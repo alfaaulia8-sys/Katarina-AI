@@ -1,7 +1,7 @@
 {
   "stage": "07",
   "version": "0.1.0",
-  "status": "STAGE_07_RESEARCH_DESIGN_ACTIVE",
+  "status": "STAGE_07_PYTHON_CONFORMANCE_ACTIVE_MQL5_GATED",
   "frozen_inputs": {
     "transport_policy": "config/transport_policy.json",
     "protocol_schema": "config/protocol_schema.json",
@@ -91,5 +91,25 @@
     "BACKPRESSURE_TESTS_PASS",
     "BINDING_MISMATCH_FAIL_CLOSED",
     "FINAL_STAGE07_AUDIT_PASS"
-  ]
+  ],
+  "implementation": {
+    "transport_port": "src/katarina/ports/transport.py",
+    "python_codec": "src/katarina/adapters/transport/kat1_codec.py",
+    "memory_adapter": "src/katarina/adapters/transport/memory.py",
+    "tests": "tests/unit/transport/test_stage07_communication.py",
+    "initial_check": "docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md"
+  },
+  "progress": {
+    "research": true,
+    "architecture_draft": true,
+    "python_transport_port": true,
+    "python_kat1_codec": true,
+    "memory_transport": true,
+    "python_golden_test_suite_prepared": true,
+    "mql5_codec": false,
+    "zeromq_spike": false,
+    "zeromq_live_adapter": false,
+    "tcp_fallback": false,
+    "session_supervisor": false
+  }
 }
