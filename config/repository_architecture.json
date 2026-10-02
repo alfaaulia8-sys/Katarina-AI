@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "architecture_version": "1.0.0",
+  "status": "FROZEN",
+  "stage": "03_PASSED",
+  "style": [
+    "MODULAR_MONOLITH",
+    "DOMAIN_DRIVEN_BOUNDARIES",
+    "EVENT_DRIVEN_CORE",
+    "PORTS_AND_ADAPTERS"
+  ],
+  "priority": [
+    "RELIABILITY",
+    "PERFORMANCE",
+    "MODULARITY",
+    "TESTABILITY",
+    "MAINTAINABILITY",
+    "DEPLOYABILITY"
+  ],
+  "top_level": [
+    "src/katarina",
+    "mt5",
+    "protocol",
+    "research",
+    "tests",
+    "models",
+    "scripts",
+    "config",
+    "docs"
+  ],
+  "python_layers": [
+    "domain",
+    "contracts",
+    "core",
+    "engines",
+    "intelligence",
+    "ports",
+    "adapters",
+    "entrypoints"
+  ],
+  "invariants": {
+    "domain_depends_on_infrastructure": false,
+    "decision_may_call_broker_directly": false,
+    "learning_may_call_broker_directly": false,
+    "adapters_implement_ports": true,
+    "cross_boundary_messages_immutable": true,
+    "shared_core_live_tester_target": true,
+    "research_isolated_from_production_execution": true,
+    "large_model_artifacts_in_git": false,
+    "catch_all_utils_allowed": false
+  }
+}
