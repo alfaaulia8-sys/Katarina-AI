@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.13"
+#property version   "0.14"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
@@ -8,6 +8,7 @@
 #include <Katarina/NativeSnapshot.mqh>
 #include <Katarina/BrokerReason.mqh>
 #include <Katarina/HealthSample.mqh>
+#include <Katarina/SessionState.mqh>
 #include <Katarina/InstanceGuard.mqh>
 #include <Katarina/SymbolRegistry.mqh>
 #include <Katarina/ExecutionPreflight.mqh>
@@ -19,6 +20,7 @@ input string InpApprovedSymbols="";
 #define KAT_STAGE06_CRITICAL_QUEUE_CAPACITY 2048
 #define KAT_STAGE06_DRAIN_BUDGET              64
 #define KAT_STAGE06_SNAPSHOT_MIN_INTERVAL_MS 1000
+#define KAT_STAGE06_HEALTH_INTERVAL_MS        250
 #define KAT_STAGE06_INSTANCE_LEASE_SECONDS    10
 
 CKatBridgeState      g_bridge_state;
@@ -32,12 +34,14 @@ CKatNativeSnapshot   g_snapshot;
 SKatAccountFacts     g_account_facts;
 SKatSymbolFacts      g_symbol_facts;
 SKatHealthSample     g_health;
+SKatSessionState     g_session;
 
 ulong g_capture_sequence=0;
 bool  g_timer_started=false;
 bool  g_snapshot_dirty=true;
 bool  g_snapshot_available=false;
 ulong g_last_snapshot_attempt_ms=0;
+ulong g_last_health_sample_ms=0;
 
 ulong KatNextCaptureSequence(void)
   {
@@ -172,6 +176,37 @@ void KatEnrichCapturedTrade(SKatCapturedTrade &event)
       event.position_reason=evidence.position_reason;
   }
 
+bool KatRefreshHealthAndFacts(void)
+  {
+   const ulong now_ms=GetTickCount64();
+   if(g_last_health_sample_ms!=0 &&
+      now_ms-g_last_health_sample_ms<KAT_STAGE06_HEALTH_INTERVAL_MS)
+      return(true);
+
+   g_last_health_sample_ms=now_ms;
+
+   SKatAccountFacts latest_account;
+   if(!KatReadAccountFacts(latest_account))
+      return(false);
+
+   if(latest_account.login!=g_account_facts.login ||
+      latest_account.server!=g_account_facts.server)
+      return(false);
+
+   g_account_facts=latest_account;
+
+   KatSampleHealth(_Symbol,g_health);
+
+   if(!KatReadSessionState(_Symbol,g_session))
+     {
+      g_session.scheduled_open=false;
+      g_session.session_open=false;
+      g_session.symbol_trade_allowed=false;
+     }
+
+   return(true);
+  }
+
 int OnInit(void)
   {
    g_bridge_state.Reset();
@@ -227,7 +262,14 @@ int OnInit(void)
       return(INIT_FAILED);
      }
 
-   KatSampleHealth(_Symbol,g_health);
+   g_last_health_sample_ms=0;
+   if(!KatRefreshHealthAndFacts())
+     {
+      g_instance_guard.Release();
+      g_bridge_state.Block(KAT_BLOCK_HEALTH_INVALID);
+      Print("KatarinaBridgeEA: initial health/account sample unavailable");
+      return(INIT_FAILED);
+     }
 
    if(!g_transport.Start())
      {
@@ -321,15 +363,11 @@ void OnTimer(void)
       return;
      }
 
-   // Detect account switches or terminal rebinding.
-   const ulong current_login=(ulong)AccountInfoInteger(ACCOUNT_LOGIN);
-   if(current_login!=g_account_facts.login)
+   if(!KatRefreshHealthAndFacts())
      {
       g_bridge_state.Block(KAT_BLOCK_ACCOUNT_BINDING);
       return;
      }
-
-   KatSampleHealth(_Symbol,g_health);
 
    // Native snapshot refresh is deliberately outside OnTradeTransaction.
    // Failure leaves snapshot_available=false and therefore cannot support READY.
