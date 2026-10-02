@@ -45,7 +45,7 @@ class KatarinaOrchestrator:
         readiness: ReadinessGate | None = None,
     ) -> None:
         self.config = config
-        self.bus = bus or EventBus()
+        self._bus = bus or EventBus()
         self.readiness = readiness or ReadinessGate(config.mode)
         self.readiness.reset_live_arming()
         self.lifecycle = LifecycleMachine()
@@ -221,7 +221,7 @@ class KatarinaOrchestrator:
                 f"{self.lifecycle.state.value}"
             )
         try:
-            emitted = await self.bus.dispatch(event)
+            emitted = await self._bus.dispatch(event)
             self.state.record_processed()
             for child in emitted:
                 await self.submit(child)
@@ -357,7 +357,7 @@ class KatarinaOrchestrator:
         tokens: list[Subscription] = []
         for spec in component.subscriptions:
             tokens.append(
-                self.bus.subscribe(
+                self._bus.subscribe(
                     spec.topic,
                     spec.handler,
                 )
@@ -376,7 +376,7 @@ class KatarinaOrchestrator:
                 component.name,
                 [],
             ):
-                self.bus.unsubscribe(token)
+                self._bus.unsubscribe(token)
 
             try:
                 await component.stop()
