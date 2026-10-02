@@ -71,10 +71,71 @@ void OnStart(void)
              "critical queue reports overflow",
              failures);
 
+   KatAssert(queue.HighWatermark()==1,
+             "critical queue high-watermark observable",
+             failures);
+   KatAssert(queue.RejectedTotal()==1,
+             "critical queue rejected counter observable",
+             failures);
+
    SKatCapturedTrade popped;
    KatAssert(queue.Pop(popped) && popped.local_capture_id==1,
              "queue preserves FIFO order",
              failures);
+
+   CKatLatestTickSlot tick_slot;
+   MqlTick tick_a;
+   tick_a.time=1;
+   tick_a.time_msc=1000;
+   tick_a.bid=100.0;
+   tick_a.ask=100.1;
+   tick_a.last=100.05;
+   tick_a.volume=1;
+   tick_a.volume_real=1.0;
+   tick_a.flags=0;
+
+   SKatCapturedTick captured_tick_a;
+   KatCaptureTick("XAUUSD",tick_a,10,captured_tick_a);
+   tick_slot.Capture(captured_tick_a);
+
+   MqlTick tick_b=tick_a;
+   tick_b.time_msc=1001;
+   tick_b.bid=100.01;
+   tick_b.ask=100.11;
+
+   SKatCapturedTick captured_tick_b;
+   KatCaptureTick("XAUUSD",tick_b,11,captured_tick_b);
+   tick_slot.Capture(captured_tick_b);
+
+   KatAssert(tick_slot.CaptureTotal()==2,
+             "tick capture counter observable",
+             failures);
+   KatAssert(tick_slot.CoalescedTotal()==1,
+             "tick coalescing counter observable",
+             failures);
+
+   CKatInstanceGuard guard_a;
+   CKatInstanceGuard guard_b;
+   const ulong guard_login=999000111;
+   const string guard_server="KAT_STAGE06_SELFTEST";
+
+   const bool guard_a_ok=guard_a.Acquire(guard_login,guard_server,5);
+   const bool guard_b_blocked=!guard_b.Acquire(guard_login,guard_server,5);
+
+   KatAssert(guard_a_ok,
+             "first duplicate guard acquires test lease",
+             failures);
+   KatAssert(guard_b_blocked,
+             "second duplicate guard is blocked",
+             failures);
+
+   guard_a.Release();
+
+   const bool guard_b_after_release=guard_b.Acquire(guard_login,guard_server,5);
+   KatAssert(guard_b_after_release,
+             "duplicate guard can acquire after owner release",
+             failures);
+   guard_b.Release();
 
    SKatSymbolFacts spec;
    spec.trade_mode=SYMBOL_TRADE_MODE_FULL;
