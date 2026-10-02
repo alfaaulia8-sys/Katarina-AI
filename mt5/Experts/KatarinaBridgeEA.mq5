@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.15"
+#property version   "0.16"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
@@ -15,7 +15,6 @@
 #include <Katarina/ExecutionPreflight.mqh>
 #include <Katarina/TransportPort.mqh>
 
-input string InpApprovedSymbols="";
 
 #define KAT_STAGE06_TIMER_MS                  50
 #define KAT_STAGE06_CRITICAL_QUEUE_CAPACITY 2048
@@ -246,12 +245,15 @@ int OnInit(void)
       return(INIT_FAILED);
      }
 
-   if(!g_symbol_registry.AddApproved(_Symbol) ||
-      !g_symbol_registry.AddApprovedCsv(InpApprovedSymbols))
+   // Stage-06/initial specialist scope: only the chart symbol is execution-approved.
+   // Other account symbols remain fully observable through snapshot/trade events.
+   // Multi-symbol market-stream approval is introduced later with an explicit
+   // multi-symbol data source; OnTick alone must not pretend to cover other symbols.
+   if(!g_symbol_registry.AddApproved(_Symbol))
      {
       g_instance_guard.Release();
       g_bridge_state.Block(KAT_BLOCK_SYMBOL_SPEC);
-      Print("KatarinaBridgeEA: invalid approved symbol configuration");
+      Print("KatarinaBridgeEA: unable to register chart symbol");
       return(INIT_FAILED);
      }
 
