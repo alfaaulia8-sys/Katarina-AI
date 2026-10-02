@@ -12,7 +12,7 @@ Allowed responsibilities:
 
 MT5 must not become a second discretionary trading brain.
 
-## Stage 06 — In Review v0.2.0
+## Stage 06 — In Review v0.4.0
 
 Current production bridge:
 
@@ -89,4 +89,8 @@ Important:
 Compile/runtime proof procedure:
 
 - `../docs/operations/STAGE_06_MT5_COMPILE_PROOF.md`
+- `../docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md`
+- `../scripts/mt5/check_stage06_host.ps1`
 - `../scripts/mt5/compile_stage06.ps1`
+
+Current proof target is modern x64 Windows. Windows Server 2012 R2 is deferred until after the modern implementation is stable.
