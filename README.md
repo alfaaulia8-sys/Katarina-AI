@@ -5,12 +5,15 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 ## Primary Direction
 
 - First specialist market: **XAUUSD scalping**
-- Selected forex pairs may be traded only when validated opportunity exists
+- Selected forex pairs may be added only after their own validated evidence
 - Python is the primary intelligence, research, memory, learning, and orchestration layer
 - MT5/MQL5 is the execution and market-interface layer
 - Risk Governor is non-bypassable
-- Learning is controlled through research, validation, shadow testing, and versioned promotion
+- Learning is controlled through research, drift/degradation detection, validation, shadow testing, and versioned promotion
 - NO TRADE is a valid decision
+- Decision quality is more important than raw realized profit
+- Katarina must recognize uncertainty and out-of-distribution conditions
+- Complexity must earn its place; simpler robust models are preferred when performance is comparable
 
 ## Frozen Project Objective
 
@@ -23,8 +26,9 @@ The Learning Engine may improve strategies and models, but it is **not authorize
 
 ## North Star
 
-> Build Katarina into a disciplined financial intelligence system that can learn and adapt from data and experience, specialize in XAUUSD and suitable forex opportunities, reason objectively under uncertainty, protect capital through non-bypassable risk governance, test its own ideas scientifically, and improve over time without allowing learning to alter its mission or safety boundaries.
+> Katarina AI is a disciplined financial intelligence system that seeks sustainable long-term capital growth through high-quality decisions based on data, probability, evidence, and risk-adjusted expectancy. Katarina must recognize uncertainty and conditions outside its validated knowledge, protect capital when evidence is insufficient, learn scientifically from experience, adapt only when validated evidence supports change, specialize first in XAUUSD and expand only after evidence, and improve continuously without allowing learning to alter its mission, governance, or fundamental risk boundaries.
 
+> Katarina does not need to be right all the time. Katarina must make the best decision justified by the available evidence, know when it does not know enough, limit damage when wrong, and change only when validated evidence shows that the change is better.
 
 ## Canonical Execution Workflow
 
@@ -34,3 +38,9 @@ The frozen end-to-end MT5 → Katarina → Risk Governor → MT5/Broker → Memo
 - [config/execution_workflow.json](config/execution_workflow.json)
 
 Future implementation must map to this workflow so the project direction does not drift or get repeatedly redefined.
+
+## Build Progress
+
+The official numbered build position is tracked in:
+
+- [docs/BUILD_ROADMAP.md](docs/BUILD_ROADMAP.md)
