@@ -1,5 +1,5 @@
 {
-  "registry_version": "0.1",
+  "registry_version": "0.2",
   "status": "DRAFT_STAGE_04",
   "protocol": "KAT1",
   "messages": [
@@ -98,6 +98,13 @@
       "name": "ORDER_STATE_EVENT",
       "direction": "MT5_TO_KATARINA",
       "critical": true
+    },
+    {
+      "id": 203,
+      "name": "ACCOUNT_LEDGER_EVENT",
+      "direction": "MT5_TO_KATARINA",
+      "critical": true,
+      "status": "OWNER_DECISION_PENDING"
     },
     {
       "id": 300,
