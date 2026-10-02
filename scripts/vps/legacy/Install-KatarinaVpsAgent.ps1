@@ -39,6 +39,14 @@ function Protect-Token {
 
 Assert-Administrator
 
+$preflight = Join-Path $PSScriptRoot "Test-KatarinaVpsPrerequisites.ps1"
+if (Test-Path $preflight) {
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $preflight
+    if ($LASTEXITCODE -ne 0) {
+        throw "VPS prerequisite preflight failed. Fix the failed checks before installation."
+    }
+}
+
 if ($PollSeconds -lt 5) {
     throw "PollSeconds must be at least 5."
 }
