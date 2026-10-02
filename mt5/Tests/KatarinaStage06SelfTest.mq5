@@ -3,6 +3,7 @@
 
 #include <Katarina/BarSource.mqh>
 #include <Katarina/BridgeState.mqh>
+#include <Katarina/BridgeIdentity.mqh>
 #include <Katarina/BrokerCalc.mqh>
 #include <Katarina/BrokerReason.mqh>
 #include <Katarina/DealHistory.mqh>
