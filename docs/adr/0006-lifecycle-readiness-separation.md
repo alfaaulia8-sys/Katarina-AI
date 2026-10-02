@@ -1,6 +1,6 @@
 # ADR-0006 — Separate Lifecycle From Live-Execution Readiness
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Stage:** 05
 
 ## Decision
@@ -23,4 +23,4 @@ Loss of a readiness signal can close new-risk admission without killing the proc
 
 Live execution arming is reset on boot and fault.
 
-This ADR remains Proposed until Stage 05 audit/freeze.
+Stage 05 audit completed. Lifecycle and live-execution readiness remain separate frozen Core dimensions.
