@@ -9,47 +9,43 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Python is the primary intelligence, research, memory, learning, and orchestration layer
 - MT5/MQL5 is the execution and market-interface layer
 - Risk Governor is non-bypassable
-- Learning is controlled through research, drift/degradation detection, validation, shadow testing, and versioned promotion
-- NO TRADE is a valid decision
+- NO TRADE is valid
 - Decision quality is more important than raw realized profit
 - Katarina must recognize uncertainty and out-of-distribution conditions
-- Complexity must earn its place; simpler robust models are preferred when performance is comparable
+- Learning is controlled by research, validation, shadow testing, promotion, monitoring, and rollback
 
 ## Frozen Project Objective
-
-The permanent project mission and non-negotiable safety boundaries are defined in:
 
 - [KATARINA_CONSTITUTION.md](KATARINA_CONSTITUTION.md)
 - [config/constitution.json](config/constitution.json)
 
-## North Star
+## Frozen MT5-to-Execution Workflow
 
-> Katarina AI is a disciplined financial intelligence system that seeks sustainable long-term capital growth through high-quality decisions based on data, probability, evidence, and risk-adjusted expectancy.
-
-> Katarina does not need to be right all the time. Katarina must make the best decision justified by the available evidence, know when it does not know enough, limit damage when wrong, and change only when validated evidence shows that the change is better.
-
-## Canonical Execution Workflow
+Stage 02 is complete and frozen at v1.2.0:
 
 - [docs/KATARINA_FINAL_WORKFLOW.md](docs/KATARINA_FINAL_WORKFLOW.md)
 - [config/execution_workflow.json](config/execution_workflow.json)
-
-## Transport & Codec Policy
-
-Stage 02 approved a binary-first realtime architecture:
-
-- production hot path: versioned binary;
-- live primary: ZeroMQ localhost;
-- live fallback: native local TCP;
-- Strategy Tester: dedicated TesterTransport adapter;
-- JSON: audit/debug only, not authoritative realtime transport.
-
-Canonical policy:
-
 - [docs/KATARINA_TRANSPORT_PROTOCOL.md](docs/KATARINA_TRANSPORT_PROTOCOL.md)
 - [config/transport_policy.json](config/transport_policy.json)
+- [docs/KATARINA_EXECUTION_RELIABILITY.md](docs/KATARINA_EXECUTION_RELIABILITY.md)
+- [config/execution_reliability.json](config/execution_reliability.json)
+- [docs/reviews/STAGE_02_WORKFLOW_AUDIT.md](docs/reviews/STAGE_02_WORKFLOW_AUDIT.md)
 
-Exact binary field layouts are intentionally deferred to **Stage 04 — Data Protocol / Schemas**.
+Key Stage 02 decisions:
+
+- event-driven MT5 data flow;
+- binary-first production hot path;
+- ZeroMQ localhost primary + local TCP fallback;
+- dedicated tester transport;
+- state cache + immutable snapshots;
+- durable idempotency;
+- broker transaction events and reconciliation as execution truth;
+- UNKNOWN outcome is never automatically retried;
+- startup/reconnect remains fail-closed until reconciliation;
+- critical execution events are durable/replayable.
 
 ## Build Progress
 
 - [docs/BUILD_ROADMAP.md](docs/BUILD_ROADMAP.md)
+
+Current position: **Stage 02 complete. Stage 03 — Repository Architecture — is next.**
