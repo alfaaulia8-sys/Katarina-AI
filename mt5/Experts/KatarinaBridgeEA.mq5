@@ -36,19 +36,19 @@ SKatSymbolFacts      g_symbol_facts;
 SKatHealthSample     g_health;
 SKatSessionState     g_session;
 
-ulong g_capture_sequence=0;
+ulong g_local_capture_id=0;
 bool  g_timer_started=false;
 bool  g_snapshot_dirty=true;
 bool  g_snapshot_available=false;
 ulong g_last_snapshot_attempt_ms=0;
 ulong g_last_health_sample_ms=0;
 
-ulong KatNextCaptureSequence(void)
+ulong KatNextLocalObservationId(void)
   {
-   g_capture_sequence++;
-   if(g_capture_sequence==0)
-      g_capture_sequence=1;
-   return(g_capture_sequence);
+   g_local_capture_id++;
+   if(g_local_capture_id==0)
+      g_local_capture_id=1;
+   return(g_local_capture_id);
   }
 
 bool KatValidateApprovedSymbols(void)
@@ -135,7 +135,7 @@ bool KatRefreshSnapshot(void)
 
    g_last_snapshot_attempt_ms=now_ms;
 
-   if(!g_snapshot.BuildStable(KatNextCaptureSequence(),3))
+   if(!g_snapshot.BuildStable(KatNextLocalObservationId(),3))
      {
       g_snapshot_available=false;
       return(false);
@@ -331,7 +331,7 @@ void OnTick(void)
       return;
 
    SKatCapturedTick captured;
-   KatCaptureTick(_Symbol,tick,KatNextCaptureSequence(),captured);
+   KatCaptureTick(_Symbol,tick,KatNextLocalObservationId(),captured);
    g_latest_tick.Capture(captured);
   }
 
@@ -340,7 +340,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
                         const MqlTradeResult &result)
   {
    SKatCapturedTrade captured;
-   KatCaptureTradeTransaction(trans,request,result,KatNextCaptureSequence(),captured);
+   KatCaptureTradeTransaction(trans,request,result,KatNextLocalObservationId(),captured);
 
    if(!g_trade_events.Push(captured))
      {
