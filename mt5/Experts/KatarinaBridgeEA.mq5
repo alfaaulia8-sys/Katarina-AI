@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.16"
+#property version   "0.17"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
@@ -326,6 +326,9 @@ int OnInit(void)
                g_snapshot.OrderCount(),
                g_identity.StreamId(),
                g_identity.BootId());
+
+   if(g_identity.StreamRecreated())
+      Print("KatarinaBridgeEA: new/recreated stream identity requires normal recovery/reconciliation before readiness");
 
    return(INIT_SUCCEEDED);
   }
