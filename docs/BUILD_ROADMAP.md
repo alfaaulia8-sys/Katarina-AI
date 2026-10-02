@@ -8,7 +8,7 @@
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
 | 06 | MT5 Bridge EA | 🟡 CLEARANCE AUTOMATION COMPLETE — Bridge v0.5.0 / EXTERNAL PROOF PENDING |
-| 07 | MT5-Python Communication | ⬜ |
+| 07 | MT5-Python Communication | 🟡 RESEARCH/DESIGN ACTIVE — Python conformance work started |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
 | 10 | Database & Memory V1 | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 06 — MT5 Bridge EA — is active and in review.**
+**Stage 06 external proof remains pending. Stage 07 research/design and pure-Python conformance work are now active without modifying the Stage-06 MQL clearance candidate.**
 
 ## Frozen Stage 04 Scope
 
@@ -142,3 +142,21 @@ Production broker mutation remains disabled and the bridge remains RECOVERING.
 Implementation and clearance automation are complete. The remaining freeze blocker is external proof only: actual MetaEditor compilation on modern x64 Windows, actual MQL self-test, standard-like and cent-like account probes, evidence collection, then governed freeze review. Windows Server 2012 R2 remains deferred.
 
 Stage 06 is not frozen yet.
+
+
+## Stage 07 Active Scope
+
+Completed/started without crossing the Stage-06 external-proof boundary:
+
+- GitHub prior-art research for MQL5/Python ZeroMQ communication;
+- localhost ZeroMQ ROUTER (Python) / DEALER (MT5) topology draft;
+- native localhost TCP fallback design using native KAT1 frame_length;
+- initial HEARTBEAT → HELLO → HELLO_ACK route/handshake design;
+- application-owned Python TransportPort;
+- bounded in-memory transport adapter for tests;
+- Python schema-driven KAT1 codec;
+- Stage-04 golden-vector round-trip tests;
+- Stage-07 communication config draft;
+- ADR-0009 proposed.
+
+Production MQL5 ZeroMQ/TCP integration remains gated on Stage-06 external clearance/freeze.
