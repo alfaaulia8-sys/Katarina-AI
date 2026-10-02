@@ -179,6 +179,35 @@ class Stage06Mt5StaticTests(unittest.TestCase):
         self.assertIn('"CENT_LIKE"', probe)
         self.assertIn("account_probe_", probe)
 
+    def test_preflight_rejects_invalid_numbers_and_tick_alignment(self):
+        preflight = (
+            INCLUDE / "ExecutionPreflight.mqh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("MathIsValidNumber", preflight)
+        self.assertIn(
+            "KAT_PREFLIGHT_NONFINITE_NUMBER",
+            preflight,
+        )
+        self.assertIn(
+            "KAT_PREFLIGHT_PRICE_NOT_TICK_ALIGNED",
+            preflight,
+        )
+        self.assertIn("KatPriceAlignedToTick", preflight)
+
+    def test_runtime_evidence_collector_requires_all_proofs(self):
+        collector = (
+            ROOT / "scripts" / "mt5" /
+            "collect_stage06_runtime_evidence.ps1"
+        ).read_text(encoding="utf-8")
+        for token in (
+            "Katarina_Stage06_self_test_result.txt",
+            "Katarina_Stage06_account_probe_STANDARD_LIKE.txt",
+            "Katarina_Stage06_account_probe_CENT_LIKE.txt",
+            "PASS_COMPILE_PROOF",
+            "PASS_RUNTIME_EVIDENCE",
+        ):
+            self.assertIn(token, collector)
+
 
 if __name__ == "__main__":
     unittest.main()
