@@ -76,7 +76,7 @@ Forbidden:
 Allowed:
 
 - copy fields needed for later interpretation;
-- assign local capture sequence;
+- assign local capture ID;
 - enqueue into the lossless-required transaction buffer;
 - set critical-integrity failure if the buffer cannot accept the event;
 - return.
