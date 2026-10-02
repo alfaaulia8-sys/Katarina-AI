@@ -17,9 +17,9 @@ if (!(Test-Path $sourceDir)) {
 New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
 
 $required = @(
-    "self_test_result.txt",
-    "account_probe_STANDARD_LIKE.txt",
-    "account_probe_CENT_LIKE.txt"
+    "Katarina_Stage06_self_test_result.txt",
+    "Katarina_Stage06_account_probe_STANDARD_LIKE.txt",
+    "Katarina_Stage06_account_probe_CENT_LIKE.txt"
 )
 
 function Read-KeyValueEvidence {
@@ -62,8 +62,8 @@ foreach ($name in $required) {
     }
 }
 
-$standard = $records | Where-Object { $_.file -eq "account_probe_STANDARD_LIKE.txt" }
-$cent = $records | Where-Object { $_.file -eq "account_probe_CENT_LIKE.txt" }
+$standard = $records | Where-Object { $_.file -eq "Katarina_Stage06_account_probe_STANDARD_LIKE.txt" }
+$cent = $records | Where-Object { $_.file -eq "Katarina_Stage06_account_probe_CENT_LIKE.txt" }
 
 if ($standard.values["account_class"] -ne "STANDARD_LIKE") {
     throw "Standard account evidence is not typed STANDARD_LIKE."
