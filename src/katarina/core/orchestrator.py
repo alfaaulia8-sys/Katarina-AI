@@ -10,7 +10,7 @@ from katarina.core.component import (
     resolve_component_order,
 )
 from katarina.core.lifecycle import LifecycleMachine, LifecycleState
-from katarina.core.message_bus import EventBus
+from katarina.core.message_bus import EventBus, Subscription
 from katarina.core.queue import CriticalIngressOverflow, IngressQueue
 from katarina.core.readiness import ReadinessGate, ReadinessSignal
 from katarina.core.state import CoreStatus, RuntimeStateStore
@@ -56,6 +56,9 @@ class KatarinaOrchestrator:
         self._ordered_components: tuple[ManagedComponent, ...] = ()
         self._initialized: list[ManagedComponent] = []
         self._started: list[ManagedComponent] = []
+        self._component_subscriptions: dict[
+            str, list[Subscription]
+        ] = {}
 
     def register_component(self, component: ManagedComponent) -> None:
         if self.lifecycle.state is not LifecycleState.CREATED:
@@ -67,7 +70,8 @@ class KatarinaOrchestrator:
     @property
     def status(self) -> CoreStatus:
         return self.state.snapshot(
-            self.lifecycle.state, self.readiness.snapshot()
+            self.lifecycle.state,
+            self.readiness.snapshot(),
         )
 
     @property
@@ -79,9 +83,13 @@ class KatarinaOrchestrator:
 
     async def bootstrap(self) -> None:
         if self.lifecycle.state is not LifecycleState.CREATED:
-            raise OrchestratorError("bootstrap requires CREATED state")
+            raise OrchestratorError(
+                "bootstrap requires CREATED state"
+            )
         try:
-            self.lifecycle.transition(LifecycleState.INITIALIZING)
+            self.lifecycle.transition(
+                LifecycleState.INITIALIZING
+            )
             self._ordered_components = resolve_component_order(
                 self._components
             )
@@ -93,18 +101,25 @@ class KatarinaOrchestrator:
             self.lifecycle.transition(LifecycleState.STARTING)
             for component in self._ordered_components:
                 if component.phase is ComponentPhase.BOOTSTRAP:
-                    self._started.append(component)
-                    await component.start()
+                    await self._start_component(component)
 
-            self.lifecycle.transition(LifecycleState.RECOVERING)
+            self.lifecycle.transition(
+                LifecycleState.RECOVERING
+            )
             if self.readiness.core_ready:
-                self.lifecycle.transition(LifecycleState.READY)
+                self.lifecycle.transition(
+                    LifecycleState.READY
+                )
         except Exception as exc:
-            await self._fault(f"bootstrap failed: {exc}")
+            await self._fault(
+                f"bootstrap failed: {exc}"
+            )
             raise OrchestratorFault(str(exc)) from exc
 
     def set_readiness(
-        self, signal: ReadinessSignal, value: bool
+        self,
+        signal: ReadinessSignal,
+        value: bool,
     ) -> None:
         self.readiness.set(signal, value)
         state = self.lifecycle.state
@@ -112,28 +127,42 @@ class KatarinaOrchestrator:
             state is LifecycleState.RECOVERING
             and self.readiness.core_ready
         ):
-            self.lifecycle.transition(LifecycleState.READY)
+            self.lifecycle.transition(
+                LifecycleState.READY
+            )
         elif (
             state is LifecycleState.READY
             and not self.readiness.core_ready
         ):
-            self.lifecycle.transition(LifecycleState.RECOVERING)
+            self.lifecycle.transition(
+                LifecycleState.RECOVERING
+            )
 
     async def activate(self) -> None:
         if self.lifecycle.state is not LifecycleState.READY:
-            raise OrchestratorError("activate requires READY state")
+            raise OrchestratorError(
+                "activate requires READY state"
+            )
         try:
-            self.lifecycle.transition(LifecycleState.STARTING)
+            self.lifecycle.transition(
+                LifecycleState.STARTING
+            )
             for component in self._ordered_components:
                 if component.phase is ComponentPhase.RUNTIME:
-                    self._started.append(component)
-                    await component.start()
-            self.lifecycle.transition(LifecycleState.RUNNING)
+                    await self._start_component(component)
+            self.lifecycle.transition(
+                LifecycleState.RUNNING
+            )
         except Exception as exc:
-            await self._fault(f"activation failed: {exc}")
+            await self._fault(
+                f"activation failed: {exc}"
+            )
             raise OrchestratorFault(str(exc)) from exc
 
-    async def submit(self, event: EventEnvelope) -> bool:
+    async def submit(
+        self,
+        event: EventEnvelope,
+    ) -> bool:
         if self.lifecycle.state in {
             LifecycleState.CREATED,
             LifecycleState.INITIALIZING,
@@ -146,7 +175,8 @@ class KatarinaOrchestrator:
             LifecycleState.DISPOSED,
         }:
             raise OrchestratorError(
-                f"cannot submit event while {self.lifecycle.state.value}"
+                "cannot submit event while "
+                f"{self.lifecycle.state.value}"
             )
         try:
             accepted = self.ingress.put_nowait(event)
@@ -155,6 +185,7 @@ class KatarinaOrchestrator:
                 f"critical ingress overflow: {exc}"
             )
             raise OrchestratorFault(str(exc)) from exc
+
         if not accepted:
             self.state.record_drop()
         return accepted
@@ -175,7 +206,10 @@ class KatarinaOrchestrator:
             processed += 1
         return processed
 
-    async def _dispatch(self, event: EventEnvelope) -> None:
+    async def _dispatch(
+        self,
+        event: EventEnvelope,
+    ) -> None:
         if self.lifecycle.state not in {
             LifecycleState.RECOVERING,
             LifecycleState.READY,
@@ -183,7 +217,8 @@ class KatarinaOrchestrator:
             LifecycleState.DEGRADED,
         }:
             raise OrchestratorError(
-                f"cannot dispatch while {self.lifecycle.state.value}"
+                "cannot dispatch while "
+                f"{self.lifecycle.state.value}"
             )
         try:
             emitted = await self.bus.dispatch(event)
@@ -197,7 +232,8 @@ class KatarinaOrchestrator:
             raise OrchestratorFault(str(exc)) from exc
         except Exception as exc:
             await self._fault(
-                f"event dispatch failed on {event.topic}: {exc}"
+                "event dispatch failed on "
+                f"{event.topic}: {exc}"
             )
             raise OrchestratorFault(str(exc)) from exc
 
@@ -206,9 +242,13 @@ class KatarinaOrchestrator:
             raise OrchestratorError(
                 "degrade requires RUNNING state"
             )
-        self.lifecycle.transition(LifecycleState.DEGRADING)
+        self.lifecycle.transition(
+            LifecycleState.DEGRADING
+        )
         self.state.record_error(reason)
-        self.lifecycle.transition(LifecycleState.DEGRADED)
+        self.lifecycle.transition(
+            LifecycleState.DEGRADED
+        )
 
     async def resume(self) -> None:
         if self.lifecycle.state is not LifecycleState.DEGRADED:
@@ -219,8 +259,12 @@ class KatarinaOrchestrator:
             raise OrchestratorError(
                 "cannot resume while core readiness is false"
             )
-        self.lifecycle.transition(LifecycleState.RESUMING)
-        self.lifecycle.transition(LifecycleState.RUNNING)
+        self.lifecycle.transition(
+            LifecycleState.RESUMING
+        )
+        self.lifecycle.transition(
+            LifecycleState.RUNNING
+        )
 
     async def stop(self) -> None:
         if self.lifecycle.state in {
@@ -237,22 +281,30 @@ class KatarinaOrchestrator:
             LifecycleState.DEGRADED,
         }:
             raise OrchestratorError(
-                f"cannot stop while {self.lifecycle.state.value}"
+                "cannot stop while "
+                f"{self.lifecycle.state.value}"
             )
 
-        self.lifecycle.transition(LifecycleState.STOPPING)
+        self.lifecycle.transition(
+            LifecycleState.STOPPING
+        )
         errors = await self._stop_started_components()
         if errors:
             await self._fault(
                 "; ".join(errors),
                 components_already_stopped=True,
             )
-            raise OrchestratorFault("; ".join(errors))
-        self.lifecycle.transition(LifecycleState.STOPPED)
+            raise OrchestratorFault(
+                "; ".join(errors)
+            )
+        self.lifecycle.transition(
+            LifecycleState.STOPPED
+        )
 
     async def dispose(self) -> None:
         if self.lifecycle.state is LifecycleState.DISPOSED:
             return
+
         if self.lifecycle.state not in {
             LifecycleState.STOPPED,
             LifecycleState.FAULTED,
@@ -260,10 +312,13 @@ class KatarinaOrchestrator:
             LifecycleState.CREATED,
         }:
             await self.stop()
+
         if self.lifecycle.state is LifecycleState.READY:
             await self.stop()
 
-        self.lifecycle.transition(LifecycleState.DISPOSING)
+        self.lifecycle.transition(
+            LifecycleState.DISPOSING
+        )
 
         errors: list[str] = []
         for component in reversed(self._initialized):
@@ -273,22 +328,63 @@ class KatarinaOrchestrator:
                 errors.append(
                     f"dispose {component.name}: {exc}"
                 )
-        if errors:
-            self.lifecycle.transition(LifecycleState.FAULTING)
-            self.state.record_error("; ".join(errors))
-            self.lifecycle.transition(LifecycleState.FAULTED)
-            raise OrchestratorFault("; ".join(errors))
-        self.lifecycle.transition(LifecycleState.DISPOSED)
 
-    async def _stop_started_components(self) -> list[str]:
+        if errors:
+            self.lifecycle.transition(
+                LifecycleState.FAULTING
+            )
+            self.state.record_error(
+                "; ".join(errors)
+            )
+            self.lifecycle.transition(
+                LifecycleState.FAULTED
+            )
+            raise OrchestratorFault(
+                "; ".join(errors)
+            )
+
+        self.lifecycle.transition(
+            LifecycleState.DISPOSED
+        )
+
+    async def _start_component(
+        self,
+        component: ManagedComponent,
+    ) -> None:
+        self._started.append(component)
+        await component.start()
+
+        tokens: list[Subscription] = []
+        for spec in component.subscriptions:
+            tokens.append(
+                self.bus.subscribe(
+                    spec.topic,
+                    spec.handler,
+                )
+            )
+        self._component_subscriptions[
+            component.name
+        ] = tokens
+
+    async def _stop_started_components(
+        self,
+    ) -> list[str]:
         errors: list[str] = []
+
         for component in reversed(self._started):
+            for token in self._component_subscriptions.pop(
+                component.name,
+                [],
+            ):
+                self.bus.unsubscribe(token)
+
             try:
                 await component.stop()
             except Exception as exc:
                 errors.append(
                     f"stop {component.name}: {exc}"
                 )
+
         self._started.clear()
         return errors
 
@@ -300,8 +396,10 @@ class KatarinaOrchestrator:
     ) -> None:
         self.readiness.reset_live_arming()
         self.state.record_error(reason)
+
         if self.lifecycle.state is LifecycleState.FAULTED:
             return
+
         if self.lifecycle.state is not LifecycleState.FAULTING:
             if self.lifecycle.can_transition(
                 LifecycleState.FAULTING
@@ -311,6 +409,10 @@ class KatarinaOrchestrator:
                 )
             else:
                 raise OrchestratorFault(reason)
+
         if not components_already_stopped:
             await self._stop_started_components()
-        self.lifecycle.transition(LifecycleState.FAULTED)
+
+        self.lifecycle.transition(
+            LifecycleState.FAULTED
+        )
