@@ -1,6 +1,6 @@
 {
-  "architecture_version": "0.3.0",
-  "status": "STAGE_06_STATIC_CANDIDATE_COMPILE_PENDING",
+  "architecture_version": "0.4.0",
+  "status": "STAGE_06_MODERN_WINDOWS_VALIDATION_CANDIDATE",
   "stage": "06",
   "role": [
     "MARKET_ACCOUNT_SENSOR",
@@ -133,11 +133,18 @@
     "python_static_test": "tests/static/test_stage06_mt5_bridge.py",
     "metaeditor_compile_proof": false,
     "python_static_test_count": 15,
-    "repository_equivalent_static_audit_passed": true
+    "repository_equivalent_static_audit_passed": true,
+    "strict_compile_policy": {
+      "zero_errors": true,
+      "zero_warnings": true,
+      "ex5_artifact_required": true,
+      "sha256_evidence_required": true,
+      "utf16le_log_parse": true
+    }
   },
   "pending_before_freeze": [
-    "METAEDITOR_COMPILE_PROOF",
-    "RUN_MQL_SELF_TEST",
+    "MODERN_WINDOWS_METAEDITOR_COMPILE_PROOF",
+    "RUN_MQL_SELF_TEST_ON_MODERN_WINDOWS",
     "RUN_ACCOUNT_PROBE_STANDARD_LIKE",
     "RUN_ACCOUNT_PROBE_CENT_LIKE",
     "RUN_STATIC_TEST_IN_CHECKOUT",
@@ -162,5 +169,22 @@
     "field_validity_bitmap": true,
     "request_result_only_for": "TRADE_TRANSACTION_REQUEST",
     "local_capture_id_is_kat1_sequence": false
+  },
+  "windows_compatibility": {
+    "baseline_file": "config/windows_compatibility_stage06.json",
+    "preferred": [
+      "WINDOWS_11_X64",
+      "WINDOWS_SERVER_2022_X64"
+    ],
+    "compatibility": [
+      "WINDOWS_10_X64",
+      "WINDOWS_SERVER_2016_X64",
+      "WINDOWS_SERVER_2019_X64"
+    ],
+    "deferred": [
+      "WINDOWS_SERVER_2012_R2_X64"
+    ],
+    "x64_required": true,
+    "windows_server_2012_r2_blocks_freeze": false
   }
 }
