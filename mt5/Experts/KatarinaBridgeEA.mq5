@@ -1,19 +1,23 @@
 #property strict
-#property version   "0.10"
+#property version   "0.11"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
 #include <Katarina/EventBuffer.mqh>
+#include <Katarina/NativeFacts.mqh>
 #include <Katarina/TransportPort.mqh>
 
 #define KAT_STAGE06_TIMER_MS                  50
 #define KAT_STAGE06_CRITICAL_QUEUE_CAPACITY 2048
 #define KAT_STAGE06_DRAIN_BUDGET              64
 
-CKatBridgeState    g_bridge_state;
+CKatBridgeState     g_bridge_state;
 CKatTradeEventQueue g_trade_events;
 CKatLatestTickSlot  g_latest_tick;
 CKatNullTransport   g_transport;
+
+SKatAccountFacts    g_account_facts;
+SKatSymbolFacts     g_symbol_facts;
 
 ulong g_capture_sequence=0;
 bool  g_timer_started=false;
@@ -29,6 +33,20 @@ ulong KatNextCaptureSequence(void)
 int OnInit(void)
   {
    g_bridge_state.Reset();
+
+   if(!KatReadAccountFacts(g_account_facts))
+     {
+      g_bridge_state.Block(KAT_BLOCK_ACCOUNT_BINDING);
+      Print("KatarinaBridgeEA: unable to read required account facts");
+      return(INIT_FAILED);
+     }
+
+   if(!KatReadSymbolFacts(_Symbol,g_symbol_facts))
+     {
+      g_bridge_state.Block(KAT_BLOCK_SYMBOL_SPEC);
+      PrintFormat("KatarinaBridgeEA: unable to read required SymbolSpec for %s",_Symbol);
+      return(INIT_FAILED);
+     }
 
    if(!g_trade_events.Init(KAT_STAGE06_CRITICAL_QUEUE_CAPACITY))
      {
@@ -59,7 +77,11 @@ int OnInit(void)
    // It must never auto-arm live execution.
    g_bridge_state.SetExecutionArmed(false);
 
-   Print("KatarinaBridgeEA Stage 06 initialized in RECOVERING / READ-ONLY mode");
+   PrintFormat("KatarinaBridgeEA Stage 06 initialized READ-ONLY. Login=%I64u, currency=%s, symbol=%s, margin_mode=%d",
+               g_account_facts.login,
+               g_account_facts.currency,
+               _Symbol,
+               (int)g_account_facts.margin_mode);
    return(INIT_SUCCEEDED);
   }
 
