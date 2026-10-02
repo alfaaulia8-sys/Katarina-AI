@@ -12,3 +12,6 @@
 /docs/architecture/ @alfaaulia-katarina
 /docs/adr/ @alfaaulia-katarina
 /config/repository_architecture.json @alfaaulia-katarina
+
+/protocol/ @alfaaulia-katarina
+/config/protocol_schema_draft.json @alfaaulia-katarina
