@@ -48,7 +48,8 @@ try {
     Write-Host "  2. Run KatarinaStage06AccountProbe on a standard-like account."
     Write-Host "  3. Run KatarinaStage06AccountProbe on a cent-like account."
     Write-Host "  4. Verify a second bridge instance is blocked in the same terminal/account."
-    Write-Host "  5. Preserve logs/evidence for the final Stage 06 audit."
+    Write-Host "  5. Run collect_stage06_runtime_evidence.ps1 against the MT5 Common Data Folder."
+    Write-Host "  6. Preserve compile + runtime manifests for the final Stage 06 audit."
 }
 finally {
     Pop-Location
