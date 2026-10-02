@@ -1,7 +1,7 @@
 {
   "protocol": "KAT1",
   "version": "1.0.0",
-  "status": "FROZEN_CANDIDATE_STAGE_04",
+  "status": "FROZEN_STAGE_04",
   "bits": {
     "0": "MARKET_ENTRY",
     "1": "LIMIT_ENTRY",
