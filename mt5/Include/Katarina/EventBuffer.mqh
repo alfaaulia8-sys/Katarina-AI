@@ -28,12 +28,15 @@ struct SKatCapturedTrade
    ENUM_ORDER_TYPE             order_type;
    ENUM_ORDER_STATE            order_state;
    ENUM_DEAL_TYPE              deal_type;
+   ENUM_ORDER_TYPE_TIME        time_type;
+   datetime                    time_expiration;
    double                      price;
    double                      price_trigger;
    double                      price_sl;
    double                      price_tp;
    double                      volume;
 
+   bool                        request_result_valid;
    uint                        request_id;
    uint                        result_retcode;
    ulong                       result_order;
@@ -76,18 +79,33 @@ void KatCaptureTradeTransaction(const MqlTradeTransaction &trans,
    out_event.order_type=trans.order_type;
    out_event.order_state=trans.order_state;
    out_event.deal_type=trans.deal_type;
+   out_event.time_type=trans.time_type;
+   out_event.time_expiration=trans.time_expiration;
    out_event.price=trans.price;
    out_event.price_trigger=trans.price_trigger;
    out_event.price_sl=trans.price_sl;
    out_event.price_tp=trans.price_tp;
    out_event.volume=trans.volume;
 
-   out_event.request_id=result.request_id;
-   out_event.result_retcode=result.retcode;
-   out_event.result_order=result.order;
-   out_event.result_deal=result.deal;
-   out_event.result_volume=result.volume;
-   out_event.result_price=result.price;
+   // MQL5 documents request/result as meaningful only for
+   // TRADE_TRANSACTION_REQUEST. Never interpret them for other transaction types.
+   out_event.request_result_valid=(trans.type==TRADE_TRANSACTION_REQUEST);
+   out_event.request_id=0;
+   out_event.result_retcode=0;
+   out_event.result_order=0;
+   out_event.result_deal=0;
+   out_event.result_volume=0.0;
+   out_event.result_price=0.0;
+
+   if(out_event.request_result_valid)
+     {
+      out_event.request_id=result.request_id;
+      out_event.result_retcode=result.retcode;
+      out_event.result_order=result.order;
+      out_event.result_deal=result.deal;
+      out_event.result_volume=result.volume;
+      out_event.result_price=result.price;
+     }
   }
 
 class CKatLatestTickSlot
