@@ -1,8 +1,9 @@
 #property strict
-#property version   "0.14"
+#property version   "0.15"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
+#include <Katarina/BridgeIdentity.mqh>
 #include <Katarina/EventBuffer.mqh>
 #include <Katarina/NativeFacts.mqh>
 #include <Katarina/NativeSnapshot.mqh>
@@ -24,6 +25,7 @@ input string InpApprovedSymbols="";
 #define KAT_STAGE06_INSTANCE_LEASE_SECONDS    10
 
 CKatBridgeState      g_bridge_state;
+CKatBridgeIdentity   g_identity;
 CKatTradeEventQueue  g_trade_events;
 CKatLatestTickSlot   g_latest_tick;
 CKatNullTransport    g_transport;
@@ -236,6 +238,14 @@ int OnInit(void)
       return(INIT_FAILED);
      }
 
+   if(!g_identity.Init(g_account_facts.login,g_account_facts.server))
+     {
+      g_instance_guard.Release();
+      g_bridge_state.Block(KAT_BLOCK_LOCAL_INIT_FAILED);
+      Print("KatarinaBridgeEA: unable to initialize stream/boot identity");
+      return(INIT_FAILED);
+     }
+
    if(!g_symbol_registry.AddApproved(_Symbol) ||
       !g_symbol_registry.AddApprovedCsv(InpApprovedSymbols))
      {
@@ -304,13 +314,15 @@ int OnInit(void)
    // Never auto-arm live execution.
    g_bridge_state.SetExecutionArmed(false);
 
-   PrintFormat("KatarinaBridgeEA Stage 06 initialized RECOVERING. Login=%I64u, currency=%s, chart_symbol=%s, approved_symbols=%d, positions=%d, orders=%d",
+   PrintFormat("KatarinaBridgeEA Stage 06 initialized RECOVERING. Login=%I64u, currency=%s, chart_symbol=%s, approved_symbols=%d, positions=%d, orders=%d, stream_id=%I64u, boot_id=%I64u",
                g_account_facts.login,
                g_account_facts.currency,
                _Symbol,
                g_symbol_registry.ApprovedCount(),
                g_snapshot.PositionCount(),
-               g_snapshot.OrderCount());
+               g_snapshot.OrderCount(),
+               g_identity.StreamId(),
+               g_identity.BootId());
 
    return(INIT_SUCCEEDED);
   }
