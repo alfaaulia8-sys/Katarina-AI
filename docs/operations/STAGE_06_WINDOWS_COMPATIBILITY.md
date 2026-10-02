@@ -130,3 +130,24 @@ Compatibility must not be obtained by weakening these invariants:
 - no blocking transport work in fast MT5 event handlers.
 
 If a legacy host later requires changes that violate these rules, that host is rejected rather than weakening Katarina.
+
+
+## One-command verification
+
+On a supported modern Windows host, the full automated host-side proof can be started with:
+
+~~~powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\mt5\verify_stage06_modern_windows.ps1 `
+  -TerminalDataPath "<MT5 DATA FOLDER>" `
+  -MetaEditorPath "<METAEDITOR64.EXE>"
+~~~
+
+This chains:
+
+1. modern-Windows host classification;
+2. Stage-06 Python static bridge tests;
+3. Windows compatibility regression tests;
+4. strict MetaEditor compile proof;
+5. EX5 artifact/hash evidence generation.
+
+It intentionally stops before MT5 runtime proof, which still requires running the MQL self-test and standard/cent account probes inside MT5.
