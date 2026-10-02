@@ -9,7 +9,7 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 03 — Repository Architecture: ✅ FROZEN v1.0.0
 - Stage 04 — Data Protocol / Schemas: ✅ FROZEN — KAT1 v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: ✅ FROZEN — v1.0.0
-- Stage 06 — MT5 Bridge EA: 🟡 IN REVIEW — v0.1.0
+- Stage 06 — MT5 Bridge EA: 🟡 IN REVIEW — v0.2.0 / compile proof pending
 
 ## KAT1 v1.0.0
 
@@ -155,10 +155,26 @@ Current safety properties:
 - OnTradeTransaction is capture/enqueue-only;
 - critical trade-event overflow blocks future risk;
 - account/symbol facts are broker-native, supporting standard/cent design;
-- bridge stays RECOVERING until complete snapshot/transport/reconciliation readiness exists.
+- complete account/position/order snapshot source exists;
+- local duplicate-instance lease exists;
+- manual order/deal/position reasons are preserved;
+- broker session/health, bar, deal-history and broker-calc sources exist;
+- MARKET/LIMIT/STOP preflight exists but always ends execution-disabled in Stage 06;
+- bridge stays RECOVERING until complete transport/journal/reconciliation readiness exists.
 
 Stage 06 documents:
 
 - [MT5 Bridge Architecture Draft](docs/architecture/KATARINA_MT5_BRIDGE_DRAFT.md)
 - [Stage 06 Research](docs/reviews/STAGE_06_MT5_BRIDGE_RESEARCH.md)
 - [MT5 Bridge Config Draft](config/mt5_bridge_draft.json)
+- [KAT1 → MT5 Field Source Mapping](docs/architecture/KAT1_MT5_FIELD_SOURCE_MAPPING_DRAFT.md)
+- [Stage 06 Compile Proof](docs/operations/STAGE_06_MT5_COMPILE_PROOF.md)
+
+Prepared verification:
+
+- `mt5/Tests/KatarinaStage06SelfTest.mq5`
+- `mt5/Tests/KatarinaStage06AccountProbe.mq5`
+- `tests/static/test_stage06_mt5_bridge.py`
+- `scripts/mt5/compile_stage06.ps1`
+
+Stage 06 remains IN REVIEW only because the actual MetaEditor/runtime proof must be produced in an MT5 installation before freeze.
