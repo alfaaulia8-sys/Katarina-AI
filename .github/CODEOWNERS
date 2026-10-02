@@ -21,4 +21,5 @@
 /docs/reviews/STAGE_05_CORE_AUDIT.md @alfaaulia-katarina
 
 /config/mt5_bridge_draft.json @alfaaulia-katarina
-/mt5/Experts/KatarinaBridgeEA.mq5 @alfaaulia-katarina
+/mt5/ @alfaaulia-katarina
+/scripts/mt5/compile_stage06.ps1 @alfaaulia-katarina
