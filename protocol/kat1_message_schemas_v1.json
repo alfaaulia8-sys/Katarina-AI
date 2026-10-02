@@ -1,0 +1,2666 @@
+{
+  "protocol": "KAT1",
+  "version": "1.0.0",
+  "status": "FROZEN_CANDIDATE_STAGE_04",
+  "byte_order": "LITTLE_ENDIAN",
+  "frame_header_bytes": 52,
+  "crc32c_trailer_bytes": 4,
+  "max_frame_bytes": 65536,
+  "variable_field_encoding": {
+    "string": "uint16 byte_length + UTF-8 bytes, no NUL terminator",
+    "embedded_record": "uint16 record_type + uint16 schema_version + uint32 body_length + body bytes",
+    "rule": "Variable fields appear after root block in schema order."
+  },
+  "crc_policy": {
+    "algorithm": "CRC32C_CASTAGNOLI",
+    "init": "0xFFFFFFFF",
+    "final_xor": "0xFFFFFFFF",
+    "trailer_endian": "LITTLE_ENDIAN",
+    "covered_bytes": "entire frame header + payload, excluding CRC trailer",
+    "required_for": "all critical messages; snapshot frames; durable journal/replay; golden fixtures",
+    "optional_for": [
+      "TICK_EVENT",
+      "BAR_EVENT",
+      "HEARTBEAT",
+      "TRANSPORT_METRICS"
+    ]
+  },
+  "execution_owner_policy": {
+    "supported_account_modes": [
+      "RETAIL_HEDGING",
+      "RETAIL_NETTING",
+      "EXCHANGE_NETTING_IF_CAPABLE"
+    ],
+    "supported_entry_types": [
+      "MARKET",
+      "LIMIT",
+      "STOP"
+    ],
+    "stop_limit_v1": false,
+    "broker_native_sl_required": true,
+    "shared_account": true,
+    "manual_default_mutation_authority": false,
+    "account_ledger_required": true,
+    "standard_account_required": true,
+    "cent_account_required": true
+  },
+  "messages": [
+    {
+      "id": 1,
+      "name": "HELLO",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 52,
+      "fields": [
+        {
+          "name": "client_instance_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "requested_capability_bits",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "last_known_stream_id",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "last_execution_cursor",
+          "type": "u64",
+          "offset": 32
+        },
+        {
+          "name": "requested_execution_mode",
+          "type": "u8",
+          "offset": 40
+        },
+        {
+          "name": "requested_wire_major",
+          "type": "u8",
+          "offset": 41
+        },
+        {
+          "name": "requested_wire_minor",
+          "type": "u8",
+          "offset": 42
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 43
+        },
+        {
+          "name": "last_snapshot_sequence",
+          "type": "u64",
+          "offset": 44
+        }
+      ],
+      "variable_fields": [],
+      "notes": [
+        "Reserved fields must be zero."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "HELLO_ACK",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 104,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "broker_login",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "terminal_build",
+          "type": "u32",
+          "offset": 24
+        },
+        {
+          "name": "ea_build_version",
+          "type": "u32",
+          "offset": 28
+        },
+        {
+          "name": "stream_id",
+          "type": "u64",
+          "offset": 32
+        },
+        {
+          "name": "boot_id_echo",
+          "type": "u64",
+          "offset": 40
+        },
+        {
+          "name": "capability_bits",
+          "type": "u64",
+          "offset": 48
+        },
+        {
+          "name": "account_mode",
+          "type": "u8",
+          "offset": 56
+        },
+        {
+          "name": "trade_mode",
+          "type": "u8",
+          "offset": 57
+        },
+        {
+          "name": "execution_mode",
+          "type": "u8",
+          "offset": 58
+        },
+        {
+          "name": "recovery_state",
+          "type": "u8",
+          "offset": 59
+        },
+        {
+          "name": "money_scale",
+          "type": "u8",
+          "offset": 60
+        },
+        {
+          "name": "account_currency_digits",
+          "type": "u8",
+          "offset": 61
+        },
+        {
+          "name": "reserved0",
+          "type": "u16",
+          "offset": 62
+        },
+        {
+          "name": "ea_source_hash",
+          "type": "bytes32",
+          "offset": 64
+        },
+        {
+          "name": "account_unit_profile_revision",
+          "type": "u32",
+          "offset": 96
+        },
+        {
+          "name": "reserved1",
+          "type": "u32",
+          "offset": 100
+        }
+      ],
+      "variable_fields": [
+        {
+          "name": "broker_server",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 64
+        },
+        {
+          "name": "account_currency",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 16
+        }
+      ],
+      "notes": [
+        "boot_id_echo must equal frame boot_id.",
+        "Account currency is broker-native."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "HEARTBEAT",
+      "schema_version": 1,
+      "critical": false,
+      "root_bytes": 48,
+      "fields": [
+        {
+          "name": "uptime_ms",
+          "type": "u64",
+          "offset": 0
+        },
+        {
+          "name": "latest_produced_sequence",
+          "type": "u64",
+          "offset": 8
+        },
+        {
+          "name": "latest_consumed_command_sequence",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "critical_queue_depth",
+          "type": "u32",
+          "offset": 24
+        },
+        {
+          "name": "market_queue_depth",
+          "type": "u32",
+          "offset": 28
+        },
+        {
+          "name": "last_broker_observation_ns",
+          "type": "u64",
+          "offset": 32
+        },
+        {
+          "name": "transport_state",
+          "type": "u8",
+          "offset": 40
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 41
+        },
+        {
+          "name": "reserved1",
+          "type": "u16",
+          "offset": 42
+        },
+        {
+          "name": "reserved2",
+          "type": "u32",
+          "offset": 44
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 4,
+      "name": "PROTOCOL_ERROR",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 16,
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "u32",
+          "offset": 0
+        },
+        {
+          "name": "related_message_type",
+          "type": "u16",
+          "offset": 4
+        },
+        {
+          "name": "severity",
+          "type": "u8",
+          "offset": 6
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 7
+        },
+        {
+          "name": "related_sequence",
+          "type": "u64",
+          "offset": 8
+        }
+      ],
+      "variable_fields": [
+        {
+          "name": "message",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 256
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": 10,
+      "name": "SNAPSHOT_REQUEST",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 40,
+      "fields": [
+        {
+          "name": "request_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "requested_record_mask",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "after_execution_cursor",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "max_chunk_bytes",
+          "type": "u32",
+          "offset": 32
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 36
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 11,
+      "name": "SNAPSHOT_BEGIN",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 56,
+      "fields": [
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "base_sequence",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "account_revision",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "expected_chunk_count",
+          "type": "u32",
+          "offset": 32
+        },
+        {
+          "name": "expected_record_count",
+          "type": "u32",
+          "offset": 36
+        },
+        {
+          "name": "expected_total_payload_bytes",
+          "type": "u32",
+          "offset": 40
+        },
+        {
+          "name": "record_mask",
+          "type": "u32",
+          "offset": 44
+        },
+        {
+          "name": "spec_revision_watermark",
+          "type": "u32",
+          "offset": 48
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 52
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 12,
+      "name": "SNAPSHOT_CHUNK",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 32,
+      "fields": [
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "chunk_index",
+          "type": "u32",
+          "offset": 16
+        },
+        {
+          "name": "record_count",
+          "type": "u32",
+          "offset": 20
+        },
+        {
+          "name": "chunk_payload_bytes",
+          "type": "u32",
+          "offset": 24
+        },
+        {
+          "name": "payload_crc32c",
+          "type": "u32",
+          "offset": 28
+        }
+      ],
+      "variable_fields": [
+        {
+          "name": "records",
+          "encoding": "repeated_embedded_record",
+          "max_bytes": 60000,
+          "record_header": "record_type:u16,schema_version:u16,body_length:u32,body:bytes"
+        }
+      ],
+      "notes": [
+        "Embedded records contain payload bodies only, not nested KAT1 frame headers."
+      ]
+    },
+    {
+      "id": 13,
+      "name": "SNAPSHOT_COMMIT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 48,
+      "fields": [
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "chunk_count",
+          "type": "u32",
+          "offset": 16
+        },
+        {
+          "name": "record_count",
+          "type": "u32",
+          "offset": 20
+        },
+        {
+          "name": "total_payload_bytes",
+          "type": "u32",
+          "offset": 24
+        },
+        {
+          "name": "aggregate_crc32c",
+          "type": "u32",
+          "offset": 28
+        },
+        {
+          "name": "sequence_watermark",
+          "type": "u64",
+          "offset": 32
+        },
+        {
+          "name": "account_revision",
+          "type": "u64",
+          "offset": 40
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 14,
+      "name": "SNAPSHOT_ABORT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 32,
+      "fields": [
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "reason_code",
+          "type": "u32",
+          "offset": 16
+        },
+        {
+          "name": "failed_chunk_index",
+          "type": "u32",
+          "offset": 20
+        },
+        {
+          "name": "related_sequence",
+          "type": "u64",
+          "offset": 24
+        }
+      ],
+      "variable_fields": [
+        {
+          "name": "message",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 128
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": 100,
+      "name": "TICK_EVENT",
+      "schema_version": 1,
+      "critical": false,
+      "root_bytes": 48,
+      "fields": [
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 0
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 4
+        },
+        {
+          "name": "bid_units",
+          "type": "i64",
+          "offset": 8
+        },
+        {
+          "name": "ask_units",
+          "type": "i64",
+          "offset": 16
+        },
+        {
+          "name": "last_units",
+          "type": "i64",
+          "offset": 24
+        },
+        {
+          "name": "volume_units",
+          "type": "i64",
+          "offset": 32
+        },
+        {
+          "name": "tick_flags",
+          "type": "u32",
+          "offset": 40
+        },
+        {
+          "name": "presence_flags",
+          "type": "u32",
+          "offset": 44
+        }
+      ],
+      "variable_fields": [],
+      "notes": [
+        "bid/ask required for tradable tick; last/volume controlled by presence_flags."
+      ]
+    },
+    {
+      "id": 101,
+      "name": "BAR_EVENT",
+      "schema_version": 1,
+      "critical": false,
+      "root_bytes": 80,
+      "fields": [
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 0
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 4
+        },
+        {
+          "name": "timeframe_minutes",
+          "type": "u16",
+          "offset": 8
+        },
+        {
+          "name": "bar_state",
+          "type": "u8",
+          "offset": 10
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 11
+        },
+        {
+          "name": "bar_sequence",
+          "type": "u32",
+          "offset": 12
+        },
+        {
+          "name": "bar_open_time_ns",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "open_units",
+          "type": "i64",
+          "offset": 24
+        },
+        {
+          "name": "high_units",
+          "type": "i64",
+          "offset": 32
+        },
+        {
+          "name": "low_units",
+          "type": "i64",
+          "offset": 40
+        },
+        {
+          "name": "close_units",
+          "type": "i64",
+          "offset": 48
+        },
+        {
+          "name": "tick_volume",
+          "type": "u64",
+          "offset": 56
+        },
+        {
+          "name": "real_volume_units",
+          "type": "i64",
+          "offset": 64
+        },
+        {
+          "name": "spread_points",
+          "type": "u32",
+          "offset": 72
+        },
+        {
+          "name": "presence_flags",
+          "type": "u32",
+          "offset": 76
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 102,
+      "name": "SYMBOL_SPEC",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 184,
+      "fields": [
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 0
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 4
+        },
+        {
+          "name": "digits",
+          "type": "u8",
+          "offset": 8
+        },
+        {
+          "name": "price_scale",
+          "type": "u8",
+          "offset": 9
+        },
+        {
+          "name": "volume_scale",
+          "type": "u8",
+          "offset": 10
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 11
+        },
+        {
+          "name": "trade_calc_mode_raw",
+          "type": "u16",
+          "offset": 12
+        },
+        {
+          "name": "trade_mode_raw",
+          "type": "u8",
+          "offset": 14
+        },
+        {
+          "name": "swap_mode_raw",
+          "type": "u8",
+          "offset": 15
+        },
+        {
+          "name": "order_mode_bits",
+          "type": "u32",
+          "offset": 16
+        },
+        {
+          "name": "filling_mode_bits",
+          "type": "u32",
+          "offset": 20
+        },
+        {
+          "name": "expiration_mode_bits",
+          "type": "u32",
+          "offset": 24
+        },
+        {
+          "name": "stops_level_points",
+          "type": "u32",
+          "offset": 28
+        },
+        {
+          "name": "freeze_level_points",
+          "type": "u32",
+          "offset": 32
+        },
+        {
+          "name": "reserved1",
+          "type": "u32",
+          "offset": 36
+        },
+        {
+          "name": "point_units",
+          "type": "i64",
+          "offset": 40
+        },
+        {
+          "name": "tick_size_units",
+          "type": "i64",
+          "offset": 48
+        },
+        {
+          "name": "tick_value_units",
+          "type": "i64",
+          "offset": 56
+        },
+        {
+          "name": "tick_value_profit_units",
+          "type": "i64",
+          "offset": 64
+        },
+        {
+          "name": "tick_value_loss_units",
+          "type": "i64",
+          "offset": 72
+        },
+        {
+          "name": "contract_size_e8",
+          "type": "i64",
+          "offset": 80
+        },
+        {
+          "name": "volume_min_units",
+          "type": "i64",
+          "offset": 88
+        },
+        {
+          "name": "volume_max_units",
+          "type": "i64",
+          "offset": 96
+        },
+        {
+          "name": "volume_step_units",
+          "type": "i64",
+          "offset": 104
+        },
+        {
+          "name": "volume_limit_units",
+          "type": "i64",
+          "offset": 112
+        },
+        {
+          "name": "margin_initial_units",
+          "type": "i64",
+          "offset": 120
+        },
+        {
+          "name": "margin_maintenance_units",
+          "type": "i64",
+          "offset": 128
+        },
+        {
+          "name": "swap_long_e8",
+          "type": "i64",
+          "offset": 136
+        },
+        {
+          "name": "swap_short_e8",
+          "type": "i64",
+          "offset": 144
+        },
+        {
+          "name": "swap_sunday_e4",
+          "type": "i32",
+          "offset": 152
+        },
+        {
+          "name": "swap_monday_e4",
+          "type": "i32",
+          "offset": 156
+        },
+        {
+          "name": "swap_tuesday_e4",
+          "type": "i32",
+          "offset": 160
+        },
+        {
+          "name": "swap_wednesday_e4",
+          "type": "i32",
+          "offset": 164
+        },
+        {
+          "name": "swap_thursday_e4",
+          "type": "i32",
+          "offset": 168
+        },
+        {
+          "name": "swap_friday_e4",
+          "type": "i32",
+          "offset": 172
+        },
+        {
+          "name": "swap_saturday_e4",
+          "type": "i32",
+          "offset": 176
+        },
+        {
+          "name": "symbol_flags",
+          "type": "u32",
+          "offset": 180
+        }
+      ],
+      "variable_fields": [
+        {
+          "name": "canonical_symbol",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 32
+        },
+        {
+          "name": "broker_symbol",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 64
+        },
+        {
+          "name": "base_currency",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 16
+        },
+        {
+          "name": "profit_currency",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 16
+        },
+        {
+          "name": "margin_currency",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 16
+        }
+      ],
+      "notes": [
+        "Tick value/margins are in broker-native account/deposit currency where MT5 reports them.",
+        "Any material economic rule change increments spec_revision."
+      ]
+    },
+    {
+      "id": 103,
+      "name": "SESSION_STATE",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 48,
+      "fields": [
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 0
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 4
+        },
+        {
+          "name": "state_revision",
+          "type": "u64",
+          "offset": 8
+        },
+        {
+          "name": "last_tick_time_ns",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "server_time_ns",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "scheduled_open",
+          "type": "u8",
+          "offset": 32
+        },
+        {
+          "name": "terminal_connected",
+          "type": "u8",
+          "offset": 33
+        },
+        {
+          "name": "terminal_trade_allowed",
+          "type": "u8",
+          "offset": 34
+        },
+        {
+          "name": "mql_trade_allowed",
+          "type": "u8",
+          "offset": 35
+        },
+        {
+          "name": "symbol_trade_allowed",
+          "type": "u8",
+          "offset": 36
+        },
+        {
+          "name": "fresh_tick",
+          "type": "u8",
+          "offset": 37
+        },
+        {
+          "name": "session_open",
+          "type": "u8",
+          "offset": 38
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 39
+        },
+        {
+          "name": "terminal_ping_us",
+          "type": "u32",
+          "offset": 40
+        },
+        {
+          "name": "reserved1",
+          "type": "u32",
+          "offset": 44
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 200,
+      "name": "ACCOUNT_DELTA",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 144,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "account_revision",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "presence_flags",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "balance_units",
+          "type": "i64",
+          "offset": 32
+        },
+        {
+          "name": "equity_units",
+          "type": "i64",
+          "offset": 40
+        },
+        {
+          "name": "credit_units",
+          "type": "i64",
+          "offset": 48
+        },
+        {
+          "name": "profit_units",
+          "type": "i64",
+          "offset": 56
+        },
+        {
+          "name": "margin_units",
+          "type": "i64",
+          "offset": 64
+        },
+        {
+          "name": "free_margin_units",
+          "type": "i64",
+          "offset": 72
+        },
+        {
+          "name": "margin_initial_units",
+          "type": "i64",
+          "offset": 80
+        },
+        {
+          "name": "margin_maintenance_units",
+          "type": "i64",
+          "offset": 88
+        },
+        {
+          "name": "leverage",
+          "type": "u64",
+          "offset": 96
+        },
+        {
+          "name": "margin_level_e6",
+          "type": "i64",
+          "offset": 104
+        },
+        {
+          "name": "margin_call_e6",
+          "type": "i64",
+          "offset": 112
+        },
+        {
+          "name": "stopout_e6",
+          "type": "i64",
+          "offset": 120
+        },
+        {
+          "name": "account_mode",
+          "type": "u8",
+          "offset": 128
+        },
+        {
+          "name": "trade_mode",
+          "type": "u8",
+          "offset": 129
+        },
+        {
+          "name": "stopout_mode_raw",
+          "type": "u8",
+          "offset": 130
+        },
+        {
+          "name": "account_currency_digits",
+          "type": "u8",
+          "offset": 131
+        },
+        {
+          "name": "account_flags",
+          "type": "u32",
+          "offset": 132
+        },
+        {
+          "name": "account_unit_profile_revision",
+          "type": "u32",
+          "offset": 136
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 140
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 201,
+      "name": "POSITION_DELTA",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 144,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "position_ticket",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "position_identifier",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 32
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 36
+        },
+        {
+          "name": "magic",
+          "type": "u64",
+          "offset": 40
+        },
+        {
+          "name": "position_revision",
+          "type": "u64",
+          "offset": 48
+        },
+        {
+          "name": "open_time_ns",
+          "type": "u64",
+          "offset": 56
+        },
+        {
+          "name": "update_time_ns",
+          "type": "u64",
+          "offset": 64
+        },
+        {
+          "name": "volume_units",
+          "type": "i64",
+          "offset": 72
+        },
+        {
+          "name": "open_price_units",
+          "type": "i64",
+          "offset": 80
+        },
+        {
+          "name": "current_price_units",
+          "type": "i64",
+          "offset": 88
+        },
+        {
+          "name": "sl_units",
+          "type": "i64",
+          "offset": 96
+        },
+        {
+          "name": "tp_units",
+          "type": "i64",
+          "offset": 104
+        },
+        {
+          "name": "profit_units",
+          "type": "i64",
+          "offset": 112
+        },
+        {
+          "name": "swap_units",
+          "type": "i64",
+          "offset": 120
+        },
+        {
+          "name": "change_kind",
+          "type": "u8",
+          "offset": 128
+        },
+        {
+          "name": "side",
+          "type": "u8",
+          "offset": 129
+        },
+        {
+          "name": "origin_class",
+          "type": "u8",
+          "offset": 130
+        },
+        {
+          "name": "position_reason_raw",
+          "type": "u8",
+          "offset": 131
+        },
+        {
+          "name": "presence_flags",
+          "type": "u32",
+          "offset": 132
+        },
+        {
+          "name": "position_type_raw",
+          "type": "u32",
+          "offset": 136
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 140
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 202,
+      "name": "ORDER_STATE_EVENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 160,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "broker_order_ticket",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "linked_order_id",
+          "type": "id128",
+          "offset": 24
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 40
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 44
+        },
+        {
+          "name": "magic",
+          "type": "u64",
+          "offset": 48
+        },
+        {
+          "name": "order_revision",
+          "type": "u64",
+          "offset": 56
+        },
+        {
+          "name": "create_time_ns",
+          "type": "u64",
+          "offset": 64
+        },
+        {
+          "name": "update_time_ns",
+          "type": "u64",
+          "offset": 72
+        },
+        {
+          "name": "volume_initial_units",
+          "type": "i64",
+          "offset": 80
+        },
+        {
+          "name": "volume_current_units",
+          "type": "i64",
+          "offset": 88
+        },
+        {
+          "name": "price_open_units",
+          "type": "i64",
+          "offset": 96
+        },
+        {
+          "name": "stop_limit_units",
+          "type": "i64",
+          "offset": 104
+        },
+        {
+          "name": "sl_units",
+          "type": "i64",
+          "offset": 112
+        },
+        {
+          "name": "tp_units",
+          "type": "i64",
+          "offset": 120
+        },
+        {
+          "name": "expiration_time_ns",
+          "type": "u64",
+          "offset": 128
+        },
+        {
+          "name": "change_kind",
+          "type": "u8",
+          "offset": 136
+        },
+        {
+          "name": "side",
+          "type": "u8",
+          "offset": 137
+        },
+        {
+          "name": "entry_type",
+          "type": "u8",
+          "offset": 138
+        },
+        {
+          "name": "origin_class",
+          "type": "u8",
+          "offset": 139
+        },
+        {
+          "name": "normalized_order_state",
+          "type": "u8",
+          "offset": 140
+        },
+        {
+          "name": "time_in_force",
+          "type": "u8",
+          "offset": 141
+        },
+        {
+          "name": "filling_policy",
+          "type": "u8",
+          "offset": 142
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 143
+        },
+        {
+          "name": "presence_flags",
+          "type": "u32",
+          "offset": 144
+        },
+        {
+          "name": "order_type_raw",
+          "type": "u32",
+          "offset": 148
+        },
+        {
+          "name": "order_state_raw",
+          "type": "u32",
+          "offset": 152
+        },
+        {
+          "name": "order_reason_raw",
+          "type": "u32",
+          "offset": 156
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 203,
+      "name": "ACCOUNT_LEDGER_EVENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 64,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "broker_deal_ticket",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "event_time_ns",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "amount_units",
+          "type": "i64",
+          "offset": 32
+        },
+        {
+          "name": "ledger_kind",
+          "type": "u8",
+          "offset": 40
+        },
+        {
+          "name": "origin_class",
+          "type": "u8",
+          "offset": 41
+        },
+        {
+          "name": "reserved0",
+          "type": "u16",
+          "offset": 42
+        },
+        {
+          "name": "deal_type_raw",
+          "type": "u32",
+          "offset": 44
+        },
+        {
+          "name": "deal_reason_raw",
+          "type": "u32",
+          "offset": 48
+        },
+        {
+          "name": "account_revision",
+          "type": "u64",
+          "offset": 52
+        },
+        {
+          "name": "reserved1",
+          "type": "u32",
+          "offset": 60
+        }
+      ],
+      "variable_fields": [
+        {
+          "name": "audit_text",
+          "encoding": "u16_length_utf8",
+          "max_bytes": 128
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": 300,
+      "name": "OPEN_INTENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 232,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "execution_intent_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "order_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 48
+        },
+        {
+          "name": "decision_id",
+          "type": "id128",
+          "offset": 64
+        },
+        {
+          "name": "risk_decision_id",
+          "type": "id128",
+          "offset": 80
+        },
+        {
+          "name": "risk_binding_hash",
+          "type": "bytes32",
+          "offset": 96
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 128
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 132
+        },
+        {
+          "name": "approved_account_revision",
+          "type": "u64",
+          "offset": 136
+        },
+        {
+          "name": "approved_position_revision",
+          "type": "u64",
+          "offset": 144
+        },
+        {
+          "name": "submit_expiry_ns",
+          "type": "u64",
+          "offset": 152
+        },
+        {
+          "name": "risk_policy_version",
+          "type": "u32",
+          "offset": 160
+        },
+        {
+          "name": "reserved_common",
+          "type": "u32",
+          "offset": 164
+        },
+        {
+          "name": "pending_valid_until_ns",
+          "type": "u64",
+          "offset": 168
+        },
+        {
+          "name": "volume_units",
+          "type": "i64",
+          "offset": 176
+        },
+        {
+          "name": "requested_price_units",
+          "type": "i64",
+          "offset": 184
+        },
+        {
+          "name": "sl_units",
+          "type": "i64",
+          "offset": 192
+        },
+        {
+          "name": "tp_units",
+          "type": "i64",
+          "offset": 200
+        },
+        {
+          "name": "expected_net_volume_after_units",
+          "type": "i64",
+          "offset": 208
+        },
+        {
+          "name": "max_deviation_points",
+          "type": "u32",
+          "offset": 216
+        },
+        {
+          "name": "side",
+          "type": "u8",
+          "offset": 220
+        },
+        {
+          "name": "entry_type",
+          "type": "u8",
+          "offset": 221
+        },
+        {
+          "name": "expected_position_effect",
+          "type": "u8",
+          "offset": 222
+        },
+        {
+          "name": "netting_guard",
+          "type": "u8",
+          "offset": 223
+        },
+        {
+          "name": "time_in_force",
+          "type": "u8",
+          "offset": 224
+        },
+        {
+          "name": "filling_policy",
+          "type": "u8",
+          "offset": 225
+        },
+        {
+          "name": "expected_net_side",
+          "type": "u8",
+          "offset": 226
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 227
+        },
+        {
+          "name": "presence_flags",
+          "type": "u32",
+          "offset": 228
+        }
+      ],
+      "variable_fields": [],
+      "notes": [
+        "sl_units is mandatory and nonzero for any intent that can create live exposure.",
+        "LIMIT/STOP require requested_price_units and finite pending_valid_until_ns.",
+        "STOP_LIMIT is reserved and rejected in V1.",
+        "On netting accounts, approved_position_revision and expected_position_effect are mandatory guards."
+      ]
+    },
+    {
+      "id": 301,
+      "name": "MODIFY_PROTECTION_INTENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 208,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "execution_intent_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "order_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 48
+        },
+        {
+          "name": "decision_id",
+          "type": "id128",
+          "offset": 64
+        },
+        {
+          "name": "risk_decision_id",
+          "type": "id128",
+          "offset": 80
+        },
+        {
+          "name": "risk_binding_hash",
+          "type": "bytes32",
+          "offset": 96
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 128
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 132
+        },
+        {
+          "name": "approved_account_revision",
+          "type": "u64",
+          "offset": 136
+        },
+        {
+          "name": "approved_position_revision",
+          "type": "u64",
+          "offset": 144
+        },
+        {
+          "name": "submit_expiry_ns",
+          "type": "u64",
+          "offset": 152
+        },
+        {
+          "name": "risk_policy_version",
+          "type": "u32",
+          "offset": 160
+        },
+        {
+          "name": "reserved_common",
+          "type": "u32",
+          "offset": 164
+        },
+        {
+          "name": "position_ticket",
+          "type": "u64",
+          "offset": 168
+        },
+        {
+          "name": "position_identifier",
+          "type": "u64",
+          "offset": 176
+        },
+        {
+          "name": "new_sl_units",
+          "type": "i64",
+          "offset": 184
+        },
+        {
+          "name": "new_tp_units",
+          "type": "i64",
+          "offset": 192
+        },
+        {
+          "name": "presence_flags",
+          "type": "u32",
+          "offset": 200
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 204
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 302,
+      "name": "REDUCE_INTENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 200,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "execution_intent_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "order_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 48
+        },
+        {
+          "name": "decision_id",
+          "type": "id128",
+          "offset": 64
+        },
+        {
+          "name": "risk_decision_id",
+          "type": "id128",
+          "offset": 80
+        },
+        {
+          "name": "risk_binding_hash",
+          "type": "bytes32",
+          "offset": 96
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 128
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 132
+        },
+        {
+          "name": "approved_account_revision",
+          "type": "u64",
+          "offset": 136
+        },
+        {
+          "name": "approved_position_revision",
+          "type": "u64",
+          "offset": 144
+        },
+        {
+          "name": "submit_expiry_ns",
+          "type": "u64",
+          "offset": 152
+        },
+        {
+          "name": "risk_policy_version",
+          "type": "u32",
+          "offset": 160
+        },
+        {
+          "name": "reserved_common",
+          "type": "u32",
+          "offset": 164
+        },
+        {
+          "name": "position_ticket",
+          "type": "u64",
+          "offset": 168
+        },
+        {
+          "name": "position_identifier",
+          "type": "u64",
+          "offset": 176
+        },
+        {
+          "name": "reduce_volume_units",
+          "type": "i64",
+          "offset": 184
+        },
+        {
+          "name": "max_deviation_points",
+          "type": "u32",
+          "offset": 192
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 196
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 303,
+      "name": "CLOSE_INTENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 200,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "execution_intent_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "order_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 48
+        },
+        {
+          "name": "decision_id",
+          "type": "id128",
+          "offset": 64
+        },
+        {
+          "name": "risk_decision_id",
+          "type": "id128",
+          "offset": 80
+        },
+        {
+          "name": "risk_binding_hash",
+          "type": "bytes32",
+          "offset": 96
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 128
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 132
+        },
+        {
+          "name": "approved_account_revision",
+          "type": "u64",
+          "offset": 136
+        },
+        {
+          "name": "approved_position_revision",
+          "type": "u64",
+          "offset": 144
+        },
+        {
+          "name": "submit_expiry_ns",
+          "type": "u64",
+          "offset": 152
+        },
+        {
+          "name": "risk_policy_version",
+          "type": "u32",
+          "offset": 160
+        },
+        {
+          "name": "reserved_common",
+          "type": "u32",
+          "offset": 164
+        },
+        {
+          "name": "position_ticket",
+          "type": "u64",
+          "offset": 168
+        },
+        {
+          "name": "position_identifier",
+          "type": "u64",
+          "offset": 176
+        },
+        {
+          "name": "close_volume_units",
+          "type": "i64",
+          "offset": 184
+        },
+        {
+          "name": "max_deviation_points",
+          "type": "u32",
+          "offset": 192
+        },
+        {
+          "name": "full_close",
+          "type": "u8",
+          "offset": 196
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 197
+        },
+        {
+          "name": "reserved1",
+          "type": "u16",
+          "offset": 198
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 304,
+      "name": "CANCEL_ORDER_INTENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 200,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "execution_intent_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "order_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 48
+        },
+        {
+          "name": "decision_id",
+          "type": "id128",
+          "offset": 64
+        },
+        {
+          "name": "risk_decision_id",
+          "type": "id128",
+          "offset": 80
+        },
+        {
+          "name": "risk_binding_hash",
+          "type": "bytes32",
+          "offset": 96
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 128
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 132
+        },
+        {
+          "name": "approved_account_revision",
+          "type": "u64",
+          "offset": 136
+        },
+        {
+          "name": "approved_position_revision",
+          "type": "u64",
+          "offset": 144
+        },
+        {
+          "name": "submit_expiry_ns",
+          "type": "u64",
+          "offset": 152
+        },
+        {
+          "name": "risk_policy_version",
+          "type": "u32",
+          "offset": 160
+        },
+        {
+          "name": "reserved_common",
+          "type": "u32",
+          "offset": 164
+        },
+        {
+          "name": "broker_order_ticket",
+          "type": "u64",
+          "offset": 168
+        },
+        {
+          "name": "linked_order_id",
+          "type": "id128",
+          "offset": 176
+        },
+        {
+          "name": "cancel_reason_code",
+          "type": "u32",
+          "offset": 192
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 196
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 310,
+      "name": "EXECUTION_ACK",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 96,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "order_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "execution_intent_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "journal_cursor",
+          "type": "u64",
+          "offset": 48
+        },
+        {
+          "name": "broker_order_ticket",
+          "type": "u64",
+          "offset": 56
+        },
+        {
+          "name": "broker_deal_ticket",
+          "type": "u64",
+          "offset": 64
+        },
+        {
+          "name": "ack_state",
+          "type": "u8",
+          "offset": 72
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 73
+        },
+        {
+          "name": "reserved1",
+          "type": "u16",
+          "offset": 74
+        },
+        {
+          "name": "reason_code",
+          "type": "u32",
+          "offset": 76
+        },
+        {
+          "name": "broker_retcode",
+          "type": "u32",
+          "offset": 80
+        },
+        {
+          "name": "local_error_code",
+          "type": "u32",
+          "offset": 84
+        },
+        {
+          "name": "observed_time_ns",
+          "type": "u64",
+          "offset": 88
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 311,
+      "name": "TRADE_EVENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 160,
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "order_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "execution_intent_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "event_cursor",
+          "type": "u64",
+          "offset": 48
+        },
+        {
+          "name": "broker_order_ticket",
+          "type": "u64",
+          "offset": 56
+        },
+        {
+          "name": "broker_deal_ticket",
+          "type": "u64",
+          "offset": 64
+        },
+        {
+          "name": "position_ticket",
+          "type": "u64",
+          "offset": 72
+        },
+        {
+          "name": "position_identifier",
+          "type": "u64",
+          "offset": 80
+        },
+        {
+          "name": "event_time_ns",
+          "type": "u64",
+          "offset": 88
+        },
+        {
+          "name": "filled_volume_units",
+          "type": "i64",
+          "offset": 96
+        },
+        {
+          "name": "fill_price_units",
+          "type": "i64",
+          "offset": 104
+        },
+        {
+          "name": "commission_units",
+          "type": "i64",
+          "offset": 112
+        },
+        {
+          "name": "swap_units",
+          "type": "i64",
+          "offset": 120
+        },
+        {
+          "name": "realized_profit_units",
+          "type": "i64",
+          "offset": 128
+        },
+        {
+          "name": "event_kind",
+          "type": "u8",
+          "offset": 136
+        },
+        {
+          "name": "side",
+          "type": "u8",
+          "offset": 137
+        },
+        {
+          "name": "origin_class",
+          "type": "u8",
+          "offset": 138
+        },
+        {
+          "name": "terminal_state",
+          "type": "u8",
+          "offset": 139
+        },
+        {
+          "name": "broker_retcode",
+          "type": "u32",
+          "offset": 140
+        },
+        {
+          "name": "deal_type_raw",
+          "type": "u32",
+          "offset": 144
+        },
+        {
+          "name": "deal_entry_raw",
+          "type": "u32",
+          "offset": 148
+        },
+        {
+          "name": "deal_reason_raw",
+          "type": "u32",
+          "offset": 152
+        },
+        {
+          "name": "reason_code",
+          "type": "u32",
+          "offset": 156
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 312,
+      "name": "RECONCILE_REQUEST",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 64,
+      "fields": [
+        {
+          "name": "request_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 32
+        },
+        {
+          "name": "after_event_cursor",
+          "type": "u64",
+          "offset": 48
+        },
+        {
+          "name": "scope_flags",
+          "type": "u32",
+          "offset": 56
+        },
+        {
+          "name": "reserved0",
+          "type": "u32",
+          "offset": 60
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 313,
+      "name": "RECONCILE_REPORT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 64,
+      "fields": [
+        {
+          "name": "request_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "snapshot_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "first_event_cursor",
+          "type": "u64",
+          "offset": 32
+        },
+        {
+          "name": "last_event_cursor",
+          "type": "u64",
+          "offset": 40
+        },
+        {
+          "name": "position_count",
+          "type": "u32",
+          "offset": 48
+        },
+        {
+          "name": "order_count",
+          "type": "u32",
+          "offset": 52
+        },
+        {
+          "name": "discrepancy_count",
+          "type": "u32",
+          "offset": 56
+        },
+        {
+          "name": "recovery_state",
+          "type": "u8",
+          "offset": 60
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 61
+        },
+        {
+          "name": "reserved1",
+          "type": "u16",
+          "offset": 62
+        }
+      ],
+      "variable_fields": [
+        {
+          "name": "discrepancies",
+          "encoding": "repeated_len32_record",
+          "max_bytes": 60000
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": 320,
+      "name": "BROKER_CALC_REQUEST",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 72,
+      "fields": [
+        {
+          "name": "calc_request_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 32
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 36
+        },
+        {
+          "name": "volume_units",
+          "type": "i64",
+          "offset": 40
+        },
+        {
+          "name": "price_open_units",
+          "type": "i64",
+          "offset": 48
+        },
+        {
+          "name": "price_close_units",
+          "type": "i64",
+          "offset": 56
+        },
+        {
+          "name": "side",
+          "type": "u8",
+          "offset": 64
+        },
+        {
+          "name": "calc_flags",
+          "type": "u8",
+          "offset": 65
+        },
+        {
+          "name": "reserved0",
+          "type": "u16",
+          "offset": 66
+        },
+        {
+          "name": "reserved1",
+          "type": "u32",
+          "offset": 68
+        }
+      ],
+      "variable_fields": [],
+      "notes": [
+        "Used as broker-native OrderCalcProfit/OrderCalcMargin evidence for deterministic sizing/preflight."
+      ]
+    },
+    {
+      "id": 321,
+      "name": "BROKER_CALC_REPORT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 72,
+      "fields": [
+        {
+          "name": "calc_request_id",
+          "type": "id128",
+          "offset": 0
+        },
+        {
+          "name": "account_id",
+          "type": "id128",
+          "offset": 16
+        },
+        {
+          "name": "instrument_id",
+          "type": "u32",
+          "offset": 32
+        },
+        {
+          "name": "spec_revision",
+          "type": "u32",
+          "offset": 36
+        },
+        {
+          "name": "profit_units",
+          "type": "i64",
+          "offset": 40
+        },
+        {
+          "name": "margin_units",
+          "type": "i64",
+          "offset": 48
+        },
+        {
+          "name": "profit_valid",
+          "type": "u8",
+          "offset": 56
+        },
+        {
+          "name": "margin_valid",
+          "type": "u8",
+          "offset": 57
+        },
+        {
+          "name": "reserved0",
+          "type": "u16",
+          "offset": 58
+        },
+        {
+          "name": "error_code",
+          "type": "u32",
+          "offset": 60
+        },
+        {
+          "name": "account_unit_profile_revision",
+          "type": "u32",
+          "offset": 64
+        },
+        {
+          "name": "reserved1",
+          "type": "u32",
+          "offset": 68
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 400,
+      "name": "HEALTH_EVENT",
+      "schema_version": 1,
+      "critical": true,
+      "root_bytes": 64,
+      "fields": [
+        {
+          "name": "data_health",
+          "type": "u8",
+          "offset": 0
+        },
+        {
+          "name": "transport_health",
+          "type": "u8",
+          "offset": 1
+        },
+        {
+          "name": "execution_health",
+          "type": "u8",
+          "offset": 2
+        },
+        {
+          "name": "reconciliation_health",
+          "type": "u8",
+          "offset": 3
+        },
+        {
+          "name": "journal_health",
+          "type": "u8",
+          "offset": 4
+        },
+        {
+          "name": "clock_health",
+          "type": "u8",
+          "offset": 5
+        },
+        {
+          "name": "snapshot_health",
+          "type": "u8",
+          "offset": 6
+        },
+        {
+          "name": "reserved0",
+          "type": "u8",
+          "offset": 7
+        },
+        {
+          "name": "health_flags",
+          "type": "u32",
+          "offset": 8
+        },
+        {
+          "name": "reason_code",
+          "type": "u32",
+          "offset": 12
+        },
+        {
+          "name": "critical_queue_depth",
+          "type": "u32",
+          "offset": 16
+        },
+        {
+          "name": "market_queue_depth",
+          "type": "u32",
+          "offset": 20
+        },
+        {
+          "name": "last_tick_time_ns",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "last_broker_observation_ns",
+          "type": "u64",
+          "offset": 32
+        },
+        {
+          "name": "last_reconciliation_ns",
+          "type": "u64",
+          "offset": 40
+        },
+        {
+          "name": "latest_execution_cursor",
+          "type": "u64",
+          "offset": 48
+        },
+        {
+          "name": "reserved1",
+          "type": "u64",
+          "offset": 56
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    },
+    {
+      "id": 401,
+      "name": "TRANSPORT_METRICS",
+      "schema_version": 1,
+      "critical": false,
+      "root_bytes": 64,
+      "fields": [
+        {
+          "name": "frames_sent",
+          "type": "u64",
+          "offset": 0
+        },
+        {
+          "name": "frames_received",
+          "type": "u64",
+          "offset": 8
+        },
+        {
+          "name": "bytes_sent",
+          "type": "u64",
+          "offset": 16
+        },
+        {
+          "name": "bytes_received",
+          "type": "u64",
+          "offset": 24
+        },
+        {
+          "name": "dropped_advisory_frames",
+          "type": "u64",
+          "offset": 32
+        },
+        {
+          "name": "decode_errors",
+          "type": "u64",
+          "offset": 40
+        },
+        {
+          "name": "rtt_us_p50",
+          "type": "u32",
+          "offset": 48
+        },
+        {
+          "name": "rtt_us_p99",
+          "type": "u32",
+          "offset": 52
+        },
+        {
+          "name": "send_queue_depth",
+          "type": "u32",
+          "offset": 56
+        },
+        {
+          "name": "receive_queue_depth",
+          "type": "u32",
+          "offset": 60
+        }
+      ],
+      "variable_fields": [],
+      "notes": []
+    }
+  ]
+}
