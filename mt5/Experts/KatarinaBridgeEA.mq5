@@ -230,6 +230,7 @@ int OnInit(void)
      }
 
    if(!g_instance_guard.Acquire(g_account_facts.login,
+                                g_account_facts.server,
                                 KAT_STAGE06_INSTANCE_LEASE_SECONDS))
      {
       g_bridge_state.Block(KAT_BLOCK_DUPLICATE_INSTANCE);
