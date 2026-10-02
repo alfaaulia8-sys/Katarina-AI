@@ -58,9 +58,9 @@ void OnStart(void)
              failures);
 
    SKatCapturedTrade first;
-   first.capture_sequence=1;
+   first.local_capture_id=1;
    SKatCapturedTrade second;
-   second.capture_sequence=2;
+   second.local_capture_id=2;
 
    KatAssert(queue.Push(first),
              "first critical event accepted",
@@ -70,7 +70,7 @@ void OnStart(void)
              failures);
 
    SKatCapturedTrade popped;
-   KatAssert(queue.Pop(popped) && popped.capture_sequence==1,
+   KatAssert(queue.Pop(popped) && popped.local_capture_id==1,
              "queue preserves FIFO order",
              failures);
 
