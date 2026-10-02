@@ -5,7 +5,7 @@
 | 01 | Constitution & North Star | ✅ FINALIZED / FROZEN v1.1.0 |
 | 02 | Final MT5-to-Execution Workflow | ✅ FINALIZED / FROZEN v1.2.0 |
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
-| 04 | Data Protocol / Schemas | ⏳ NEXT |
+| 04 | Data Protocol / Schemas | 🟡 IN REVIEW — KAT1 draft 0.1 |
 | 05 | Katarina Core / Orchestrator | ⬜ |
 | 06 | MT5 Bridge EA | ⬜ |
 | 07 | MT5-Python Communication | ⬜ |
@@ -45,4 +45,18 @@
 
 ## Current Position
 
-**03/40 completed. Stage 04 — Data Protocol / Schemas — is next.**
+**Stage 04 is active and in review.**
+
+Current draft decisions:
+
+- KAT1 custom canonical binary;
+- SBE-inspired fixed root blocks;
+- explicit little-endian encoding;
+- no raw native-struct wire contract;
+- scaled int64 for execution-sensitive decimal values;
+- 128-bit trace IDs;
+- instrument dictionary + spec revision;
+- 65,536-byte frame bound;
+- chunked atomic snapshots;
+- strict schema evolution;
+- Python/MQL5 golden conformance fixtures required before freeze.
