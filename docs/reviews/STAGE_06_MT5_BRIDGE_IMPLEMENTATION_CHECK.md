@@ -7,13 +7,34 @@
 
 ## Current Implementation
 
-Implemented:
+Production bridge:
 
 - `mt5/Experts/KatarinaBridgeEA.mq5`
-- `mt5/Include/Katarina/BridgeState.mqh`
-- `mt5/Include/Katarina/EventBuffer.mqh`
-- `mt5/Include/Katarina/NativeFacts.mqh`
-- `mt5/Include/Katarina/TransportPort.mqh`
+
+Stage-06 include modules:
+
+- `BarSource.mqh`
+- `BridgeIdentity.mqh`
+- `BridgeState.mqh`
+- `BrokerCalc.mqh`
+- `BrokerReason.mqh`
+- `DealHistory.mqh`
+- `EventBuffer.mqh`
+- `ExecutionPreflight.mqh`
+- `HealthSample.mqh`
+- `InstanceGuard.mqh`
+- `NativeFacts.mqh`
+- `NativeSnapshot.mqh`
+- `SessionState.mqh`
+- `SymbolRegistry.mqh`
+- `TransportPort.mqh`
+
+Verification sources:
+
+- `mt5/Tests/KatarinaStage06SelfTest.mq5`
+- `mt5/Tests/KatarinaStage06AccountProbe.mq5`
+- `tests/static/test_stage06_mt5_bridge.py`
+- `scripts/mt5/compile_stage06.ps1`
 
 ## Safety Review
 
@@ -226,3 +247,36 @@ Stage 06 now enforces:
 - chart symbol = the only execution-approved realtime market symbol;
 - all other account symbols = observable through account-wide positions/orders/trade events;
 - future multi-symbol execution approval = forbidden until an explicit multi-symbol tick source is implemented and validated.
+
+
+### Type-Aware MqlTradeTransaction Capture
+
+A further review against the official MQL5 transaction structure found that not only request/result parameters, but also the fields inside `MqlTradeTransaction` are valid according to transaction type.
+
+Stage 06 now:
+
+- initializes transaction-derived fields to neutral values;
+- classifies ORDER/HISTORY, DEAL, POSITION and REQUEST transactions;
+- copies only the fields documented for that class;
+- carries an explicit `transaction_field_flags` bitmap;
+- keeps REQUEST data exclusively in the request/result evidence fields.
+
+This prevents undefined/unfilled transaction members from being interpreted as valid broker facts.
+
+### Preflight Hardening
+
+The disabled Stage-06 preflight now additionally validates:
+
+- symbol long-only / short-only / close-only direction restrictions;
+- minimum pending-entry distance from current market;
+- TP capability;
+- TP side;
+- minimum TP distance.
+
+Even a fully valid request still ends with `KAT_PREFLIGHT_STAGE06_EXECUTION_DISABLED`; no broker submission exists.
+
+### Account-Fact Preservation
+
+Raw account fact reading no longer rejects a zero leverage value by itself.
+
+Leverage is preserved as a broker-reported fact. Whether an account is execution-capable is a later risk/execution validation decision rather than a reason to fabricate an unavailable account snapshot.
