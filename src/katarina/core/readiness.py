@@ -37,6 +37,7 @@ _REQUIRED_BY_MODE: dict[RuntimeMode, frozenset[ReadinessSignal]] = {
     RuntimeMode.SHADOW: _BASE_LIVE,
     RuntimeMode.TESTER: frozenset(
         {
+            ReadinessSignal.TRANSPORT,
             ReadinessSignal.PROTOCOL,
             ReadinessSignal.IDENTITY,
             ReadinessSignal.SNAPSHOT,
