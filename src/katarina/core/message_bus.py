@@ -2,17 +2,9 @@ from __future__ import annotations
 
 import inspect
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
-from typing import TypeAlias
 
-from katarina.contracts.runtime import EventEnvelope
-
-
-HandlerOutput: TypeAlias = None | EventEnvelope | Iterable[EventEnvelope]
-EventHandler: TypeAlias = Callable[
-    [EventEnvelope], HandlerOutput | Awaitable[HandlerOutput]
-]
+from katarina.contracts.runtime import EventEnvelope, EventHandler
 
 
 @dataclass(frozen=True, slots=True)
