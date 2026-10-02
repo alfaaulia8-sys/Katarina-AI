@@ -1,0 +1,71 @@
+{
+  "architecture_version": "0.1.0",
+  "status": "STAGE_06_IN_REVIEW",
+  "stage": "06",
+  "role": [
+    "MARKET_ACCOUNT_SENSOR",
+    "LOCAL_SAFETY_GATEWAY",
+    "EXECUTION_GATEWAY"
+  ],
+  "discretionary_strategy_allowed": false,
+  "bridge_instance_model": "ONE_LOGICAL_INSTANCE_PER_ACCOUNT_EXECUTION_NAMESPACE",
+  "handlers": {
+    "OnInit": [
+      "VALIDATE_LOCAL_PRECONDITIONS",
+      "INIT_STATE",
+      "INIT_BUFFERS",
+      "START_TIMER",
+      "ENTER_RECOVERING"
+    ],
+    "OnTick": [
+      "CAPTURE_LATEST_TICK_ONLY"
+    ],
+    "OnTradeTransaction": [
+      "CAPTURE_AND_ENQUEUE_ONLY"
+    ],
+    "OnTimer": [
+      "BOUNDED_DRAIN",
+      "HEALTH_SAMPLE",
+      "FUTURE_TRANSPORT_PUMP",
+      "FUTURE_COMMAND_PUMP"
+    ],
+    "OnDeinit": [
+      "DISARM",
+      "KILL_TIMER",
+      "STOP_AND_RELEASE"
+    ]
+  },
+  "initial_state": "RECOVERING",
+  "auto_arm_live": false,
+  "queue": {
+    "critical_events": "BOUNDED_LOSSLESS_REQUIRED",
+    "ticks": "COALESCE_LATEST",
+    "production_capacity_frozen": false
+  },
+  "transport": {
+    "implementation_stage": "07",
+    "handlers_may_block_on_transport": false,
+    "stage06_adapter": "NULL_TRANSPORT_ONLY"
+  },
+  "supports": {
+    "shared_account_visibility": true,
+    "manual_trade_observation": true,
+    "hedging": true,
+    "netting": true,
+    "standard_account": true,
+    "cent_account": true,
+    "market_entry_schema": true,
+    "limit_entry_schema": true,
+    "stop_entry_schema": true
+  },
+  "execution": {
+    "stage06_external_execution_enabled": false,
+    "broker_native_sl_required_when_enabled": true,
+    "order_send_boolean_is_final_truth": false,
+    "ambiguous_outcome": "UNKNOWN_RECONCILE"
+  },
+  "tester": {
+    "logical_compatibility_required": true,
+    "actual_tester_transport_stage": "35"
+  }
+}
