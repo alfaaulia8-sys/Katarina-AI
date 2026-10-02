@@ -28,14 +28,19 @@ public:
 
       if(!GlobalVariableCheck(m_name))
         {
-         ResetLastError();
-         GlobalVariableSet(m_name,0.0);
-         if(!GlobalVariableCheck(m_name))
+         // Atomic mutex state must not be initialized with GlobalVariableSet:
+         // another EA could acquire between Check and Set and then be clobbered.
+         // GlobalVariableTemp creates a missing variable at 0 without rewriting
+         // an already-existing variable.
+         if(!GlobalVariableTemp(m_name) && !GlobalVariableCheck(m_name))
             return(false);
         }
 
+      double current=0.0;
+      if(!GlobalVariableGet(m_name,current))
+         return(false);
+
       const double now=(double)TimeLocal();
-      const double current=GlobalVariableGet(m_name);
 
       if(current>now)
          return(false);
