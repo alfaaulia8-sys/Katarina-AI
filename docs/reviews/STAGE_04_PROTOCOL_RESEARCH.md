@@ -1,7 +1,7 @@
 # STAGE 04 — DATA PROTOCOL / SCHEMA RESEARCH
 
 **Stage:** 04/40  
-**Status:** IN REVIEW  
+**Status:** COMPLETE / INCORPORATED  
 **Reviewed:** 2026-10-02
 
 ## Purpose
@@ -113,3 +113,19 @@ GOLDEN CROSS-LANGUAGE FIXTURES
 This removes the need for a second MessagePack codec in the authoritative MT5 path.
 
 JSON remains for human audit and diagnostics.
+
+
+## Final Stage 04 Outcome
+
+The research recommendation was adopted as KAT1 v1.0.0 with additional controls finalized during review:
+
+- exact 30-message schema registry;
+- Hedging + Netting support;
+- MARKET + LIMIT + STOP support;
+- broker-native protective SL requirement;
+- first-class account ledger;
+- shared-account/manual-trade learning;
+- standard + cent account-native normalization;
+- broker calculation request/report;
+- fixed capability/flag/reason registries;
+- cross-language golden vectors.
