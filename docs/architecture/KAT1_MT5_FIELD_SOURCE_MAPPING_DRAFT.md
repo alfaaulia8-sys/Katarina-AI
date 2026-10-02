@@ -64,7 +64,7 @@ Native sources currently implemented:
 - SYMBOL_VOLUME_MIN / MAX / STEP / LIMIT
 - SYMBOL_CURRENCY_BASE / PROFIT / MARGIN
 
-Swap and margin-detail fields required by frozen KAT1 still need to be added before Stage 06 freeze.
+Swap and margin-detail sources are now present in SKatSymbolFacts: SYMBOL_MARGIN_INITIAL / MAINTENANCE, SYMBOL_SWAP_MODE, SYMBOL_SWAP_LONG / SHORT, and all seven weekday swap ratios.
 
 ## SESSION_STATE / HEALTH
 
@@ -79,7 +79,7 @@ Swap and margin-detail fields required by frozen KAT1 still need to be added bef
 
 Stage-06 source: SKatHealthSample / KatSampleHealth.
 
-Session schedule/open-state derivation remains unfinished.
+Session schedule/open-state sourcing is implemented through SymbolInfoSessionTrade and broker/server time in SessionState.mqh. Stage 07 will encode the resulting state/revisions into KAT1.
 
 ## ACCOUNT_DELTA
 
@@ -93,7 +93,7 @@ Current native sources:
 - ACCOUNT_CURRENCY / ACCOUNT_CURRENCY_DIGITS
 - ACCOUNT_TRADE_ALLOWED / ACCOUNT_TRADE_EXPERT
 
-Initial/maintenance margin, margin level, margin call, stopout mode/value still need to be added before freeze.
+Initial/maintenance margin, margin level, margin call, stopout mode/value, hedge permission and FIFO-close facts are now included in SKatAccountFacts.
 
 ## POSITION_DELTA / position snapshot
 
@@ -133,14 +133,14 @@ Raw reason enrichment is performed later from ORDER_REASON, DEAL_REASON and POSI
 
 ## ACCOUNT_LEDGER_EVENT
 
-Authoritative source will be MT5 deal history. Required Stage-06 history extraction still pending:
+Authoritative source is MT5 deal history. Stage 06 now provides CKatDealHistoryRange, which reads:
 
 - DEAL_TICKET / DEAL_TIME_MSC
 - DEAL_TYPE / DEAL_REASON
 - DEAL_PROFIT / DEAL_COMMISSION / DEAL_SWAP
 - optional broker comment for audit.
 
-Raw DEAL_TYPE must be preserved for balance/credit/charge/correction/bonus/commission/interest/dividend/tax normalization.
+Raw DEAL_TYPE and DEAL_REASON are preserved. CKatDealHistoryRange rejects oversized requested ranges rather than silently truncating them; normalization into balance/credit/charge/correction/bonus/commission/interest/dividend/tax remains a later Python responsibility.
 
 ## BROKER_CALC_REPORT
 
