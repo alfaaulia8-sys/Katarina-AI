@@ -1,7 +1,7 @@
 {
   "protocol": "KAT1",
   "version": "1.0.0",
-  "status": "FROZEN_CANDIDATE_STAGE_04",
+  "status": "FROZEN_STAGE_04",
   "crc": {
     "algorithm": "CRC32C_CASTAGNOLI",
     "init": "FFFFFFFF",
@@ -195,14 +195,50 @@
     }
   ],
   "negative_cases": [
-    {"name":"BAD_MAGIC","mutation":"change first byte of magic","expected":"REJECT"},
-    {"name":"CRC_MISMATCH","mutation":"flip one payload bit without updating trailer","expected":"REJECT"},
-    {"name":"FRAME_LENGTH_UNDERFLOW","mutation":"frame_length < header_length","expected":"REJECT"},
-    {"name":"UNKNOWN_CRITICAL_FLAG","mutation":"set unsupported critical flag bit","expected":"REJECT"},
-    {"name":"OPEN_WITHOUT_NATIVE_SL","mutation":"OPEN_INTENT sl_units=0","expected":"REJECT"},
-    {"name":"STOP_LIMIT_V1","mutation":"OPEN_INTENT entry_type=4","expected":"REJECT"},
-    {"name":"STALE_SPEC","mutation":"execution spec_revision != active symbol spec revision","expected":"REJECT"},
-    {"name":"STALE_NETTING_POSITION","mutation":"approved_position_revision != active revision on netting account","expected":"REJECT_OR_CANCEL"},
-    {"name":"IDEMPOTENCY_CONFLICT","mutation":"same order_id with different normalized payload hash","expected":"REJECT"}
+    {
+      "name": "BAD_MAGIC",
+      "mutation": "change first byte of magic",
+      "expected": "REJECT"
+    },
+    {
+      "name": "CRC_MISMATCH",
+      "mutation": "flip one payload bit without updating trailer",
+      "expected": "REJECT"
+    },
+    {
+      "name": "FRAME_LENGTH_UNDERFLOW",
+      "mutation": "frame_length < header_length",
+      "expected": "REJECT"
+    },
+    {
+      "name": "UNKNOWN_CRITICAL_FLAG",
+      "mutation": "set unsupported critical flag bit",
+      "expected": "REJECT"
+    },
+    {
+      "name": "OPEN_WITHOUT_NATIVE_SL",
+      "mutation": "OPEN_INTENT sl_units=0",
+      "expected": "REJECT"
+    },
+    {
+      "name": "STOP_LIMIT_V1",
+      "mutation": "OPEN_INTENT entry_type=4",
+      "expected": "REJECT"
+    },
+    {
+      "name": "STALE_SPEC",
+      "mutation": "execution spec_revision != active symbol spec revision",
+      "expected": "REJECT"
+    },
+    {
+      "name": "STALE_NETTING_POSITION",
+      "mutation": "approved_position_revision != active revision on netting account",
+      "expected": "REJECT_OR_CANCEL"
+    },
+    {
+      "name": "IDEMPOTENCY_CONFLICT",
+      "mutation": "same order_id with different normalized payload hash",
+      "expected": "REJECT"
+    }
   ]
 }
