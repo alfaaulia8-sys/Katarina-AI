@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "workflow_version": "1.0.0",
+  "status": "FROZEN_BASELINE",
+  "source_of_truth": "docs/KATARINA_FINAL_WORKFLOW.md",
+  "stages": [
+    "mt5_collect_market_account_state",
+    "build_snapshot",
+    "validate_data",
+    "katarina_health_check",
+    "market_regime_analysis",
+    "multi_timeframe_analysis",
+    "economic_event_context",
+    "memory_retrieval",
+    "strategy_ensemble",
+    "decision_engine_trade_candidate",
+    "risk_governor",
+    "deterministic_position_sizing",
+    "build_execution_intent",
+    "mt5_pre_execution_validation",
+    "idempotency_check",
+    "broker_execution",
+    "execution_confirmation",
+    "position_state_machine",
+    "position_management",
+    "trade_closure",
+    "trade_memory",
+    "research_and_learning_pipeline"
+  ],
+  "hard_invariants": {
+    "mt5_may_invent_buy_sell": false,
+    "valid_katarina_decision_required": true,
+    "risk_governor_approval_required": true,
+    "valid_snapshot_required": true,
+    "unique_order_id_required": true,
+    "invalid_critical_data_action": "NO_NEW_RISK",
+    "katarina_unavailable_action": "NO_NEW_RISK",
+    "live_capital_is_research_sandbox": false,
+    "audit_required": true,
+    "learning_may_bypass_validation": false
+  },
+  "decision_flow": {
+    "katarina": "decides_what",
+    "risk_governor": "decides_whether_and_how_much",
+    "execution_engine": "decides_how_to_execute_safely",
+    "mt5_broker": "performs_action"
+  }
+}
