@@ -120,7 +120,7 @@ Implemented so far:
 - broker-server + login scoped duplicate lease;
 - strengthened pending/TP preflight;
 - 15 bridge static safety regression tests;
-- 9 Windows compatibility regression tests;
+- 10 Windows compatibility regression tests;
 - modern-Windows host preflight;
 - strict MetaEditor UTF-16LE log parser;
 - zero-warning compile policy;
