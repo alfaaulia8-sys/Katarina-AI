@@ -236,3 +236,25 @@ Current files:
 - `tests/unit/transport/test_stage07_communication.py`
 
 Production MQL5 ZeroMQ/TCP integration remains blocked until Stage-06 external clearance is complete.
+
+
+## VPS Remote Lab Bridge
+
+A controlled repository-mediated VPS bridge is prepared before further Stage-07 integration.
+
+Current paths:
+
+- modern Windows: GitHub Actions self-hosted runner through `.github/workflows/katarina-vps-lab.yml`;
+- Windows Server 2012 R2: outbound-only PowerShell polling agent under `scripts/vps/legacy/`.
+
+Security baseline:
+
+- no inbound command port;
+- no arbitrary shell command in request JSON;
+- fixed allowlisted task IDs only;
+- target-agent and expiry validation;
+- DPAPI-protected legacy token;
+- text-only result relay;
+- no production broker mutation.
+
+See `docs/operations/KATARINA_VPS_REMOTE_LAB.md`.
