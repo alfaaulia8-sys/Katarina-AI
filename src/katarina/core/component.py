@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Protocol, runtime_checkable
 
+from katarina.contracts.runtime import SubscriptionSpec
+
 
 class ComponentGraphError(RuntimeError):
     pass
@@ -18,6 +20,7 @@ class ManagedComponent(Protocol):
     name: str
     dependencies: tuple[str, ...]
     phase: ComponentPhase
+    subscriptions: tuple[SubscriptionSpec, ...]
 
     async def initialize(self) -> None: ...
     async def start(self) -> None: ...
