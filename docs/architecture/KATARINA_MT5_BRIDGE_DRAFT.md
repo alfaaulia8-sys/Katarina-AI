@@ -159,6 +159,8 @@ OnTimer bounded publish
 
 Trade lifecycle is lossless-required. Ticks are latest-state/coalescible when backlogged.
 
+Stage-06 local_capture_id is only an internal observation identifier. It must not be serialized as KAT1 sequence. Stage 07 assigns the canonical frame sequence after permitted coalescing.
+
 ## 7. Manual Trades
 
 Manual desktop/mobile/web activity is observable where MT5 exposes raw broker reason/type fields.
