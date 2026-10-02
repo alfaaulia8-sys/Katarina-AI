@@ -174,13 +174,65 @@ public:
         }
 
       // A total-count change proves this was not one coherent enumeration.
-      // Same-count replacements are still caught later by transaction/reconciliation
-      // semantics; Stage 06 does not pretend this local read is broker-atomic.
       if(PositionsTotal()!=position_total || OrdersTotal()!=order_total)
         {
          Reset();
          return(false);
         }
+
+      // Re-select every structural record once. Ignore POSITION_PRICE_CURRENT
+      // because normal ticks can change it continuously; verify the fields whose
+      // change would make an execution/risk snapshot structurally stale.
+      for(int i=0;i<position_total;i++)
+        {
+         SKatPositionFact fact=m_positions[i];
+         if(!PositionSelectByTicket(fact.ticket))
+           {
+            Reset();
+            return(false);
+           }
+
+         if((ulong)PositionGetInteger(POSITION_IDENTIFIER)!=fact.identifier ||
+            PositionGetInteger(POSITION_TIME_UPDATE_MSC)!=fact.time_update_msc ||
+            PositionGetDouble(POSITION_VOLUME)!=fact.volume ||
+            PositionGetDouble(POSITION_SL)!=fact.sl ||
+            PositionGetDouble(POSITION_TP)!=fact.tp)
+           {
+            Reset();
+            return(false);
+           }
+        }
+
+      for(int i=0;i<order_total;i++)
+        {
+         SKatOrderFact fact=m_orders[i];
+         if(!OrderSelect(fact.ticket))
+           {
+            Reset();
+            return(false);
+           }
+
+         if((ENUM_ORDER_STATE)OrderGetInteger(ORDER_STATE)!=fact.state ||
+            OrderGetDouble(ORDER_VOLUME_CURRENT)!=fact.volume_current ||
+            OrderGetDouble(ORDER_PRICE_OPEN)!=fact.price_open ||
+            OrderGetDouble(ORDER_PRICE_STOPLIMIT)!=fact.price_stoplimit ||
+            OrderGetDouble(ORDER_SL)!=fact.sl ||
+            OrderGetDouble(ORDER_TP)!=fact.tp ||
+            (datetime)OrderGetInteger(ORDER_TIME_EXPIRATION)!=fact.expiration)
+           {
+            Reset();
+            return(false);
+           }
+        }
+
+      // Use the freshest account values after structural verification.
+      SKatAccountFacts final_account;
+      if(!KatReadAccountFacts(final_account))
+        {
+         Reset();
+         return(false);
+        }
+      m_account=final_account;
 
       m_complete=true;
       return(true);
