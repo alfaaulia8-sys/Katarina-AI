@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "protocol_name": "KAT1",
-  "draft_version": "0.1",
+  "draft_version": "0.2",
   "status": "STAGE_04_IN_REVIEW",
   "encoding": {
     "authoritative_wire": "CANONICAL_BINARY",
@@ -150,5 +150,15 @@
   "fixtures": {
     "cross_language_golden_vectors_required": true,
     "python_mql5_same_bytes_required": true
-  }
+  },
+  "data_contract": "protocol/payload_catalog_v1_draft.json",
+  "owner_decisions": "docs/reviews/STAGE_04_OWNER_DECISIONS.md",
+  "owner_decisions_pending": [
+    "ACCOUNT_CUSTODY",
+    "ACCOUNT_MODE_CERTIFICATION",
+    "ENTRY_ORDER_TYPES",
+    "PROTECTIVE_STOP_REQUIREMENT",
+    "EXTERNAL_POSITION_VISIBILITY",
+    "ACCOUNT_LEDGER_EVENTS"
+  ]
 }
