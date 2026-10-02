@@ -89,7 +89,8 @@ public:
         {
          const ulong generated=KatGenerateNonZeroId64();
          const uint hi=(uint)(generated>>32);
-         const uint lo=(uint)(generated & 0xFFFFFFFF);
+         const ulong mask32=4294967295;
+         const uint lo=(uint)(generated & mask32);
 
          if(GlobalVariableSet(m_stream_hi_name,(double)hi)==0)
             return(false);
@@ -114,7 +115,7 @@ public:
 
       m_boot_id=KatGenerateNonZeroId64();
       if(m_boot_id==m_stream_id)
-         m_boot_id^=0x9E3779B97F4A7C15;
+         m_boot_id^=0x5A5A5A5A5A5A5A5A;
 
       if(m_boot_id==0)
          m_boot_id=1;
