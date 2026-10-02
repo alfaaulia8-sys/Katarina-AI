@@ -85,10 +85,10 @@
     "rebuild_outside_trade_handler": true
   },
   "symbol_registry": {
-    "chart_symbol_auto_approved": true,
-    "approved_csv_input": true,
-    "observed_account_symbols": true,
-    "approved_and_observed_are_distinct": true
+    "initial_execution_approved_scope": "CHART_SYMBOL_ONLY",
+    "all_account_position_order_symbols_observed": true,
+    "multi_symbol_market_stream": "DEFERRED_UNTIL_EXPLICIT_SOURCE_EXISTS",
+    "reason": "OnTick only represents the chart symbol; do not claim realtime coverage for extra approved symbols."
   },
   "manual_trade_evidence": {
     "order_reason": true,
