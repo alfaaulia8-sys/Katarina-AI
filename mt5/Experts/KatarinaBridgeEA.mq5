@@ -141,6 +141,15 @@ bool KatRefreshSnapshot(void)
       return(false);
      }
 
+   SKatAccountFacts snapshot_account;
+   if(!g_snapshot.Account(snapshot_account) ||
+      snapshot_account.login!=g_account_facts.login ||
+      snapshot_account.server!=g_account_facts.server)
+     {
+      g_snapshot_available=false;
+      return(false);
+     }
+
    if(!KatObserveSnapshotSymbols())
      {
       g_snapshot_available=false;
