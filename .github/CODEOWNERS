@@ -1,9 +1,14 @@
 # Governance-critical files: human project owner review required.
 /KATARINA_CONSTITUTION.md @alfaaulia-katarina
 /config/constitution.json @alfaaulia-katarina
+
 /docs/KATARINA_FINAL_WORKFLOW.md @alfaaulia-katarina
 /config/execution_workflow.json @alfaaulia-katarina
 /docs/KATARINA_TRANSPORT_PROTOCOL.md @alfaaulia-katarina
 /config/transport_policy.json @alfaaulia-katarina
 /docs/KATARINA_EXECUTION_RELIABILITY.md @alfaaulia-katarina
 /config/execution_reliability.json @alfaaulia-katarina
+
+/docs/architecture/ @alfaaulia-katarina
+/docs/adr/ @alfaaulia-katarina
+/config/repository_architecture.json @alfaaulia-katarina
