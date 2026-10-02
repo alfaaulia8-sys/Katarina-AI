@@ -1,0 +1,42 @@
+{
+  "protocol": "KAT1",
+  "version": "1.0.0",
+  "status": "FROZEN_CANDIDATE_STAGE_04",
+  "frame_flags": {
+    "0x0001": "CRC32C_PRESENT",
+    "0x0002": "CRITICAL_MESSAGE",
+    "0x0004": "SNAPSHOT_TRANSACTION",
+    "0x0008": "REPLAYED_FROM_DURABLE_JOURNAL"
+  },
+  "tick_presence": {
+    "0x00000001": "BID_PRESENT",
+    "0x00000002": "ASK_PRESENT",
+    "0x00000004": "LAST_PRESENT",
+    "0x00000008": "VOLUME_PRESENT"
+  },
+  "bar_presence": {
+    "0x00000001": "TICK_VOLUME_PRESENT",
+    "0x00000002": "REAL_VOLUME_PRESENT",
+    "0x00000004": "SPREAD_PRESENT"
+  },
+  "account_flags": {
+    "0x00000001": "TRADE_ALLOWED",
+    "0x00000002": "EXPERT_TRADE_ALLOWED",
+    "0x00000004": "HEDGE_ALLOWED",
+    "0x00000008": "FIFO_CLOSE_REQUIRED"
+  },
+  "open_intent_presence": {
+    "0x00000001": "SL_PRESENT_REQUIRED",
+    "0x00000002": "TP_PRESENT",
+    "0x00000004": "REQUESTED_PRICE_PRESENT",
+    "0x00000008": "BROKER_EXPIRATION_PRESENT"
+  },
+  "modify_protection_presence": {
+    "0x00000001": "SL_PRESENT",
+    "0x00000002": "TP_PRESENT"
+  },
+  "rules": {
+    "unknown_frame_flag": "REJECT_IF_SET_WITHOUT_NEGOTIATED_SCHEMA_SUPPORT",
+    "unknown_presence_flag": "REJECT_FOR_EXECUTION_CRITICAL_MESSAGES"
+  }
+}
