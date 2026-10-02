@@ -1,9 +1,9 @@
 # STAGE 06 — MT5 BRIDGE INITIAL IMPLEMENTATION CHECK
 
 **Stage:** 06/40  
-**Status:** PASS FOR CONTINUED DEVELOPMENT / NOT FROZEN  
+**Status:** SOURCE/DESIGN PASS / EVIDENCE PENDING / NOT FROZEN  
 **Reviewed:** 2026-10-02  
-**Bridge Draft:** v0.2.0
+**Bridge Draft:** v0.5.0
 
 ## Current Implementation
 
@@ -322,3 +322,55 @@ Modern host tooling added:
 - 10 Windows compatibility regression tests.
 
 This changes only the validation/deployment baseline. It does not weaken the frozen protocol, Core, fail-closed bridge, or risk-safety rules.
+
+
+## Final GitHub Gap Review Before Evidence Gate
+
+A dedicated public-GitHub prior-art review was completed and recorded in:
+
+- `docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md`
+
+The review compared Stage 06 with patterns from:
+
+- FX31337/MQL-Compile-Action;
+- EA31337/EA-Tester;
+- rodrigoshaller/MTUnit;
+- 0xbarss/mt5-bridge;
+- smizxe/mt5-agent-toolkit;
+- psyb0t/mt5-httpapi.
+
+Additional Stage-06 hardening incorporated:
+
+- timer count + microsecond budget;
+- transport pump time budget;
+- queue high-watermark / reject counter;
+- tick capture / coalescing counter;
+- timer budget/max-elapsed metrics;
+- finite-number validation;
+- broker tick-size price alignment;
+- MQL FILE_COMMON proof artifacts;
+- explicit standard-like / cent-like account labels;
+- runtime-evidence collector tied to compile evidence.
+
+Current static regression inventory:
+
+~~~text
+Bridge static tests        : 21
+Windows compatibility tests: 10
+Total Python static tests  : 31
+~~~
+
+### Current Stage-06 conclusion
+
+No further architecture capability is identified as required before real compiler/runtime proof.
+
+Remaining blockers are:
+
+1. modern-Windows MetaEditor compile proof;
+2. MQL self-test PASS;
+3. STANDARD_LIKE probe PASS;
+4. CENT_LIKE probe PASS;
+5. runtime evidence collector PASS;
+6. final audit/freeze.
+
+Transport fuzzing, durable idempotency/reconciliation failure injection, automated Strategy Tester orchestration, demo execution and live micro-risk tests remain intentionally assigned to their later stages.
