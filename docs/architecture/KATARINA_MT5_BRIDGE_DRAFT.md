@@ -1,7 +1,7 @@
 # KATARINA MT5 BRIDGE EA — DRAFT
 
 **Status:** IN REVIEW  
-**Version:** 0.1.0  
+**Version:** 0.2.0  
 **Stage:** 06/40
 
 ## 1. Role
@@ -247,7 +247,7 @@ Examples forcing BLOCKED / no new risk:
 - unresolved execution outcome;
 - transport/reconciliation/journal failure later.
 
-## 15. Initial Physical Layout
+## 15. Current Physical Layout
 
 ~~~text
 mt5/
@@ -255,11 +255,27 @@ mt5/
 │  └─ KatarinaBridgeEA.mq5
 ├─ Include/
 │  └─ Katarina/
+│     ├─ BarSource.mqh
 │     ├─ BridgeState.mqh
+│     ├─ BrokerCalc.mqh
+│     ├─ BrokerReason.mqh
+│     ├─ DealHistory.mqh
 │     ├─ EventBuffer.mqh
+│     ├─ ExecutionPreflight.mqh
+│     ├─ HealthSample.mqh
+│     ├─ InstanceGuard.mqh
+│     ├─ NativeFacts.mqh
+│     ├─ NativeSnapshot.mqh
+│     ├─ SessionState.mqh
+│     ├─ SymbolRegistry.mqh
 │     └─ TransportPort.mqh
 └─ Tests/
+   └─ KatarinaStage06SelfTest.mq5
 ~~~
+
+Python static source checks also exist at:
+
+- tests/static/test_stage06_mt5_bridge.py
 
 ## 16. Stage 06 Acceptance Target
 
@@ -276,3 +292,94 @@ Before freeze, Stage 06 should prove:
 - Stage 04 KAT1 fields can be sourced from MT5.
 
 Stage 06 is not yet frozen.
+
+
+## 17. Stage 06 v0.2 Additions
+
+### Complete Native Snapshot Source
+
+The bridge now has a bounded-retry native snapshot builder for:
+
+- account facts;
+- every current open position;
+- every current order.
+
+A failed read is not converted into a false empty state.
+
+The snapshot is marked dirty by OnTradeTransaction and rebuilt later from OnTimer, never inside the transaction callback.
+
+### Duplicate-Instance Guard
+
+A terminal-global lease uses GlobalVariableSetOnCondition for atomic ownership inside one MT5 terminal/account context.
+
+Lease loss blocks the bridge.
+
+This is only local-terminal protection. Cross-terminal duplicate-account protection remains a Stage-07 identity/stream responsibility.
+
+### Symbol Registry
+
+The bridge distinguishes:
+
+- execution-approved symbols;
+- account-observed symbols.
+
+The chart symbol is approved automatically. Optional approved symbols may be supplied explicitly. Symbols discovered from open positions/orders are observed for account-wide risk visibility but are not automatically granted execution authority.
+
+### Manual-Trade Evidence
+
+Raw ORDER_REASON, DEAL_REASON and POSITION_REASON are preserved where available.
+
+Reason/history lookups are deliberately deferred out of OnTradeTransaction.
+
+### Session / Health Facts
+
+The bridge now sources:
+
+- terminal connectivity and trade permissions;
+- MQL/account trade permissions;
+- terminal ping;
+- broker server time;
+- current trading-session schedule state;
+- last tick time.
+
+### Standard / Cent Native Facts
+
+Account and SymbolSpec readers now include the frozen Stage-04 economic fields required for account-native sizing/reporting, including margin/stopout, symbol margin, swap mode/values, and weekday swap ratios.
+
+### Deal History
+
+A bounded complete history-range reader preserves raw deal type/reason and money components.
+
+If a requested range exceeds its configured maximum, it reports failure/overflow rather than silently truncating.
+
+### Execution Preflight Surface
+
+The bridge now has a local validation surface for:
+
+- approved symbol;
+- broker trade direction;
+- MARKET/LIMIT/STOP capability;
+- volume range/step;
+- mandatory broker-native SL;
+- pending-price relation;
+- stop side/distance.
+
+It still returns EXECUTION_DISABLED at the end of a valid Stage-06 preflight. There is no OrderSend path.
+
+### KAT1 Source Mapping
+
+The MT5 source for frozen KAT1 facts is documented in:
+
+- docs/architecture/KAT1_MT5_FIELD_SOURCE_MAPPING_DRAFT.md
+
+## 18. Remaining Freeze Blockers
+
+Code/design work is substantially complete, but Stage 06 must remain IN REVIEW until:
+
+1. MetaEditor successfully compiles the EA/includes/self-test;
+2. the MQL self-test is run;
+3. repository static test is run from a real checkout;
+4. any compile/runtime corrections are applied;
+5. final Stage-06 audit is completed.
+
+Stage 07 must not rely on an uncompiled bridge.
