@@ -405,11 +405,13 @@ class OrchestratorTests(
     async def test_child_event_is_not_recursively_dispatched(
         self,
     ):
+        bus = EventBus()
         core = KatarinaOrchestrator(
             OrchestratorConfig(
                 RuntimeMode.RESEARCH,
                 ingress_capacity=16,
-            )
+            ),
+            bus=bus,
         )
         order = []
 
@@ -432,15 +434,15 @@ class OrchestratorTests(
                 "child"
             )
 
-        core.bus.subscribe(
+        bus.subscribe(
             "root",
             first,
         )
-        core.bus.subscribe(
+        bus.subscribe(
             "root",
             second,
         )
-        core.bus.subscribe(
+        bus.subscribe(
             "child",
             child,
         )
