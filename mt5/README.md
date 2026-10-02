@@ -12,7 +12,7 @@ Allowed responsibilities:
 
 MT5 must not become a second discretionary trading brain.
 
-## Stage 06 — In Review v0.4.0
+## Stage 06 — Source/Design Complete v0.5.0
 
 Current production bridge:
 
@@ -33,6 +33,7 @@ Current include modules:
 - `Include/Katarina/NativeSnapshot.mqh`
 - `Include/Katarina/SessionState.mqh`
 - `Include/Katarina/SymbolRegistry.mqh`
+- `Include/Katarina/TestEvidence.mqh`
 - `Include/Katarina/TransportPort.mqh`
 
 Tests:
@@ -67,9 +68,12 @@ OnTradeTransaction
 OnTimer
 → lease refresh
 → account/health/session refresh
-→ deferred snapshot rebuild
+→ bounded future transport pump
+→ critical trade drain first
+→ count + microsecond budget
 → deferred reason enrichment
-→ bounded future transport drain
+→ snapshot only with empty critical queue + time reserve
+→ runtime timing/backpressure metrics
 
 OnDeinit
 → disarm
@@ -94,3 +98,12 @@ Compile/runtime proof procedure:
 - `../scripts/mt5/compile_stage06.ps1`
 
 Current proof target is modern x64 Windows. Windows Server 2012 R2 is deferred until after the modern implementation is stable.
+
+
+Runtime proof evidence:
+
+- MQL self-test writes `Katarina_Stage06_self_test_result.txt` to MT5 Common/Files.
+- Account probe requires explicit `STANDARD_LIKE` or `CENT_LIKE` classification.
+- Runtime evidence collector: `../scripts/mt5/collect_stage06_runtime_evidence.ps1`.
+
+Stage-06 source/design is complete. Actual compiler/runtime evidence is still required before freeze.
