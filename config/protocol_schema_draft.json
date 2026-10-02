@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "protocol_name": "KAT1",
-  "draft_version": "0.3",
+  "draft_version": "0.4",
   "status": "STAGE_04_IN_REVIEW",
   "encoding": {
     "authoritative_wire": "CANONICAL_BINARY",
@@ -165,5 +165,22 @@
     "manual_mutation_default": false,
     "declared_reason_separate_from_inferred_reason": true,
     "contract": "protocol/manual_trade_learning_v1_draft.json"
+  },
+  "account_unit_compatibility": {
+    "owner_approved": true,
+    "standard_accounts": true,
+    "cent_accounts": true,
+    "hardcoded_cent_multiplier_allowed": false,
+    "native_account_currency_authoritative": true,
+    "money_scale_source": "ACCOUNT_CURRENCY_DIGITS",
+    "sizing_basis": [
+      "BROKER_NATIVE_ACCOUNT_MONEY",
+      "SYMBOL_TRADE_CONTRACT_SIZE",
+      "SYMBOL_TRADE_TICK_SIZE",
+      "SYMBOL_TRADE_TICK_VALUE_PROFIT_LOSS",
+      "SYMBOL_VOLUME_MIN_MAX_STEP_LIMIT"
+    ],
+    "reporting_conversion_optional": true,
+    "compatibility_contract": "docs/architecture/STANDARD_CENT_ACCOUNT_COMPATIBILITY.md"
   }
 }
