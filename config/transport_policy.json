@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "policy_version": "1.0.0",
+  "status": "APPROVED_STAGE_02",
+  "core_transport_independent": true,
+  "production_hot_path_codec": "VERSIONED_BINARY",
+  "json_realtime_authoritative": false,
+  "json_allowed_for": [
+    "audit",
+    "debug",
+    "configuration",
+    "test_fixtures",
+    "offline_inspection"
+  ],
+  "flexible_control_codec_candidate": "MESSAGEPACK_OR_VERSIONED_BINARY",
+  "live_transport": {
+    "primary": "ZEROMQ_LOCALHOST",
+    "fallback": "NATIVE_LOCAL_TCP"
+  },
+  "tester_transport": {
+    "interface": "TESTER_TRANSPORT_ADAPTER",
+    "initial_mechanism_candidate": "FILE_COMMON_OR_TESTER_COMPATIBLE_DETERMINISTIC_ADAPTER"
+  },
+  "architecture": "EVENT_DRIVEN_DELTA_WITH_KATARINA_STATE_CACHE",
+  "hot_path_message_classes": [
+    "TickEvent",
+    "BarEvent",
+    "AccountDelta",
+    "PositionDelta",
+    "TradeEvent",
+    "Heartbeat"
+  ],
+  "wire_envelope_requires": [
+    "protocol_identifier",
+    "protocol_version",
+    "message_type",
+    "sequence_number",
+    "event_timestamp",
+    "payload_length"
+  ],
+  "integrity_check_policy": "DEFINE_IN_STAGE_04",
+  "traceability_chain": [
+    "snapshot_id",
+    "decision_id",
+    "risk_decision_id",
+    "execution_intent_id",
+    "order_id",
+    "broker_identifiers"
+  ],
+  "latency_observability_required": true,
+  "exact_latency_thresholds": "DEFER_TO_PROFILING_AND_EXECUTION_POLICY",
+  "fail_safe_on_transport_failure": true,
+  "exact_field_layouts": "DEFER_TO_STAGE_04_DATA_PROTOCOL_SCHEMAS"
+}
