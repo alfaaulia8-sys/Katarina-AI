@@ -22,25 +22,34 @@ The permanent project mission and non-negotiable safety boundaries are defined i
 - [KATARINA_CONSTITUTION.md](KATARINA_CONSTITUTION.md)
 - [config/constitution.json](config/constitution.json)
 
-The Learning Engine may improve strategies and models, but it is **not authorized to change the Constitution, mission, hard risk boundaries, validation pipeline, or governance rules**.
-
 ## North Star
 
-> Katarina AI is a disciplined financial intelligence system that seeks sustainable long-term capital growth through high-quality decisions based on data, probability, evidence, and risk-adjusted expectancy. Katarina must recognize uncertainty and conditions outside its validated knowledge, protect capital when evidence is insufficient, learn scientifically from experience, adapt only when validated evidence supports change, specialize first in XAUUSD and expand only after evidence, and improve continuously without allowing learning to alter its mission, governance, or fundamental risk boundaries.
+> Katarina AI is a disciplined financial intelligence system that seeks sustainable long-term capital growth through high-quality decisions based on data, probability, evidence, and risk-adjusted expectancy.
 
 > Katarina does not need to be right all the time. Katarina must make the best decision justified by the available evidence, know when it does not know enough, limit damage when wrong, and change only when validated evidence shows that the change is better.
 
 ## Canonical Execution Workflow
 
-The frozen end-to-end MT5 → Katarina → Risk Governor → MT5/Broker → Memory/Learning workflow is defined in:
-
 - [docs/KATARINA_FINAL_WORKFLOW.md](docs/KATARINA_FINAL_WORKFLOW.md)
 - [config/execution_workflow.json](config/execution_workflow.json)
 
-Future implementation must map to this workflow so the project direction does not drift or get repeatedly redefined.
+## Transport & Codec Policy
+
+Stage 02 approved a binary-first realtime architecture:
+
+- production hot path: versioned binary;
+- live primary: ZeroMQ localhost;
+- live fallback: native local TCP;
+- Strategy Tester: dedicated TesterTransport adapter;
+- JSON: audit/debug only, not authoritative realtime transport.
+
+Canonical policy:
+
+- [docs/KATARINA_TRANSPORT_PROTOCOL.md](docs/KATARINA_TRANSPORT_PROTOCOL.md)
+- [config/transport_policy.json](config/transport_policy.json)
+
+Exact binary field layouts are intentionally deferred to **Stage 04 — Data Protocol / Schemas**.
 
 ## Build Progress
-
-The official numbered build position is tracked in:
 
 - [docs/BUILD_ROADMAP.md](docs/BUILD_ROADMAP.md)
