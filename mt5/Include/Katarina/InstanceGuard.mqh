@@ -21,10 +21,25 @@ public:
      }
 
    bool              Acquire(const ulong login,
+                             const string server,
                              const int ttl_seconds=10)
      {
+      if(login==0 || server=="")
+         return(false);
+
       m_ttl_seconds=(ttl_seconds<3 ? 3 : ttl_seconds);
-      m_name="KAT_BRIDGE_LOCK_"+IntegerToString((long)login);
+
+      uint server_hash=2166136261;
+      const int server_length=StringLen(server);
+      for(int i=0;i<server_length;i++)
+        {
+         server_hash^=(uint)StringGetCharacter(server,i);
+         server_hash*=16777619;
+        }
+
+      m_name="KAT_BRIDGE_LOCK_"+
+             IntegerToString((long)login)+"_"+
+             IntegerToString((long)server_hash);
 
       if(!GlobalVariableCheck(m_name))
         {
