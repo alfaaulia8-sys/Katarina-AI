@@ -79,11 +79,17 @@ $testSource = Join-Path $repoRoot "mt5\Tests\KatarinaStage06SelfTest.mq5"
 $testTarget = Join-Path $scriptTargetDir "KatarinaStage06SelfTest.mq5"
 Copy-Item -Path $testSource -Destination $testTarget -Force
 
+$probeSource = Join-Path $repoRoot "mt5\Tests\KatarinaStage06AccountProbe.mq5"
+$probeTarget = Join-Path $scriptTargetDir "KatarinaStage06AccountProbe.mq5"
+Copy-Item -Path $probeSource -Destination $probeTarget -Force
+
 $eaLog = Join-Path $buildDir "KatarinaBridgeEA.compile.log"
 $testLog = Join-Path $buildDir "KatarinaStage06SelfTest.compile.log"
+$probeLog = Join-Path $buildDir "KatarinaStage06AccountProbe.compile.log"
 
 Remove-Item $eaLog -ErrorAction SilentlyContinue
 Remove-Item $testLog -ErrorAction SilentlyContinue
+Remove-Item $probeLog -ErrorAction SilentlyContinue
 
 $eaArgs = @(
     "/compile:`"$eaTarget`"",
@@ -99,9 +105,17 @@ $testArgs = @(
 Start-Process -FilePath $metaEditor -ArgumentList $testArgs -Wait | Out-Null
 Assert-CompileSuccess -LogPath $testLog -TargetName "KatarinaStage06SelfTest.mq5"
 
+$probeArgs = @(
+    "/compile:`"$probeTarget`"",
+    "/log:`"$probeLog`""
+)
+Start-Process -FilePath $metaEditor -ArgumentList $probeArgs -Wait | Out-Null
+Assert-CompileSuccess -LogPath $probeLog -TargetName "KatarinaStage06AccountProbe.mq5"
+
 Write-Host ""
 Write-Host "Stage 06 MetaEditor compile proof complete."
-Write-Host "EA log:   $eaLog"
-Write-Host "Test log: $testLog"
+Write-Host "EA log:    $eaLog"
+Write-Host "Self-test: $testLog"
+Write-Host "Probe log: $probeLog"
 Write-Host ""
-Write-Host "Next manual proof: run KatarinaStage06SelfTest from MT5 Scripts and confirm PASSED."
+Write-Host "Next manual proof: run KatarinaStage06SelfTest and KatarinaStage06AccountProbe from MT5 Scripts."
