@@ -193,10 +193,13 @@ RECONCILED
 Initial proposal:
 
 ~~~text
+TRANSPORT
 PROTOCOL
 IDENTITY
 SNAPSHOT
 ~~~
+
+TesterTransport may be implemented differently from live transport, but the Core still requires its data path to be ready before activation.
 
 ### RESEARCH bootstrap readiness
 
