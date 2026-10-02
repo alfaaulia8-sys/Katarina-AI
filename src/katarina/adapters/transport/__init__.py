@@ -6,6 +6,10 @@ from katarina.adapters.transport.kat1_codec import (
     Kat1ProtocolError,
     SchemaCatalog,
 )
+from katarina.adapters.transport.memory import (
+    MemoryTransportEndpoint,
+    create_memory_transport_pair,
+)
 
 __all__ = (
     "Kat1Codec",
@@ -13,4 +17,6 @@ __all__ = (
     "Kat1Header",
     "Kat1ProtocolError",
     "SchemaCatalog",
+    "MemoryTransportEndpoint",
+    "create_memory_transport_pair",
 )
