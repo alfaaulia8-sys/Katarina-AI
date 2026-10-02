@@ -1,0 +1,95 @@
+{
+  "stage": "07",
+  "version": "0.1.0",
+  "status": "STAGE_07_RESEARCH_DESIGN_ACTIVE",
+  "frozen_inputs": {
+    "transport_policy": "config/transport_policy.json",
+    "protocol_schema": "config/protocol_schema.json",
+    "core": "config/core_orchestrator.json",
+    "stage06": "config/mt5_bridge_draft.json"
+  },
+  "primary_live_transport": {
+    "kind": "ZEROMQ",
+    "python_role": "ROUTER_BIND",
+    "mt5_role": "DEALER_CONNECT",
+    "endpoint_scope": "LOCALHOST_ONLY",
+    "one_kat1_frame_per_message": true,
+    "json_wrapper": false
+  },
+  "fallback_live_transport": {
+    "kind": "NATIVE_TCP",
+    "endpoint_scope": "LOCALHOST_ONLY",
+    "framing": "KAT1_FRAME_LENGTH",
+    "secondary_application_envelope": false
+  },
+  "tester": {
+    "kind": "TESTER_TRANSPORT",
+    "implementation_stage": "35"
+  },
+  "handshake": [
+    "MT5_PRESENCE_HEARTBEAT",
+    "PYTHON_HELLO",
+    "MT5_HELLO_ACK",
+    "BINDING_VALIDATION",
+    "SNAPSHOT_RECOVERY",
+    "RECONCILIATION",
+    "TRANSPORT_READY"
+  ],
+  "sequence": {
+    "assigned_after_local_coalescing": true,
+    "local_capture_id_is_wire_sequence": false,
+    "monotonic_per_stream_id": true,
+    "reconnect_resets_sequence": false,
+    "new_stream_id_new_namespace": true
+  },
+  "heartbeat": {
+    "draft_interval_ms": 1000,
+    "draft_stale_after_ms": 5000,
+    "real_heartbeat_required_after_reconnect": true,
+    "reconnect_itself_marks_ready": false,
+    "tunable_until_stage07_profile": true
+  },
+  "queues": {
+    "bounded": true,
+    "priority": [
+      "CRITICAL",
+      "RISK_STATE",
+      "MARKET",
+      "ADVISORY"
+    ],
+    "tick_coalescing_before_sequence_allowed": true,
+    "critical_loss_allowed": false
+  },
+  "security": {
+    "localhost_only": true,
+    "public_bind_allowed": false,
+    "routing_identity_is_authorization": false,
+    "kat1_binding_authoritative": true
+  },
+  "current_allowed_work": [
+    "RESEARCH",
+    "ARCHITECTURE",
+    "PYTHON_TRANSPORT_PORT",
+    "PYTHON_KAT1_CODEC",
+    "IN_MEMORY_TESTS"
+  ],
+  "blocked_until_stage06_external_clearance": [
+    "MQL5_ZEROMQ_INTEGRATION",
+    "MQL5_TCP_INTEGRATION",
+    "EXTERNAL_EXECUTION_COMMAND_ENABLEMENT",
+    "PRODUCTION_READY_CLAIM"
+  ],
+  "acceptance_draft": [
+    "STAGE06_FROZEN",
+    "PYTHON_KAT1_GOLDEN_PASS",
+    "MQL5_KAT1_GOLDEN_PASS",
+    "CROSS_LANGUAGE_BYTE_EQUALITY",
+    "ZEROMQ_CAPABILITY_SPIKE_PASS",
+    "ZEROMQ_LOCALHOST_INTEGRATION_PASS",
+    "TCP_FALLBACK_INTEGRATION_PASS",
+    "HEARTBEAT_RECONNECT_TESTS_PASS",
+    "BACKPRESSURE_TESTS_PASS",
+    "BINDING_MISMATCH_FAIL_CLOSED",
+    "FINAL_STAGE07_AUDIT_PASS"
+  ]
+}
