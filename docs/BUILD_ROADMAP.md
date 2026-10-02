@@ -66,7 +66,7 @@ KAT1 v1.0.0 now freezes:
 - 13 canonical golden vectors.
 
 
-## Stage 05 In-Review Scope
+## Frozen Stage 05 Scope
 
 Implemented:
 
