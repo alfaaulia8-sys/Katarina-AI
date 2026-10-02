@@ -4,8 +4,8 @@
 |---|---|---|
 | 01 | Constitution & North Star | ✅ FINALIZED / FROZEN v1.1.0 |
 | 02 | Final MT5-to-Execution Workflow | ✅ FINALIZED / FROZEN v1.2.0 |
-| 03 | Repository Architecture | ⏳ NEXT |
-| 04 | Data Protocol / Schemas | ⬜ |
+| 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
+| 04 | Data Protocol / Schemas | ⏳ NEXT |
 | 05 | Katarina Core / Orchestrator | ⬜ |
 | 06 | MT5 Bridge EA | ⬜ |
 | 07 | MT5-Python Communication | ⬜ |
@@ -45,4 +45,4 @@
 
 ## Current Position
 
-**02/40 completed. Stage 03 is next.**
+**03/40 completed. Stage 04 — Data Protocol / Schemas — is next.**
