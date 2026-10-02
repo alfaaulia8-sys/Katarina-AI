@@ -14,4 +14,5 @@
 /config/repository_architecture.json @alfaaulia-katarina
 
 /protocol/ @alfaaulia-katarina
-/config/protocol_schema_draft.json @alfaaulia-katarina
+/config/protocol_schema.json @alfaaulia-katarina
+/docs/reviews/STAGE_04_PROTOCOL_AUDIT.md @alfaaulia-katarina
