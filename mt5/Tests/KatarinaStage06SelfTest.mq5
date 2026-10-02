@@ -15,6 +15,7 @@
 #include <Katarina/NativeSnapshot.mqh>
 #include <Katarina/SessionState.mqh>
 #include <Katarina/SymbolRegistry.mqh>
+#include <Katarina/TestEvidence.mqh>
 #include <Katarina/TransportPort.mqh>
 
 void KatAssert(const bool condition,
@@ -109,6 +110,26 @@ void OnStart(void)
    KatAssert(reason==KAT_PREFLIGHT_NATIVE_SL_REQUIRED,
              "native SL is mandatory",
              failures);
+
+   const bool passed=(failures==0);
+
+   const int evidence=KatOpenEvidenceFile("self_test_result.txt");
+   if(evidence!=INVALID_HANDLE)
+     {
+      KatEvidenceWrite(evidence,"schema_version","1.0");
+      KatEvidenceWrite(evidence,"stage","06");
+      KatEvidenceWrite(evidence,"proof_type","MQL_SELF_TEST");
+      KatEvidenceWriteLong(evidence,"terminal_build",TerminalInfoInteger(TERMINAL_BUILD));
+      KatEvidenceWriteLong(evidence,"failures",failures);
+      KatEvidenceWrite(evidence,"result",(passed ? "PASS" : "FAIL"));
+      FileClose(evidence);
+      Print("Stage 06 self-test evidence: ",KatEvidenceCommonRoot());
+     }
+   else
+     {
+      PrintFormat("FAIL: unable to write Stage 06 self-test evidence, error=%d",GetLastError());
+      failures++;
+     }
 
    if(failures==0)
       Print("Katarina Stage 06 static MQL self-tests PASSED");
