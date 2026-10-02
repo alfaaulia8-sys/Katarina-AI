@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.11"
+#property version   "0.12"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
@@ -157,8 +157,6 @@ void OnTimer(void)
         }
      }
 
-   // Local bridge setup is valid, but Stage 06 deliberately remains read-only.
-   if(g_bridge_state.State()==KAT_BRIDGE_RECOVERING &&
-      g_bridge_state.CriticalIntegrityOk())
-      g_bridge_state.EnterReadyReadonly();
+   // Remain RECOVERING in Stage 06. READY requires the later complete
+   // snapshot/transport/reconciliation chain; local initialization alone is not enough.
   }
