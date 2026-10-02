@@ -208,6 +208,56 @@ class Stage06Mt5StaticTests(unittest.TestCase):
         ):
             self.assertIn(token, collector)
 
+    def test_compile_proof_binds_complete_mql_source_manifest(self):
+        compile_script = (
+            ROOT / "scripts" / "mt5" / "compile_stage06.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("source_manifest", compile_script)
+        self.assertIn('Get-ChildItem -Path (Join-Path $repoRoot "mt5\\Include\\Katarina")', compile_script)
+        self.assertIn('bridge_design_version = $designVersion', compile_script)
+
+    def test_runtime_evidence_is_versioned_and_freshness_checked(self):
+        evidence = (
+            INCLUDE / "TestEvidence.mqh"
+        ).read_text(encoding="utf-8")
+        collector = (
+            ROOT / "scripts" / "mt5" /
+            "collect_stage06_runtime_evidence.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn('KAT_STAGE06_DESIGN_VERSION "0.5.0"', evidence)
+        self.assertIn("generated_epoch_seconds", (
+            ROOT / "mt5" / "Tests" / "KatarinaStage06SelfTest.mq5"
+        ).read_text(encoding="utf-8"))
+        self.assertIn("LastWriteTimeUtc", collector)
+        self.assertIn("bridge_design_version", collector)
+
+    def test_final_clearance_audit_binds_compile_runtime_and_source(self):
+        audit = (
+            ROOT / "scripts" / "mt5" / "audit_stage06_final.ps1"
+        ).read_text(encoding="utf-8")
+        for token in (
+            "PASS_COMPILE_PROOF",
+            "PASS_RUNTIME_EVIDENCE",
+            "source_manifest",
+            "Get-FileHash",
+            "PASS_STAGE06_FINAL_CLEARANCE",
+        ):
+            self.assertIn(token, audit)
+
+    def test_complete_stage06_runner_covers_all_evidence_gates(self):
+        runner = (
+            ROOT / "scripts" / "mt5" / "complete_stage06.ps1"
+        ).read_text(encoding="utf-8")
+        for token in (
+            "verify_stage06_modern_windows.ps1",
+            "KatarinaStage06SelfTest",
+            "STANDARD_LIKE",
+            "CENT_LIKE",
+            "collect_stage06_runtime_evidence.ps1",
+            "audit_stage06_final.ps1",
+        ):
+            self.assertIn(token, runner)
+
 
 if __name__ == "__main__":
     unittest.main()
