@@ -23,3 +23,7 @@
 /config/mt5_bridge_draft.json @alfaaulia-katarina
 /mt5/ @alfaaulia-katarina
 /scripts/mt5/compile_stage06.ps1 @alfaaulia-katarina
+/config/windows_compatibility_stage06.json @alfaaulia-katarina
+/docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md @alfaaulia-katarina
+/scripts/mt5/check_stage06_host.ps1 @alfaaulia-katarina
+/tests/static/test_stage06_windows_compatibility.py @alfaaulia-katarina
