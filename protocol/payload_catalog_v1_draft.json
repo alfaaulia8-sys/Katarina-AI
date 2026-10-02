@@ -1,5 +1,5 @@
 {
-  "catalog_version": "0.2",
+  "catalog_version": "0.3",
   "status": "STAGE_04_IN_REVIEW",
   "protocol": "KAT1",
   "principle": "MT5_SENDS_BROKER_FACTS_KATARINA_DERIVES_INTELLIGENCE",
@@ -217,11 +217,17 @@
     "risk_decision"
   ],
   "owner_decisions_pending": [
-    "ACCOUNT_CUSTODY",
     "ACCOUNT_MODE_CERTIFICATION",
     "ENTRY_ORDER_TYPES",
     "PROTECTIVE_STOP_REQUIREMENT",
-    "EXTERNAL_POSITION_VISIBILITY",
     "ACCOUNT_LEDGER_EVENTS"
-  ]
+  ],
+  "shared_account": {
+    "enabled": true,
+    "full_account_visibility": true,
+    "manual_trades_learnable": true,
+    "manual_default_mutation_authority": false,
+    "trade_origin_classification_required": true,
+    "learning_contract": "protocol/manual_trade_learning_v1_draft.json"
+  }
 }
