@@ -1,6 +1,6 @@
 # ADR-0004 — SBE-Inspired Canonical Binary Wire Protocol
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Stage:** 04
 
 ## Context
@@ -9,7 +9,7 @@ Katarina needs a fast deterministic MT5 ↔ Python protocol with explicit versio
 
 JSON is easy to debug but adds repeated text parsing and field-name overhead. MessagePack, Protobuf, FlatBuffers and full SBE each add different levels of external tooling/dependency complexity on the MQL5 side.
 
-## Proposed Decision
+## Decision
 
 Use one custom canonical binary protocol with:
 
@@ -39,4 +39,4 @@ Costs:
 - schema changes require discipline;
 - conformance tests are mandatory.
 
-This ADR remains Proposed until Stage 04 is reviewed and frozen.
+Stage 04 review completed. KAT1 v1.0.0 is frozen as the canonical MT5 ↔ Katarina binary wire contract.
