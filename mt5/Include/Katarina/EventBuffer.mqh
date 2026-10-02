@@ -292,15 +292,22 @@ class CKatLatestTickSlot
 private:
    bool             m_has_value;
    SKatCapturedTick m_value;
+   ulong            m_capture_total;
+   ulong            m_coalesced_total;
 
 public:
                      CKatLatestTickSlot(void)
      {
       m_has_value=false;
+      m_capture_total=0;
+      m_coalesced_total=0;
      }
 
    void              Capture(const SKatCapturedTick &value)
      {
+      m_capture_total++;
+      if(m_has_value)
+         m_coalesced_total++;
       m_value=value;
       m_has_value=true;
      }
@@ -322,6 +329,16 @@ public:
      {
       return(m_has_value);
      }
+
+   ulong             CaptureTotal(void) const
+     {
+      return(m_capture_total);
+     }
+
+   ulong             CoalescedTotal(void) const
+     {
+      return(m_coalesced_total);
+     }
   };
 
 class CKatTradeEventQueue
@@ -332,6 +349,8 @@ private:
    int               m_head;
    int               m_tail;
    int               m_count;
+   int               m_high_watermark;
+   ulong             m_rejected_total;
 
 public:
                      CKatTradeEventQueue(void)
@@ -340,6 +359,8 @@ public:
       m_head=0;
       m_tail=0;
       m_count=0;
+      m_high_watermark=0;
+      m_rejected_total=0;
      }
 
    bool              Init(const int capacity)
@@ -352,18 +373,28 @@ public:
       m_head=0;
       m_tail=0;
       m_count=0;
+      m_high_watermark=0;
+      m_rejected_total=0;
       return(true);
      }
 
    bool              Push(const SKatCapturedTrade &value)
      {
       if(m_capacity<=0 || m_count>=m_capacity)
+        {
+         m_rejected_total++;
          return(false);
+        }
+
       m_items[m_tail]=value;
       m_tail++;
       if(m_tail>=m_capacity)
          m_tail=0;
       m_count++;
+
+      if(m_count>m_high_watermark)
+         m_high_watermark=m_count;
+
       return(true);
      }
 
@@ -395,6 +426,16 @@ public:
    int               Capacity(void) const
      {
       return(m_capacity);
+     }
+
+   int               HighWatermark(void) const
+     {
+      return(m_high_watermark);
+     }
+
+   ulong             RejectedTotal(void) const
+     {
+      return(m_rejected_total);
      }
   };
 
