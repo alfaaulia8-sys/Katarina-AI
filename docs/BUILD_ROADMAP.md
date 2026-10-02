@@ -6,7 +6,7 @@
 | 02 | Final MT5-to-Execution Workflow | ✅ FINALIZED / FROZEN v1.2.0 |
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
-| 05 | Katarina Core / Orchestrator | ⏳ NEXT |
+| 05 | Katarina Core / Orchestrator | 🟡 IN REVIEW — Core v0.1.0 / 16 unit tests |
 | 06 | MT5 Bridge EA | ⬜ |
 | 07 | MT5-Python Communication | ⬜ |
 | 08 | Data Validation Engine | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**04/40 completed. Stage 05 — Katarina Core / Orchestrator — is next.**
+**Stage 05 — Katarina Core / Orchestrator — is active and in review.**
 
 ## Frozen Stage 04 Scope
 
@@ -64,3 +64,31 @@ KAT1 v1.0.0 now freezes:
 - chunked atomic snapshots;
 - CRC32C/conformance rules;
 - 13 canonical golden vectors.
+
+
+## Stage 05 In-Review Scope
+
+Implemented:
+
+- immutable internal EventEnvelope / priorities;
+- explicit lifecycle state machine;
+- deterministic component dependency ordering;
+- BOOTSTRAP vs RUNTIME phases;
+- lifecycle-scoped internal event subscriptions;
+- deterministic serial EventBus;
+- bounded priority ingress;
+- readiness gate separate from lifecycle;
+- explicit live-risk admission gate;
+- orchestration runtime status;
+- central KatarinaOrchestrator;
+- 16 standard-library unit tests.
+
+Current rule:
+
+```text
+RUNNING != LIVE TRADING ALLOWED
+```
+
+New live risk additionally requires fresh/healthy/reconciled/risk-ready state and explicit execution arming.
+
+Stage 05 is not frozen yet.
