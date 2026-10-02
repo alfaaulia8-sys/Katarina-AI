@@ -43,6 +43,13 @@ struct SKatCapturedTrade
    ulong                       result_deal;
    double                      result_volume;
    double                      result_price;
+
+   bool                        order_reason_valid;
+   ENUM_ORDER_REASON           order_reason;
+   bool                        deal_reason_valid;
+   ENUM_DEAL_REASON            deal_reason;
+   bool                        position_reason_valid;
+   ENUM_POSITION_REASON        position_reason;
   };
 
 void KatCaptureTick(const string symbol,
@@ -106,6 +113,13 @@ void KatCaptureTradeTransaction(const MqlTradeTransaction &trans,
       out_event.result_volume=result.volume;
       out_event.result_price=result.price;
      }
+
+   out_event.order_reason_valid=false;
+   out_event.order_reason=(ENUM_ORDER_REASON)0;
+   out_event.deal_reason_valid=false;
+   out_event.deal_reason=(ENUM_DEAL_REASON)0;
+   out_event.position_reason_valid=false;
+   out_event.position_reason=(ENUM_POSITION_REASON)0;
   }
 
 class CKatLatestTickSlot
