@@ -359,9 +359,9 @@ Additional Stage-06 hardening incorporated:
 Current static regression inventory:
 
 ~~~text
-Bridge static tests        : 21
+Bridge static tests        : 25
 Windows compatibility tests: 10
-Total Python static tests  : 31
+Total Python static tests  : 35
 ~~~
 
 ### Current Stage-06 conclusion
@@ -378,3 +378,39 @@ Remaining blockers are:
 6. final audit/freeze.
 
 Transport fuzzing, durable idempotency/reconciliation failure injection, automated Strategy Tester orchestration, demo execution and live micro-risk tests remain intentionally assigned to their later stages.
+
+
+## Clearance Automation Completion
+
+The six remaining Stage-06 freeze items now all have an implemented proof path:
+
+1. actual MetaEditor compile → `compile_stage06.ps1`;
+2. actual MQL self-test → `KatarinaStage06SelfTest.mq5` + FILE_COMMON evidence;
+3. STANDARD_LIKE account probe → typed runtime evidence;
+4. CENT_LIKE account probe → typed runtime evidence;
+5. evidence collection → `collect_stage06_runtime_evidence.ps1`;
+6. final evidence-bound audit → `audit_stage06_final.ps1`.
+
+One-command orchestration:
+
+- `scripts/mt5/complete_stage06.ps1`.
+
+Additional anti-stale safeguards:
+
+- runtime proof files are deleted before a new clearance run;
+- compile proof records the complete Stage-06 MQL/include SHA-256 manifest;
+- runtime proof must be fresh relative to the compile proof;
+- runtime design version must match the compile design version;
+- runtime manifest is bound to the exact compile-evidence SHA-256;
+- final audit re-hashes the current source tree and rejects post-compile changes;
+- final audit re-runs all 35 Stage-06 Python static regressions.
+
+Current conclusion:
+
+~~~text
+IMPLEMENTATION / CLEARANCE AUTOMATION : COMPLETE
+REAL METAEDITOR / MT5 PROOF           : PENDING
+GOVERNED FREEZE                       : PENDING
+~~~
+
+A repository-only environment cannot truthfully replace the remaining real Windows/MetaEditor/MT5/account execution evidence.
