@@ -2,6 +2,7 @@
 #define __KATARINA_TEST_EVIDENCE_MQH__
 
 #define KAT_STAGE06_EVIDENCE_PREFIX "Katarina_Stage06_"
+#define KAT_STAGE06_DESIGN_VERSION "0.5.0"
 
 string KatEvidenceSafeToken(string value)
   {
