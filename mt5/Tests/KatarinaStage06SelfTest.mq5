@@ -1,9 +1,20 @@
 #property strict
 #property script_show_inputs
 
+#include <Katarina/BarSource.mqh>
 #include <Katarina/BridgeState.mqh>
+#include <Katarina/BrokerCalc.mqh>
+#include <Katarina/BrokerReason.mqh>
+#include <Katarina/DealHistory.mqh>
 #include <Katarina/EventBuffer.mqh>
 #include <Katarina/ExecutionPreflight.mqh>
+#include <Katarina/HealthSample.mqh>
+#include <Katarina/InstanceGuard.mqh>
+#include <Katarina/NativeFacts.mqh>
+#include <Katarina/NativeSnapshot.mqh>
+#include <Katarina/SessionState.mqh>
+#include <Katarina/SymbolRegistry.mqh>
+#include <Katarina/TransportPort.mqh>
 
 void KatAssert(const bool condition,
                const string name,
