@@ -9,7 +9,7 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 03 — Repository Architecture: ✅ FROZEN v1.0.0
 - Stage 04 — Data Protocol / Schemas: ✅ FROZEN — KAT1 v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: ✅ FROZEN — v1.0.0
-- Stage 06 — MT5 Bridge EA: ⏳ NEXT
+- Stage 06 — MT5 Bridge EA: 🟡 IN REVIEW — v0.1.0
 
 ## KAT1 v1.0.0
 
@@ -128,3 +128,37 @@ Unit tests:
 - `tests/unit/core/test_stage05_core.py`
 
 Stage 05 passed final audit and is **FROZEN v1.0.0**. See [Stage 05 Audit](docs/reviews/STAGE_05_CORE_AUDIT.md).
+
+
+## Stage 06 — MT5 Bridge EA (In Review)
+
+The MT5-side bridge has started as a read-only, fail-closed sensor/gateway skeleton.
+
+```text
+MT5 events
+   ↓
+fast capture
+   ↓
+bounded local buffers
+   ↓
+transport-neutral port
+   ↓
+Stage-07 communication later
+```
+
+Current safety properties:
+
+- no discretionary BUY/SELL logic in MQL5;
+- no OrderSend path is enabled yet;
+- startup never auto-arms execution;
+- OnTick is capture-only;
+- OnTradeTransaction is capture/enqueue-only;
+- critical trade-event overflow blocks future risk;
+- account/symbol facts are broker-native, supporting standard/cent design;
+- bridge stays RECOVERING until complete snapshot/transport/reconciliation readiness exists.
+
+Stage 06 documents:
+
+- [MT5 Bridge Architecture Draft](docs/architecture/KATARINA_MT5_BRIDGE_DRAFT.md)
+- [Stage 06 Research](docs/reviews/STAGE_06_MT5_BRIDGE_RESEARCH.md)
+- [MT5 Bridge Config Draft](config/mt5_bridge_draft.json)
