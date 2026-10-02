@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "protocol_name": "KAT1",
+  "draft_version": "0.1",
+  "status": "STAGE_04_IN_REVIEW",
+  "encoding": {
+    "authoritative_wire": "CANONICAL_BINARY",
+    "inspiration": "SBE_STYLE_FIXED_ROOT_BLOCKS",
+    "byte_order": "LITTLE_ENDIAN",
+    "raw_native_struct_dump_allowed": false,
+    "max_frame_bytes": 65536,
+    "frame_header_bytes": 52
+  },
+  "header": [
+    [
+      "magic",
+      "bytes4",
+      0,
+      4
+    ],
+    [
+      "wire_major",
+      "uint8",
+      4,
+      1
+    ],
+    [
+      "wire_minor",
+      "uint8",
+      5,
+      1
+    ],
+    [
+      "header_length",
+      "uint16",
+      6,
+      2
+    ],
+    [
+      "message_type",
+      "uint16",
+      8,
+      2
+    ],
+    [
+      "schema_version",
+      "uint16",
+      10,
+      2
+    ],
+    [
+      "block_length",
+      "uint16",
+      12,
+      2
+    ],
+    [
+      "flags",
+      "uint16",
+      14,
+      2
+    ],
+    [
+      "frame_length",
+      "uint32",
+      16,
+      4
+    ],
+    [
+      "sequence",
+      "uint64",
+      20,
+      8
+    ],
+    [
+      "source_time_ns",
+      "uint64",
+      28,
+      8
+    ],
+    [
+      "stream_id",
+      "uint64",
+      36,
+      8
+    ],
+    [
+      "boot_id",
+      "uint64",
+      44,
+      8
+    ]
+  ],
+  "numeric_policy": {
+    "execution_sensitive": "SCALED_INT64",
+    "analytical": "FINITE_FLOAT64_ALLOWED",
+    "nan_allowed": false,
+    "infinity_allowed": false
+  },
+  "ids": {
+    "stream_id_bits": 64,
+    "boot_id_bits": 64,
+    "trace_id_bits": 128
+  },
+  "crc32c": {
+    "supported": true,
+    "mandatory_for": [
+      "DURABLE_JOURNAL",
+      "GOLDEN_FIXTURE",
+      "EXECUTION_MUTATION",
+      "EXECUTION_LIFECYCLE_EVENT"
+    ],
+    "hot_market_live": "BENCHMARK_BEFORE_FREEZE"
+  },
+  "message_ranges": {
+    "system": [
+      0,
+      99
+    ],
+    "market": [
+      100,
+      199
+    ],
+    "account": [
+      200,
+      299
+    ],
+    "execution": [
+      300,
+      399
+    ],
+    "health": [
+      400,
+      499
+    ]
+  },
+  "compatibility": {
+    "append_only_fixed_root": true,
+    "block_length_on_wire": true,
+    "schema_version_on_wire": true,
+    "reorder_existing_fields": false,
+    "change_existing_primitive_width": false,
+    "silently_change_units": false,
+    "unknown_execution_critical_schema": "REJECT"
+  },
+  "snapshot": {
+    "chunked": true,
+    "partial_install_allowed": false
+  },
+  "fixtures": {
+    "cross_language_golden_vectors_required": true,
+    "python_mql5_same_bytes_required": true
+  }
+}
