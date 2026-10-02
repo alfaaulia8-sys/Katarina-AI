@@ -132,7 +132,7 @@
     "mql_self_test": "mt5/Tests/KatarinaStage06SelfTest.mq5",
     "python_static_test": "tests/static/test_stage06_mt5_bridge.py",
     "metaeditor_compile_proof": false,
-    "python_static_test_count": 24,
+    "python_static_test_count": 25,
     "repository_equivalent_static_audit_passed": true,
     "strict_compile_policy": {
       "zero_errors": true,
@@ -146,7 +146,8 @@
       "tests/static/test_stage06_windows_compatibility.py"
     ],
     "modern_windows_host_preflight": "scripts/mt5/check_stage06_host.ps1",
-    "compile_evidence_path": "build/mt5/stage06_compile_evidence.json"
+    "compile_evidence_path": "build/mt5/stage06_compile_evidence.json",
+    "modern_windows_verifier": "scripts/mt5/verify_stage06_modern_windows.ps1"
   },
   "pending_before_freeze": [
     "MODERN_WINDOWS_METAEDITOR_COMPILE_PROOF",
