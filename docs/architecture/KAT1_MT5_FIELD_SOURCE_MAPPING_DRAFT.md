@@ -41,7 +41,7 @@ Stage-06 source: SKatCapturedTick and KatCaptureTick.
 
 ## BAR_EVENT
 
-Stage 06 does not fabricate bars from ticks. Future source is broker series data (MqlRates/CopyRates) outside OnTick.
+Stage 06 does not fabricate bars from ticks. BarSource.mqh now reads broker series data through CopyRates/MqlRates outside OnTick, including OHLC, tick volume, real volume and spread.
 
 ## SYMBOL_SPEC
 
@@ -144,7 +144,7 @@ Raw DEAL_TYPE and DEAL_REASON are preserved. CKatDealHistoryRange rejects oversi
 
 ## BROKER_CALC_REPORT
 
-Future native source: OrderCalcProfit and OrderCalcMargin. Values remain in broker-native account units; no standard/cent multiplier is guessed.
+Stage 06 now provides BrokerCalc.mqh using OrderCalcProfit and OrderCalcMargin. Values remain in broker-native account units; no standard/cent multiplier is guessed.
 
 ## Snapshot completeness
 
