@@ -280,3 +280,45 @@ Even a fully valid request still ends with `KAT_PREFLIGHT_STAGE06_EXECUTION_DISA
 Raw account fact reading no longer rejects a zero leverage value by itself.
 
 Leverage is preserved as a broker-reported fact. Whether an account is execution-capable is a later risk/execution validation decision rather than a reason to fabricate an unavailable account snapshot.
+
+
+## Modern Windows Validation Decision
+
+Project owner direction:
+
+- validate and stabilize Stage 06 on newer Windows first;
+- do not block the project on Windows Server 2012 R2;
+- revisit Server 2012 R2 only after the finished system is stable, if still required.
+
+Current validation baseline:
+
+~~~text
+PREFERRED
+- Windows Server 2022 x64
+- Windows 11 x64
+
+COMPATIBILITY
+- Windows Server 2019 x64
+- Windows Server 2016 x64
+- Windows 10 x64
+
+DEFERRED
+- Windows Server 2012 R2 x64
+~~~
+
+The Stage-06 freeze gate therefore requires a modern-Windows MetaEditor/runtime proof, not a Server-2012-R2 proof.
+
+Modern host tooling added:
+
+- `config/windows_compatibility_stage06.json`;
+- `scripts/mt5/check_stage06_host.ps1`;
+- `scripts/mt5/verify_stage06_modern_windows.ps1`;
+- strict UTF-16LE MetaEditor log parsing;
+- zero-error and zero-warning policy;
+- stale-EX5 deletion before compile;
+- EX5 existence/size check;
+- SHA-256 source/artifact evidence;
+- machine-readable `stage06_compile_evidence.json`;
+- 10 Windows compatibility regression tests.
+
+This changes only the validation/deployment baseline. It does not weaken the frozen protocol, Core, fail-closed bridge, or risk-safety rules.
