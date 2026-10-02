@@ -9,7 +9,7 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 03 — Repository Architecture: ✅ FROZEN v1.0.0
 - Stage 04 — Data Protocol / Schemas: ✅ FROZEN — KAT1 v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: ✅ FROZEN — v1.0.0
-- Stage 06 — MT5 Bridge EA: 🟡 IN REVIEW — v0.2.0 / compile proof pending
+- Stage 06 — MT5 Bridge EA: 🟡 IN REVIEW — v0.4.0 / modern Windows compile proof pending
 
 ## KAT1 v1.0.0
 
@@ -176,5 +176,27 @@ Prepared verification:
 - `mt5/Tests/KatarinaStage06AccountProbe.mq5`
 - `tests/static/test_stage06_mt5_bridge.py`
 - `scripts/mt5/compile_stage06.ps1`
+- `scripts/mt5/check_stage06_host.ps1`
+- `tests/static/test_stage06_windows_compatibility.py`
 
-Stage 06 remains IN REVIEW only because the actual MetaEditor/runtime proof must be produced in an MT5 installation before freeze.
+Stage 06 remains IN REVIEW only because the actual MetaEditor/runtime proof must be produced on a modern 64-bit Windows host before freeze. Windows Server 2012 R2 is deliberately deferred and is not part of the current freeze gate.
+
+
+### Current Windows validation baseline
+
+Preferred:
+
+- Windows Server 2022 x64
+- Windows 11 x64
+
+Compatibility validation:
+
+- Windows Server 2019 x64
+- Windows Server 2016 x64
+- Windows 10 x64
+
+Deferred:
+
+- Windows Server 2012 R2 x64
+
+The modern compile proof requires zero errors, zero warnings, fresh non-empty EX5 artifacts, and SHA-256 evidence. See `docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md`.
