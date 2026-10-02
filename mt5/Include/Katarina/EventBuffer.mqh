@@ -1,6 +1,25 @@
 #ifndef __KATARINA_EVENT_BUFFER_MQH__
 #define __KATARINA_EVENT_BUFFER_MQH__
 
+enum ENUM_KAT_TRANSACTION_FIELD_FLAG
+  {
+   KAT_TRANS_HAS_ORDER          =1,
+   KAT_TRANS_HAS_DEAL           =2,
+   KAT_TRANS_HAS_POSITION       =4,
+   KAT_TRANS_HAS_POSITION_BY    =8,
+   KAT_TRANS_HAS_SYMBOL         =16,
+   KAT_TRANS_HAS_ORDER_TYPE     =32,
+   KAT_TRANS_HAS_ORDER_STATE    =64,
+   KAT_TRANS_HAS_DEAL_TYPE      =128,
+   KAT_TRANS_HAS_TIME_TYPE      =256,
+   KAT_TRANS_HAS_EXPIRATION     =512,
+   KAT_TRANS_HAS_PRICE          =1024,
+   KAT_TRANS_HAS_PRICE_TRIGGER  =2048,
+   KAT_TRANS_HAS_SL             =4096,
+   KAT_TRANS_HAS_TP             =8192,
+   KAT_TRANS_HAS_VOLUME         =16384
+  };
+
 struct SKatCapturedTick
   {
    ulong    local_capture_id;
@@ -20,6 +39,7 @@ struct SKatCapturedTrade
    ulong                       local_capture_id;
    long                        capture_monotonic_ms;
    ENUM_TRADE_TRANSACTION_TYPE transaction_type;
+   uint                        transaction_field_flags;
    ulong                       deal;
    ulong                       order;
    ulong                       position;
@@ -96,21 +116,112 @@ void KatCaptureTradeTransaction(const MqlTradeTransaction &trans,
    out_event.local_capture_id=local_capture_id;
    out_event.capture_monotonic_ms=(long)(GetMicrosecondCount()/1000);
    out_event.transaction_type=trans.type;
-   out_event.deal=trans.deal;
-   out_event.order=trans.order;
-   out_event.position=trans.position;
-   out_event.position_by=trans.position_by;
-   out_event.symbol=trans.symbol;
-   out_event.order_type=trans.order_type;
-   out_event.order_state=trans.order_state;
-   out_event.deal_type=trans.deal_type;
-   out_event.time_type=trans.time_type;
-   out_event.time_expiration=trans.time_expiration;
-   out_event.price=trans.price;
-   out_event.price_trigger=trans.price_trigger;
-   out_event.price_sl=trans.price_sl;
-   out_event.price_tp=trans.price_tp;
-   out_event.volume=trans.volume;
+   out_event.transaction_field_flags=0;
+
+   // MqlTradeTransaction fields are type-dependent. Start from a fully neutral
+   // record and copy only fields documented for the received transaction type.
+   out_event.deal=0;
+   out_event.order=0;
+   out_event.position=0;
+   out_event.position_by=0;
+   out_event.symbol="";
+   out_event.order_type=(ENUM_ORDER_TYPE)0;
+   out_event.order_state=(ENUM_ORDER_STATE)0;
+   out_event.deal_type=(ENUM_DEAL_TYPE)0;
+   out_event.time_type=(ENUM_ORDER_TYPE_TIME)0;
+   out_event.time_expiration=0;
+   out_event.price=0.0;
+   out_event.price_trigger=0.0;
+   out_event.price_sl=0.0;
+   out_event.price_tp=0.0;
+   out_event.volume=0.0;
+
+   const bool order_transaction=
+      (trans.type==TRADE_TRANSACTION_ORDER_ADD ||
+       trans.type==TRADE_TRANSACTION_ORDER_UPDATE ||
+       trans.type==TRADE_TRANSACTION_ORDER_DELETE ||
+       trans.type==TRADE_TRANSACTION_HISTORY_ADD ||
+       trans.type==TRADE_TRANSACTION_HISTORY_UPDATE ||
+       trans.type==TRADE_TRANSACTION_HISTORY_DELETE);
+
+   const bool deal_transaction=
+      (trans.type==TRADE_TRANSACTION_DEAL_ADD ||
+       trans.type==TRADE_TRANSACTION_DEAL_UPDATE ||
+       trans.type==TRADE_TRANSACTION_DEAL_DELETE);
+
+   if(order_transaction)
+     {
+      out_event.order=trans.order;
+      out_event.symbol=trans.symbol;
+      out_event.order_type=trans.order_type;
+      out_event.order_state=trans.order_state;
+      out_event.time_type=trans.time_type;
+      out_event.time_expiration=trans.time_expiration;
+      out_event.price=trans.price;
+      out_event.price_trigger=trans.price_trigger;
+      out_event.price_sl=trans.price_sl;
+      out_event.price_tp=trans.price_tp;
+      out_event.volume=trans.volume;
+      out_event.position=trans.position;
+      out_event.position_by=trans.position_by;
+
+      out_event.transaction_field_flags=
+         KAT_TRANS_HAS_ORDER |
+         KAT_TRANS_HAS_SYMBOL |
+         KAT_TRANS_HAS_ORDER_TYPE |
+         KAT_TRANS_HAS_ORDER_STATE |
+         KAT_TRANS_HAS_TIME_TYPE |
+         KAT_TRANS_HAS_EXPIRATION |
+         KAT_TRANS_HAS_PRICE |
+         KAT_TRANS_HAS_PRICE_TRIGGER |
+         KAT_TRANS_HAS_SL |
+         KAT_TRANS_HAS_TP |
+         KAT_TRANS_HAS_VOLUME |
+         KAT_TRANS_HAS_POSITION |
+         KAT_TRANS_HAS_POSITION_BY;
+     }
+   else if(deal_transaction)
+     {
+      out_event.deal=trans.deal;
+      out_event.order=trans.order;
+      out_event.symbol=trans.symbol;
+      out_event.deal_type=trans.deal_type;
+      out_event.price=trans.price;
+      out_event.price_sl=trans.price_sl;
+      out_event.price_tp=trans.price_tp;
+      out_event.volume=trans.volume;
+      out_event.position=trans.position;
+      out_event.position_by=trans.position_by;
+
+      out_event.transaction_field_flags=
+         KAT_TRANS_HAS_DEAL |
+         KAT_TRANS_HAS_ORDER |
+         KAT_TRANS_HAS_SYMBOL |
+         KAT_TRANS_HAS_DEAL_TYPE |
+         KAT_TRANS_HAS_PRICE |
+         KAT_TRANS_HAS_SL |
+         KAT_TRANS_HAS_TP |
+         KAT_TRANS_HAS_VOLUME |
+         KAT_TRANS_HAS_POSITION |
+         KAT_TRANS_HAS_POSITION_BY;
+     }
+   else if(trans.type==TRADE_TRANSACTION_POSITION)
+     {
+      out_event.symbol=trans.symbol;
+      out_event.deal_type=trans.deal_type;
+      out_event.price=trans.price;
+      out_event.price_sl=trans.price_sl;
+      out_event.price_tp=trans.price_tp;
+      out_event.volume=trans.volume;
+
+      out_event.transaction_field_flags=
+         KAT_TRANS_HAS_SYMBOL |
+         KAT_TRANS_HAS_DEAL_TYPE |
+         KAT_TRANS_HAS_PRICE |
+         KAT_TRANS_HAS_SL |
+         KAT_TRANS_HAS_TP |
+         KAT_TRANS_HAS_VOLUME;
+     }
 
    // MQL5 documents request/result as meaningful only for
    // TRADE_TRANSACTION_REQUEST. Never interpret them for other transaction types.
