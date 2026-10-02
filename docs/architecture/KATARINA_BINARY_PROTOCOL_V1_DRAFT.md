@@ -2,7 +2,7 @@
 
 **Status:** IN REVIEW  
 **Protocol:** KAT1  
-**Draft:** 0.1  
+**Draft:** 0.2  
 **Stage:** 04/40
 
 ## 1. Design Goals
@@ -359,3 +359,17 @@ Adopt KAT1 as a **custom SBE-inspired canonical binary protocol**, not as a raw 
 The first Stage 04 implementation target should cover HELLO/HELLO_ACK, SYMBOL_SPEC, TICK_EVENT, BAR_EVENT, ACCOUNT_DELTA, POSITION_DELTA, SNAPSHOT transaction, execution intents, EXECUTION_ACK, TRADE_EVENT, HEARTBEAT/HEALTH, and reconciliation.
 
 No implementation is authorized to treat this draft as frozen until Stage 04 review is completed.
+
+
+## 22. Data Contract Catalog
+
+The message-level data catalog is maintained separately so protocol framing and business payload semantics remain reviewable:
+
+- `docs/architecture/KAT1_DATA_CONTRACT_DRAFT.md`
+- `protocol/payload_catalog_v1_draft.json`
+
+The owner-facing operating decisions that still affect V1 payload scope are recorded in:
+
+- `docs/reviews/STAGE_04_OWNER_DECISIONS.md`
+
+Until those decisions are approved, Stage 04 remains IN REVIEW.
