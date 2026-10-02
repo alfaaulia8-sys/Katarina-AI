@@ -8,7 +8,8 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 02 — MT5-to-Execution Workflow: ✅ FROZEN v1.2.0
 - Stage 03 — Repository Architecture: ✅ FROZEN v1.0.0
 - Stage 04 — Data Protocol / Schemas: ✅ FROZEN — KAT1 v1.0.0
-- Stage 05 — Katarina Core / Orchestrator: 🟡 IN REVIEW — v0.1.0
+- Stage 05 — Katarina Core / Orchestrator: ✅ FROZEN — v1.0.0
+- Stage 06 — MT5 Bridge EA: ⏳ NEXT
 
 ## KAT1 v1.0.0
 
@@ -75,7 +76,7 @@ Machine-readable contracts:
 - [docs/BUILD_ROADMAP.md](docs/BUILD_ROADMAP.md)
 
 
-## Stage 05 — Core / Orchestrator (In Review)
+## Stage 05 — Core / Orchestrator v1.0.0
 
 The first Katarina runtime core is now implemented as a standard-library Python skeleton.
 
@@ -107,9 +108,9 @@ Important safety properties:
 
 Stage 05 documents:
 
-- [Core / Orchestrator Draft](docs/architecture/KATARINA_CORE_ORCHESTRATOR_DRAFT.md)
+- [Core / Orchestrator V1](docs/architecture/KATARINA_CORE_ORCHESTRATOR_V1.md)
 - [Stage 05 Research](docs/reviews/STAGE_05_CORE_RESEARCH.md)
-- [Core Config Draft](config/core_orchestrator_draft.json)
+- [Core Config](config/core_orchestrator.json)
 
 Current implementation:
 
@@ -126,4 +127,4 @@ Unit tests:
 
 - `tests/unit/core/test_stage05_core.py`
 
-Stage 05 remains **IN REVIEW** until its final audit/freeze.
+Stage 05 passed final audit and is **FROZEN v1.0.0**. See [Stage 05 Audit](docs/reviews/STAGE_05_CORE_AUDIT.md).
