@@ -21,6 +21,7 @@ Current production bridge:
 Current include modules:
 
 - `Include/Katarina/BarSource.mqh`
+- `Include/Katarina/BridgeIdentity.mqh`
 - `Include/Katarina/BridgeState.mqh`
 - `Include/Katarina/BrokerCalc.mqh`
 - `Include/Katarina/BrokerReason.mqh`
