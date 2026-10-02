@@ -99,6 +99,15 @@ Future examples:
 
 Runtime components start only after Core bootstrap readiness is satisfied.
 
+Internal event subscriptions are lifecycle-scoped:
+
+- BOOTSTRAP component handlers become active only after that bootstrap component starts;
+- RUNTIME component handlers remain inactive during RECOVERING/READY;
+- RUNTIME handlers become active only after successful runtime start;
+- subscriptions are removed before component stop.
+
+This prevents decision/runtime handlers from accidentally consuming recovery traffic before they are active.
+
 A BOOTSTRAP component may not depend on a RUNTIME component.
 
 ## 5. Component Dependency Graph
@@ -361,6 +370,8 @@ Stage 05 draft unit tests cover:
 - readiness gating;
 - reverse-order shutdown;
 - runtime-start failure cleanup;
+- runtime subscriptions inactive during recovery;
+- lifecycle-scoped subscription activation/removal;
 - non-critical ingress rejection;
 - critical ingress overflow fail-closed;
 - emitted-event non-reentrancy;
@@ -377,6 +388,7 @@ Not frozen/implemented here:
 - persistent journal/database;
 - market/account state reducers;
 - engine-specific event topics;
+- dynamic data-subscription ownership;
 - production queue capacity;
 - latency budgets;
 - CPU-heavy model worker design.
