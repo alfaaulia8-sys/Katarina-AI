@@ -1,6 +1,6 @@
 # ADR-0005 — Single-Writer Deterministic Core
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Stage:** 05
 
 ## Decision
@@ -23,4 +23,4 @@ A slow handler can delay all later events.
 
 Therefore blocking I/O and long model computation are prohibited on the mutation lane and must be moved behind worker/adapter boundaries.
 
-This ADR remains Proposed until Stage 05 audit/freeze.
+Stage 05 audit completed. The single-writer deterministic Core is accepted and frozen in Core v1.0.0.
