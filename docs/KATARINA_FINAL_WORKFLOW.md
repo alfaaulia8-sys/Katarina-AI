@@ -1,182 +1,246 @@
 # KATARINA AI — FINAL MT5 EXECUTION WORKFLOW
 
-**Status:** STAGE 02 — IN REVIEW  
-**Version:** 1.1.0  
-**Purpose:** Canonical end-to-end workflow from MT5 market data acquisition to trade execution, position management, memory, and learning.
+**Status:** FROZEN  
+**Version:** 1.2.0  
+**Stage:** 02/40 — PASSED  
+**Purpose:** Canonical end-to-end workflow from MT5 data capture through Katarina decisioning, risk approval, broker execution, reconciliation, position management, memory, and learning.
 
-## 1. Architectural Rule
+## 1. Authority
 
 ```text
-KATARINA          decides WHAT
-      ↓
-RISK GOVERNOR     decides WHETHER / HOW MUCH
-      ↓
-EXECUTION ENGINE  decides HOW TO EXECUTE SAFELY
-      ↓
-MT5 / BROKER      performs ACTION
-      ↓
-RESULT
+HUMAN PROJECT OWNER
+        ↓
+KATARINA CONSTITUTION
+        ↓
+KATARINA BRAIN        decides WHAT
+        ↓
+RISK GOVERNOR         decides WHETHER / HOW MUCH
+        ↓
+EXECUTION ENGINE      decides HOW TO EXECUTE SAFELY
+        ↓
+MT5 / BROKER          performs ACTION
+        ↓
+RECONCILIATION        establishes ACTUAL STATE
 ```
 
-MT5/MQL5 does not invent discretionary BUY/SELL decisions. If Katarina is unavailable or critical data/communication integrity fails, MT5 must not open new risk.
+MT5/MQL5 does not invent discretionary BUY/SELL decisions. Communication, data, or intelligence failure must not create new live risk.
 
-## 2. Canonical End-to-End Flow
+## 2. Canonical Flow
 
 ```text
 MT5 FAST EVENT CAPTURE
-        │
-        ├─ TickEvent
-        ├─ BarEvent
-        ├─ AccountDelta
-        ├─ PositionDelta
-        └─ TradeEvent
-        │
-        ▼
-EVENT BUFFER
-        │
-        ▼
+  ├─ TickEvent
+  ├─ BarEvent
+  ├─ AccountDelta
+  ├─ PositionDelta
+  └─ TradeEvent
+        ↓
+BOUNDED PRIORITY EVENT BUFFER
+        ↓
 VERSIONED BINARY CODEC
-        │
-        ▼
+        ↓
 TRANSPORT ABSTRACTION
-   ┌────┴──────────┐
-   │               │
- LIVE            TESTER
-   │               │
-ZeroMQ/TCP     TesterAdapter
-   └────┬──────────┘
-        ▼
+  ├─ Live: ZeroMQ localhost
+  ├─ Live fallback: native local TCP
+  └─ Tester: TesterTransport
+        ↓
 KATARINA INGEST
-        │
-        ▼
+        ↓
 STATE CACHE
-        │
-        ▼
-SNAPSHOT BUILDER
-        │
-        ▼
-DATA VALIDATION
-        │
-   INVALID ─────→ SAFE MODE / NO NEW RISK
-        │
-      VALID
-        ▼
-KATARINA CORE
-        │
-        ├─ Health Check
-        ├─ Market Regime
-        ├─ Multi-Timeframe Analysis
-        ├─ Economic/Event Context
-        ├─ Memory Retrieval
-        ├─ Strategy Ensemble
-        └─ Decision Engine
-                 │
-                 ▼
-           TRADE CANDIDATE
-                 │
-                 ▼
-            RISK GOVERNOR
-          ┌──────┼──────┐
-        REJECT  REDUCE APPROVE
-          │       └──┬──┘
-          ▼          ▼
-       NO TRADE   POSITION SIZING
-                     │
-                     ▼
-              EXECUTION INTENT
-                     │
-              BINARY COMMAND PATH
-                     │
-                     ▼
-                 MT5 GATEWAY
-                     │
-             PRE-EXECUTION CHECK
-                     │
-                  OrderCheck
-                     │
-                  OrderSend
-                     │
-                     ▼
-                   BROKER
-                     │
-                     ▼
-          BROKER TRANSACTION EVENTS
-                     │
-                     ▼
-          ORDER STATE / POSITION STATE
-                     │
-                     ▼
-                  KATARINA
-                     │
-             POSITION MANAGEMENT
-                     │
-                     ▼
-                   CLOSED
-                     │
-                     ▼
-             EXPERIENCE / MEMORY
-                     │
-                     ▼
-                 RESEARCH
-                     │
-                     ▼
-             LEARNING PIPELINE
+        ↓
+IMMUTABLE SNAPSHOT BUILDER
+        ↓
+DATA / SEQUENCE / HEALTH VALIDATION
+        ↓
+KATARINA ANALYSIS
+  ├─ Regime
+  ├─ Multi-timeframe
+  ├─ Economic/event context
+  ├─ Memory
+  ├─ Strategy/model ensemble
+  └─ Uncertainty / OOD
+        ↓
+TRADE CANDIDATE
+        ↓
+RISK GOVERNOR
+  ├─ REJECT
+  ├─ REDUCE
+  └─ APPROVE
+        ↓
+DETERMINISTIC POSITION SIZING
+        ↓
+EXECUTION INTENT
+        ↓
+MT5 EXECUTION GATEWAY
+  ├─ identity / protocol validation
+  ├─ freshness / price / spread validation
+  ├─ duplicate / journal check
+  ├─ OrderCheck
+  ├─ final revalidation
+  └─ OrderSend
+        ↓
+BROKER
+        ↓
+OnTradeTransaction + broker/history reconciliation
+        ↓
+ORDER STATE + POSITION STATE
+        ↓
+POSITION MANAGEMENT
+        ↓
+CLOSE
+        ↓
+TRADE EXPERIENCE / MEMORY
+        ↓
+RESEARCH / VALIDATION / LEARNING
 ```
 
-## 3. MT5 Event Collection
+## 3. Startup / Reconnect Gate
 
-MT5 should keep realtime handlers fast and event-driven.
+No new live risk is permitted immediately after startup or reconnect.
 
-It collects required market/account/execution state and emits deltas rather than repeatedly sending full history on every tick.
+Required sequence:
 
-Relevant information includes:
+1. Transport connection.
+2. HELLO / protocol-version handshake.
+3. Instance identity validation.
+4. Account, broker, symbol, magic, EA build and mode binding.
+5. Capability negotiation.
+6. Complete initial account/symbol/position snapshot.
+7. Durable execution journal restore.
+8. Event cursor / sequence restore.
+9. Broker reconciliation against open orders, positions, deals and journal.
+10. Katarina health + Risk Governor readiness.
+11. State becomes `READY`.
 
-- symbol, bid, ask, spread, tick time/sequence;
-- new/closed bars for required timeframes;
-- account balance/equity/margin/free margin/leverage;
-- open positions and pending orders;
-- broker/server time;
-- broker and bridge health;
-- execution/trade transaction changes.
-
-Historical synchronization/bootstrap may send larger state payloads when required, but this is not the normal hot path.
-
-## 4. Transport & Codec
-
-The authoritative policy is defined in:
-
-- `docs/KATARINA_TRANSPORT_PROTOCOL.md`
-- `config/transport_policy.json`
-
-Binding direction:
+Until step 11:
 
 ```text
-Realtime production hot path → VERSIONED BINARY
-Flexible control path         → structured binary / MessagePack candidate
-Live primary transport        → ZeroMQ localhost
-Live fallback                 → Native local TCP
-Strategy Tester               → TesterTransport adapter
-Human audit/debug             → JSON
+EXECUTION_STATE = RECOVERING
+NO NEW LIVE RISK
 ```
 
-Katarina Core must remain independent from transport/codec implementation.
+## 4. Instance Identity and Capabilities
 
-## 5. State Cache and Immutable Snapshot
+Each MT5 bridge instance must expose stable/bounded identity sufficient to prevent cross-account or wrong-instance execution.
 
-Katarina maintains the latest validated state from event streams.
+Logical identity includes:
 
-A decision snapshot is built internally and tied to immutable identifiers such as:
+- account_id / broker account identity;
+- broker server;
+- symbol or approved symbol set;
+- magic / strategy execution namespace;
+- protocol version;
+- EA build/version;
+- stream_id persisted across boots;
+- boot_id changed on each successful initialization;
+- execution mode: READ_ONLY / DEMO_ARMED / LIVE_ARMED;
+- supported order/filling/account modes.
+
+A command with incompatible binding must fail closed.
+
+## 5. Fast MT5 Event Capture
+
+Realtime handlers must stay lightweight.
+
+`OnTick` should:
+
+- capture the latest tick state;
+- assign/update sequence and timestamp metadata;
+- enqueue/coalesce market data according to queue policy;
+- return quickly.
+
+Heavy AI work, full history transfer, blocking network calls, and model inference do not belong in `OnTick`.
+
+`OnTradeTransaction` is used to emit authoritative broker transaction lifecycle events.
+
+## 6. Event Priority and Backpressure
+
+Queues are bounded. Unbounded memory growth is prohibited.
+
+Priority order:
+
+1. execution / TradeEvent / reconciliation events;
+2. risk-critical account and position changes;
+3. bar events;
+4. tick events.
+
+Allowed behavior:
+
+- latest tick per symbol may be coalesced when backlog exists;
+- redundant noncritical telemetry may be coalesced.
+
+Forbidden behavior:
+
+- silently dropping execution lifecycle events;
+- silently dropping state changes needed for risk/reconciliation.
+
+If critical queue integrity cannot be guaranteed:
 
 ```text
-snapshot_id
-timestamp
-symbol
-sequence state
+TRANSPORT_DEGRADED
+→ NO NEW LIVE RISK
 ```
 
-A stale, sequence-inconsistent, or mismatched snapshot must not be executed.
+## 7. Transport and Codec
 
-Traceability should preserve:
+Authoritative policy:
+
+- production hot path: versioned binary;
+- flexible lower-frequency control: structured binary / MessagePack candidate;
+- live primary: ZeroMQ over localhost only;
+- live fallback: native local TCP;
+- Strategy Tester: dedicated TesterTransport;
+- JSON: audit/debug/config/test fixtures only.
+
+Katarina Brain must remain independent from transport and codec implementation.
+
+## 8. Time, Sequence and Freshness
+
+Every authoritative event carries enough metadata to reason about order and freshness.
+
+Required concepts:
+
+- event timestamp;
+- receive timestamp;
+- per-stream sequence number;
+- stream_id;
+- boot_id;
+- protocol version.
+
+Katarina must detect:
+
+- stale events;
+- sequence gaps;
+- duplicated events;
+- stream resets;
+- unexpected boot changes.
+
+Clock-health status is part of system health. Exact timestamp encoding and monotonic timing fields are defined in Stage 04.
+
+## 9. State Cache and Complete Snapshot
+
+MT5 sends deltas/events; Katarina maintains the latest state cache.
+
+Decision snapshots are immutable and must reference a coherent set of:
+
+- market state;
+- required bars/history;
+- account state;
+- positions/orders;
+- broker/execution health;
+- sequence/stream state.
+
+If a required native read fails, Katarina must not substitute an invented empty account/position set.
+
+```text
+INCOMPLETE SNAPSHOT
+→ SNAPSHOT_UNAVAILABLE
+→ NO NEW LIVE RISK
+```
+
+## 10. Traceability
+
+The full path must remain reconstructable:
 
 ```text
 snapshot_id
@@ -184,135 +248,146 @@ snapshot_id
 → risk_decision_id
 → execution_intent_id
 → order_id
-→ broker identifiers
+→ broker order/deal/position IDs
 ```
 
-## 6. Data Validation Gateway
+A correlation_id may join the full chain.
 
-Validate at least:
+## 11. Data Validation
 
-- stale or malformed events;
-- sequence gaps when material;
-- missing required bars/history;
-- impossible/inconsistent price state;
-- spread condition;
+Validate, at minimum:
+
+- message/schema/protocol compatibility;
+- stream and sequence consistency;
+- timestamp freshness;
+- complete required history;
+- price/bid/ask consistency;
+- spread state;
+- symbol specification availability;
 - account state;
-- transport/bridge connectivity;
-- time synchronization.
+- position/order state;
+- transport health;
+- clock health.
 
-Critical failure:
+Critical failure means SAFE MODE / NO NEW LIVE RISK.
 
-```text
-SAFE MODE
-NO NEW LIVE RISK
-```
+## 12. Katarina Decision Flow
 
-## 7. Katarina Analysis
+The Brain uses validated state to evaluate:
 
-The Brain may use:
-
-- system/health state;
-- market regime;
+- regime;
 - multi-timeframe structure;
-- economic/event context;
-- memory and comparable historical conditions;
-- strategy ensemble;
-- uncertainty / out-of-distribution state.
+- economics/events;
+- memory;
+- strategy/model evidence;
+- uncertainty;
+- out-of-distribution state.
 
-The Decision Engine creates a Trade Candidate, not an order.
+Output is a Trade Candidate, not a broker order.
 
-## 8. Trade Candidate
+A candidate contains logical equivalents of:
 
-A candidate may include logical equivalents of:
-
-- symbol/direction;
+- symbol / direction;
 - entry concept;
 - invalidation;
-- proposed SL/TP or exit policy;
+- proposed SL / TP / exit policy;
 - expected risk/reward;
 - calibrated probability and/or model confidence;
 - evidence for/against;
-- uncertainty;
-- regime;
+- uncertainty / OOD state;
 - model/strategy version;
 - snapshot_id;
-- expiry/validity window.
+- validity window.
 
-Possible actions include BUY_CANDIDATE, SELL_CANDIDATE, WAIT, HOLD, NO_TRADE, CLOSE/REDUCE candidate.
+## 13. Risk Governor
 
-## 9. Risk Governor
+Every live capital action passes the non-bypassable Risk Governor.
 
-Every live capital action must pass deterministic Risk Governor controls covering, as applicable:
+It considers, as applicable:
 
-- per-trade and aggregate open risk;
-- drawdown/session/daily limits;
-- symbol/currency/correlation exposure;
-- margin/leverage;
-- volatility/spread;
-- data and execution health;
-- uncertainty / out-of-domain state.
+- per-trade risk;
+- aggregate risk;
+- drawdown / session / daily limits;
+- symbol and currency exposure;
+- correlation;
+- margin / leverage;
+- volatility / spread;
+- execution health;
+- data health;
+- uncertainty / OOD state.
 
-Results:
+Output: REJECT / REDUCE / APPROVE.
 
-```text
-REJECT / REDUCE / APPROVE
-```
+## 14. Deterministic Position Sizing
 
-## 10. Position Sizing
+Exact size is computed after approval from approved risk, stop distance, tick/contract values, lot min/max/step, margin constraints, and broker specifications.
 
-Exact lot/size is calculated deterministically after approval using approved risk, stop distance, contract/tick values, broker lot constraints, margin constraints, and other frozen policy inputs.
+Probabilistic AI may recommend risk but does not invent the final unsupported lot.
 
-## 11. Execution Intent
+## 15. Execution Intent
 
-The final command must carry unique/traceable identifiers and logical equivalents of:
+Execution Intent contains logical equivalents of:
 
 - execution_intent_id;
 - order_id;
-- snapshot_id / decision_id / risk_decision_id;
-- symbol/side/order type;
-- final lot;
+- snapshot_id;
+- decision_id;
+- risk_decision_id;
+- symbol / side / order type;
+- final size;
 - entry instruction;
-- SL/TP or exit policy;
+- SL / TP / exit policy;
 - approved risk;
-- deviation/slippage rule;
+- deviation/slippage policy;
 - expiry;
-- model/strategy version.
+- model/strategy version;
+- instance binding.
 
-## 12. MT5 Pre-Execution Validation
+## 16. Durable Idempotency
 
-Immediately before broker submission MT5 rechecks:
+Before the first irreversible broker submission attempt, MT5 must durably reserve the `order_id` / client request identity with its normalized payload.
 
-- instruction freshness;
-- price deviation;
-- spread;
-- symbol/market/trading permission;
-- lot/margin;
-- approval integrity;
-- duplicate order_id;
-- message/protocol validity.
+Rules:
 
-Then perform `OrderCheck` and only submit when valid.
+- same ID + same payload → return known stored state, never duplicate;
+- same ID + different payload → `IDEMPOTENCY_CONFLICT`;
+- restart must not erase the reservation;
+- journal corruption or ambiguous recovery blocks new execution until reconciled.
 
-Failure returns an explicit reason; MT5 must not silently turn a rejected idea into a different discretionary strategy.
+## 17. Pre-Execution Gate
 
-## 13. Idempotency
+Immediately before submission:
 
-Every execution request has a unique `order_id`.
+1. validate protocol and binding;
+2. verify instruction not expired;
+3. validate price deviation and spread;
+4. validate symbol / market / trade permission;
+5. validate lot / stops / margin / exposure inputs;
+6. verify durable idempotency state;
+7. run `OrderCheck`;
+8. re-read critical current state after `OrderCheck`;
+9. reject if freshness, exposure, capacity or price assumptions are no longer valid;
+10. call `OrderSend` only once for that reserved request.
 
-Retransmitting the same order_id after a timeout must return the known state/ticket rather than opening another position.
+MT5 may apply only explicitly authorized deterministic safety normalization; it may not invent a different discretionary strategy.
 
-## 14. Broker Execution Truth
+## 18. Broker Execution Truth
 
-`OrderSend` acceptance is not itself treated as final fill truth.
+The boolean return of `OrderSend` is not treated as final fill truth.
 
-The authoritative execution lifecycle comes from actual broker transaction events and reconciliation.
+Authoritative execution state comes from:
 
-Order state and position state are separate state machines.
+- broker result codes;
+- `OnTradeTransaction` events;
+- order/deal history;
+- current positions;
+- reconciliation against the durable execution journal.
 
-Possible order states include logical equivalents of:
+Possible logical order states:
 
 ```text
 CREATED
+RESERVED
 VALIDATED
 SUBMITTING
 SUBMITTED
@@ -321,87 +396,213 @@ FILLED
 REJECTED
 CANCELED
 EXPIRED
+UNKNOWN
 ERROR
 ```
 
-Position states include:
+## 19. Unknown Outcome Rule
+
+If a broker submission may have occurred but its exact result cannot be proven because of timeout, disconnect, contradictory fields, process crash, or missing transaction evidence:
 
 ```text
+ORDER_STATE = UNKNOWN
+AUTO-RETRY = FORBIDDEN
+NEW RISK ON AFFECTED EXECUTION SCOPE = BLOCKED
+RECONCILIATION = REQUIRED
+```
+
+Unknown is safer than inventing FILLED or REJECTED.
+
+## 20. Event Journal and Replay
+
+Execution lifecycle events are durable and ordered.
+
+The system maintains a logical event cursor / sequence allowing Katarina to:
+
+- detect gaps;
+- request/replay missing critical events;
+- restore after restart;
+- prove whether execution state was fully reconciled.
+
+Trade events cannot rely only on ephemeral realtime delivery.
+
+## 21. Reconciliation
+
+Reconciliation runs:
+
+- at startup;
+- after reconnect;
+- after unknown outcomes;
+- after sequence gaps affecting execution;
+- periodically as a consistency check.
+
+It compares:
+
+- local durable requests/journal;
+- broker open orders;
+- broker positions;
+- order/deal history;
+- Katarina expected state.
+
+Only reconciled state may return execution scope to READY.
+
+## 22. Position State
+
+Order lifecycle and position lifecycle are distinct.
+
+```text
+ORDER:
+CREATED → RESERVED → SUBMITTED → PARTIAL/FILLED
+                            ↘ REJECTED/CANCELED/UNKNOWN
+
+POSITION:
 CREATED → ACTIVE → MANAGING → EXITING → CLOSED
 ```
 
-## 15. Execution Confirmation
+Katarina manages positions from actual broker state, not assumed order intent.
 
-Store actual execution facts such as:
+## 23. Position Management
 
-- order_id and broker identifiers;
-- requested and fill price;
-- requested and filled size;
-- slippage;
-- timing/latency;
-- broker result/status;
-- accepted SL/TP state.
+Validated management actions may include:
 
-## 16. Position Management
+- HOLD;
+- MODIFY_SL;
+- MODIFY_TP;
+- PARTIAL_CLOSE;
+- REDUCE_POSITION;
+- CLOSE;
+- policy-authorized break-even behavior.
 
-While active, Katarina continues receiving validated state and may create management decisions such as HOLD, MODIFY_SL, MODIFY_TP, PARTIAL_CLOSE, REDUCE_POSITION, CLOSE, or policy-authorized break-even actions.
+They remain subject to safety, idempotency where applicable, and reconciliation.
 
-Safety validation remains mandatory.
+## 24. Local Emergency Safety
 
-## 17. Local Emergency Safety
+Local deterministic safety may:
 
-Local deterministic safety may block new entries, enter safe mode, cancel invalid pending state, or execute predefined emergency protections.
+- block new entries;
+- enter SAFE MODE;
+- cancel invalid pending state when policy permits;
+- execute predefined emergency protection.
+
+It may not invent a new trading thesis.
 
 ```text
-NO KATARINA / NO VALID DATA / INVALID TRANSPORT
+NO KATARINA
+OR INVALID CRITICAL DATA
+OR INVALID TRANSPORT
+OR UNRECONCILED EXECUTION
 = NO NEW LIVE RISK
 ```
 
-It does not grant MT5 permission to invent a new trading strategy.
+## 25. Localhost Security Boundary
 
-## 18. Trade Experience
+Production live messaging must bind/connect only to localhost unless a future security review explicitly approves otherwise.
 
-After closure, record decision context, execution facts, P/L after costs, MAE/MFE, R-multiple, duration, exit reason, regime, evidence, model/strategy version, risk decision, and relevant snapshot lineage.
+Execution must require explicit arming and correct instance/account binding.
 
-## 19. Learning
+Transport exposure to a public interface is not part of the approved baseline.
+
+## 26. Strategy Tester
+
+TesterTransport must expose the same logical event/command contracts as live transport while remaining deterministic.
+
+Tester-specific transport must not leak file-I/O logic into Katarina Brain.
+
+## 27. Trade Experience and Learning
+
+After closure, preserve:
+
+- full decision lineage;
+- risk decision;
+- requested vs actual execution;
+- transaction costs;
+- latency/slippage;
+- MAE/MFE;
+- R multiple;
+- outcome;
+- exit reason;
+- regime/evidence/model versions.
+
+Learning path remains:
 
 ```text
 OBSERVE
 → RECORD
-→ EVALUATE DECISION QUALITY
+→ EVALUATE
 → DETECT DRIFT/DEGRADATION
 → HYPOTHESIZE
-→ OFFLINE TRAIN/ADJUST
+→ OFFLINE TRAIN
 → BACKTEST
-→ OUT-OF-SAMPLE
+→ OOS
 → WALK-FORWARD
 → ROBUSTNESS
 → SHADOW/PAPER
 → COMPARE
 → APPROVED PROMOTION
 → MONITOR
-→ ROLLBACK IF NEEDED
+→ ROLLBACK
 ```
 
-Live observations do not directly rewrite production behavior.
+## 28. Latency Observability
 
-## 20. Latency Observability
+Measure enough components to locate delay:
 
-The system must measure enough timing stages to identify whether delay is caused by capture, encoding, transport, decoding/ingest, analysis, decision, risk, return transport, MT5 validation, or broker execution.
+- event capture;
+- queue wait;
+- encode;
+- transport;
+- decode/ingest;
+- snapshot build;
+- analysis/features;
+- decision;
+- risk;
+- return transport;
+- MT5 preflight;
+- broker execution.
 
-Exact latency budgets will be set from profiling rather than guessed in this workflow.
+Exact budgets are set later by profiling, not guessed here.
 
-## 21. Primary Safety Invariants
+## 29. Frozen Safety Invariants
 
-1. MT5 does not invent discretionary BUY/SELL decisions.
-2. Every live entry requires a valid Katarina decision.
-3. Every live entry requires Risk Governor approval.
-4. Every execution references valid decision/snapshot lineage.
-5. Every order uses idempotent unique order_id.
-6. Invalid critical data/transport means NO NEW RISK.
-7. Katarina failure means NO NEW RISK.
-8. Learning cannot bypass validation.
-9. Live capital is not a research sandbox.
-10. Important decisions/executions are auditable.
-11. Realtime hot-path JSON is not required.
-12. Transport/codec changes must not require changing Katarina Brain.
+1. MT5 cannot invent discretionary BUY/SELL decisions.
+2. Every live entry needs valid Katarina decision lineage.
+3. Every live entry needs Risk Governor approval.
+4. Every broker mutation is idempotent.
+5. Ambiguous execution is UNKNOWN, never automatically retried.
+6. Startup/reconnect is fail-closed until reconciliation.
+7. Critical execution events are durable/replayable.
+8. Incomplete native reads cannot be converted into false empty state.
+9. Critical queue/event loss means NO NEW RISK.
+10. Transport/codec implementation is replaceable without changing the Brain.
+11. Realtime production hot path is binary-first.
+12. JSON is not required in the realtime hot path.
+13. Live transport is localhost-bound in the baseline.
+14. Learning cannot bypass validation.
+15. Live capital is not a research sandbox.
+
+## 30. Stage 02 Acceptance
+
+Stage 02 is passed because the workflow now defines:
+
+- authority boundaries;
+- live vs tester transport;
+- binary-first wire direction;
+- fast MT5 event capture;
+- state cache and immutable snapshots;
+- startup/reconnect recovery;
+- instance binding and capability handshake;
+- queue/backpressure behavior;
+- sequence/freshness logic;
+- decision/risk separation;
+- deterministic sizing;
+- durable idempotency;
+- broker truth and UNKNOWN handling;
+- transaction journaling/replay;
+- order/position state separation;
+- reconciliation;
+- fail-safe local behavior;
+- end-to-end traceability;
+- latency observability;
+- memory/learning feedback.
+
+Exact data fields and byte layouts are intentionally deferred to Stage 04.
