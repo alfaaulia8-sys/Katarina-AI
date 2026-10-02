@@ -2,7 +2,7 @@
 
 **Status:** IN REVIEW  
 **Protocol:** KAT1  
-**Draft:** 0.2  
+**Draft:** 0.3  
 **Stage:** 04/40
 
 ## 1. Data Ownership Rule
@@ -491,10 +491,35 @@ Economic/news/cross-asset information is not sourced from MT5 KAT1 unless explic
 
 External intelligence enters Katarina through separate ports/adapters and is joined to immutable decision snapshots with its own freshness/provenance.
 
-## 15. Open Owner Decisions
+## 15. Shared Account and Manual-Trade Learning
 
-Six business/operating decisions remain intentionally unresolved. See:
+Owner-approved direction:
+
+- the account may be shared with manual user trading;
+- Katarina has full account visibility for risk/reconciliation/learning;
+- observation authority and mutation authority are separate;
+- manual trades are read-only by default;
+- manual trade facts are captured automatically from MT5;
+- actual human reasoning is captured only through explicit user annotation;
+- Katarina-inferred reasoning is stored separately and never presented as the user's declared reason;
+- manual-trade examples remain a distinct learning population.
+
+Canonical learning contract:
+
+- `docs/architecture/MANUAL_TRADE_LEARNING_CONTRACT_DRAFT.md`
+- `protocol/manual_trade_learning_v1_draft.json`
+
+## 16. Remaining Owner Decisions
+
+Four business/operating decisions remain unresolved:
+
+- account-mode certification;
+- V1 new-entry order types;
+- broker-native protective-stop requirement;
+- deposit/withdrawal/credit ledger.
+
+See:
 
 `docs/reviews/STAGE_04_OWNER_DECISIONS.md`
 
-Engineering choices that do not change business behavior will continue to be resolved without requiring owner input.
+Engineering choices that do not change business behavior continue without requiring owner input.
