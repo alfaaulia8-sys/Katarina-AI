@@ -1,6 +1,6 @@
 # KAT1 V1 — IDENTITY AND BINDING CONTRACT
 
-**Status:** FROZEN CANDIDATE  
+**Status:** FROZEN / STAGE 04  
 **Version:** 1.0.0
 
 ## Account ID
