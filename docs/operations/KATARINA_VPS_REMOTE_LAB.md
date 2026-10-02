@@ -45,7 +45,7 @@ The repository already contains:
 .github/workflows/katarina-vps-lab.yml
 ```
 
-A request committed to `ops/vps/requests/*.json` starts the job. The job uses the allowlisted task runner and uploads the result as a GitHub Actions artifact.
+A request committed to `ops/vps/requests/actions/*.json` starts the job. The job uses the allowlisted task runner and uploads the result as a GitHub Actions artifact.
 
 ### B. Windows Server 2012 R2 — legacy bridge
 
@@ -62,7 +62,7 @@ scripts/vps/Invoke-KatarinaRemoteTask.ps1
 The legacy agent:
 
 - uses outbound HTTPS to GitHub only;
-- polls `ops/vps/requests`;
+- polls `ops/vps/requests/legacy`;
 - accepts only a request whose `target_agent` equals its configured agent ID;
 - rejects expired requests;
 - rejects every task not on the allowlist;
@@ -137,7 +137,7 @@ cek apakah MetaEditor ada
 
 the development flow is:
 
-1. create one request JSON in the private repository;
+1. create one request JSON in `ops/vps/requests/legacy` for Windows Server 2012 R2, or `ops/vps/requests/actions` for a modern self-hosted runner;
 2. the VPS agent executes the matching allowlisted task;
 3. wait for the result folder or Actions artifact;
 4. read the result through the GitHub connector;
