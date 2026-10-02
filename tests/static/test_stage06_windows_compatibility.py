@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "config" / "windows_compatibility_stage06.json"
 COMPILE = ROOT / "scripts" / "mt5" / "compile_stage06.ps1"
 HOST_CHECK = ROOT / "scripts" / "mt5" / "check_stage06_host.ps1"
+VERIFY = ROOT / "scripts" / "mt5" / "verify_stage06_modern_windows.ps1"
 
 
 class Stage06WindowsCompatibilityTests(unittest.TestCase):
@@ -15,6 +16,7 @@ class Stage06WindowsCompatibilityTests(unittest.TestCase):
         cls.config = json.loads(CONFIG.read_text(encoding="utf-8"))
         cls.compile_script = COMPILE.read_text(encoding="utf-8")
         cls.host_script = HOST_CHECK.read_text(encoding="utf-8")
+        cls.verify_script = VERIFY.read_text(encoding="utf-8")
 
     def test_modern_preferred_hosts_are_x64(self):
         self.assertEqual(self.config["architecture"], "x64")
@@ -95,6 +97,18 @@ class Stage06WindowsCompatibilityTests(unittest.TestCase):
             "DEFERRED",
         ):
             self.assertIn(token, self.host_script)
+
+    def test_one_command_verifier_chains_host_static_and_compile_proof(self):
+        self.assertIn("check_stage06_host.ps1", self.verify_script)
+        self.assertIn(
+            "tests.static.test_stage06_mt5_bridge",
+            self.verify_script,
+        )
+        self.assertIn(
+            "tests.static.test_stage06_windows_compatibility",
+            self.verify_script,
+        )
+        self.assertIn("compile_stage06.ps1", self.verify_script)
 
 
 if __name__ == "__main__":
