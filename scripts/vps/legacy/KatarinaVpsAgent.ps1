@@ -173,7 +173,7 @@ $repo = [string]$config.repository
 $branch = [string]$config.branch
 $agentId = [string]$config.agent_id
 $pollSeconds = [int]$config.poll_seconds
-$requestsDir = "ops/vps/requests"
+$requestsDir = "ops/vps/requests/legacy"
 $resultsDir = "ops/vps/results"
 
 Write-Host "Katarina VPS Agent $AgentVersion"
