@@ -7,7 +7,7 @@
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
-| 06 | MT5 Bridge EA | 🟡 IN REVIEW — Bridge v0.3.0 / STATIC PASS / COMPILE PROOF PENDING |
+| 06 | MT5 Bridge EA | 🟡 IN REVIEW — Bridge v0.4.0 / MODERN WINDOWS VALIDATION / COMPILE PROOF PENDING |
 | 07 | MT5-Python Communication | ⬜ |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
@@ -119,10 +119,16 @@ Implemented so far:
 - persistent stream/per-boot bridge identity;
 - broker-server + login scoped duplicate lease;
 - strengthened pending/TP preflight;
-- 15 static safety regression tests.
+- 15 bridge static safety regression tests;
+- 9 Windows compatibility regression tests;
+- modern-Windows host preflight;
+- strict MetaEditor UTF-16LE log parser;
+- zero-warning compile policy;
+- fresh EX5 existence + SHA-256 evidence;
+- Windows Server 2012 R2 explicitly deferred.
 
 Production broker mutation remains disabled and the bridge remains RECOVERING.
 
-Remaining freeze blocker: actual MetaEditor compilation/runtime proof in an MT5 installation, followed by final audit.
+Remaining freeze blocker: actual MetaEditor compilation/runtime proof on a modern 64-bit Windows validation host, followed by self-test/account probes and final audit. Windows Server 2012 R2 is explicitly deferred and does not block Stage 06.
 
 Stage 06 is not frozen yet.
