@@ -46,6 +46,7 @@
     "RECONCILED"
   ],
   "tester_bootstrap_readiness": [
+    "TRANSPORT",
     "PROTOCOL",
     "IDENTITY",
     "SNAPSHOT"
