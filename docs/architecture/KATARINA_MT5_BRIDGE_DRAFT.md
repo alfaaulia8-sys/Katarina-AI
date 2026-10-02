@@ -385,3 +385,19 @@ Code/design work is substantially complete, but Stage 06 must remain IN REVIEW u
 5. final Stage-06 audit is completed.
 
 Stage 07 must not rely on an uncompiled bridge.
+
+
+## 19. Bridge Identity
+
+Stage 06 now creates:
+
+- a persistent nonzero stream_id scoped to broker server + login;
+- a new nonzero boot_id on every successful bridge initialization.
+
+The stream ID is stored as two exact uint32 halves in terminal global variables and reconstructed as uint64.
+
+The two-half storage avoids precision loss from putting a full uint64 into one double-valued terminal global variable.
+
+A stream ID disappearing after external cleanup/long inactivity is treated as a new stream on the next boot, which later forces normal Stage-07 recovery/reconciliation behavior.
+
+account_id derivation and HELLO/HELLO_ACK encoding remain Stage 07.
