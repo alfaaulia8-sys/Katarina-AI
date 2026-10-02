@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.18"
+#property version   "0.19"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
@@ -45,6 +45,8 @@ bool  g_snapshot_dirty=true;
 bool  g_snapshot_available=false;
 ulong g_last_snapshot_attempt_ms=0;
 ulong g_last_health_sample_ms=0;
+ulong g_timer_budget_exhausted_total=0;
+ulong g_timer_max_elapsed_us=0;
 
 ulong KatNextLocalObservationId(void)
   {
@@ -374,6 +376,14 @@ void OnDeinit(const int reason)
    g_instance_guard.Release();
    g_bridge_state.MarkStopped();
 
+   PrintFormat("KatarinaBridgeEA metrics: trade_queue_high_watermark=%d trade_queue_rejected=%I64u tick_captures=%I64u tick_coalesced=%I64u timer_budget_exhausted=%I64u timer_max_elapsed_us=%I64u",
+               g_trade_events.HighWatermark(),
+               g_trade_events.RejectedTotal(),
+               g_latest_tick.CaptureTotal(),
+               g_latest_tick.CoalescedTotal(),
+               g_timer_budget_exhausted_total,
+               g_timer_max_elapsed_us);
+
    PrintFormat("KatarinaBridgeEA stopped, reason=%d",reason);
   }
 
@@ -477,4 +487,10 @@ void OnTimer(void)
    // Remain RECOVERING in Stage 06. Local facts/snapshot alone do not prove
    // transport, durable journal, event cursor, or reconciliation readiness.
    g_bridge_state.SetExecutionArmed(false);
+
+   const ulong elapsed_us=KatTimerElapsedUs(timer_started_us);
+   if(elapsed_us>g_timer_max_elapsed_us)
+      g_timer_max_elapsed_us=elapsed_us;
+   if(elapsed_us>=KAT_STAGE06_TIMER_BUDGET_US)
+      g_timer_budget_exhausted_total++;
   }
