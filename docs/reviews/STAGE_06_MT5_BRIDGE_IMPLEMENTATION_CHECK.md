@@ -88,7 +88,7 @@ No standard/cent multiplier is hard-coded.
 
 The bridge reads native account margin mode and does not emulate a different position accounting mode.
 
-Full position/order snapshot semantics are still pending in Stage 06.
+Complete current account/position/order snapshot sourcing is now implemented with bounded stable retry. Broker-atomic continuity is still correctly delegated to transaction events plus later reconciliation.
 
 ## Compilation Status
 
@@ -140,8 +140,8 @@ This is a static source check, not a substitute for MetaEditor compilation.
 
 ## Remaining Stage 06 Freeze Blockers
 
-- MetaEditor compile proof for KatarinaBridgeEA.mq5 and all includes;
-- compile/run KatarinaStage06SelfTest.mq5;
+- MetaEditor compile proof for KatarinaBridgeEA.mq5, KatarinaStage06SelfTest.mq5 and KatarinaStage06AccountProbe.mq5;
+- run KatarinaStage06SelfTest.mq5 and the read-only account probe;
 - run tests/static/test_stage06_mt5_bridge.py from a repository checkout;
 - correct any compiler/runtime issues discovered;
 - final Stage-06 audit/freeze.
