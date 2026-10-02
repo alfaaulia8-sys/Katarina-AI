@@ -1,6 +1,6 @@
 # STAGE 04 — OWNER DATA DECISIONS
 
-**Status:** OWNER INPUT REQUIRED  
+**Status:** OWNER INPUT PARTIALLY RESOLVED  
 **Stage:** 04/40  
 **Purpose:** Decisions that materially change what Katarina observes or is allowed to execute.
 
@@ -8,40 +8,33 @@ The protocol can be engineered without asking the Project Owner about byte offse
 
 ## Decision 1 — Account Custody
 
-### A. Dedicated Katarina account — RECOMMENDED
+### OWNER DECISION: B — SHARED ACCOUNT FOR OBSERVATIONAL LEARNING ✅
 
-Only Katarina is expected to trade the live account.
+The account may contain:
 
-Advantages:
+- Katarina-owned trades;
+- manual user trades;
+- other explicitly observable activity.
 
-- simplest reconciliation;
-- strongest protection against foreign/manual mutations;
-- cleaner learning data;
-- clearer risk attribution;
-- easier recovery after restart.
+Purpose:
 
-Disadvantage:
+- Katarina should learn not only from its own decisions, but also from manual user entries;
+- manual trades become first-class observation data;
+- Katarina records the market context at entry, lifecycle changes, SL/TP behavior, and final outcome;
+- declared user reasoning is stored separately from Katarina-inferred reasoning.
 
-- manual trades or another EA should not share that account.
+Safety boundary:
 
-### B. Shared account
+- **visibility does not imply mutation authority**;
+- Katarina may observe all account activity for risk/learning;
+- by default Katarina may mutate only positions/orders that are explicitly Katarina-owned;
+- manual trades remain read-only unless a future owner-approved assistance policy grants otherwise.
 
-Manual trades and/or other EAs may coexist.
+This design requires explicit trade-origin classification and separate learning labels so manual behavior cannot be mistaken for Katarina policy.
 
-Advantages:
+**Decision 1 is resolved: SHARED ACCOUNT.**
 
-- more operational flexibility.
 
-Disadvantages:
-
-- more complex reconciliation;
-- external positions change margin/exposure;
-- attribution becomes harder;
-- learning data needs origin classification.
-
-**Recommendation: A — Dedicated.**
-
----
 
 ## Decision 2 — MT5 Account Mode Certification
 
@@ -137,35 +130,22 @@ Disadvantages:
 
 ## Decision 5 — Visibility of External Positions and Orders
 
-### A. Full account visibility — RECOMMENDED
+### OWNER DECISION: A — FULL ACCOUNT VISIBILITY ✅
 
-Katarina observes all open positions and pending orders needed to understand account-wide margin/exposure, including foreign magic/manual activity.
+Katarina observes all positions, pending orders, and relevant broker transactions needed for account-wide exposure, reconciliation, and learning.
 
-Mutation authority remains limited to Katarina-owned namespace unless a future explicitly governed emergency policy says otherwise.
+This includes manual entries and foreign-magic activity.
 
-Advantages:
+Rules:
 
-- correct total risk/margin;
-- detects unexpected broker/account activity;
-- safer reconciliation.
+- all activity contributes to account risk/exposure awareness;
+- origin and ownership are classified separately;
+- Katarina-owned trades and manual-user trades remain distinct learning populations;
+- mutation authority stays restricted to Katarina-owned objects by default.
 
-Disadvantage:
+**Decision 5 is resolved: FULL ACCOUNT VISIBILITY.**
 
-- snapshot size is slightly larger.
 
-### B. Katarina-only visibility
-
-Advantage:
-
-- smaller state.
-
-Disadvantage:
-
-- Risk Governor can be blind to capital already consumed by other activity.
-
-**Recommendation: A — Full account visibility.**
-
----
 
 ## Decision 6 — Deposit / Withdrawal / Credit Ledger
 
@@ -216,21 +196,26 @@ These are engineering/runtime calibration issues and should not block Stage 04:
 
 Protocol enums can support future changes without hard-coding strategy configuration into the wire format.
 
-## Recommended Owner Response
+## Current Owner Decision State
 
-To accept all recommendations, reply simply:
-
-~~~text
-Pakai semua rekomendasi Stage 04.
-~~~
-
-Or override individual items, for example:
+Resolved:
 
 ~~~text
-1A
-2A
-3B
-4A
-5A
-6A
+1B  Shared account for observational learning
+5A  Full account visibility
 ~~~
+
+Still pending:
+
+~~~text
+2   Account-mode certification
+3   New-entry order types
+4   Protective stop requirement
+6   Deposit / withdrawal / credit ledger
+~~~
+
+Manual-trade learning is now an approved architectural requirement. See:
+
+- `docs/architecture/MANUAL_TRADE_LEARNING_CONTRACT_DRAFT.md`
+
+The remaining owner decisions can be answered individually later.
