@@ -2,7 +2,7 @@
 
 **Stage:** 06/40  
 **Status:** SOURCE/DESIGN PASS / EVIDENCE PENDING / NOT FROZEN  
-**Reviewed:** 2026-10-02  
+**Reviewed:** 2026-10-03  
 **Bridge Draft:** v0.5.0
 
 ## Current Implementation
@@ -27,6 +27,7 @@ Stage-06 include modules:
 - `NativeSnapshot.mqh`
 - `SessionState.mqh`
 - `SymbolRegistry.mqh`
+- `TestEvidence.mqh`
 - `TransportPort.mqh`
 
 Verification sources:
@@ -34,7 +35,10 @@ Verification sources:
 - `mt5/Tests/KatarinaStage06SelfTest.mq5`
 - `mt5/Tests/KatarinaStage06AccountProbe.mq5`
 - `tests/static/test_stage06_mt5_bridge.py`
+- `tests/static/test_stage06_windows_compatibility.py`
 - `scripts/mt5/compile_stage06.ps1`
+- `scripts/mt5/verify_stage06_modern_windows.ps1`
+- `scripts/mt5/collect_stage06_runtime_evidence.ps1`
 
 ## Safety Review
 
