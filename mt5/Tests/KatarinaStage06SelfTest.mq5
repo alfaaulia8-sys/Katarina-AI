@@ -194,6 +194,7 @@ void OnStart(void)
       KatEvidenceWrite(evidence,"schema_version","1.0");
       KatEvidenceWrite(evidence,"stage","06");
       KatEvidenceWrite(evidence,"design_version",KAT_STAGE06_DESIGN_VERSION);
+      KatEvidenceWriteLong(evidence,"generated_epoch_seconds",(long)TimeGMT());
       KatEvidenceWrite(evidence,"proof_type","MQL_SELF_TEST");
       KatEvidenceWriteLong(evidence,"terminal_build",TerminalInfoInteger(TERMINAL_BUILD));
       KatEvidenceWriteLong(evidence,"failures",failures);
