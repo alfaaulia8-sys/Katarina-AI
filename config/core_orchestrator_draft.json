@@ -67,7 +67,10 @@
     "advisory_rejection_must_be_observable": true,
     "core_owns_broker_io": false,
     "core_owns_strategy_edge": false,
-    "core_owns_risk_thresholds": false
+    "core_owns_risk_thresholds": false,
+    "runtime_component_handlers_active_during_recovery": false,
+    "component_subscriptions_lifecycle_scoped": true,
+    "unsubscribe_before_component_stop": true
   },
   "queue": {
     "capacity_frozen": false,
@@ -77,5 +80,10 @@
     "stdlib_only": true,
     "python_asyncio_owned_queue": true,
     "cross_thread_core_mutation_allowed": false
+  },
+  "tests": {
+    "local_prototype_passed": 16,
+    "command": "PYTHONPATH=src python -m unittest discover -s tests -v",
+    "note": "Full repository automation remains Stage 33."
   }
 }
