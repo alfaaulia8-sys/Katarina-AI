@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.17"
+#property version   "0.18"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
@@ -19,6 +19,8 @@
 #define KAT_STAGE06_TIMER_MS                  50
 #define KAT_STAGE06_CRITICAL_QUEUE_CAPACITY 2048
 #define KAT_STAGE06_DRAIN_BUDGET              64
+#define KAT_STAGE06_TIMER_BUDGET_US          2000
+#define KAT_STAGE06_SNAPSHOT_START_MIN_US     750
 #define KAT_STAGE06_SNAPSHOT_MIN_INTERVAL_MS 1000
 #define KAT_STAGE06_HEALTH_INTERVAL_MS        250
 #define KAT_STAGE06_INSTANCE_LEASE_SECONDS    10
@@ -50,6 +52,30 @@ ulong KatNextLocalObservationId(void)
    if(g_local_capture_id==0)
       g_local_capture_id=1;
    return(g_local_capture_id);
+  }
+
+ulong KatTimerElapsedUs(const ulong started_us)
+  {
+   const ulong now_us=GetMicrosecondCount();
+   return(now_us-started_us);
+  }
+
+bool KatTimerBudgetAvailable(const ulong started_us,
+                             const ulong reserve_us=0)
+  {
+   const ulong elapsed=KatTimerElapsedUs(started_us);
+   if(elapsed>=KAT_STAGE06_TIMER_BUDGET_US)
+      return(false);
+
+   return((KAT_STAGE06_TIMER_BUDGET_US-elapsed)>reserve_us);
+  }
+
+ulong KatTimerBudgetRemainingUs(const ulong started_us)
+  {
+   const ulong elapsed=KatTimerElapsedUs(started_us);
+   if(elapsed>=KAT_STAGE06_TIMER_BUDGET_US)
+      return(0);
+   return(KAT_STAGE06_TIMER_BUDGET_US-elapsed);
   }
 
 bool KatValidateApprovedSymbols(void)
@@ -384,6 +410,8 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
 
 void OnTimer(void)
   {
+   const ulong timer_started_us=GetMicrosecondCount();
+
    if(!g_instance_guard.Refresh())
      {
       g_bridge_state.Block(KAT_BLOCK_DUPLICATE_INSTANCE);
@@ -397,13 +425,16 @@ void OnTimer(void)
      }
 
    // Stage 07 replaces the null transport with localhost adapters.
-   // Critical trade lifecycle events are serviced before heavier snapshot work.
-   g_transport.Pump(KAT_STAGE06_DRAIN_BUDGET);
+   // Both item count and microsecond budget are explicit so a stalled or busy
+   // downstream cannot monopolize the MT5 event loop.
+   g_transport.Pump(KAT_STAGE06_DRAIN_BUDGET,
+                    KatTimerBudgetRemainingUs(timer_started_us));
 
    if(g_transport.IsReady())
      {
       int drained=0;
-      while(drained<KAT_STAGE06_DRAIN_BUDGET)
+      while(drained<KAT_STAGE06_DRAIN_BUDGET &&
+            KatTimerBudgetAvailable(timer_started_us))
         {
          SKatCapturedTrade event;
          if(!g_trade_events.Peek(event))
@@ -424,12 +455,16 @@ void OnTimer(void)
         }
      }
 
-   // Native snapshot refresh is deliberately outside OnTradeTransaction and
-   // after critical event servicing. Failure leaves snapshot_available=false.
-   if(g_snapshot_dirty)
+   // Snapshot reads can be heavier than queue servicing. Start them only when
+   // the critical queue is empty and enough of this timer slice remains.
+   if(g_snapshot_dirty &&
+      g_trade_events.Count()==0 &&
+      KatTimerBudgetAvailable(timer_started_us,
+                              KAT_STAGE06_SNAPSHOT_START_MIN_US))
       KatRefreshSnapshot();
 
-   if(g_transport.IsReady())
+   if(g_transport.IsReady() &&
+      KatTimerBudgetAvailable(timer_started_us))
      {
       SKatCapturedTick tick;
       if(g_latest_tick.Peek(tick))
