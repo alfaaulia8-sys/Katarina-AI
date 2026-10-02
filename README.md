@@ -207,3 +207,32 @@ Deferred:
 - Windows Server 2012 R2 x64
 
 The modern compile proof requires zero errors, zero warnings, fresh non-empty EX5 artifacts, and SHA-256 evidence. See `docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md`.
+
+
+## Stage 07 — MT5 ↔ Python Communication
+
+Stage 07 has started in a gated mode while Stage 06 waits for external MetaEditor/MT5 proof.
+
+Current work:
+
+- GitHub prior-art research;
+- localhost ZeroMQ ROUTER/DEALER topology draft;
+- native local TCP fallback design using KAT1 frame_length;
+- application-owned Python TransportPort;
+- bounded in-memory transport adapter;
+- schema-driven Python KAT1 codec;
+- golden-vector round-trip tests;
+- corrupt frame / CRC / flag rejection tests.
+
+Current files:
+
+- `docs/reviews/STAGE_07_COMMUNICATION_RESEARCH.md`
+- `docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md`
+- `docs/adr/0009-stage07-live-communication-topology.md`
+- `config/mt5_python_communication_draft.json`
+- `src/katarina/ports/transport.py`
+- `src/katarina/adapters/transport/kat1_codec.py`
+- `src/katarina/adapters/transport/memory.py`
+- `tests/unit/transport/test_stage07_communication.py`
+
+Production MQL5 ZeroMQ/TCP integration remains blocked until Stage-06 external clearance is complete.
