@@ -1,7 +1,7 @@
 {
   "protocol": "KAT1",
   "version": "1.0.0",
-  "status": "FROZEN_CANDIDATE_STAGE_04",
+  "status": "FROZEN_STAGE_04",
   "byte_order": "LITTLE_ENDIAN",
   "frame_header_bytes": 52,
   "crc32c_trailer_bytes": 4,
