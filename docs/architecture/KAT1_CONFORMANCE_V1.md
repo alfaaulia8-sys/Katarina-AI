@@ -195,5 +195,5 @@ Unknown execution-critical schema is fail-closed.
 
 - `protocol/kat1_message_schemas_v1.json`
 - `protocol/enums_v1.json`
-- `protocol/message_registry_v1_draft.json` (to be promoted at Stage 04 freeze)
+- `protocol/message_registry_v1.json`
 - `protocol/golden/kat1_v1_vectors.json`
