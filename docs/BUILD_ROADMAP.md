@@ -3,8 +3,8 @@
 | # | Stage | Status |
 |---|---|---|
 | 01 | Constitution & North Star | ✅ FINALIZED / FROZEN v1.1.0 |
-| 02 | Final MT5-to-Execution Workflow | 🟡 IN REVIEW — binary transport policy approved |
-| 03 | Repository Architecture | ⬜ |
+| 02 | Final MT5-to-Execution Workflow | ✅ FINALIZED / FROZEN v1.2.0 |
+| 03 | Repository Architecture | ⏳ NEXT |
 | 04 | Data Protocol / Schemas | ⬜ |
 | 05 | Katarina Core / Orchestrator | ⬜ |
 | 06 | MT5 Bridge EA | ⬜ |
@@ -45,19 +45,4 @@
 
 ## Current Position
 
-**Stage 02 is active.**
-
-Approved Stage 02 decisions so far:
-
-- event-driven delta transport rather than full-state resend on every tick;
-- Katarina-side state cache and immutable decision snapshots;
-- production hot path uses versioned binary from day one;
-- JSON is for audit/debug, not authoritative realtime transport;
-- transport abstraction separates Brain from ZeroMQ/TCP/tester implementation;
-- live primary transport: ZeroMQ localhost;
-- live fallback transport: native local TCP;
-- Strategy Tester uses a dedicated TesterTransport adapter;
-- actual broker transaction lifecycle is separated from position lifecycle;
-- end-to-end IDs and latency observability are required.
-
-Stage 02 remains open for further sweeping before final freeze.
+**02/40 completed. Stage 03 is next.**
