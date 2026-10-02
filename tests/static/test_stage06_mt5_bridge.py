@@ -142,6 +142,43 @@ class Stage06Mt5StaticTests(unittest.TestCase):
                 self_test,
             )
 
+    def test_timer_has_count_and_microsecond_budget(self):
+        self.assertIn("KAT_STAGE06_DRAIN_BUDGET", self.ea)
+        self.assertIn("KAT_STAGE06_TIMER_BUDGET_US", self.ea)
+        self.assertIn("KatTimerBudgetAvailable", self.ea)
+        self.assertIn("KatTimerBudgetRemainingUs", self.ea)
+        transport = (
+            INCLUDE / "TransportPort.mqh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("const ulong max_microseconds", transport)
+
+    def test_backpressure_metrics_are_observable(self):
+        buffer_source = (
+            INCLUDE / "EventBuffer.mqh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("HighWatermark", buffer_source)
+        self.assertIn("RejectedTotal", buffer_source)
+        self.assertIn("CoalescedTotal", buffer_source)
+        self.assertIn("CaptureTotal", buffer_source)
+        self.assertIn("timer_budget_exhausted", self.ea)
+
+    def test_runtime_evidence_writer_is_present(self):
+        evidence = (
+            INCLUDE / "TestEvidence.mqh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("FILE_COMMON", evidence)
+        self.assertIn("KAT_STAGE06_EVIDENCE_PREFIX", evidence)
+        self.assertNotIn("password", evidence.lower())
+
+    def test_account_probe_requires_explicit_account_class(self):
+        probe = (
+            ROOT / "mt5" / "Tests" / "KatarinaStage06AccountProbe.mq5"
+        ).read_text(encoding="utf-8")
+        self.assertIn('InpAccountClass="UNSPECIFIED"', probe)
+        self.assertIn('"STANDARD_LIKE"', probe)
+        self.assertIn('"CENT_LIKE"', probe)
+        self.assertIn("account_probe_", probe)
+
 
 if __name__ == "__main__":
     unittest.main()
