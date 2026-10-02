@@ -13,7 +13,6 @@
     "max_text_result_bytes": 1048576
   },
   "request": {
-    "directory": "ops/vps/requests",
     "required_fields": [
       "schema_version",
       "request_id",
@@ -27,7 +26,11 @@
       "args"
     ],
     "default_ref": "main",
-    "target_must_match_agent_id": true
+    "target_must_match_agent_id": true,
+    "directories": {
+      "legacy": "ops/vps/requests/legacy",
+      "github_actions": "ops/vps/requests/actions"
+    }
   },
   "result": {
     "directory": "ops/vps/results",
