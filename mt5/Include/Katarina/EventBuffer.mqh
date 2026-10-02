@@ -18,7 +18,7 @@ struct SKatCapturedTick
 struct SKatCapturedTrade
   {
    ulong                       capture_sequence;
-   long                        capture_time_msc;
+   long                        capture_monotonic_ms;
    ENUM_TRADE_TRANSACTION_TYPE transaction_type;
    ulong                       deal;
    ulong                       order;
@@ -66,7 +66,7 @@ void KatCaptureTradeTransaction(const MqlTradeTransaction &trans,
                                 SKatCapturedTrade &out_event)
   {
    out_event.capture_sequence=capture_sequence;
-   out_event.capture_time_msc=(long)(GetMicrosecondCount()/1000);
+   out_event.capture_monotonic_ms=(long)(GetMicrosecondCount()/1000);
    out_event.transaction_type=trans.type;
    out_event.deal=trans.deal;
    out_event.order=trans.order;
