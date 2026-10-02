@@ -3,7 +3,7 @@
 **Stage:** 06/40  
 **Status:** PASS FOR CONTINUED DEVELOPMENT / NOT FROZEN  
 **Reviewed:** 2026-10-02  
-**Bridge Draft:** v0.1.0
+**Bridge Draft:** v0.2.0
 
 ## Current Implementation
 
@@ -98,17 +98,53 @@ Therefore the current MQL5 skeleton has been statically reviewed against officia
 
 No production-readiness claim is made yet.
 
-## Remaining Stage 06 Work Before Freeze
+## Stage 06 v0.2 Work Completed
 
-- complete account/position/order snapshot source;
-- duplicate bridge-instance protection;
-- symbol registry / approved symbol-set model;
-- raw order/deal reason enrichment for manual learning;
-- terminal/account permission health sampling;
-- KAT1 field-source mapping;
-- execution-gateway local validation surface while keeping submission disabled;
-- MetaEditor compile check;
-- MT5-side tests/static fixtures.
+Since the initial check, Stage 06 now includes:
+
+- complete account/position/order snapshot source with bounded stable retry;
+- local duplicate bridge-instance lease guard;
+- approved-vs-observed symbol registry;
+- raw ORDER_REASON / DEAL_REASON / POSITION_REASON enrichment;
+- terminal/account permission + ping health sampling;
+- broker trading-session reader;
+- complete Stage-04 account margin/stopout native facts;
+- SymbolSpec margin/swap/weekday-swap native facts;
+- bounded complete deal-history range reader;
+- broker-native OrderCalcProfit / OrderCalcMargin wrapper;
+- BAR_EVENT broker series source through CopyRates/MqlRates;
+- local MARKET/LIMIT/STOP execution preflight with native-SL requirement;
+- KAT1-to-MT5 field-source mapping;
+- MQL self-test script;
+- Python static bridge-safety test.
+
+## Latest Static Source Recheck
+
+A repository-level source audit was run over the current production MQL files.
+
+~~~text
+production bridge/include files checked : 15
+forbidden OrderSend path                : 0
+forbidden OrderSendAsync path           : 0
+WebRequest/socket transport             : 0
+strategy indicator calls                : 0
+automatic SetExecutionArmed(true)       : 0
+heavy history/session/calc in
+OnTradeTransaction                      : 0
+brace/parenthesis balance issues        : 0
+include-guard issues                    : 0
+static structural issues found          : 0
+~~~
+
+This is a static source check, not a substitute for MetaEditor compilation.
+
+## Remaining Stage 06 Freeze Blockers
+
+- MetaEditor compile proof for KatarinaBridgeEA.mq5 and all includes;
+- compile/run KatarinaStage06SelfTest.mq5;
+- run tests/static/test_stage06_mt5_bridge.py from a repository checkout;
+- correct any compiler/runtime issues discovered;
+- final Stage-06 audit/freeze.
 
 ## Result
 
