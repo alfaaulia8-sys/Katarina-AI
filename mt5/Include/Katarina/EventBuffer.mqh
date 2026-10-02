@@ -37,6 +37,24 @@ struct SKatCapturedTrade
    double                      volume;
 
    bool                        request_result_valid;
+   ENUM_TRADE_REQUEST_ACTIONS  request_action;
+   ulong                       request_magic;
+   ulong                       request_order;
+   string                      request_symbol;
+   double                      request_volume;
+   double                      request_price;
+   double                      request_stoplimit;
+   double                      request_sl;
+   double                      request_tp;
+   ulong                       request_deviation;
+   ENUM_ORDER_TYPE             request_type;
+   ENUM_ORDER_TYPE_FILLING     request_type_filling;
+   ENUM_ORDER_TYPE_TIME        request_type_time;
+   datetime                    request_expiration;
+   ulong                       request_position;
+   ulong                       request_position_by;
+   string                      request_comment;
+
    uint                        request_id;
    uint                        result_retcode;
    ulong                       result_order;
@@ -97,6 +115,24 @@ void KatCaptureTradeTransaction(const MqlTradeTransaction &trans,
    // MQL5 documents request/result as meaningful only for
    // TRADE_TRANSACTION_REQUEST. Never interpret them for other transaction types.
    out_event.request_result_valid=(trans.type==TRADE_TRANSACTION_REQUEST);
+   out_event.request_action=(ENUM_TRADE_REQUEST_ACTIONS)0;
+   out_event.request_magic=0;
+   out_event.request_order=0;
+   out_event.request_symbol="";
+   out_event.request_volume=0.0;
+   out_event.request_price=0.0;
+   out_event.request_stoplimit=0.0;
+   out_event.request_sl=0.0;
+   out_event.request_tp=0.0;
+   out_event.request_deviation=0;
+   out_event.request_type=(ENUM_ORDER_TYPE)0;
+   out_event.request_type_filling=(ENUM_ORDER_TYPE_FILLING)0;
+   out_event.request_type_time=(ENUM_ORDER_TYPE_TIME)0;
+   out_event.request_expiration=0;
+   out_event.request_position=0;
+   out_event.request_position_by=0;
+   out_event.request_comment="";
+
    out_event.request_id=0;
    out_event.result_retcode=0;
    out_event.result_order=0;
@@ -106,6 +142,24 @@ void KatCaptureTradeTransaction(const MqlTradeTransaction &trans,
 
    if(out_event.request_result_valid)
      {
+      out_event.request_action=request.action;
+      out_event.request_magic=request.magic;
+      out_event.request_order=request.order;
+      out_event.request_symbol=request.symbol;
+      out_event.request_volume=request.volume;
+      out_event.request_price=request.price;
+      out_event.request_stoplimit=request.stoplimit;
+      out_event.request_sl=request.sl;
+      out_event.request_tp=request.tp;
+      out_event.request_deviation=request.deviation;
+      out_event.request_type=request.type;
+      out_event.request_type_filling=request.type_filling;
+      out_event.request_type_time=request.type_time;
+      out_event.request_expiration=request.expiration;
+      out_event.request_position=request.position;
+      out_event.request_position_by=request.position_by;
+      out_event.request_comment=request.comment;
+
       out_event.request_id=result.request_id;
       out_event.result_retcode=result.retcode;
       out_event.result_order=result.order;
