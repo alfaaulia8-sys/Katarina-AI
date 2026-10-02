@@ -28,3 +28,5 @@
 /scripts/mt5/check_stage06_host.ps1 @alfaaulia-katarina
 /tests/static/test_stage06_windows_compatibility.py @alfaaulia-katarina
 /scripts/mt5/verify_stage06_modern_windows.ps1 @alfaaulia-katarina
+/scripts/mt5/collect_stage06_runtime_evidence.ps1 @alfaaulia-katarina
+/docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md @alfaaulia-katarina
