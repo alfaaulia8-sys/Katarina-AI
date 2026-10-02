@@ -24,3 +24,13 @@ The Learning Engine may improve strategies and models, but it is **not authorize
 ## North Star
 
 > Build Katarina into a disciplined financial intelligence system that can learn and adapt from data and experience, specialize in XAUUSD and suitable forex opportunities, reason objectively under uncertainty, protect capital through non-bypassable risk governance, test its own ideas scientifically, and improve over time without allowing learning to alter its mission or safety boundaries.
+
+
+## Canonical Execution Workflow
+
+The frozen end-to-end MT5 → Katarina → Risk Governor → MT5/Broker → Memory/Learning workflow is defined in:
+
+- [docs/KATARINA_FINAL_WORKFLOW.md](docs/KATARINA_FINAL_WORKFLOW.md)
+- [config/execution_workflow.json](config/execution_workflow.json)
+
+Future implementation must map to this workflow so the project direction does not drift or get repeatedly redefined.
