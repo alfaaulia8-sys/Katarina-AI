@@ -126,5 +126,18 @@
     "RUN_MQL_SELF_TEST",
     "RUN_STATIC_TEST_IN_CHECKOUT",
     "FINAL_STAGE_06_AUDIT"
-  ]
+  ],
+  "identity": {
+    "stream_id": {
+      "persistent": true,
+      "scope": "BROKER_SERVER_PLUS_LOGIN",
+      "storage": "TWO_UINT32_HALVES_IN_TERMINAL_GLOBALS",
+      "full_uint64_in_single_double": false
+    },
+    "boot_id": {
+      "new_each_init": true,
+      "persistent": false
+    },
+    "account_id_derivation_stage": "07"
+  }
 }
