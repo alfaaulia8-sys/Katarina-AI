@@ -48,6 +48,7 @@ private:
    string m_stream_hi_name;
    string m_stream_lo_name;
    bool   m_ready;
+   bool   m_stream_recreated;
 
    string PartName(const string prefix,
                    const ulong login,
@@ -67,12 +68,14 @@ public:
       m_stream_hi_name="";
       m_stream_lo_name="";
       m_ready=false;
+      m_stream_recreated=false;
      }
 
    bool              Init(const ulong login,
                           const string server)
      {
       m_ready=false;
+      m_stream_recreated=false;
       if(login==0 || server=="")
          return(false);
 
@@ -83,7 +86,19 @@ public:
       bool have_lo=GlobalVariableCheck(m_stream_lo_name);
 
       if(have_hi!=have_lo)
-         return(false);
+        {
+         // Partial identity persistence is corrupt. The local instance lease
+         // guarantees this bridge is the only local writer, so discard the
+         // partial pair and create a new stream identity. Stage 07 will treat
+         // the changed stream_id as a recovery/reconciliation boundary.
+         if(have_hi)
+            GlobalVariableDel(m_stream_hi_name);
+         if(have_lo)
+            GlobalVariableDel(m_stream_lo_name);
+         have_hi=false;
+         have_lo=false;
+         m_stream_recreated=true;
+        }
 
       if(!have_hi)
         {
@@ -94,10 +109,15 @@ public:
 
          if(GlobalVariableSet(m_stream_hi_name,(double)hi)==0)
             return(false);
+
          if(GlobalVariableSet(m_stream_lo_name,(double)lo)==0)
+           {
+            GlobalVariableDel(m_stream_hi_name);
             return(false);
+           }
 
          GlobalVariablesFlush();
+         m_stream_recreated=true;
         }
 
       double hi_value=0.0;
@@ -137,6 +157,11 @@ public:
    ulong             BootId(void) const
      {
       return(m_boot_id);
+     }
+
+   bool              StreamRecreated(void) const
+     {
+      return(m_stream_recreated);
      }
   };
 
