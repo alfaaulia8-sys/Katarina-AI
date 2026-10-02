@@ -2,7 +2,7 @@
 
 **Status:** IN REVIEW  
 **Protocol:** KAT1  
-**Draft:** 0.3  
+**Draft:** 0.4  
 **Stage:** 04/40
 
 ## 1. Data Ownership Rule
@@ -523,3 +523,25 @@ See:
 `docs/reviews/STAGE_04_OWNER_DECISIONS.md`
 
 Engineering choices that do not change business behavior continue without requiring owner input.
+
+
+## 17. Standard / Cent Account Compatibility
+
+Owner-approved requirement: Katarina must support both standard and cent account economics without hard-coded account-type multipliers.
+
+The account data contract therefore preserves:
+
+- broker-native account currency;
+- ACCOUNT_CURRENCY_DIGITS-derived money scale;
+- broker-native account monetary values;
+- account-unit profile revision.
+
+SymbolSpec remains authoritative for contract size, tick size/value, volume min/max/step/limit and margin/execution rules.
+
+Risk sizing must combine broker-native account money with broker-native symbol economics. It must not assume that 0.01 lot or one displayed currency unit has identical economic meaning across brokers/account types.
+
+Canonical compatibility contract:
+
+- `docs/architecture/STANDARD_CENT_ACCOUNT_COMPATIBILITY.md`
+
+Cross-account learning uses normalized percentage/R metrics or explicit validated reporting conversion instead of comparing raw native monetary numbers.
