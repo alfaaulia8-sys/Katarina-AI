@@ -28,7 +28,8 @@ enum ENUM_KAT_PREFLIGHT_REASON
    KAT_PREFLIGHT_INVALID_SL_DISTANCE=7,
    KAT_PREFLIGHT_INVALID_ENTRY_PRICE=8,
    KAT_PREFLIGHT_INVALID_PENDING_RELATION=9,
-   KAT_PREFLIGHT_SYMBOL_NOT_TRADABLE=10
+   KAT_PREFLIGHT_SYMBOL_NOT_TRADABLE=10,
+   KAT_PREFLIGHT_DIRECTION_NOT_ALLOWED=11
   };
 
 struct SKatOpenPreflight
@@ -64,8 +65,17 @@ ENUM_KAT_PREFLIGHT_REASON KatValidateOpenPreflight(const SKatOpenPreflight &requ
    if(!symbol_approved)
       return(KAT_PREFLIGHT_SYMBOL_NOT_APPROVED);
 
-   if(spec.trade_mode==SYMBOL_TRADE_MODE_DISABLED)
+   if(spec.trade_mode==SYMBOL_TRADE_MODE_DISABLED ||
+      spec.trade_mode==SYMBOL_TRADE_MODE_CLOSEONLY)
       return(KAT_PREFLIGHT_SYMBOL_NOT_TRADABLE);
+
+   if(request.side==KAT_SIDE_BUY &&
+      spec.trade_mode==SYMBOL_TRADE_MODE_SHORTONLY)
+      return(KAT_PREFLIGHT_DIRECTION_NOT_ALLOWED);
+
+   if(request.side==KAT_SIDE_SELL &&
+      spec.trade_mode==SYMBOL_TRADE_MODE_LONGONLY)
+      return(KAT_PREFLIGHT_DIRECTION_NOT_ALLOWED);
 
    if(!KatVolumeAligned(request.volume,
                         spec.volume_min,
