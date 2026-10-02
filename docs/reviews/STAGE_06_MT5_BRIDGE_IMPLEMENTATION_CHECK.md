@@ -213,3 +213,16 @@ Stage 06 now supplies:
 stream_id is persisted as two uint32 halves so a uint64 is not lossy-converted through one double terminal global variable.
 
 account_id derivation remains Stage 07.
+
+
+### Single-Symbol Realtime Scope Correction
+
+The draft briefly exposed an input for multiple execution-approved symbols while the EA's realtime OnTick source only covers its chart symbol.
+
+That could have implied market-data coverage that did not actually exist.
+
+Stage 06 now enforces:
+
+- chart symbol = the only execution-approved realtime market symbol;
+- all other account symbols = observable through account-wide positions/orders/trade events;
+- future multi-symbol execution approval = forbidden until an explicit multi-symbol tick source is implemented and validated.
