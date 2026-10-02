@@ -6,8 +6,8 @@
 | 02 | Final MT5-to-Execution Workflow | ✅ FINALIZED / FROZEN v1.2.0 |
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
-| 05 | Katarina Core / Orchestrator | 🟡 IN REVIEW — Core v0.1.0 / 16 unit tests |
-| 06 | MT5 Bridge EA | ⬜ |
+| 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
+| 06 | MT5 Bridge EA | ⏳ NEXT |
 | 07 | MT5-Python Communication | ⬜ |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 05 — Katarina Core / Orchestrator — is active and in review.**
+**Stage 05 is completed. Stage 06 — MT5 Bridge EA — is next.**
 
 ## Frozen Stage 04 Scope
 
@@ -91,4 +91,4 @@ RUNNING != LIVE TRADING ALLOWED
 
 New live risk additionally requires fresh/healthy/reconciled/risk-ready state and explicit execution arming.
 
-Stage 05 is not frozen yet.
+Stage 05 is frozen as Core v1.0.0.
