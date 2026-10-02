@@ -1,7 +1,7 @@
 # KATARINA MT5 BRIDGE EA — DRAFT
 
 **Status:** IN REVIEW  
-**Version:** 0.2.0  
+**Version:** 0.3.0  
 **Stage:** 06/40
 
 ## 1. Role
@@ -258,6 +258,7 @@ mt5/
 ├─ Include/
 │  └─ Katarina/
 │     ├─ BarSource.mqh
+│     ├─ BridgeIdentity.mqh
 │     ├─ BridgeState.mqh
 │     ├─ BrokerCalc.mqh
 │     ├─ BrokerReason.mqh
@@ -272,7 +273,8 @@ mt5/
 │     ├─ SymbolRegistry.mqh
 │     └─ TransportPort.mqh
 └─ Tests/
-   └─ KatarinaStage06SelfTest.mq5
+   ├─ KatarinaStage06SelfTest.mq5
+   └─ KatarinaStage06AccountProbe.mq5
 ~~~
 
 Python static source checks also exist at:
@@ -325,7 +327,7 @@ The bridge distinguishes:
 - execution-approved symbols;
 - account-observed symbols.
 
-The chart symbol is approved automatically. Optional approved symbols may be supplied explicitly. Symbols discovered from open positions/orders are observed for account-wide risk visibility but are not automatically granted execution authority.
+The chart symbol is the only execution-approved realtime symbol in Stage 06. Symbols discovered from open positions/orders are observed for account-wide risk visibility but are not automatically granted execution authority.
 
 ### Manual-Trade Evidence
 
@@ -363,8 +365,9 @@ The bridge now has a local validation surface for:
 - MARKET/LIMIT/STOP capability;
 - volume range/step;
 - mandatory broker-native SL;
-- pending-price relation;
-- stop side/distance.
+- pending-price relation and minimum pending distance;
+- stop side/distance;
+- TP capability, side and minimum distance.
 
 It still returns EXECUTION_DISABLED at the end of a valid Stage-06 preflight. There is no OrderSend path.
 
@@ -414,3 +417,21 @@ Stage 06 now enforces:
 - chart symbol = the only execution-approved realtime market symbol;
 - all other account symbols = observable through account-wide positions/orders/trade events;
 - future multi-symbol execution approval = forbidden until an explicit multi-symbol tick source is implemented and validated.
+
+
+## 21. Stage 06 v0.3 Static Candidate
+
+Continued review added the following hardening before compiler proof:
+
+- duplicate-instance lease is scoped by broker server + login, not login alone;
+- persistent stream identity can recover from a partially written two-part value by creating a new stream boundary;
+- raw zero leverage is preserved as broker fact rather than making the whole account snapshot unavailable;
+- MqlTradeTransaction fields are copied according to transaction type with an explicit validity bitmap;
+- request/result evidence remains exclusive to TRADE_TRANSACTION_REQUEST;
+- pending-order preflight now validates minimum market distance;
+- optional TP now validates broker capability, direction and minimum distance;
+- static regression tests expanded to cover sequence naming, type-aware transactions, single-symbol realtime scope, identity storage, duplicate-guard primitives, and all include modules.
+
+The repository is now a **static Stage-06 candidate**.
+
+It is not a frozen or production-certified bridge until the actual MetaEditor compiler and MT5 runtime proof pass.
