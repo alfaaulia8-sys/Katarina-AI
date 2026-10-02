@@ -72,18 +72,14 @@ else {
 switch ($profile.validation_class) {
     "PREFERRED" {
         Write-Host "PASS: preferred Stage 06 validation host."
-        exit 0
     }
     "COMPATIBILITY" {
         Write-Host "PASS: Stage 06 compatibility-validation host."
-        exit 0
     }
     "DEFERRED" {
-        Write-Error "DEFERRED: Windows Server 2012 R2 is intentionally outside the current Stage 06 validation baseline."
-        exit 2
+        throw "DEFERRED: Windows Server 2012 R2 is intentionally outside the current Stage 06 validation baseline."
     }
     default {
-        Write-Error "UNSUPPORTED: this Windows host is outside the current Stage 06 validation baseline."
-        exit 3
+        throw "UNSUPPORTED: this Windows host is outside the current Stage 06 validation baseline."
     }
 }
