@@ -63,6 +63,21 @@ The bridge now remains RECOVERING until later readiness work actually proves the
 
 The internal trade capture timestamp was also renamed to `capture_monotonic_ms` so it cannot be confused with KAT1 epoch event time.
 
+## Additional Recheck Finding
+
+Official MQL5 documentation states that the `request` and `result` parameters supplied to `OnTradeTransaction` are meaningful for `TRADE_TRANSACTION_REQUEST`; other transaction types must be interpreted from the transaction fields relevant to that type.
+
+The initial Stage-06 capture structure copied result fields unconditionally.
+
+This has been corrected:
+
+- `request_result_valid` is explicit;
+- result/request-derived values are zeroed for non-request transactions;
+- result fields are copied only for `TRADE_TRANSACTION_REQUEST`;
+- order `time_type` and `time_expiration` are now captured as native transaction facts.
+
+This prevents meaningless result fields from being mistaken for broker execution evidence.
+
 ## Standard / Cent Review
 
 NativeFacts reads broker account currency/currency digits and symbol contract/tick/volume facts.
