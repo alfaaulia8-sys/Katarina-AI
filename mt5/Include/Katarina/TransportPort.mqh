@@ -30,7 +30,8 @@ public:
       return(false);
      }
 
-   virtual void      Pump(const int budget)
+   virtual void      Pump(const int max_items,
+                          const ulong max_microseconds)
      {
      }
   };
@@ -64,7 +65,8 @@ public:
       return(false);
      }
 
-   virtual void      Pump(const int budget)
+   virtual void      Pump(const int max_items,
+                          const ulong max_microseconds)
      {
      }
   };
