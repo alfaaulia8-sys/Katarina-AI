@@ -5,7 +5,7 @@
 | 01 | Constitution & North Star | ✅ FINALIZED / FROZEN v1.1.0 |
 | 02 | Final MT5-to-Execution Workflow | ✅ FINALIZED / FROZEN v1.2.0 |
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
-| 04 | Data Protocol / Schemas | 🟡 IN REVIEW — KAT1 draft 0.3 / 4 OWNER DECISIONS |
+| 04 | Data Protocol / Schemas | 🟡 IN REVIEW — KAT1 draft 0.4 / 4 OWNER DECISIONS |
 | 05 | Katarina Core / Orchestrator | ⬜ |
 | 06 | MT5 Bridge EA | ⬜ |
 | 07 | MT5-Python Communication | ⬜ |
@@ -54,6 +54,7 @@ Current draft decisions:
 - BarEvent fixed body draft: 80 bytes;
 - full SymbolSpec / account / position / order / execution data catalog drafted;
 - shared account + manual-user learning approved;
+- standard + cent account compatibility required; broker-native unit normalization only;
 - full account visibility approved;
 - declared user reason and Katarina-inferred reason are stored separately;
 - four owner operating decisions remain before schema freeze;
