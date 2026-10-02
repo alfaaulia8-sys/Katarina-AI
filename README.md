@@ -9,7 +9,7 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 03 — Repository Architecture: ✅ FROZEN v1.0.0
 - Stage 04 — Data Protocol / Schemas: ✅ FROZEN — KAT1 v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: ✅ FROZEN — v1.0.0
-- Stage 06 — MT5 Bridge EA: 🟡 IN REVIEW — v0.4.0 / modern Windows compile proof pending
+- Stage 06 — MT5 Bridge EA: 🟡 SOURCE/DESIGN COMPLETE — v0.5.0 / evidence gate pending
 
 ## KAT1 v1.0.0
 
@@ -170,6 +170,7 @@ Stage 06 documents:
 - [KAT1 → MT5 Field Source Mapping](docs/architecture/KAT1_MT5_FIELD_SOURCE_MAPPING_DRAFT.md)
 - [Stage 06 Compile Proof](docs/operations/STAGE_06_MT5_COMPILE_PROOF.md)
 - [Stage 06 Windows Compatibility](docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md)
+- [Stage 06 GitHub Reference Audit](docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md)
 
 Prepared verification:
 
@@ -180,8 +181,9 @@ Prepared verification:
 - `scripts/mt5/check_stage06_host.ps1`
 - `scripts/mt5/verify_stage06_modern_windows.ps1`
 - `tests/static/test_stage06_windows_compatibility.py`
+- `scripts/mt5/collect_stage06_runtime_evidence.ps1`
 
-Stage 06 remains IN REVIEW only because the actual MetaEditor/runtime proof must be produced on a modern 64-bit Windows host before freeze. Windows Server 2012 R2 is deliberately deferred and is not part of the current freeze gate.
+Stage 06 source/design work is complete. Freeze now depends only on evidence from a modern 64-bit Windows + MT5/MetaEditor environment: strict compile proof, MQL self-test, standard-like probe, cent-like probe, runtime-evidence collection, and final audit. Windows Server 2012 R2 is deliberately deferred.
 
 
 ### Current Windows validation baseline
