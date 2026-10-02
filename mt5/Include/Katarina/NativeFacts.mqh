@@ -104,9 +104,10 @@ bool KatReadAccountFacts(SKatAccountFacts &facts)
       return(false);
    if(facts.currency_digits<0 || facts.currency_digits>8)
       return(false);
-   if(facts.leverage<=0)
-      return(false);
 
+   // Preserve broker-reported leverage as a fact. Do not make a raw account
+   // snapshot unavailable merely because a broker/account mode reports zero;
+   // execution/risk capability validation belongs to the later safety layers.
    return(true);
   }
 
