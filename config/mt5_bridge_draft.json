@@ -1,6 +1,6 @@
 {
-  "architecture_version": "0.4.0",
-  "status": "STAGE_06_MODERN_WINDOWS_VALIDATION_CANDIDATE",
+  "architecture_version": "0.5.0",
+  "status": "STAGE_06_SOURCE_DESIGN_COMPLETE_EVIDENCE_PENDING",
   "stage": "06",
   "role": [
     "MARKET_ACCOUNT_SENSOR",
@@ -40,7 +40,13 @@
   "queue": {
     "critical_events": "BOUNDED_LOSSLESS_REQUIRED",
     "ticks": "COALESCE_LATEST",
-    "production_capacity_frozen": false
+    "production_capacity_frozen": false,
+    "observability": {
+      "trade_high_watermark": true,
+      "trade_rejected_total": true,
+      "tick_capture_total": true,
+      "tick_coalesced_total": true
+    }
   },
   "transport": {
     "implementation_stage": "07",
@@ -67,9 +73,12 @@
     "order_send_path_present": false,
     "preflight_checks": [
       "APPROVED_SYMBOL",
+      "VALID_SIDE",
+      "FINITE_NUMERIC_VALUES",
       "SYMBOL_TRADE_DIRECTION",
       "MARKET_LIMIT_STOP_CAPABILITY",
       "VOLUME_RANGE_AND_STEP",
+      "BROKER_TICK_ALIGNMENT",
       "NATIVE_SL_REQUIRED",
       "PENDING_PRICE_RELATION",
       "PENDING_MINIMUM_DISTANCE",
@@ -132,7 +141,7 @@
     "mql_self_test": "mt5/Tests/KatarinaStage06SelfTest.mq5",
     "python_static_test": "tests/static/test_stage06_mt5_bridge.py",
     "metaeditor_compile_proof": false,
-    "python_static_test_count": 25,
+    "python_static_test_count": 31,
     "repository_equivalent_static_audit_passed": true,
     "strict_compile_policy": {
       "zero_errors": true,
@@ -147,14 +156,18 @@
     ],
     "modern_windows_host_preflight": "scripts/mt5/check_stage06_host.ps1",
     "compile_evidence_path": "build/mt5/stage06_compile_evidence.json",
-    "modern_windows_verifier": "scripts/mt5/verify_stage06_modern_windows.ps1"
+    "modern_windows_verifier": "scripts/mt5/verify_stage06_modern_windows.ps1",
+    "bridge_static_test_count": 21,
+    "windows_compatibility_test_count": 10,
+    "github_reference_audit": "docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md"
   },
   "pending_before_freeze": [
     "MODERN_WINDOWS_METAEDITOR_COMPILE_PROOF",
     "RUN_MQL_SELF_TEST_ON_MODERN_WINDOWS",
     "RUN_ACCOUNT_PROBE_STANDARD_LIKE",
     "RUN_ACCOUNT_PROBE_CENT_LIKE",
-    "RUN_STATIC_TEST_IN_CHECKOUT",
+    "COLLECT_RUNTIME_EVIDENCE",
+    "RUN_STATIC_TESTS_IN_CHECKOUT",
     "FINAL_STAGE_06_AUDIT"
   ],
   "identity": {
@@ -193,5 +206,22 @@
     ],
     "x64_required": true,
     "windows_server_2012_r2_blocks_freeze": false
+  },
+  "timer": {
+    "interval_ms": 50,
+    "max_items_per_drain": 64,
+    "budget_us": 2000,
+    "snapshot_start_reserve_us": 750,
+    "max_elapsed_observable": true,
+    "budget_exhaustion_observable": true
+  },
+  "runtime_evidence": {
+    "mql_self_test_file": "Katarina_Stage06_self_test_result.txt",
+    "standard_probe_file": "Katarina_Stage06_account_probe_STANDARD_LIKE.txt",
+    "cent_probe_file": "Katarina_Stage06_account_probe_CENT_LIKE.txt",
+    "location": "MT5_COMMON_FILES",
+    "collector": "scripts/mt5/collect_stage06_runtime_evidence.ps1",
+    "manifest": "build/mt5/stage06_runtime_evidence.json",
+    "passwords_or_credentials_allowed": false
   }
 }
