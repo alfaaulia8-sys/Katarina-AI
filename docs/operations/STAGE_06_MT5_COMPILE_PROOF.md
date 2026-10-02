@@ -213,3 +213,16 @@ Evidence includes:
 - final `PASS_COMPILE_PROOF` result.
 
 This gives the final Stage-06 audit a traceable link between source, compiler host and compiled artifact.
+
+
+## Recommended Entry Point
+
+For a complete automated host-side Stage-06 check, prefer:
+
+~~~powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\mt5\verify_stage06_modern_windows.ps1 `
+  -TerminalDataPath "<MT5 DATA FOLDER>" `
+  -MetaEditorPath "<METAEDITOR64.EXE>"
+~~~
+
+The lower-level `compile_stage06.ps1` remains available when only compiler proof is needed.
