@@ -97,6 +97,18 @@ class Stage06Mt5StaticTests(unittest.TestCase):
         )
         self.assertIn("request_result_valid", source)
 
+    def test_transaction_fields_are_type_guarded(self):
+        source = (
+            INCLUDE / "EventBuffer.mqh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("transaction_field_flags", source)
+        self.assertIn("order_transaction", source)
+        self.assertIn("deal_transaction", source)
+        self.assertIn(
+            "trans.type==TRADE_TRANSACTION_POSITION",
+            source,
+        )
+
     def test_realtime_execution_scope_is_chart_symbol_only(self):
         self.assertNotIn("InpApprovedSymbols", self.ea)
         self.assertIn(
