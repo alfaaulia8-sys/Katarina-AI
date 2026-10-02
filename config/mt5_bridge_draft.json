@@ -1,5 +1,5 @@
 {
-  "architecture_version": "0.1.0",
+  "architecture_version": "0.2.0",
   "status": "STAGE_06_IN_REVIEW",
   "stage": "06",
   "role": [
@@ -62,10 +62,69 @@
     "stage06_external_execution_enabled": false,
     "broker_native_sl_required_when_enabled": true,
     "order_send_boolean_is_final_truth": false,
-    "ambiguous_outcome": "UNKNOWN_RECONCILE"
+    "ambiguous_outcome": "UNKNOWN_RECONCILE",
+    "preflight_surface": true,
+    "order_send_path_present": false
   },
   "tester": {
     "logical_compatibility_required": true,
     "actual_tester_transport_stage": "35"
-  }
+  },
+  "duplicate_instance_guard": {
+    "local_terminal_lease": true,
+    "primitive": "GlobalVariableSetOnCondition",
+    "cross_terminal_detection": "STAGE_07_IDENTITY_STREAM_BINDING_REQUIRED"
+  },
+  "snapshot": {
+    "account": true,
+    "positions": true,
+    "orders": true,
+    "bounded_stable_retry": 3,
+    "false_empty_state_allowed": false,
+    "broker_atomic_claim": false,
+    "rebuild_outside_trade_handler": true
+  },
+  "symbol_registry": {
+    "chart_symbol_auto_approved": true,
+    "approved_csv_input": true,
+    "observed_account_symbols": true,
+    "approved_and_observed_are_distinct": true
+  },
+  "manual_trade_evidence": {
+    "order_reason": true,
+    "deal_reason": true,
+    "position_reason": true,
+    "heavy_reason_lookup_in_trade_handler": false
+  },
+  "health": {
+    "terminal_connected": true,
+    "terminal_trade_allowed": true,
+    "mql_trade_allowed": true,
+    "account_trade_allowed": true,
+    "account_expert_allowed": true,
+    "terminal_ping_us": true,
+    "session_schedule_reader": true
+  },
+  "native_fact_coverage": {
+    "account_margin_and_stopout": true,
+    "symbol_swap_and_margin": true,
+    "standard_cent_native_units": true
+  },
+  "deal_history": {
+    "bounded_complete_range_reader": true,
+    "silent_truncation_allowed": false,
+    "ledger_normalization_location": "PYTHON_LATER",
+    "raw_deal_type_preserved": true
+  },
+  "tests": {
+    "mql_self_test": "mt5/Tests/KatarinaStage06SelfTest.mq5",
+    "python_static_test": "tests/static/test_stage06_mt5_bridge.py",
+    "metaeditor_compile_proof": false
+  },
+  "pending_before_freeze": [
+    "METAEDITOR_COMPILE_PROOF",
+    "RUN_MQL_SELF_TEST",
+    "RUN_STATIC_TEST_IN_CHECKOUT",
+    "FINAL_STAGE_06_AUDIT"
+  ]
 }
