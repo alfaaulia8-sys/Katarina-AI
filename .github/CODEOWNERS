@@ -27,3 +27,4 @@
 /docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md @alfaaulia-katarina
 /scripts/mt5/check_stage06_host.ps1 @alfaaulia-katarina
 /tests/static/test_stage06_windows_compatibility.py @alfaaulia-katarina
+/scripts/mt5/verify_stage06_modern_windows.ps1 @alfaaulia-katarina
