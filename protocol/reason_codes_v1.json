@@ -1,7 +1,7 @@
 {
   "protocol": "KAT1",
   "version": "1.0.0",
-  "status": "FROZEN_CANDIDATE_STAGE_04",
+  "status": "FROZEN_STAGE_04",
   "reason_codes": {
     "0": "NONE",
     "1": "MALFORMED_FRAME",
