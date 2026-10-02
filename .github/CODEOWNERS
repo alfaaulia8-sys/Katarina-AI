@@ -17,4 +17,5 @@
 /config/protocol_schema.json @alfaaulia-katarina
 /docs/reviews/STAGE_04_PROTOCOL_AUDIT.md @alfaaulia-katarina
 
-/config/core_orchestrator_draft.json @alfaaulia-katarina
+/config/core_orchestrator.json @alfaaulia-katarina
+/docs/reviews/STAGE_05_CORE_AUDIT.md @alfaaulia-katarina
