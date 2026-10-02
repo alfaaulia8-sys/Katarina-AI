@@ -378,13 +378,8 @@ void OnTimer(void)
       return;
      }
 
-   // Native snapshot refresh is deliberately outside OnTradeTransaction.
-   // Failure leaves snapshot_available=false and therefore cannot support READY.
-   if(g_snapshot_dirty)
-      KatRefreshSnapshot();
-
    // Stage 07 replaces the null transport with localhost adapters.
-   // Keep all work bounded so terminal event processing remains responsive.
+   // Critical trade lifecycle events are serviced before heavier snapshot work.
    g_transport.Pump(KAT_STAGE06_DRAIN_BUDGET);
 
    if(g_transport.IsReady())
@@ -409,7 +404,15 @@ void OnTimer(void)
 
          drained++;
         }
+     }
 
+   // Native snapshot refresh is deliberately outside OnTradeTransaction and
+   // after critical event servicing. Failure leaves snapshot_available=false.
+   if(g_snapshot_dirty)
+      KatRefreshSnapshot();
+
+   if(g_transport.IsReady())
+     {
       SKatCapturedTick tick;
       if(g_latest_tick.Peek(tick))
         {
