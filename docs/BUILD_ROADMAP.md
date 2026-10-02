@@ -2,7 +2,7 @@
 
 | # | Stage | Status |
 |---|---|---|
-| 01 | Constitution & North Star | ✅ VERIFIED / FROZEN |
+| 01 | Constitution & North Star | ✅ FINALIZED / FROZEN v1.1.0 |
 | 02 | Final MT5-to-Execution Workflow | ⏳ NEXT REVIEW |
 | 03 | Repository Architecture | ⬜ |
 | 04 | Data Protocol / Schemas | ⬜ |
@@ -43,4 +43,6 @@
 | 39 | Performance Monitoring | ⬜ |
 | 40 | Continuous Evolution | ⬜ |
 
-Current position: **Stage 01 verified. Stage 02 is next.**
+Current position: **Stage 01 complete. Stage 02 is next.**
+
+Stage 01 is closed unless the human Project Owner intentionally reopens the Constitution through the documented version-change protocol.
