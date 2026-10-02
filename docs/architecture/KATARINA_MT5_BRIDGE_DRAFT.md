@@ -1,7 +1,7 @@
 # KATARINA MT5 BRIDGE EA — DRAFT
 
 **Status:** IN REVIEW  
-**Version:** 0.4.0  
+**Version:** 0.5.0  
 **Stage:** 06/40
 
 ## 1. Role
@@ -271,6 +271,7 @@ mt5/
 │     ├─ NativeSnapshot.mqh
 │     ├─ SessionState.mqh
 │     ├─ SymbolRegistry.mqh
+│     ├─ TestEvidence.mqh
 │     └─ TransportPort.mqh
 └─ Tests/
    ├─ KatarinaStage06SelfTest.mq5
@@ -497,3 +498,87 @@ The compiler proof produces:
 - `build/mt5/stage06_compile_evidence.json`
 
 This evidence becomes an input to the final Stage-06 audit.
+
+
+## 23. Stage 06 v0.5 Source / Design Completion
+
+A final GitHub prior-art review identified four Stage-06 hardening gaps that were still worth closing before compiler proof.
+
+### Count + Time Bounded Timer Work
+
+The timer now has both:
+
+~~~text
+max drained items = 64
+timer budget      = 2000 microseconds
+~~~
+
+Transport pumping receives the remaining microsecond budget.
+
+Critical events are serviced before snapshot work.
+
+A snapshot rebuild starts only when:
+
+- the critical trade queue is empty;
+- at least the configured timer reserve remains.
+
+Individual MT5 API calls are not preemptible. Therefore runtime metrics record actual maximum timer elapsed time and budget-exhaustion count rather than making a false hard-realtime claim.
+
+### Backpressure Observability
+
+The bridge now records:
+
+- trade queue high-watermark;
+- rejected critical trade-event total;
+- tick capture total;
+- tick coalescing total;
+- timer budget exhaustion total;
+- maximum timer elapsed microseconds.
+
+Critical trade-event rejection remains fail-closed.
+
+### Numeric / Tick-Grid Preflight
+
+The local execution-disabled preflight now also rejects:
+
+- invalid side;
+- invalid/non-finite numeric values via MathIsValidNumber;
+- invalid broker point/tick-size facts;
+- pending, SL or TP price not aligned to SYMBOL_TRADE_TICK_SIZE.
+
+No broker mutation path is enabled.
+
+### Runtime Evidence
+
+MQL tests now emit FILE_COMMON evidence:
+
+~~~text
+Katarina_Stage06_self_test_result.txt
+Katarina_Stage06_account_probe_STANDARD_LIKE.txt
+Katarina_Stage06_account_probe_CENT_LIKE.txt
+~~~
+
+The account class is explicitly supplied by the operator; Katarina does not infer standard/cent from a marketing label or currency convention.
+
+Runtime evidence is collected with:
+
+- `scripts/mt5/collect_stage06_runtime_evidence.ps1`
+
+Final runtime manifest:
+
+- `build/mt5/stage06_runtime_evidence.json`
+
+GitHub research and adoption decisions are documented in:
+
+- `docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md`
+
+At v0.5.0, **Stage-06 source/design work is complete**.
+
+Remaining work is external proof:
+
+- actual MetaEditor compile;
+- actual MQL self-test;
+- standard-like account probe;
+- cent-like account probe;
+- evidence collection;
+- final freeze audit.
