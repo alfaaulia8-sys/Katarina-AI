@@ -173,8 +173,29 @@ public:
          m_orders[i]=fact;
         }
 
+      // A total-count change proves this was not one coherent enumeration.
+      // Same-count replacements are still caught later by transaction/reconciliation
+      // semantics; Stage 06 does not pretend this local read is broker-atomic.
+      if(PositionsTotal()!=position_total || OrdersTotal()!=order_total)
+        {
+         Reset();
+         return(false);
+        }
+
       m_complete=true;
       return(true);
+     }
+
+   bool              BuildStable(const ulong first_build_sequence,
+                                 const int max_attempts=3)
+     {
+      const int attempts=(max_attempts<1 ? 1 : max_attempts);
+      for(int i=0;i<attempts;i++)
+        {
+         if(Build(first_build_sequence+(ulong)i))
+            return(true);
+        }
+      return(false);
      }
 
    bool              Complete(void) const
@@ -208,9 +229,12 @@ public:
       return(true);
      }
 
-   SKatAccountFacts  Account(void) const
+   bool              Account(SKatAccountFacts &facts) const
      {
-      return(m_account);
+      if(!m_complete)
+         return(false);
+      facts=m_account;
+      return(true);
      }
 
    ulong             BuildSequence(void) const
