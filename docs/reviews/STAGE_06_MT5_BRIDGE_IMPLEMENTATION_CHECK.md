@@ -124,7 +124,7 @@ Since the initial check, Stage 06 now includes:
 A repository-level source audit was run over the current production MQL files.
 
 ~~~text
-production bridge/include files checked : 15
+production bridge/include files checked : 16
 forbidden OrderSend path                : 0
 forbidden OrderSendAsync path           : 0
 WebRequest/socket transport             : 0
@@ -153,3 +153,63 @@ This is a static source check, not a substitute for MetaEditor compilation.
 **PASS FOR CONTINUED STAGE 06 DEVELOPMENT.**
 
 Stage 06 remains **IN REVIEW**.
+
+
+## v0.2 Safety Corrections Found During Continued Review
+
+### Duplicate-Guard Initialization Race
+
+The first lease implementation used GlobalVariableSet to create a missing mutex variable.
+
+That contained a race:
+
+~~~text
+EA A sees missing
+EA B sees missing
+EA A creates + acquires
+EA B performs unconditional GlobalVariableSet(0)
+→ A's lease could be clobbered
+~~~
+
+The implementation now uses GlobalVariableTemp for missing-variable initialization and GlobalVariableSetOnCondition for ownership changes.
+
+No unconditional write is used to overwrite an existing lease.
+
+### Local Capture ID vs KAT1 Sequence
+
+The original local field name `capture_sequence` could be confused with the frozen KAT1 frame sequence.
+
+It was renamed to `local_capture_id`.
+
+Rule:
+
+~~~text
+Stage-06 local_capture_id
+!=
+KAT1 wire sequence
+~~~
+
+Stage 07 assigns the KAT1 wire sequence only after permitted market coalescing.
+
+### Snapshot Stability
+
+The native snapshot builder now:
+
+- rechecks position/order totals;
+- re-selects each structural position/order record;
+- rejects changed volume/SL/TP/order state/price structure during the read;
+- re-reads account facts at the end;
+- binds the installed local snapshot back to the active login/server.
+
+It still does not claim broker-atomic state; later reconciliation remains authoritative.
+
+### Stream / Boot Identity
+
+Stage 06 now supplies:
+
+- persistent stream_id scoped by server + login;
+- per-initialization boot_id.
+
+stream_id is persisted as two uint32 halves so a uint64 is not lossy-converted through one double terminal global variable.
+
+account_id derivation remains Stage 07.
