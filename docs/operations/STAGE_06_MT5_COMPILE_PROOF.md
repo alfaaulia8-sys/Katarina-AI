@@ -6,6 +6,25 @@
 
 Stage 06 is intentionally not frozen from static review alone.
 
+Current validation baseline is modern 64-bit Windows. Windows Server 2012 R2 is explicitly deferred and does not block Stage 06.
+
+See:
+
+- `docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md`
+
+Preferred proof hosts:
+
+- Windows Server 2022 x64;
+- Windows 11 x64.
+
+Compatibility-validation hosts:
+
+- Windows Server 2019 x64;
+- Windows Server 2016 x64;
+- Windows 10 x64.
+
+Stage 06 is intentionally not frozen from static review alone.
+
 The MT5 bridge must be compiled by the actual MetaEditor/MQL5 compiler and the read-only self-tests must run inside MT5 before Stage 07 is allowed to depend on it.
 
 ## Prepared Script
@@ -16,12 +35,19 @@ Repository helper:
 
 The script:
 
-1. copies all Katarina include files into the selected MT5 data folder;
-2. copies KatarinaBridgeEA.mq5 into MQL5/Experts;
-3. copies the two Stage-06 test scripts into MQL5/Scripts;
-4. invokes MetaEditor;
-5. stores compile logs under build/mt5;
-6. fails unless each log reports zero errors.
+1. validates the Windows host against the Stage-06 compatibility baseline;
+2. rejects Windows Server 2012 R2 for the current freeze proof because that host is deliberately deferred;
+3. copies all Katarina include files into the selected MT5 data folder;
+4. copies KatarinaBridgeEA.mq5 into MQL5/Experts;
+5. copies the two Stage-06 test scripts into MQL5/Scripts;
+6. deletes stale EX5 artifacts before compiling;
+7. invokes MetaEditor with an explicit MQL5 include root;
+8. reads MetaEditor logs explicitly as UTF-16LE;
+9. parses the final error/warning summary;
+10. requires zero errors and zero warnings;
+11. requires each EX5 artifact to exist and be non-empty;
+12. records SHA-256 hashes for source and EX5 artifacts;
+13. writes machine-readable evidence to `build/mt5/stage06_compile_evidence.json`.
 
 ## Windows Example
 
@@ -51,13 +77,23 @@ powershell -ExecutionPolicy Bypass -File .\scripts\mt5\compile_stage06.ps1 `
 
 ## Required Compile Result
 
-All three must compile with zero errors:
+All three must satisfy the strict Stage-06 freeze policy:
+
+~~~text
+0 errors
+0 warnings
+EX5 exists
+EX5 size > 0
+SHA-256 recorded
+~~~
+
+Targets:
 
 - KatarinaBridgeEA.mq5
 - KatarinaStage06SelfTest.mq5
 - KatarinaStage06AccountProbe.mq5
 
-Warnings should also be reviewed; Stage 06 should not be frozen with unexplained safety-relevant warnings.
+A stale EX5 cannot make the proof pass because the script removes prior artifacts before compile.
 
 ## Runtime Self-Test
 
@@ -134,3 +170,46 @@ Before Stage 06 freeze, record:
 - any warnings/corrections.
 
 No broker credentials or personally identifying account data should be committed to the repository.
+
+
+## Modern Windows Host Check
+
+Before compile, you can run:
+
+~~~powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\mt5\check_stage06_host.ps1
+~~~
+
+Current classifications:
+
+~~~text
+Windows 11 x64          PREFERRED
+Windows Server 2022     PREFERRED
+Windows Server 2019     COMPATIBILITY
+Windows Server 2016     COMPATIBILITY
+Windows 10 x64          COMPATIBILITY
+Windows Server 2012 R2  DEFERRED
+32-bit Windows          UNSUPPORTED
+~~~
+
+Windows Server 2012 R2 will be revisited only after the modern-Windows project path is complete and stable.
+
+## Compile Evidence JSON
+
+Successful compile writes:
+
+`build/mt5/stage06_compile_evidence.json`
+
+Evidence includes:
+
+- normalized Windows host;
+- OS version and architecture;
+- PowerShell version;
+- MetaEditor file/product version;
+- source SHA-256 hashes;
+- compile error/warning counts;
+- EX5 path/size/SHA-256;
+- strict policy flags;
+- final `PASS_COMPILE_PROOF` result.
+
+This gives the final Stage-06 audit a traceable link between source, compiler host and compiled artifact.
