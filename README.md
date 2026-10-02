@@ -169,6 +169,7 @@ Stage 06 documents:
 - [MT5 Bridge Config Draft](config/mt5_bridge_draft.json)
 - [KAT1 → MT5 Field Source Mapping](docs/architecture/KAT1_MT5_FIELD_SOURCE_MAPPING_DRAFT.md)
 - [Stage 06 Compile Proof](docs/operations/STAGE_06_MT5_COMPILE_PROOF.md)
+- [Stage 06 Windows Compatibility](docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md)
 
 Prepared verification:
 
@@ -177,6 +178,7 @@ Prepared verification:
 - `tests/static/test_stage06_mt5_bridge.py`
 - `scripts/mt5/compile_stage06.ps1`
 - `scripts/mt5/check_stage06_host.ps1`
+- `scripts/mt5/verify_stage06_modern_windows.ps1`
 - `tests/static/test_stage06_windows_compatibility.py`
 
 Stage 06 remains IN REVIEW only because the actual MetaEditor/runtime proof must be produced on a modern 64-bit Windows host before freeze. Windows Server 2012 R2 is deliberately deferred and is not part of the current freeze gate.
