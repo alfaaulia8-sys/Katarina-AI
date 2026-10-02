@@ -149,6 +149,7 @@ void OnStart(void)
    spec.volume_step=0.01;
    spec.stops_level_points=10;
    spec.point=0.01;
+   spec.tick_size=0.01;
 
    SKatOpenPreflight request;
    request.symbol="XAUUSD";
@@ -170,6 +171,19 @@ void OnStart(void)
    reason=KatValidateOpenPreflight(request,spec,true,99.90,100.00);
    KatAssert(reason==KAT_PREFLIGHT_NATIVE_SL_REQUIRED,
              "native SL is mandatory",
+             failures);
+
+   request.sl=99.005;
+   reason=KatValidateOpenPreflight(request,spec,true,99.90,100.00);
+   KatAssert(reason==KAT_PREFLIGHT_PRICE_NOT_TICK_ALIGNED,
+             "SL must align to broker tick size",
+             failures);
+
+   request.sl=99.0;
+   request.side=(ENUM_KAT_SIDE)99;
+   reason=KatValidateOpenPreflight(request,spec,true,99.90,100.00);
+   KatAssert(reason==KAT_PREFLIGHT_INVALID_SIDE,
+             "invalid trade side fails closed",
              failures);
 
    const bool passed=(failures==0);
