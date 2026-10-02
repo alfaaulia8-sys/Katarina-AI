@@ -1,38 +1,46 @@
 # Protocol
 
-Language-neutral MT5 ↔ Katarina contracts live here.
+This directory contains the language-neutral MT5 ↔ Katarina protocol contracts.
 
-## Stage 04 Status
+## Frozen Protocol
 
-Stage 04 is now **IN REVIEW**.
-
-Current proposal:
+**KAT1 v1.0.0 — Stage 04 FROZEN**
 
 ~~~text
-KAT1
-→ canonical binary
+canonical binary
 → little-endian
 → 52-byte fixed frame header
-→ SBE-inspired block-length/schema-version evolution
-→ scaled int64 for execution-sensitive decimals
-→ bounded UTF-8 / bounded arrays
-→ optional/required CRC32C by message policy
+→ exact versioned root layouts
+→ bounded variable tails
+→ scaled execution-sensitive integers
+→ CRC32C policy
 → max frame 65,536 bytes
-→ chunked atomic snapshot bootstrap
-→ cross-language golden fixtures
+→ chunked atomic snapshots
+→ golden cross-language fixtures
 ~~~
 
-Draft documents:
+## Canonical Files
 
-- ../docs/architecture/KATARINA_BINARY_PROTOCOL_V1_DRAFT.md
-- ../docs/reviews/STAGE_04_PROTOCOL_RESEARCH.md
-- ../config/protocol_schema_draft.json
-- message_registry_v1_draft.json
+- `message_registry_v1.json`
+- `kat1_message_schemas_v1.json`
+- `enums_v1.json`
+- `flags_v1.json`
+- `capabilities_v1.json`
+- `reason_codes_v1.json`
+- `payload_catalog_v1.json`
+- `manual_trade_learning_v1.json`
+- `golden/kat1_v1_vectors.json`
 
-## Important Rule
+Human-readable specifications:
 
-The canonical wire format is **not** a raw MQL5/Python memory-structure dump.
+- `../docs/architecture/KATARINA_BINARY_PROTOCOL_V1.md`
+- `../docs/architecture/KAT1_DATA_CONTRACT_V1.md`
+- `../docs/architecture/KAT1_CONFORMANCE_V1.md`
 
-Python and MQL5 implementations must use explicit field offsets, widths and byte order.
+## Critical Rule
 
-Exact payload layouts and golden vectors will be completed and reviewed before Stage 04 is frozen.
+The wire contract is **not** a raw MQL5/Python memory-structure dump.
+
+Python and MQL5 implementations must encode explicit KAT1 fields using the frozen offsets, widths, byte order, version rules and conformance fixtures.
+
+Actual Python/MQL5 codec implementation occurs in later stages.
