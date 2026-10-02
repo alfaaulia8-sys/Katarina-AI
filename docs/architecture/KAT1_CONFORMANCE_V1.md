@@ -1,6 +1,6 @@
 # KAT1 V1 — CONFORMANCE CONTRACT
 
-**Status:** FROZEN CANDIDATE  
+**Status:** FROZEN / STAGE 04  
 **Version:** 1.0.0  
 **Stage:** 04/40
 
