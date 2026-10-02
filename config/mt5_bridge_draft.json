@@ -1,6 +1,6 @@
 {
   "architecture_version": "0.5.0",
-  "status": "STAGE_06_SOURCE_DESIGN_COMPLETE_EVIDENCE_PENDING",
+  "status": "STAGE_06_CLEARANCE_AUTOMATION_COMPLETE_EXTERNAL_PROOF_PENDING",
   "stage": "06",
   "role": [
     "MARKET_ACCOUNT_SENSOR",
@@ -141,7 +141,7 @@
     "mql_self_test": "mt5/Tests/KatarinaStage06SelfTest.mq5",
     "python_static_test": "tests/static/test_stage06_mt5_bridge.py",
     "metaeditor_compile_proof": false,
-    "python_static_test_count": 31,
+    "python_static_test_count": 35,
     "repository_equivalent_static_audit_passed": true,
     "strict_compile_policy": {
       "zero_errors": true,
@@ -157,9 +157,11 @@
     "modern_windows_host_preflight": "scripts/mt5/check_stage06_host.ps1",
     "compile_evidence_path": "build/mt5/stage06_compile_evidence.json",
     "modern_windows_verifier": "scripts/mt5/verify_stage06_modern_windows.ps1",
-    "bridge_static_test_count": 21,
+    "bridge_static_test_count": 25,
     "windows_compatibility_test_count": 10,
-    "github_reference_audit": "docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md"
+    "github_reference_audit": "docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md",
+    "final_audit_script": "scripts/mt5/audit_stage06_final.ps1",
+    "complete_clearance_runner": "scripts/mt5/complete_stage06.ps1"
   },
   "pending_before_freeze": [
     "MODERN_WINDOWS_METAEDITOR_COMPILE_PROOF",
@@ -222,6 +224,32 @@
     "location": "MT5_COMMON_FILES",
     "collector": "scripts/mt5/collect_stage06_runtime_evidence.ps1",
     "manifest": "build/mt5/stage06_runtime_evidence.json",
-    "passwords_or_credentials_allowed": false
-  }
+    "passwords_or_credentials_allowed": false,
+    "design_version": "0.5.0",
+    "stale_evidence_rejected": true,
+    "compile_evidence_binding": true,
+    "complete_source_manifest_binding": true,
+    "final_clearance_manifest": "build/mt5/stage06_final_clearance.json"
+  },
+  "clearance_automation": {
+    "version": "1.0.0",
+    "complete_runner": "scripts/mt5/complete_stage06.ps1",
+    "compile_proof": "scripts/mt5/compile_stage06.ps1",
+    "runtime_collector": "scripts/mt5/collect_stage06_runtime_evidence.ps1",
+    "final_audit": "scripts/mt5/audit_stage06_final.ps1",
+    "final_clearance_manifest": "build/mt5/stage06_final_clearance.json",
+    "final_audit_candidate": "build/mt5/STAGE_06_FINAL_AUDIT_CANDIDATE.md",
+    "stale_runtime_evidence_rejected": true,
+    "complete_mql_source_manifest_bound": true,
+    "implementation_pending": []
+  },
+  "implementation_pending": [],
+  "external_evidence_pending": [
+    "ACTUAL_METAEDITOR_COMPILE_ON_MODERN_WINDOWS",
+    "ACTUAL_MQL_SELF_TEST_IN_MT5",
+    "ACTUAL_STANDARD_LIKE_ACCOUNT_PROBE",
+    "ACTUAL_CENT_LIKE_ACCOUNT_PROBE",
+    "ACTUAL_RUNTIME_EVIDENCE_COLLECTION",
+    "GOVERNED_FINAL_FREEZE_REVIEW"
+  ]
 }
