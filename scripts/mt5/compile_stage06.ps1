@@ -93,6 +93,7 @@ Remove-Item $probeLog -ErrorAction SilentlyContinue
 
 $eaArgs = @(
     "/compile:`"$eaTarget`"",
+    "/include:`"$mqlRoot`"",
     "/log:`"$eaLog`""
 )
 Start-Process -FilePath $metaEditor -ArgumentList $eaArgs -Wait | Out-Null
@@ -100,6 +101,7 @@ Assert-CompileSuccess -LogPath $eaLog -TargetName "KatarinaBridgeEA.mq5"
 
 $testArgs = @(
     "/compile:`"$testTarget`"",
+    "/include:`"$mqlRoot`"",
     "/log:`"$testLog`""
 )
 Start-Process -FilePath $metaEditor -ArgumentList $testArgs -Wait | Out-Null
@@ -107,6 +109,7 @@ Assert-CompileSuccess -LogPath $testLog -TargetName "KatarinaStage06SelfTest.mq5
 
 $probeArgs = @(
     "/compile:`"$probeTarget`"",
+    "/include:`"$mqlRoot`"",
     "/log:`"$probeLog`""
 )
 Start-Process -FilePath $metaEditor -ArgumentList $probeArgs -Wait | Out-Null
