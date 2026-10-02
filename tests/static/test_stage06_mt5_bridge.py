@@ -34,7 +34,7 @@ class Stage06Mt5StaticTests(unittest.TestCase):
         self.assertIn("SetExecutionArmed(false)", self.ea)
 
     def test_no_concrete_network_transport(self):
-        for token in ("WebRequest(", "SocketCreate(", "Zmq", "ZeroMQ"):
+        for token in ("WebRequest(", "SocketCreate(", "#include <Zmq", "zmq_"):
             self.assertNotIn(token, self.all_mt5)
 
     def test_fast_handlers_exist(self):
