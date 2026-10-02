@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       request_path:
-        description: "Path to one ops/vps/requests/*.json request"
+        description: "Path to one ops/vps/requests/actions/*.json request"
         required: true
         type: string
   push:
     paths:
-      - "ops/vps/requests/*.json"
+      - "ops/vps/requests/actions/*.json"
 
 permissions:
   contents: read
@@ -34,14 +34,14 @@ jobs:
           } else {
             $before = "${{ github.event.before }}"
             $after = "${{ github.sha }}"
-            $paths = @(git diff --name-only $before $after -- "ops/vps/requests/*.json")
+            $paths = @(git diff --name-only $before $after -- "ops/vps/requests/actions/*.json")
             if ($paths.Count -ne 1) {
               throw "Expected exactly one VPS request in the triggering commit; found $($paths.Count)."
             }
             $path = $paths[0]
           }
 
-          if ($path -notmatch '^ops/vps/requests/[A-Za-z0-9._-]+\.json$') {
+          if ($path -notmatch '^ops/vps/requests/actions/[A-Za-z0-9._-]+\.json$') {
             throw "Invalid request path: $path"
           }
           if (!(Test-Path $path)) {
