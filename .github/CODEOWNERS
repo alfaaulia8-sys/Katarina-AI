@@ -19,3 +19,6 @@
 
 /config/core_orchestrator.json @alfaaulia-katarina
 /docs/reviews/STAGE_05_CORE_AUDIT.md @alfaaulia-katarina
+
+/config/mt5_bridge_draft.json @alfaaulia-katarina
+/mt5/Experts/KatarinaBridgeEA.mq5 @alfaaulia-katarina
