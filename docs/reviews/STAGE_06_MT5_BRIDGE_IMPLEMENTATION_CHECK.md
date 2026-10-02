@@ -104,6 +104,7 @@ Since the initial check, Stage 06 now includes:
 
 - complete account/position/order snapshot source with bounded stable retry;
 - local duplicate bridge-instance lease guard;
+- persistent stream_id + per-boot boot_id source;
 - approved-vs-observed symbol registry;
 - raw ORDER_REASON / DEAL_REASON / POSITION_REASON enrichment;
 - terminal/account permission + ping health sampling;
@@ -134,6 +135,7 @@ OnTradeTransaction                      : 0
 brace/parenthesis balance issues        : 0
 include-guard issues                    : 0
 static structural issues found          : 0
+local capture ID / KAT1 sequence conflation : 0
 ~~~
 
 This is a static source check, not a substitute for MetaEditor compilation.
