@@ -28,7 +28,9 @@ Frozen KAT1 remains defined by protocol/kat1_message_schemas_v1.json and protoco
 - money_scale/account_currency_digits <- ACCOUNT_CURRENCY_DIGITS
 - broker_server <- ACCOUNT_SERVER
 - account_currency <- ACCOUNT_CURRENCY
-- account_id, stream_id, boot_id, source hash and capability synthesis are Stage-07/build identity work.
+- stream_id <- CKatBridgeIdentity persistent account/server-scoped ID;
+- boot_id <- CKatBridgeIdentity new per EA initialization;
+- account_id, source hash and capability synthesis remain Stage-07/build identity work.
 
 ## TICK_EVENT
 
