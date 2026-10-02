@@ -1,6 +1,6 @@
 {
-  "registry_version": "0.2",
-  "status": "DRAFT_STAGE_04",
+  "registry_version": "1.0.0",
+  "status": "FROZEN_CANDIDATE_STAGE_04",
   "protocol": "KAT1",
   "messages": [
     {
@@ -103,8 +103,7 @@
       "id": 203,
       "name": "ACCOUNT_LEDGER_EVENT",
       "direction": "MT5_TO_KATARINA",
-      "critical": true,
-      "status": "OWNER_DECISION_PENDING"
+      "critical": true
     },
     {
       "id": 300,
@@ -161,6 +160,18 @@
       "critical": true
     },
     {
+      "id": 320,
+      "name": "BROKER_CALC_REQUEST",
+      "direction": "KATARINA_TO_MT5",
+      "critical": true
+    },
+    {
+      "id": 321,
+      "name": "BROKER_CALC_REPORT",
+      "direction": "MT5_TO_KATARINA",
+      "critical": true
+    },
+    {
       "id": 400,
       "name": "HEALTH_EVENT",
       "direction": "MT5_TO_KATARINA",
@@ -172,5 +183,21 @@
       "direction": "BIDIRECTIONAL",
       "critical": false
     }
-  ]
+  ],
+  "owner_scope": {
+    "shared_account": true,
+    "full_account_visibility": true,
+    "hedging": true,
+    "netting": true,
+    "entry_types": [
+      "MARKET",
+      "LIMIT",
+      "STOP"
+    ],
+    "stop_limit_v1": false,
+    "broker_native_sl_required": true,
+    "account_ledger_required": true,
+    "standard_account_required": true,
+    "cent_account_required": true
+  }
 }
