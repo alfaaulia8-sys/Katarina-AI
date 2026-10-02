@@ -155,3 +155,44 @@ No Stage 04 architecture/data-schema blocker remains.
 **STAGE 04 PASSED / FROZEN — KAT1 v1.0.0.**
 
 Next: **Stage 05 — Katarina Core / Orchestrator.**
+
+
+## Post-Freeze Recheck — 2026-10-02
+
+A second repository-wide Stage 04 consistency review was performed before advancing to Stage 05.
+
+Two **documentation-only** inconsistencies were found and corrected:
+
+1. `KAT1_CONFORMANCE_V1.md` still referenced the superseded `message_registry_v1_draft.json`; it now references `message_registry_v1.json`.
+2. `STANDARD_CENT_ACCOUNT_COMPATIBILITY.md` still displayed its pre-freeze draft status/version; it is now marked FROZEN / Stage 04 v1.0.0.
+
+No wire/schema bytes, message IDs, owner trading requirements, or execution semantics were changed by those corrections.
+
+Re-validation after correction:
+
+~~~text
+canonical Stage-04 JSON files parsed successfully
+registry messages             : 30
+message schemas               : 30
+golden positive vectors       : 13
+golden negative cases         : 9
+duplicate message IDs         : 0
+registry/schema mismatches     : 0
+field offset/root-size errors : 0
+golden frame-length errors    : 0
+CRC32C mismatches             : 0
+owner decisions pending       : 0
+stale draft refs in canonical Stage-04 docs : 0
+critical blockers             : 0
+~~~
+
+Repository state at recheck:
+
+~~~text
+open pull requests : 0
+latest commit checks: none configured / no failing status reported
+~~~
+
+**POST-FREEZE RECHECK: PASS.**
+
+Stage 05 may begin without reopening Stage 04.
