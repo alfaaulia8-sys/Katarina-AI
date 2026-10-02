@@ -33,3 +33,11 @@
 /scripts/mt5/audit_stage06_final.ps1 @alfaaulia-katarina
 /scripts/mt5/complete_stage06.ps1 @alfaaulia-katarina
 /docs/operations/STAGE_06_FINAL_CLEARANCE.md @alfaaulia-katarina
+/config/mt5_python_communication_draft.json @alfaaulia-katarina
+/src/katarina/ports/transport.py @alfaaulia-katarina
+/src/katarina/adapters/transport/ @alfaaulia-katarina
+/tests/unit/transport/ @alfaaulia-katarina
+/docs/reviews/STAGE_07_COMMUNICATION_RESEARCH.md @alfaaulia-katarina
+/docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md @alfaaulia-katarina
+/docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md @alfaaulia-katarina
+/docs/adr/0009-stage07-live-communication-topology.md @alfaaulia-katarina
