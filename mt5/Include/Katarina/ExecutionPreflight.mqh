@@ -29,7 +29,11 @@ enum ENUM_KAT_PREFLIGHT_REASON
    KAT_PREFLIGHT_INVALID_ENTRY_PRICE=8,
    KAT_PREFLIGHT_INVALID_PENDING_RELATION=9,
    KAT_PREFLIGHT_SYMBOL_NOT_TRADABLE=10,
-   KAT_PREFLIGHT_DIRECTION_NOT_ALLOWED=11
+   KAT_PREFLIGHT_DIRECTION_NOT_ALLOWED=11,
+   KAT_PREFLIGHT_INVALID_PENDING_DISTANCE=12,
+   KAT_PREFLIGHT_TP_UNSUPPORTED=13,
+   KAT_PREFLIGHT_INVALID_TP_SIDE=14,
+   KAT_PREFLIGHT_INVALID_TP_DISTANCE=15
   };
 
 struct SKatOpenPreflight
@@ -106,12 +110,24 @@ ENUM_KAT_PREFLIGHT_REASON KatValidateOpenPreflight(const SKatOpenPreflight &requ
    if(entry_price<=0.0 || bid<=0.0 || ask<=0.0 || ask<bid)
       return(KAT_PREFLIGHT_INVALID_ENTRY_PRICE);
 
+   const double min_distance=(double)spec.stops_level_points*spec.point;
+
    if(request.entry_type==KAT_ENTRY_LIMIT)
      {
       if(request.side==KAT_SIDE_BUY && request.requested_price>=ask)
          return(KAT_PREFLIGHT_INVALID_PENDING_RELATION);
       if(request.side==KAT_SIDE_SELL && request.requested_price<=bid)
          return(KAT_PREFLIGHT_INVALID_PENDING_RELATION);
+
+      if(min_distance>0.0)
+        {
+         if(request.side==KAT_SIDE_BUY &&
+            ask-request.requested_price<min_distance)
+            return(KAT_PREFLIGHT_INVALID_PENDING_DISTANCE);
+         if(request.side==KAT_SIDE_SELL &&
+            request.requested_price-bid<min_distance)
+            return(KAT_PREFLIGHT_INVALID_PENDING_DISTANCE);
+        }
      }
 
    if(request.entry_type==KAT_ENTRY_STOP)
@@ -120,6 +136,16 @@ ENUM_KAT_PREFLIGHT_REASON KatValidateOpenPreflight(const SKatOpenPreflight &requ
          return(KAT_PREFLIGHT_INVALID_PENDING_RELATION);
       if(request.side==KAT_SIDE_SELL && request.requested_price>=bid)
          return(KAT_PREFLIGHT_INVALID_PENDING_RELATION);
+
+      if(min_distance>0.0)
+        {
+         if(request.side==KAT_SIDE_BUY &&
+            request.requested_price-ask<min_distance)
+            return(KAT_PREFLIGHT_INVALID_PENDING_DISTANCE);
+         if(request.side==KAT_SIDE_SELL &&
+            bid-request.requested_price<min_distance)
+            return(KAT_PREFLIGHT_INVALID_PENDING_DISTANCE);
+        }
      }
 
    if(request.side==KAT_SIDE_BUY && request.sl>=entry_price)
@@ -127,9 +153,22 @@ ENUM_KAT_PREFLIGHT_REASON KatValidateOpenPreflight(const SKatOpenPreflight &requ
    if(request.side==KAT_SIDE_SELL && request.sl<=entry_price)
       return(KAT_PREFLIGHT_INVALID_SL_SIDE);
 
-   const double min_distance=(double)spec.stops_level_points*spec.point;
    if(min_distance>0.0 && MathAbs(entry_price-request.sl)<min_distance)
       return(KAT_PREFLIGHT_INVALID_SL_DISTANCE);
+
+   if(request.tp>0.0)
+     {
+      if((spec.order_mode & SYMBOL_ORDER_TP)==0)
+         return(KAT_PREFLIGHT_TP_UNSUPPORTED);
+
+      if(request.side==KAT_SIDE_BUY && request.tp<=entry_price)
+         return(KAT_PREFLIGHT_INVALID_TP_SIDE);
+      if(request.side==KAT_SIDE_SELL && request.tp>=entry_price)
+         return(KAT_PREFLIGHT_INVALID_TP_SIDE);
+
+      if(min_distance>0.0 && MathAbs(request.tp-entry_price)<min_distance)
+         return(KAT_PREFLIGHT_INVALID_TP_DISTANCE);
+     }
 
    // Stage 06 validates only the local shape/capability surface.
    // Broker OrderCheck, revision binding, durable idempotency and actual submission
