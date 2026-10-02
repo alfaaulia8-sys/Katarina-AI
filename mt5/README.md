@@ -108,3 +108,13 @@ Runtime proof evidence:
 - Runtime evidence collector: `../scripts/mt5/collect_stage06_runtime_evidence.ps1`.
 
 Stage-06 source/design is complete. Actual compiler/runtime evidence is still required before freeze.
+
+
+Final Stage-06 clearance tooling:
+
+- `../scripts/mt5/collect_stage06_runtime_evidence.ps1`
+- `../scripts/mt5/audit_stage06_final.ps1`
+- `../scripts/mt5/complete_stage06.ps1`
+- `../docs/operations/STAGE_06_FINAL_CLEARANCE.md`
+
+The one-command runner performs host/static/compile proof, removes stale runtime evidence, waits for the three real MT5 runtime proof files, binds them to the exact compile/source manifest, and creates `PASS_STAGE06_FINAL_CLEARANCE` evidence. It cannot fabricate the actual MetaEditor/MT5/account proof.
