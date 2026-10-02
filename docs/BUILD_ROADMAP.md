@@ -7,7 +7,7 @@
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
-| 06 | MT5 Bridge EA | 🟡 IN REVIEW — Bridge v0.1.0 |
+| 06 | MT5 Bridge EA | 🟡 IN REVIEW — Bridge v0.2.0 / COMPILE PROOF PENDING |
 | 07 | MT5-Python Communication | ⬜ |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
@@ -98,14 +98,26 @@ Stage 05 is frozen as Core v1.0.0.
 
 Implemented so far:
 
-- MT5 Bridge research and architecture draft;
-- capture-only handler policy;
-- transport-neutral bridge port;
-- fail-closed local bridge state;
-- bounded trade-transaction queue;
-- coalesced latest-tick slot;
-- broker-native account/symbol fact readers;
-- read-only EA skeleton with no live execution path;
-- bridge remains RECOVERING until future snapshot/transport/reconciliation proof.
+- capture-only OnTick / OnTradeTransaction;
+- bounded lossless-required trade-event queue;
+- latest-tick coalescing;
+- complete account/position/order snapshot source;
+- local duplicate-instance lease;
+- approved-vs-observed symbol registry;
+- raw manual order/deal/position reason evidence;
+- terminal/account/session health source;
+- standard/cent broker-native account and SymbolSpec facts;
+- deal-history source for account ledger;
+- broker OrderCalcProfit / OrderCalcMargin source;
+- broker bar source through CopyRates;
+- local MARKET/LIMIT/STOP preflight with mandatory native SL;
+- KAT1 field-source mapping;
+- MQL self-test + read-only account probe;
+- Python static bridge-safety test;
+- Windows MetaEditor compile-proof script.
+
+Production broker mutation remains disabled and the bridge remains RECOVERING.
+
+Remaining freeze blocker: actual MetaEditor compilation/runtime proof in an MT5 installation, followed by final audit.
 
 Stage 06 is not frozen yet.
