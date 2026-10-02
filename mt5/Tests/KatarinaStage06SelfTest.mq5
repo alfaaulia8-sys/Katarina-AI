@@ -80,7 +80,8 @@ void OnStart(void)
    spec.order_mode=(SYMBOL_ORDER_MARKET |
                     SYMBOL_ORDER_LIMIT |
                     SYMBOL_ORDER_STOP |
-                    SYMBOL_ORDER_SL);
+                    SYMBOL_ORDER_SL |
+                    SYMBOL_ORDER_TP);
    spec.volume_min=0.01;
    spec.volume_max=100.0;
    spec.volume_step=0.01;
