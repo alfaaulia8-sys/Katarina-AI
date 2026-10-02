@@ -1,5 +1,5 @@
 {
-  "catalog_version": "0.3",
+  "catalog_version": "0.4",
   "status": "STAGE_04_IN_REVIEW",
   "protocol": "KAT1",
   "principle": "MT5_SENDS_BROKER_FACTS_KATARINA_DERIVES_INTELLIGENCE",
@@ -136,7 +136,8 @@
     "CONTRACT",
     "VOLUME",
     "STOPS_EXECUTION",
-    "SWAP"
+    "SWAP",
+    "ACCOUNT_ECONOMIC_COMPATIBILITY"
   ],
   "account_fields": [
     "account_id",
@@ -229,5 +230,16 @@
     "manual_default_mutation_authority": false,
     "trade_origin_classification_required": true,
     "learning_contract": "protocol/manual_trade_learning_v1_draft.json"
+  },
+  "account_unit_profile": {
+    "required": true,
+    "fields": [
+      "account_currency",
+      "account_currency_digits",
+      "money_scale",
+      "account_unit_profile_revision"
+    ],
+    "hardcoded_standard_cent_multiplier": false,
+    "reporting_conversion_optional": true
   }
 }
