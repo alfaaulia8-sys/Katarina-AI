@@ -33,7 +33,10 @@ enum ENUM_KAT_PREFLIGHT_REASON
    KAT_PREFLIGHT_INVALID_PENDING_DISTANCE=12,
    KAT_PREFLIGHT_TP_UNSUPPORTED=13,
    KAT_PREFLIGHT_INVALID_TP_SIDE=14,
-   KAT_PREFLIGHT_INVALID_TP_DISTANCE=15
+   KAT_PREFLIGHT_INVALID_TP_DISTANCE=15,
+   KAT_PREFLIGHT_INVALID_SIDE=16,
+   KAT_PREFLIGHT_NONFINITE_NUMBER=17,
+   KAT_PREFLIGHT_PRICE_NOT_TICK_ALIGNED=18
   };
 
 struct SKatOpenPreflight
@@ -52,12 +55,32 @@ bool KatVolumeAligned(const double value,
                       const double maximum,
                       const double step)
   {
+   if(!MathIsValidNumber(value) ||
+      !MathIsValidNumber(minimum) ||
+      !MathIsValidNumber(maximum) ||
+      !MathIsValidNumber(step))
+      return(false);
+
    if(value<minimum || value>maximum || step<=0.0)
       return(false);
 
    const double steps=(value-minimum)/step;
    const double nearest=MathRound(steps);
    return(MathAbs(steps-nearest)<=1e-7);
+  }
+
+bool KatPriceAlignedToTick(const double value,
+                           const double tick_size)
+  {
+   if(!MathIsValidNumber(value) ||
+      !MathIsValidNumber(tick_size) ||
+      value<=0.0 ||
+      tick_size<=0.0)
+      return(false);
+
+   const double ticks=value/tick_size;
+   const double nearest=MathRound(ticks);
+   return(MathAbs(ticks-nearest)<=1e-7);
   }
 
 ENUM_KAT_PREFLIGHT_REASON KatValidateOpenPreflight(const SKatOpenPreflight &request,
@@ -68,6 +91,26 @@ ENUM_KAT_PREFLIGHT_REASON KatValidateOpenPreflight(const SKatOpenPreflight &requ
   {
    if(!symbol_approved)
       return(KAT_PREFLIGHT_SYMBOL_NOT_APPROVED);
+
+   if(request.side!=KAT_SIDE_BUY &&
+      request.side!=KAT_SIDE_SELL)
+      return(KAT_PREFLIGHT_INVALID_SIDE);
+
+   if(!MathIsValidNumber(request.volume) ||
+      !MathIsValidNumber(request.requested_price) ||
+      !MathIsValidNumber(request.sl) ||
+      !MathIsValidNumber(request.tp) ||
+      !MathIsValidNumber(bid) ||
+      !MathIsValidNumber(ask) ||
+      !MathIsValidNumber(spec.point) ||
+      !MathIsValidNumber(spec.tick_size) ||
+      !MathIsValidNumber(spec.volume_min) ||
+      !MathIsValidNumber(spec.volume_max) ||
+      !MathIsValidNumber(spec.volume_step))
+      return(KAT_PREFLIGHT_NONFINITE_NUMBER);
+
+   if(spec.point<=0.0 || spec.tick_size<=0.0)
+      return(KAT_PREFLIGHT_NONFINITE_NUMBER);
 
    if(spec.trade_mode==SYMBOL_TRADE_MODE_DISABLED ||
       spec.trade_mode==SYMBOL_TRADE_MODE_CLOSEONLY)
@@ -109,6 +152,17 @@ ENUM_KAT_PREFLIGHT_REASON KatValidateOpenPreflight(const SKatOpenPreflight &requ
 
    if(entry_price<=0.0 || bid<=0.0 || ask<=0.0 || ask<bid)
       return(KAT_PREFLIGHT_INVALID_ENTRY_PRICE);
+
+   if(request.entry_type!=KAT_ENTRY_MARKET &&
+      !KatPriceAlignedToTick(request.requested_price,spec.tick_size))
+      return(KAT_PREFLIGHT_PRICE_NOT_TICK_ALIGNED);
+
+   if(!KatPriceAlignedToTick(request.sl,spec.tick_size))
+      return(KAT_PREFLIGHT_PRICE_NOT_TICK_ALIGNED);
+
+   if(request.tp>0.0 &&
+      !KatPriceAlignedToTick(request.tp,spec.tick_size))
+      return(KAT_PREFLIGHT_PRICE_NOT_TICK_ALIGNED);
 
    const double min_distance=(double)spec.stops_level_points*spec.point;
 
