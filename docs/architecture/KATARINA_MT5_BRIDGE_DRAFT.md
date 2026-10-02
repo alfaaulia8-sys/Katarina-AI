@@ -1,7 +1,7 @@
 # KATARINA MT5 BRIDGE EA — DRAFT
 
 **Status:** IN REVIEW  
-**Version:** 0.3.0  
+**Version:** 0.4.0  
 **Stage:** 06/40
 
 ## 1. Role
@@ -435,3 +435,65 @@ Continued review added the following hardening before compiler proof:
 The repository is now a **static Stage-06 candidate**.
 
 It is not a frozen or production-certified bridge until the actual MetaEditor compiler and MT5 runtime proof pass.
+
+
+## 22. Modern Windows Validation Baseline
+
+The current Stage-06 certification path deliberately targets modern 64-bit Windows first.
+
+Preferred proof hosts:
+
+- Windows Server 2022 x64;
+- Windows 11 x64.
+
+Additional compatibility-validation hosts:
+
+- Windows Server 2019 x64;
+- Windows Server 2016 x64;
+- Windows 10 x64.
+
+Deferred:
+
+- Windows Server 2012 R2 x64.
+
+Windows Server 2012 R2 is no longer a Stage-06 freeze blocker.
+
+The project will first produce a clean modern-Windows bridge and only revisit Server 2012 R2 after the finished system is stable, if that deployment target is still needed.
+
+The modern validation path may not weaken Core/Bridge safety invariants merely to preserve legacy compatibility.
+
+Machine-readable baseline:
+
+- `config/windows_compatibility_stage06.json`
+
+Operational procedure:
+
+- `docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md`
+- `scripts/mt5/check_stage06_host.ps1`
+- `scripts/mt5/compile_stage06.ps1`
+
+### Strict compiler evidence
+
+The modern-Windows compile proof now requires:
+
+~~~text
+MetaEditor actual compile
++
+explicit UTF-16LE log parsing
++
+0 errors
++
+0 warnings
++
+fresh non-empty EX5 artifact
++
+SHA-256 source/artifact evidence
+~~~
+
+Old EX5 artifacts are removed before compilation so a stale binary cannot satisfy the proof.
+
+The compiler proof produces:
+
+- `build/mt5/stage06_compile_evidence.json`
+
+This evidence becomes an input to the final Stage-06 audit.
