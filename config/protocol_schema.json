@@ -1,7 +1,6 @@
 {
   "schema_version": 1,
   "protocol_name": "KAT1",
-  "draft_version": "1.0.0",
   "status": "FROZEN_STAGE_04",
   "encoding": {
     "authoritative_wire": "CANONICAL_BINARY",
@@ -193,5 +192,6 @@
     "account_ledger_required": true,
     "standard_account_required": true,
     "cent_account_required": true
-  }
+  },
+  "protocol_version": "1.0.0"
 }
