@@ -1,7 +1,7 @@
 #ifndef __KATARINA_TEST_EVIDENCE_MQH__
 #define __KATARINA_TEST_EVIDENCE_MQH__
 
-#define KAT_STAGE06_EVIDENCE_DIR "Katarina\\Stage06"
+#define KAT_STAGE06_EVIDENCE_PREFIX "Katarina_Stage06_"
 
 string KatEvidenceSafeToken(string value)
   {
@@ -16,23 +16,10 @@ string KatEvidenceSafeToken(string value)
    return(value);
   }
 
-bool KatEnsureEvidenceDirectory(void)
-  {
-   if(FolderCreate(KAT_STAGE06_EVIDENCE_DIR,FILE_COMMON))
-      return(true);
-
-   // FolderCreate may return false if the folder already exists.
-   const int err=GetLastError();
-   ResetLastError();
-   return(err==0 || err==5004);
-  }
-
 int KatOpenEvidenceFile(const string file_name)
   {
-   if(!KatEnsureEvidenceDirectory())
-      return(INVALID_HANDLE);
-
-   const string path=KAT_STAGE06_EVIDENCE_DIR+"\\"+KatEvidenceSafeToken(file_name);
+   const string path=KAT_STAGE06_EVIDENCE_PREFIX+
+                     KatEvidenceSafeToken(file_name);
    return(FileOpen(path,FILE_WRITE|FILE_TXT|FILE_COMMON|FILE_ANSI));
   }
 
@@ -80,7 +67,7 @@ void KatEvidenceWriteBool(const int handle,
 
 string KatEvidenceCommonRoot(void)
   {
-   return(TerminalInfoString(TERMINAL_COMMONDATA_PATH)+"\\Files\\"+KAT_STAGE06_EVIDENCE_DIR);
+   return(TerminalInfoString(TERMINAL_COMMONDATA_PATH)+"\\Files");
   }
 
 #endif
