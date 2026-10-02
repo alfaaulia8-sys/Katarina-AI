@@ -3,7 +3,7 @@
 
 struct SKatCapturedTick
   {
-   ulong    capture_sequence;
+   ulong    local_capture_id;
    string   symbol;
    datetime time_seconds;
    long     time_msc;
@@ -17,7 +17,7 @@ struct SKatCapturedTick
 
 struct SKatCapturedTrade
   {
-   ulong                       capture_sequence;
+   ulong                       local_capture_id;
    long                        capture_monotonic_ms;
    ENUM_TRADE_TRANSACTION_TYPE transaction_type;
    ulong                       deal;
@@ -54,10 +54,10 @@ struct SKatCapturedTrade
 
 void KatCaptureTick(const string symbol,
                     const MqlTick &tick,
-                    const ulong capture_sequence,
+                    const ulong local_capture_id,
                     SKatCapturedTick &out_event)
   {
-   out_event.capture_sequence=capture_sequence;
+   out_event.local_capture_id=local_capture_id;
    out_event.symbol=symbol;
    out_event.time_seconds=tick.time;
    out_event.time_msc=tick.time_msc;
@@ -72,10 +72,10 @@ void KatCaptureTick(const string symbol,
 void KatCaptureTradeTransaction(const MqlTradeTransaction &trans,
                                 const MqlTradeRequest &request,
                                 const MqlTradeResult &result,
-                                const ulong capture_sequence,
+                                const ulong local_capture_id,
                                 SKatCapturedTrade &out_event)
   {
-   out_event.capture_sequence=capture_sequence;
+   out_event.local_capture_id=local_capture_id;
    out_event.capture_monotonic_ms=(long)(GetMicrosecondCount()/1000);
    out_event.transaction_type=trans.type;
    out_event.deal=trans.deal;
