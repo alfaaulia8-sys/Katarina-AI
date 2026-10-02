@@ -7,6 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$designVersion = "0.5.0"
 
 function Get-Stage06HostProfile {
     $os = Get-CimInstance Win32_OperatingSystem
@@ -260,9 +261,31 @@ $selfTestResult = Assert-CompileSuccess -LogPath $selfTestLog -TargetName "Katar
 Invoke-MetaEditorCompile -MetaEditor $metaEditor -SourcePath $probeTarget -MqlRoot $mqlRoot -LogPath $probeLog
 $probeResult = Assert-CompileSuccess -LogPath $probeLog -TargetName "KatarinaStage06AccountProbe.mq5" -ArtifactPath $probeArtifact
 
+$sourceManifest = @()
+
+$sourceFiles = @(
+    $eaSource,
+    $selfTestSource,
+    $probeSource
+)
+
+$sourceFiles += Get-ChildItem -Path (Join-Path $repoRoot "mt5\Include\Katarina") -Filter "*.mqh" -File |
+    Sort-Object FullName |
+    ForEach-Object { $_.FullName }
+
+foreach ($sourceFile in $sourceFiles) {
+    $resolvedSource = (Resolve-Path $sourceFile).Path
+    $relativeSource = $resolvedSource.Substring($repoRoot.Length).TrimStart("\")
+    $sourceManifest += [pscustomobject]@{
+        path = $relativeSource.Replace("\","/")
+        sha256 = (Get-FileHash -Path $resolvedSource -Algorithm SHA256).Hash
+    }
+}
+
 $evidence = [ordered]@{
-    schema_version = "1.0"
+    schema_version = "1.1"
     stage = "06"
+    bridge_design_version = $designVersion
     generated_utc = [DateTime]::UtcNow.ToString("o")
     host = $hostProfile
     metaeditor = [ordered]@{
@@ -275,6 +298,7 @@ $evidence = [ordered]@{
         self_test_sha256 = (Get-FileHash -Path $selfTestSource -Algorithm SHA256).Hash
         account_probe_sha256 = (Get-FileHash -Path $probeSource -Algorithm SHA256).Hash
     }
+    source_manifest = $sourceManifest
     compile = @(
         $eaResult,
         $selfTestResult,
