@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from enum import Enum, IntEnum
-from typing import Any
+from typing import Any, TypeAlias
 
 
 class RuntimeMode(str, Enum):
@@ -44,3 +45,19 @@ class EventEnvelope:
     @property
     def lossless_required(self) -> bool:
         return self.priority <= MessagePriority.RISK_STATE
+
+
+HandlerOutput: TypeAlias = None | EventEnvelope | Iterable[EventEnvelope]
+EventHandler: TypeAlias = Callable[
+    [EventEnvelope], HandlerOutput | Awaitable[HandlerOutput]
+]
+
+
+@dataclass(frozen=True, slots=True)
+class SubscriptionSpec:
+    topic: str
+    handler: EventHandler
+
+    def __post_init__(self) -> None:
+        if not self.topic:
+            raise ValueError("subscription topic must be non-empty")
