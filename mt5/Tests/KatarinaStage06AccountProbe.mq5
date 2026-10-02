@@ -110,6 +110,7 @@ void OnStart(void)
      {
       KatEvidenceWrite(evidence,"schema_version","1.0");
       KatEvidenceWrite(evidence,"stage","06");
+      KatEvidenceWrite(evidence,"design_version",KAT_STAGE06_DESIGN_VERSION);
       KatEvidenceWrite(evidence,"proof_type","ACCOUNT_PROBE");
       KatEvidenceWrite(evidence,"account_class",InpAccountClass);
       KatEvidenceWriteLong(evidence,"terminal_build",TerminalInfoInteger(TERMINAL_BUILD));
