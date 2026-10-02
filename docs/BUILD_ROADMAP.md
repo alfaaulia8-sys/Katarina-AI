@@ -7,7 +7,7 @@
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
-| 06 | MT5 Bridge EA | 🟡 IN REVIEW — Bridge v0.2.0 / COMPILE PROOF PENDING |
+| 06 | MT5 Bridge EA | 🟡 IN REVIEW — Bridge v0.3.0 / STATIC PASS / COMPILE PROOF PENDING |
 | 07 | MT5-Python Communication | ⬜ |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
@@ -114,7 +114,12 @@ Implemented so far:
 - KAT1 field-source mapping;
 - MQL self-test + read-only account probe;
 - Python static bridge-safety test;
-- Windows MetaEditor compile-proof script.
+- Windows MetaEditor compile-proof script;
+- type-aware MqlTradeTransaction validity bitmap;
+- persistent stream/per-boot bridge identity;
+- broker-server + login scoped duplicate lease;
+- strengthened pending/TP preflight;
+- 15 static safety regression tests.
 
 Production broker mutation remains disabled and the bridge remains RECOVERING.
 
