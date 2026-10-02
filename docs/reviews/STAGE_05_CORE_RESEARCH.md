@@ -1,7 +1,7 @@
 # STAGE 05 — CORE / ORCHESTRATOR RESEARCH
 
 **Stage:** 05/40  
-**Status:** IN REVIEW  
+**Status:** COMPLETE / INCORPORATED  
 **Reviewed:** 2026-10-02
 
 ## Goal
@@ -159,3 +159,17 @@ Stage 05 must **not** implement:
 - learning/model logic.
 
 Those remain later roadmap stages.
+
+
+## Final Outcome
+
+The research direction was adopted in Core v1.0.0.
+
+Additional review refinements incorporated before freeze:
+
+- runtime subscriptions are lifecycle-scoped;
+- runtime handlers cannot consume recovery traffic before activation;
+- Tester mode explicitly requires TesterTransport readiness;
+- the EventBus remains behind the Core composition boundary rather than becoming a public mutation shortcut.
+
+Stage 05 implementation passed structural review and is frozen.
