@@ -5,8 +5,8 @@
 | 01 | Constitution & North Star | ✅ FINALIZED / FROZEN v1.1.0 |
 | 02 | Final MT5-to-Execution Workflow | ✅ FINALIZED / FROZEN v1.2.0 |
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
-| 04 | Data Protocol / Schemas | 🟡 IN REVIEW — KAT1 draft 0.4 / 4 OWNER DECISIONS |
-| 05 | Katarina Core / Orchestrator | ⬜ |
+| 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
+| 05 | Katarina Core / Orchestrator | ⏳ NEXT |
 | 06 | MT5 Bridge EA | ⬜ |
 | 07 | MT5-Python Communication | ⬜ |
 | 08 | Data Validation Engine | ⬜ |
@@ -45,28 +45,22 @@
 
 ## Current Position
 
-**Stage 04 is active and in review.**
+**04/40 completed. Stage 05 — Katarina Core / Orchestrator — is next.**
 
-Current draft decisions:
+## Frozen Stage 04 Scope
 
-- MT5 sends broker facts; Python/Katarina derives intelligence;
-- TickEvent fixed body draft: 48 bytes;
-- BarEvent fixed body draft: 80 bytes;
-- full SymbolSpec / account / position / order / execution data catalog drafted;
-- shared account + manual-user learning approved;
-- standard + cent account compatibility required; broker-native unit normalization only;
-- full account visibility approved;
-- declared user reason and Katarina-inferred reason are stored separately;
-- four owner operating decisions remain before schema freeze;
+KAT1 v1.0.0 now freezes:
 
-- KAT1 custom canonical binary;
-- SBE-inspired fixed root blocks;
-- explicit little-endian encoding;
-- no raw native-struct wire contract;
-- scaled int64 for execution-sensitive decimal values;
-- 128-bit trace IDs;
-- instrument dictionary + spec revision;
-- 65,536-byte frame bound;
+- canonical little-endian binary framing;
+- exact 30-message registry and payload layouts;
+- scaled execution-sensitive numeric representation;
+- explicit identity/revision binding;
+- standard + cent account-native handling;
+- shared-account/manual-trade learning visibility;
+- Hedging + Netting account support;
+- MARKET + LIMIT + STOP entries;
+- mandatory broker-native SL for Katarina exposure;
+- first-class account ledger;
 - chunked atomic snapshots;
-- strict schema evolution;
-- Python/MQL5 golden conformance fixtures required before freeze.
+- CRC32C/conformance rules;
+- 13 canonical golden vectors.
