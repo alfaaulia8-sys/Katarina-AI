@@ -17,6 +17,7 @@ Frozen KAT1 remains defined by protocol/kat1_message_schemas_v1.json and protoco
 - MQL5 epoch milliseconds are converted to KAT1 nanosecond wire units by multiplying by 1,000,000.
 - MQL5 epoch seconds are converted by multiplying by 1,000,000,000.
 - GetTickCount64/GetMicrosecondCount are local monotonic capture clocks only; they are never labeled UTC epoch time.
+- Stage-06 local_capture_id is internal observation ordering only. It is NOT the KAT1 wire sequence. Stage 07 assigns wire sequence after any permitted coalescing.
 
 ## HELLO_ACK
 
