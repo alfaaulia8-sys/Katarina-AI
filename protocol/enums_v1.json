@@ -1,0 +1,171 @@
+{
+  "protocol": "KAT1",
+  "version": "1.0.0",
+  "status": "FROZEN_CANDIDATE_STAGE_04",
+  "enums": {
+    "side": {
+      "0": "NONE",
+      "1": "BUY",
+      "2": "SELL"
+    },
+    "entry_type": {
+      "0": "NONE",
+      "1": "MARKET",
+      "2": "LIMIT",
+      "3": "STOP",
+      "4": "STOP_LIMIT_RESERVED"
+    },
+    "account_mode": {
+      "0": "UNKNOWN",
+      "1": "RETAIL_HEDGING",
+      "2": "RETAIL_NETTING",
+      "3": "EXCHANGE_NETTING"
+    },
+    "trade_mode": {
+      "0": "UNKNOWN",
+      "1": "DEMO",
+      "2": "CONTEST",
+      "3": "REAL"
+    },
+    "execution_mode": {
+      "0": "READ_ONLY",
+      "1": "DEMO_ARMED",
+      "2": "LIVE_ARMED"
+    },
+    "recovery_state": {
+      "0": "UNKNOWN",
+      "1": "RECOVERING",
+      "2": "READY",
+      "3": "BLOCKED"
+    },
+    "origin_class": {
+      "0": "UNKNOWN",
+      "1": "KATARINA",
+      "2": "MANUAL_DESKTOP",
+      "3": "MANUAL_MOBILE",
+      "4": "MANUAL_WEB",
+      "5": "FOREIGN_EA",
+      "6": "BROKER_OPERATION"
+    },
+    "position_change_kind": {
+      "0": "UNKNOWN",
+      "1": "UPSERT",
+      "2": "REMOVE"
+    },
+    "order_change_kind": {
+      "0": "UNKNOWN",
+      "1": "UPSERT",
+      "2": "REMOVE"
+    },
+    "normalized_order_state": {
+      "0": "UNKNOWN",
+      "1": "STARTED",
+      "2": "PLACED",
+      "3": "PARTIAL",
+      "4": "FILLED",
+      "5": "CANCELED",
+      "6": "REJECTED",
+      "7": "EXPIRED",
+      "8": "REQUEST_ADD",
+      "9": "REQUEST_MODIFY",
+      "10": "REQUEST_CANCEL"
+    },
+    "ledger_kind": {
+      "0": "UNKNOWN",
+      "1": "DEPOSIT",
+      "2": "WITHDRAWAL",
+      "3": "CREDIT",
+      "4": "CHARGE",
+      "5": "CORRECTION",
+      "6": "BONUS",
+      "7": "COMMISSION",
+      "8": "INTEREST",
+      "9": "DIVIDEND",
+      "10": "TAX",
+      "11": "OTHER_BALANCE_OPERATION"
+    },
+    "timeframe_minutes": {
+      "1": "M1",
+      "5": "M5",
+      "15": "M15",
+      "30": "M30",
+      "60": "H1",
+      "240": "H4",
+      "1440": "D1"
+    },
+    "bar_state": {
+      "0": "CLOSED",
+      "1": "FORMING"
+    },
+    "expected_position_effect": {
+      "0": "UNKNOWN",
+      "1": "OPEN_NEW",
+      "2": "INCREASE",
+      "3": "REDUCE",
+      "4": "CLOSE",
+      "5": "REVERSE",
+      "6": "NO_POSITION_CHANGE"
+    },
+    "netting_guard": {
+      "0": "NOT_APPLICABLE",
+      "1": "REQUIRE_SAME_POSITION_REVISION",
+      "2": "CANCEL_ON_POSITION_REVISION_CHANGE"
+    },
+    "time_in_force": {
+      "0": "GTC",
+      "1": "DAY",
+      "2": "SPECIFIED",
+      "3": "SPECIFIED_DAY"
+    },
+    "filling_policy": {
+      "0": "BROKER_DEFAULT",
+      "1": "FOK",
+      "2": "IOC",
+      "3": "RETURN",
+      "4": "BOC"
+    },
+    "execution_ack_state": {
+      "0": "UNKNOWN",
+      "1": "RECEIVED",
+      "2": "RESERVED",
+      "3": "VALIDATED",
+      "4": "SUBMITTING",
+      "5": "SUBMITTED",
+      "6": "REJECTED_PRE_BROKER",
+      "7": "ORDER_UNKNOWN"
+    },
+    "trade_event_kind": {
+      "0": "UNKNOWN",
+      "1": "SUBMISSION_RESERVED",
+      "2": "ORDER_ACCEPTED",
+      "3": "ORDER_REJECTED",
+      "4": "ORDER_PARTIAL",
+      "5": "ORDER_FILLED",
+      "6": "ORDER_CANCELED",
+      "7": "ORDER_EXPIRED",
+      "8": "POSITION_CHANGED",
+      "9": "ORDER_UNKNOWN",
+      "10": "DEAL_RECORDED"
+    },
+    "health_state": {
+      "0": "UNKNOWN",
+      "1": "OK",
+      "2": "DEGRADED",
+      "3": "BLOCKED"
+    },
+    "snapshot_record_type": {
+      "0": "UNKNOWN",
+      "1": "SYMBOL_SPEC",
+      "2": "SESSION_STATE",
+      "3": "ACCOUNT_STATE",
+      "4": "POSITION_STATE",
+      "5": "ORDER_STATE",
+      "6": "EXECUTION_JOURNAL_SUMMARY",
+      "7": "ACCOUNT_LEDGER_WATERMARK"
+    }
+  },
+  "rules": {
+    "unknown_enum_behavior": "REJECT_FOR_EXECUTION_CRITICAL_MESSAGES_PRESERVE_RAW_FOR_OBSERVATION_WHEN_SCHEMA_ALLOWS",
+    "enum_values_never_reused": true
+  }
+}
