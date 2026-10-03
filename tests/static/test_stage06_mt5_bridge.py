@@ -237,9 +237,11 @@ class Stage06Mt5StaticTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         for token in (
             "PASS_COMPILE_PROOF",
-            "PASS_RUNTIME_EVIDENCE",
+            "MQL_SELF_TEST",
+            "mql_self_test_sha256",
             "source_manifest",
             "Get-FileHash",
+            "DEFERRED_STAGE_36_38",
             "PASS_STAGE06_FINAL_CLEARANCE",
         ):
             self.assertIn(token, audit)
