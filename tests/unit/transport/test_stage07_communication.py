@@ -10,8 +10,14 @@ from katarina.adapters.transport.kat1_codec import (
     Kat1Codec,
     Kat1ProtocolError,
     SchemaCatalog,
+    crc32c,
 )
 from katarina.adapters.transport.memory import create_memory_transport_pair
+from katarina.adapters.transport.recovery import (
+    Kat1RecoveryGate,
+    RecoveryFault,
+    RecoveryState,
+)
 from katarina.adapters.transport.tcp import Kat1TcpServerTransport
 from katarina.adapters.transport.zmq import ZmqRouterTransport
 from katarina.adapters.transport.session import (
@@ -168,6 +174,322 @@ class Kat1CodecTests(unittest.TestCase):
                 values=frame.values,
                 flags=frame.header.flags | CRITICAL_MESSAGE,
             )
+
+
+class Kat1RecoveryGateTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.codec = Kat1Codec(SchemaCatalog.from_path(SCHEMA))
+        cls.stream_id = 77
+        cls.boot_id = 88
+        cls.account_id = "11" * 16
+        cls.snapshot_id = b"\x33" * 16
+        cls.snapshot_request_id = b"\x44" * 16
+        cls.reconcile_request_id = b"\x55" * 16
+
+    def _gate(self) -> Kat1RecoveryGate:
+        gate = Kat1RecoveryGate(
+            codec=self.codec,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            account_id=self.account_id,
+        )
+        gate.start(snapshot_request_id=self.snapshot_request_id)
+        return gate
+
+    def _snapshot_frames(self, *, bad_chunk_crc: bool = False):
+        body = b"abc"
+        variable = struct.pack("<HHI", 3, 1, len(body)) + body
+        payload_crc = crc32c(variable)
+        if bad_chunk_crc:
+            payload_crc ^= 1
+
+        begin = self.codec.encode(
+            message_type=11,
+            schema_version=1,
+            sequence=3,
+            source_time_ns=2_000,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "snapshot_id": self.snapshot_id,
+                "base_sequence": 3,
+                "account_revision": 10,
+                "expected_chunk_count": 1,
+                "expected_record_count": 1,
+                "expected_total_payload_bytes": len(variable),
+                "record_mask": 0x7F,
+                "spec_revision_watermark": 1,
+            },
+        )
+        chunk = self.codec.encode(
+            message_type=12,
+            schema_version=1,
+            sequence=4,
+            source_time_ns=2_100,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "snapshot_id": self.snapshot_id,
+                "chunk_index": 0,
+                "record_count": 1,
+                "chunk_payload_bytes": len(variable),
+                "payload_crc32c": payload_crc,
+                "records": [
+                    {
+                        "record_type": 3,
+                        "schema_version": 1,
+                        "body": body,
+                    }
+                ],
+            },
+        )
+        commit = self.codec.encode(
+            message_type=13,
+            schema_version=1,
+            sequence=5,
+            source_time_ns=2_200,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "snapshot_id": self.snapshot_id,
+                "chunk_count": 1,
+                "record_count": 1,
+                "total_payload_bytes": len(variable),
+                "aggregate_crc32c": crc32c(variable),
+                "sequence_watermark": 5,
+                "account_revision": 10,
+            },
+        )
+        return begin, chunk, commit
+
+    def test_atomic_snapshot_and_clean_reconcile_complete_recovery(self) -> None:
+        gate = self._gate()
+        request = gate.build_snapshot_request(
+            sequence=2,
+            source_time_ns=1_900,
+            requested_record_mask=0x7F,
+            after_execution_cursor=0,
+        )
+        self.assertEqual(self.codec.decode(request).header.message_type, 10)
+
+        for raw in self._snapshot_frames():
+            gate.observe_raw(raw)
+
+        self.assertEqual(gate.state, RecoveryState.WAITING_RECONCILE)
+        self.assertFalse(gate.communication_ready)
+        summary = gate.snapshot_summary
+        self.assertIsNotNone(summary)
+        self.assertEqual(summary.chunk_count, 1)
+        self.assertEqual(summary.record_count, 1)
+
+        reconcile_request = gate.build_reconcile_request(
+            sequence=6,
+            source_time_ns=2_300,
+            request_id=self.reconcile_request_id,
+            after_event_cursor=5,
+            scope_flags=0xFFFFFFFF,
+        )
+        self.assertEqual(
+            self.codec.decode(reconcile_request).header.message_type,
+            312,
+        )
+
+        report = self.codec.encode(
+            message_type=313,
+            schema_version=1,
+            sequence=7,
+            source_time_ns=2_400,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "request_id": self.reconcile_request_id,
+                "snapshot_id": self.snapshot_id,
+                "first_event_cursor": 5,
+                "last_event_cursor": 5,
+                "position_count": 0,
+                "order_count": 0,
+                "discrepancy_count": 0,
+                "recovery_state": 2,
+                "discrepancies": [],
+            },
+        )
+        gate.observe_raw(report)
+        self.assertEqual(gate.state, RecoveryState.COMPLETE)
+        self.assertTrue(gate.communication_ready)
+        self.assertFalse(gate.live_risk_ready)
+
+    def test_snapshot_chunk_crc_mismatch_faults(self) -> None:
+        gate = self._gate()
+        begin, chunk, _ = self._snapshot_frames(bad_chunk_crc=True)
+        gate.observe_raw(begin)
+        with self.assertRaises(RecoveryFault):
+            gate.observe_raw(chunk)
+        self.assertEqual(gate.state, RecoveryState.FAULTED)
+
+    def test_snapshot_abort_faults(self) -> None:
+        gate = self._gate()
+        begin, _, _ = self._snapshot_frames()
+        gate.observe_raw(begin)
+        abort = self.codec.encode(
+            message_type=14,
+            schema_version=1,
+            sequence=4,
+            source_time_ns=2_100,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "snapshot_id": self.snapshot_id,
+                "reason_code": 1,
+                "failed_chunk_index": 0,
+                "related_sequence": 3,
+                "message": "synthetic abort",
+            },
+        )
+        with self.assertRaises(RecoveryFault):
+            gate.observe_raw(abort)
+        self.assertEqual(gate.state, RecoveryState.FAULTED)
+
+    def test_reconcile_discrepancy_blocks_recovery(self) -> None:
+        gate = self._gate()
+        for raw in self._snapshot_frames():
+            gate.observe_raw(raw)
+        gate.build_reconcile_request(
+            sequence=6,
+            source_time_ns=2_300,
+            request_id=self.reconcile_request_id,
+            after_event_cursor=5,
+            scope_flags=0xFFFFFFFF,
+        )
+        report = self.codec.encode(
+            message_type=313,
+            schema_version=1,
+            sequence=7,
+            source_time_ns=2_400,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "request_id": self.reconcile_request_id,
+                "snapshot_id": self.snapshot_id,
+                "first_event_cursor": 5,
+                "last_event_cursor": 6,
+                "position_count": 1,
+                "order_count": 0,
+                "discrepancy_count": 1,
+                "recovery_state": 3,
+                "discrepancies": [b"position mismatch"],
+            },
+        )
+        with self.assertRaises(RecoveryFault):
+            gate.observe_raw(report)
+        self.assertEqual(gate.state, RecoveryState.FAULTED)
+
+    def test_session_ready_requires_recovery_gate_completion(self) -> None:
+        session = Kat1SessionSupervisor(
+            codec=self.codec,
+            client_instance_id=b"\xAA" * 16,
+            heartbeat_interval_ms=1000,
+            stale_after_ms=5000,
+        )
+        session.start()
+
+        heartbeat = self.codec.encode(
+            message_type=HEARTBEAT,
+            schema_version=1,
+            sequence=1,
+            source_time_ns=1_000,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "uptime_ms": 1000,
+                "latest_produced_sequence": 1,
+                "latest_consumed_command_sequence": 0,
+                "critical_queue_depth": 0,
+                "market_queue_depth": 0,
+                "last_broker_observation_ns": 1_000,
+                "transport_state": 1,
+            },
+        )
+        peer = TransportPeer(
+            route_id=b"mt5",
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+        )
+        session.observe(
+            ReceivedTransportFrame(frame=heartbeat, peer=peer),
+            now_ns=1_000,
+        )
+
+        hello_ack = self.codec.encode(
+            message_type=HELLO_ACK,
+            schema_version=1,
+            sequence=2,
+            source_time_ns=1_100,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "account_id": bytes.fromhex(self.account_id),
+                "broker_login": 123456,
+                "terminal_build": 6235,
+                "ea_build_version": 700,
+                "stream_id": self.stream_id,
+                "boot_id_echo": self.boot_id,
+                "capability_bits": 0,
+                "account_mode": 1,
+                "trade_mode": 1,
+                "execution_mode": 0,
+                "recovery_state": 1,
+                "money_scale": 2,
+                "account_currency_digits": 2,
+                "ea_source_hash": b"\x22" * 32,
+                "account_unit_profile_revision": 1,
+                "broker_server": "Katarina-CI",
+                "account_currency": "USD",
+            },
+        )
+        session.observe(
+            ReceivedTransportFrame(frame=hello_ack, peer=peer),
+            now_ns=1_100,
+        )
+        self.assertEqual(session.state, SessionState.RECOVERING)
+        self.assertFalse(session.communication_ready)
+
+        gate = self._gate()
+        for raw in self._snapshot_frames():
+            gate.observe_raw(raw)
+        gate.build_reconcile_request(
+            sequence=6,
+            source_time_ns=2_300,
+            request_id=self.reconcile_request_id,
+            after_event_cursor=5,
+            scope_flags=0xFFFFFFFF,
+        )
+        report = self.codec.encode(
+            message_type=313,
+            schema_version=1,
+            sequence=7,
+            source_time_ns=2_400,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "request_id": self.reconcile_request_id,
+                "snapshot_id": self.snapshot_id,
+                "first_event_cursor": 5,
+                "last_event_cursor": 5,
+                "position_count": 0,
+                "order_count": 0,
+                "discrepancy_count": 0,
+                "recovery_state": 2,
+                "discrepancies": [],
+            },
+        )
+        gate.observe_raw(report)
+        self.assertTrue(gate.communication_ready)
+
+        session.mark_recovered(now_ns=2_500)
+        self.assertEqual(session.state, SessionState.READY)
+        self.assertTrue(session.communication_ready)
+        self.assertFalse(session.live_risk_ready)
 
 
 class Kat1SessionSupervisorTests(unittest.TestCase):
