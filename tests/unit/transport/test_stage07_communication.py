@@ -13,6 +13,7 @@ from katarina.adapters.transport.kat1_codec import (
 )
 from katarina.adapters.transport.memory import create_memory_transport_pair
 from katarina.adapters.transport.tcp import Kat1TcpServerTransport
+from katarina.adapters.transport.zmq import ZmqRouterTransport
 from katarina.adapters.transport.session import (
     HELLO,
     HELLO_ACK,
@@ -329,6 +330,90 @@ class Kat1SessionSupervisorTests(unittest.TestCase):
         with self.assertRaises(SessionFault):
             supervisor.observe(bad, now_ns=1_000_000_000)
         self.assertEqual(supervisor.state, SessionState.FAULTED)
+
+
+class ZmqRouterTransportTests(unittest.IsolatedAsyncioTestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.codec = Kat1Codec(SchemaCatalog.from_path(SCHEMA))
+
+    def _heartbeat_frame(self) -> bytes:
+        return self.codec.encode(
+            message_type=HEARTBEAT,
+            schema_version=1,
+            sequence=1,
+            source_time_ns=123456789,
+            stream_id=77,
+            boot_id=88,
+            values={
+                "uptime_ms": 1000,
+                "latest_produced_sequence": 1,
+                "latest_consumed_command_sequence": 0,
+                "critical_queue_depth": 0,
+                "market_queue_depth": 0,
+                "last_broker_observation_ns": 123456789,
+                "transport_state": 1,
+            },
+        )
+
+    async def test_router_dealer_raw_kat1_roundtrip(self) -> None:
+        import asyncio
+        import socket
+        import zmq
+        import zmq.asyncio
+
+        probe = socket.socket()
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+        probe.close()
+
+        endpoint = f"tcp://127.0.0.1:{port}"
+        router = ZmqRouterTransport(endpoint=endpoint)
+        await router.start()
+        self.assertEqual(router.state, TransportState.CONNECTED)
+
+        context = zmq.asyncio.Context.instance()
+        dealer = context.socket(zmq.DEALER)
+        dealer.setsockopt(zmq.IDENTITY, b"mt5-test")
+        dealer.setsockopt(zmq.LINGER, 0)
+        dealer.connect(endpoint)
+
+        frame = self._heartbeat_frame()
+        await dealer.send(frame)
+
+        received = await asyncio.wait_for(
+            router.receive_frame(),
+            timeout=2.0,
+        )
+        self.assertEqual(received.frame, frame)
+        self.assertEqual(received.peer.route_id, b"mt5-test")
+
+        await router.send_frame(frame, peer=received.peer)
+        echoed = await asyncio.wait_for(dealer.recv(), timeout=2.0)
+        self.assertEqual(echoed, frame)
+
+        dealer.close(0)
+        await router.stop()
+
+    async def test_router_send_requires_route_identity(self) -> None:
+        import socket
+
+        probe = socket.socket()
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+        probe.close()
+
+        router = ZmqRouterTransport(
+            endpoint=f"tcp://127.0.0.1:{port}",
+        )
+        await router.start()
+        with self.assertRaises(TransportClosedError):
+            await router.send_frame(self._heartbeat_frame())
+        await router.stop()
+
+    def test_router_rejects_public_bind(self) -> None:
+        with self.assertRaises(ValueError):
+            ZmqRouterTransport(endpoint="tcp://0.0.0.0:5567")
 
 
 class TcpTransportTests(unittest.IsolatedAsyncioTestCase):
