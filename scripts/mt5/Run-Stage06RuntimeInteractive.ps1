@@ -3,7 +3,8 @@ param()
 $ErrorActionPreference = "Stop"
 
 $DesignVersion = "0.5.0"
-$CommonFiles = Join-Path $env:APPDATA "MetaQuotes\Terminal\Common\Files"
+$AdministratorRoaming = "C:\Users\Administrator\AppData\Roaming"
+$CommonFiles = Join-Path $AdministratorRoaming "MetaQuotes\Terminal\Common\Files"
 $RunRoot = Join-Path "C:\KatarinaStage06Runtime" ([DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss"))
 
 function Write-Step {
@@ -27,9 +28,20 @@ function Read-Evidence {
 
 function Get-TerminalInstances {
     $instances = @()
-    $originPattern = Join-Path $env:APPDATA "MetaQuotes\Terminal\*\origin.txt"
+    $originPatterns = @(
+        (Join-Path $env:APPDATA "MetaQuotes\Terminal\*\origin.txt"),
+        "C:\Users\*\AppData\Roaming\MetaQuotes\Terminal\*\origin.txt"
+    )
 
-    foreach ($origin in @(Get-ChildItem -Path $originPattern -ErrorAction SilentlyContinue)) {
+    $origins = @()
+    foreach ($pattern in $originPatterns) {
+        try {
+            $origins += @(Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue)
+        } catch {}
+    }
+    $origins = @($origins | Sort-Object FullName -Unique)
+
+    foreach ($origin in $origins) {
         try {
             $home = (Get-Content -LiteralPath $origin.FullName -Raw).Trim()
             if (-not $home) { continue }
@@ -198,7 +210,14 @@ Write-Host ""
 
 $instances = Get-TerminalInstances
 if ($instances.Count -lt 2) {
-    throw "At least two compiled MT5 instances are required for distinct STANDARD_LIKE and CENT_LIKE probes. Found: $($instances.Count)"
+    $diag = Join-Path $RunRoot "discovery_failure.txt"
+    @(
+        "windows_user=" + $identity.Name,
+        "appdata=" + $env:APPDATA,
+        "instances_found=" + $instances.Count,
+        "expected_admin_roaming=" + $AdministratorRoaming
+    ) | Set-Content -LiteralPath $diag -Encoding UTF8
+    throw "At least two compiled MT5 instances are required. Found: $($instances.Count). Diagnostic: $diag"
 }
 
 foreach ($instance in $instances) {
