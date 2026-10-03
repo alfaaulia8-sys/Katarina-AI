@@ -176,6 +176,121 @@ function Invoke-Stage06Script {
     }
 }
 
+function Get-EvidenceNumber {
+    param($Evidence,[string]$Key)
+
+    $raw = [string]$Evidence.Values[$Key]
+    if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
+
+    $value = 0.0
+    $style = [Globalization.NumberStyles]::Float -bor [Globalization.NumberStyles]::AllowThousands
+    if ([double]::TryParse($raw,$style,[Globalization.CultureInfo]::InvariantCulture,[ref]$value)) {
+        return $value
+    }
+    if ([double]::TryParse($raw,[ref]$value)) {
+        return $value
+    }
+    return $null
+}
+
+function Resolve-AutomaticAccountClasses {
+    param($Instances,$Discoveries)
+
+    if ($Instances.Count -ne 2 -or $Discoveries.Count -ne 2) {
+        throw "Automatic Stage-06 classification currently requires exactly two verified MT5 account instances."
+    }
+
+    $scores = @(0,0)
+    $strong = @(0,0)
+    $reasons = @((New-Object System.Collections.ArrayList),(New-Object System.Collections.ArrayList))
+
+    for ($i=0; $i -lt 2; $i++) {
+        $currency = ([string]$Discoveries[$i].Values["account_currency"]).ToUpperInvariant()
+        if ($currency -match "(CENT|USC|USCENT|CENTS)") {
+            $scores[$i] += 2
+            [void]$reasons[$i].Add("native account currency contains a cent-unit hint")
+        }
+
+        $server = ([string]$Discoveries[$i].Values["broker_server"]).ToUpperInvariant()
+        if ($server -match "(^|[^A-Z])CENT([^A-Z]|$)") {
+            $scores[$i] += 1
+            [void]$reasons[$i].Add("broker server contains a cent hint (supporting only)")
+        }
+    }
+
+    $contract = @(
+        (Get-EvidenceNumber $Discoveries[0] "contract_size"),
+        (Get-EvidenceNumber $Discoveries[1] "contract_size")
+    )
+    $vmin = @(
+        (Get-EvidenceNumber $Discoveries[0] "volume_min"),
+        (Get-EvidenceNumber $Discoveries[1] "volume_min")
+    )
+    $tick = @(
+        (Get-EvidenceNumber $Discoveries[0] "tick_value"),
+        (Get-EvidenceNumber $Discoveries[1] "tick_value")
+    )
+
+    if ($contract[0] -gt 0 -and $contract[1] -gt 0 -and $vmin[0] -gt 0 -and $vmin[1] -gt 0) {
+        $minExposure = @($contract[0]*$vmin[0],$contract[1]*$vmin[1])
+        $maxExp = [Math]::Max($minExposure[0],$minExposure[1])
+        $minExp = [Math]::Min($minExposure[0],$minExposure[1])
+        if ($minExp -gt 0 -and ($maxExp/$minExp) -ge 20.0) {
+            $cent = $(if ($minExposure[0] -lt $minExposure[1]) { 0 } else { 1 })
+            $scores[$cent] += 6
+            $strong[$cent]++
+            [void]$reasons[$cent].Add(("minimum tradable contract exposure is {0:N2}x smaller" -f ($maxExp/$minExp)))
+        }
+    }
+
+    if ($contract[0] -gt 0 -and $contract[1] -gt 0 -and $tick[0] -gt 0 -and $tick[1] -gt 0) {
+        $density = @($tick[0]/$contract[0],$tick[1]/$contract[1])
+        $maxDen = [Math]::Max($density[0],$density[1])
+        $minDen = [Math]::Min($density[0],$density[1])
+        if ($minDen -gt 0 -and ($maxDen/$minDen) -ge 20.0) {
+            $cent = $(if ($density[0] -gt $density[1]) { 0 } else { 1 })
+            $scores[$cent] += 6
+            $strong[$cent]++
+            [void]$reasons[$cent].Add(("native tick-value density is {0:N2}x larger" -f ($maxDen/$minDen)))
+        }
+    }
+
+    $difference = [Math]::Abs($scores[0]-$scores[1])
+    $candidate = $(if ($scores[0] -gt $scores[1]) { 0 } elseif ($scores[1] -gt $scores[0]) { 1 } else { -1 })
+
+    $report = [ordered]@{
+        mode = "AUTO_FAIL_CLOSED"
+        score_1 = $scores[0]
+        score_2 = $scores[1]
+        strong_evidence_1 = $strong[0]
+        strong_evidence_2 = $strong[1]
+        reasons_1 = @($reasons[0])
+        reasons_2 = @($reasons[1])
+        result = "AMBIGUOUS"
+    }
+
+    if ($candidate -lt 0 -or $difference -lt 5 -or $strong[$candidate] -lt 1) {
+        return [pscustomobject]@{
+            Passed = $false
+            StandardIndex = -1
+            CentIndex = -1
+            Report = $report
+        }
+    }
+
+    $standard = 1-$candidate
+    $report.result = "CLASSIFIED"
+    $report.cent_index = $candidate+1
+    $report.standard_index = $standard+1
+
+    return [pscustomobject]@{
+        Passed = $true
+        StandardIndex = $standard
+        CentIndex = $candidate
+        Report = $report
+    }
+}
+
 function Show-Discovery {
     param([int]$Index,$Instance,$Evidence)
 
@@ -237,22 +352,26 @@ for ($i=0; $i -lt $instances.Count; $i++) {
     Show-Discovery -Index ($i+1) -Instance $instances[$i] -Evidence $d
 }
 
-Write-Host ""
-Write-Host "Katarina does NOT infer standard/cent from marketing labels or currency codes." -ForegroundColor Yellow
-Write-Host "Choose the classes based on the actual broker accounts you configured." -ForegroundColor Yellow
+Write-Step "Automatic STANDARD_LIKE / CENT_LIKE classification"
+$classification = Resolve-AutomaticAccountClasses -Instances $instances -Discoveries $discoveries
+$classification.Report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $RunRoot "account_classification.json") -Encoding UTF8
 
-$standardIndex = [int](Read-Host "Number for STANDARD_LIKE account") - 1
-$centIndex = [int](Read-Host "Number for CENT_LIKE account") - 1
+if (-not $classification.Passed) {
+    Write-Host "Automatic account classification is AMBIGUOUS. No account class was guessed." -ForegroundColor Yellow
+    throw "Stage 06 automatic account classification is ambiguous. See account_classification.json."
+}
 
-if ($standardIndex -lt 0 -or $standardIndex -ge $instances.Count) { throw "Invalid STANDARD_LIKE selection." }
-if ($centIndex -lt 0 -or $centIndex -ge $instances.Count) { throw "Invalid CENT_LIKE selection." }
-if ($standardIndex -eq $centIndex) { throw "STANDARD_LIKE and CENT_LIKE must use distinct account instances." }
+$standardIndex = [int]$classification.StandardIndex
+$centIndex = [int]$classification.CentIndex
 
 $stdKey = [string]$discoveries[$standardIndex].Values["broker_server"] + "|" + [string]$discoveries[$standardIndex].Values["login_last4"]
 $centKey = [string]$discoveries[$centIndex].Values["broker_server"] + "|" + [string]$discoveries[$centIndex].Values["login_last4"]
 if ($stdKey -eq $centKey) {
-    throw "Selected terminals appear to use the same broker account identity. Stage 06 requires distinct account probes."
+    throw "Automatically selected terminals use the same broker account identity. Stage 06 requires distinct accounts."
 }
+
+Write-Host ("AUTO STANDARD_LIKE: [" + ($standardIndex+1) + "] " + $instances[$standardIndex].Name) -ForegroundColor Green
+Write-Host ("AUTO CENT_LIKE    : [" + ($centIndex+1) + "] " + $instances[$centIndex].Name) -ForegroundColor Green
 
 $standardSymbol = [string]$discoveries[$standardIndex].Values["symbol"]
 $centSymbol = [string]$discoveries[$centIndex].Values["symbol"]
@@ -279,6 +398,8 @@ $summary = [ordered]@{
     generated_utc = [DateTime]::UtcNow.ToString("o")
     windows_user = $identity.Name
     symbol_mode = "AUTO_PER_MT5"
+    account_classification_mode = "AUTO_FAIL_CLOSED"
+    account_classification = $classification.Report
     standard = [ordered]@{
         symbol = $standardSymbol
         terminal = $instances[$standardIndex].Name
