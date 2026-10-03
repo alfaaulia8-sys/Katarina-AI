@@ -65,12 +65,16 @@ class Kat1CodecTests(unittest.TestCase):
             "ledger_kind": "ledger_kind",
             "event_kind": "trade_event_kind",
         }
+        semantic_field_alias = {
+            "money_scale": "account_currency_digits",
+        }
 
         for vector in self.golden["vectors"]:
             frame = self.codec.decode(bytes.fromhex(vector["hex"]))
             for key, expected in vector["decoded"].items():
                 with self.subTest(vector=vector["name"], field=key):
-                    actual = frame.values[key]
+                    wire_key = semantic_field_alias.get(key, key)
+                    actual = frame.values[wire_key]
                     if isinstance(expected, str) and key in enum_alias:
                         enum_name = enum_alias[key]
                         actual = self.enums[enum_name][str(actual)]
