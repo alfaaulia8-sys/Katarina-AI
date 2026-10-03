@@ -1,0 +1,15 @@
+GO	0	10:57:38.688	Terminal	MetaTrader 5 x64 build 6230 started for MetaQuotes Ltd.
+DI	0	10:57:38.688	Terminal	Windows Server 2012 R2 build 9600 on KVM, 2 x Intel Xeon E-2236  @ 3.40GHz, AVX2, 0 / 1 Gb memory, 17 / 39 Gb disk, RDP, UAC, admin, GMT+7
+OF	0	10:57:38.688	Terminal	C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\2698BCED53B80670A80FF375C9E8D6A1
+HJ	0	10:57:40.782	Network	'374880962': authorized on ValetaxIntl-Live2 through valetax-mt5-sg9 (ping: 37.29 ms, build 6182)
+PK	0	10:57:40.782	Network	'374880962': previous successful authorization performed from 182.253.50.96 on 2026.09.29 06:10:31
+NH	0	10:57:41.468	Network	'374880962': terminal synchronized with Valetax International Limited: 0 positions, 0 orders, 73 symbols, 0 spreads
+CF	0	10:57:41.468	Network	'374880962': trading has been enabled, demo account - hedging mode
+IJ	0	10:57:41.468	Network	'374880962': balance management has been disabled - demo account
+LQ	0	10:57:42.591	Network	'374880962': scanning network for access points
+GQ	0	10:57:46.415	Network	'374880962': scanning network finished
+JJ	0	11:24:43.770	Terminal	exit with code 0
+PE	0	11:24:43.859	Network	'374880962': disconnected from ValetaxIntl-Live2
+FQ	0	11:24:43.969	Terminal	stopped with 0
+FE	0	11:24:43.988	Terminal	shutdown with 0
+
