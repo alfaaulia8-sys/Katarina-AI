@@ -126,12 +126,32 @@ jobs:
           New-Item -ItemType Directory -Force -Path "build\mt5" | Out-Null
           Copy-Item $evidencePath "build\mt5\Katarina_Stage06_self_test_result.txt" -Force
 
-      - name: Upload modern compile and runtime evidence
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stage 06 final evidence-bound audit
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\mt5\audit_stage06_final.ps1" -PythonExe python
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $clearance = Get-Content ".\build\mt5\stage06_final_clearance.json" -Raw | ConvertFrom-Json
+          if ($clearance.result -ne "PASS_STAGE06_FINAL_CLEARANCE") {
+            throw "Stage 06 final clearance did not pass."
+          }
+          if ([int]$clearance.static_regressions.total -ne 35) {
+            throw "Unexpected Stage 06 static regression count."
+          }
+
+      - name: Upload Stage 06 final freeze evidence
         uses: actions/upload-artifact@v4
         with:
-          name: stage06-modern-compile-runtime-evidence
+          name: stage06-final-freeze-evidence
           path: |
             build/mt5/stage06_compile_evidence.json
             build/mt5/*.compile.log
             build/mt5/Katarina_Stage06_self_test_result.txt
+            build/mt5/stage06_final_clearance.json
+            build/mt5/STAGE_06_FINAL_AUDIT_CANDIDATE.md
           retention-days: 30
