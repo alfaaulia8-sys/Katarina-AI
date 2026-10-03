@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
 
-$InstallerVersion = "1.2.0"
+$InstallerVersion = "1.2.1"
 $AgentId = "katarina-vps-2012r2-01"
 $Repository = "alfaaulia-katarina/Katarina-AI"
 $Branch = "main"
@@ -92,6 +92,42 @@ function Upload-Telemetry {
         Write-Host ("Telemetry upload failed: " + $_.Exception.Message) -ForegroundColor DarkYellow
     }
 }
+
+function Get-RemoteAgentHealth {
+    try {
+        $path = "ops/vps/health/$AgentId/status.json"
+        $escaped = ($path -split "/" | ForEach-Object { [Uri]::EscapeDataString($_) }) -join "/"
+        $uri = "https://api.github.com/repos/$Repository/contents/$escaped?ref=$([Uri]::EscapeDataString($Branch))"
+        $item = Invoke-RestMethod -Method GET -Uri $uri -Headers $script:Headers
+        $raw = [Convert]::FromBase64String(([string]$item.content -replace "\\s",""))
+        return ([Text.Encoding]::UTF8.GetString($raw) | ConvertFrom-Json)
+    } catch {
+        return $null
+    }
+}
+
+function Upload-AgentDiagnostics {
+    if ($null -eq $script:Headers) { return }
+
+    try {
+        $base = "ops/vps/bootstrap/$AgentId/$SessionId"
+
+        $taskText = (& schtasks.exe /Query /TN "KatarinaVPSAgent" /V /FO LIST 2>&1 | Out-String)
+        if ([string]::IsNullOrWhiteSpace($taskText)) { $taskText = "No Task Scheduler output." }
+        Put-GitHubTextFile -Path "$base/task_status.txt" -Text $taskText -Message "vps-bootstrap: task diagnostics $SessionId"
+
+        foreach ($name in @("startup_state.json","last_error.json")) {
+            $local = Join-Path $InstallRoot $name
+            if (Test-Path $local) {
+                $txt = Get-Content -Path $local -Raw
+                Put-GitHubTextFile -Path "$base/$name" -Text $txt -Message "vps-bootstrap: $name $SessionId"
+            }
+        }
+    } catch {
+        Write-Host ("Diagnostic upload failed: " + $_.Exception.Message) -ForegroundColor DarkYellow
+    }
+}
+
 
 function Protect-Token {
     param([string]$PlainToken,[string]$Path)
@@ -191,11 +227,39 @@ try {
     & schtasks.exe /Run /TN $taskName | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "KatarinaVPSAgent task was created but failed to start." }
 
-    Start-Sleep -Seconds 3
-    & schtasks.exe /Query /TN $taskName /FO LIST /V > $null 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "KatarinaVPSAgent task verification failed." }
+    Log-Line "Waiting for persistent agent health..."
+    $online = $false
+    $health = $null
 
-    Log-Line "Persistent agent installed and started: PASS"
+    for ($i = 0; $i -lt 5; $i++) {
+        Start-Sleep -Seconds 5
+
+        & schtasks.exe /Query /TN $taskName /FO LIST /V > $null 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Upload-AgentDiagnostics
+            throw "KatarinaVPSAgent task verification failed."
+        }
+
+        $health = Get-RemoteAgentHealth
+        if ($null -ne $health) {
+            Log-Line ("Agent health state: " + [string]$health.state)
+            if ([string]$health.state -eq "ONLINE") {
+                $online = $true
+                break
+            }
+            if ([string]$health.state -eq "ERROR") {
+                Upload-AgentDiagnostics
+                throw ("Persistent agent reported ERROR: " + [string]$health.error)
+            }
+        }
+    }
+
+    if (-not $online) {
+        Upload-AgentDiagnostics
+        throw "Persistent agent did not publish ONLINE health within 25 seconds."
+    }
+
+    Log-Line "Persistent agent end-to-end health: PASS"
     Upload-Telemetry -Status "INSTALLED"
 
     Write-Host ""
@@ -210,6 +274,7 @@ try {
 catch {
     $err = $_.Exception.Message
     Log-Line ("ERROR: " + $err)
+    Upload-AgentDiagnostics
     Upload-Telemetry -Status "FAILED" -ErrorText $err
 
     Write-Host ""
