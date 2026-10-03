@@ -505,6 +505,140 @@ try {
         }
 
         "STAGE06_CLEARANCE" {
+            $mode = ([string](Get-ArgValue $request.args "mode" "FULL")).ToUpperInvariant()
+
+            if ($mode -eq "PREPARE_RUNTIME") {
+                $target = "C:\KatarinaStage06Runtime"
+                New-Item -ItemType Directory -Force -Path $target | Out-Null
+
+                $sourcePs1 = Join-Path $RepoRoot "scripts\mt5\Run-Stage06RuntimeInteractive.ps1"
+                $sourceCmd = Join-Path $RepoRoot "scripts\mt5\FINALIZE_STAGE06_RUNTIME.cmd"
+                if (!(Test-Path $sourcePs1) -or !(Test-Path $sourceCmd)) {
+                    throw "Stage-06 interactive runtime finalizer source is missing."
+                }
+
+                Copy-Item $sourcePs1 (Join-Path $target "Run-Stage06RuntimeInteractive.ps1") -Force
+                Copy-Item $sourceCmd (Join-Path $target "FINALIZE_STAGE06_RUNTIME.cmd") -Force
+
+                @"
+KATARINA AI - Stage 06 Runtime Finalizer
+
+Run from the interactive Administrator/user desktop:
+  FINALIZE_STAGE06_RUNTIME.cmd
+
+Safety:
+- AllowLiveTrading=0
+- no OrderSend path
+- no password is requested or exported
+- scripts only read account/symbol facts and write Stage-06 evidence
+
+After PASS, return to ChatGPT and type:
+  cek Stage 06 runtime
+"@ | Set-Content -Path (Join-Path $target "README.txt") -Encoding UTF8
+
+                ("STAGE06 PREPARE_RUNTIME PASS" + [Environment]::NewLine + "Path: " + $target) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = "PREPARE_RUNTIME"
+                $details["runtime_finalizer_path"] = $target
+                break
+            }
+
+            if ($mode -eq "COLLECT_RUNTIME") {
+                $terminalCommonDataPath = Get-ArgValue $request.args "terminal_common_data_path" ""
+                if (-not $terminalCommonDataPath) {
+                    throw "terminal_common_data_path is required for COLLECT_RUNTIME."
+                }
+
+                $sourceDir = Join-Path $terminalCommonDataPath "Files"
+                if (!(Test-Path $sourceDir)) {
+                    throw "MT5 Common Files directory not found: $sourceDir"
+                }
+
+                $requiredRuntime = @(
+                    "Katarina_Stage06_self_test_result.txt",
+                    "Katarina_Stage06_account_probe_STANDARD_LIKE.txt",
+                    "Katarina_Stage06_account_probe_CENT_LIKE.txt"
+                )
+
+                function Read-KatEvidenceLocal {
+                    param([string]$Path)
+                    $values = [ordered]@{}
+                    foreach ($line in Get-Content -Path $Path) {
+                        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                        $idx = $line.IndexOf("=")
+                        if ($idx -lt 1) { continue }
+                        $values[$line.Substring(0,$idx).Trim()] = $line.Substring($idx+1).Trim()
+                    }
+                    return $values
+                }
+
+                $records = @()
+                foreach ($name in $requiredRuntime) {
+                    $source = Join-Path $sourceDir $name
+                    if (!(Test-Path $source)) {
+                        throw "Required Stage-06 runtime evidence missing: $name"
+                    }
+
+                    $values = Read-KatEvidenceLocal -Path $source
+                    foreach ($key in @("stage","design_version","proof_type","terminal_build","result")) {
+                        if (-not $values.Contains($key)) {
+                            throw "Runtime evidence $name missing field: $key"
+                        }
+                    }
+                    if ($values["stage"] -ne "06") { throw "Runtime evidence stage mismatch: $name" }
+                    if ($values["design_version"] -ne "0.5.0") { throw "Runtime evidence design mismatch: $name" }
+                    if ($values["result"] -ne "PASS") { throw "Runtime evidence did not pass: $name" }
+
+                    $dest = Join-Path $OutputDir $name
+                    Copy-Item $source $dest -Force
+                    $info = Get-Item $source
+
+                    $records += [pscustomobject]@{
+                        file = $name
+                        last_write_utc = $info.LastWriteTimeUtc.ToString("o")
+                        sha256 = (Get-FileHash -Path $dest -Algorithm SHA256).Hash
+                        values = $values
+                    }
+                }
+
+                $self = $records | Where-Object { $_.file -eq "Katarina_Stage06_self_test_result.txt" }
+                $std = $records | Where-Object { $_.file -eq "Katarina_Stage06_account_probe_STANDARD_LIKE.txt" }
+                $cent = $records | Where-Object { $_.file -eq "Katarina_Stage06_account_probe_CENT_LIKE.txt" }
+
+                if ($self.values["proof_type"] -ne "MQL_SELF_TEST") { throw "Invalid MQL self-test proof type." }
+                if ($std.values["proof_type"] -ne "ACCOUNT_PROBE" -or $std.values["account_class"] -ne "STANDARD_LIKE") {
+                    throw "Invalid STANDARD_LIKE runtime proof."
+                }
+                if ($cent.values["proof_type"] -ne "ACCOUNT_PROBE" -or $cent.values["account_class"] -ne "CENT_LIKE") {
+                    throw "Invalid CENT_LIKE runtime proof."
+                }
+
+                $stdIdentity = [string]$std.values["broker_server"] + "|" + [string]$std.values["login_last4"]
+                $centIdentity = [string]$cent.values["broker_server"] + "|" + [string]$cent.values["login_last4"]
+                if ($stdIdentity -eq $centIdentity) {
+                    throw "STANDARD_LIKE and CENT_LIKE evidence use the same account identity."
+                }
+
+                $manifest = [ordered]@{
+                    schema_version = "1.0"
+                    stage = "06"
+                    bridge_design_version = "0.5.0"
+                    generated_utc = [DateTime]::UtcNow.ToString("o")
+                    source_host = $env:COMPUTERNAME
+                    records = $records
+                    identities_distinct = $true
+                    result = "PASS_STAGE06_RUNTIME_PROBES"
+                }
+                Write-JsonFile (Join-Path $OutputDir "stage06_runtime_probe_manifest.json") $manifest
+
+                "STAGE06 COLLECT_RUNTIME PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = "COLLECT_RUNTIME"
+                $details["runtime_result"] = "PASS_STAGE06_RUNTIME_PROBES"
+                $details["records"] = 3
+                break
+            }
+
             $terminalDataPath = Get-ArgValue $request.args "terminal_data_path" ""
             $terminalCommonDataPath = Get-ArgValue $request.args "terminal_common_data_path" ""
             $metaEditorPath = Get-ArgValue $request.args "metaeditor_path" ""
