@@ -1,0 +1,14 @@
+WARNING: Windows Server 2012 R2 compile is exploratory only and cannot produce 
+Stage 06 freeze proof.
+PASS: KatarinaBridgeEA.mq5 -> 0 errors, 0 warnings, EX5 exists
+PASS: KatarinaStage06SelfTest.mq5 -> 0 errors, 0 warnings, EX5 exists
+PASS: KatarinaStage06AccountProbe.mq5 -> 0 errors, 0 warnings, EX5 exists
+
+Katarina Stage 06 legacy exploratory compile PASSED
+NOTE: This is NOT Stage 06 freeze proof.
+Host:       WINDOWS_SERVER_2012_R2_X64 [DEFERRED]
+MetaEditor: 5.0.0.6230
+Evidence:   C:\KatarinaVPSAgent\work\s6a5\src\alfaaulia-katarina-Katarina-AI-0de3ae57d0299ca06694b63d83d53500379117bb\build\mt5\stage06_compile_evidence.json
+
+Next: run KatarinaStage06SelfTest and KatarinaStage06AccountProbe inside MT5.
+
