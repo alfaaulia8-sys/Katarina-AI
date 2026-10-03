@@ -7,7 +7,7 @@
 | 03 | Repository Architecture | ✅ FINALIZED / FROZEN v1.0.0 |
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
-| 06 | MT5 Bridge EA | 🟡 CLEARANCE AUTOMATION COMPLETE — Bridge v0.5.0 / EXTERNAL PROOF PENDING |
+| 06 | MT5 Bridge EA | ✅ FINALIZED / FROZEN v1.0.0 — Bridge design v0.5.0 |
 | 07 | MT5-Python Communication | 🟡 RESEARCH/DESIGN ACTIVE — Python conformance work started |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 06 external proof remains pending. Stage 07 research/design and pure-Python conformance work are now active without modifying the Stage-06 MQL clearance candidate.**
+**Stage 06 is FINALIZED / FROZEN v1.0.0. Stage 07 communication development may now proceed against the frozen Bridge v0.5.0 contract.**
 
 ## Frozen Stage 04 Scope
 
@@ -94,7 +94,7 @@ New live risk additionally requires fresh/healthy/reconciled/risk-ready state an
 Stage 05 is frozen as Core v1.0.0.
 
 
-## Stage 06 In-Review Scope
+## Frozen Stage 06 Scope
 
 Implemented so far:
 
@@ -139,9 +139,22 @@ Implemented so far:
 
 Production broker mutation remains disabled and the bridge remains RECOVERING.
 
-Implementation and clearance automation are complete. The remaining freeze blocker is external proof only: actual MetaEditor compilation on modern x64 Windows, actual MQL self-test, standard-like and cent-like account probes, evidence collection, then governed freeze review. Windows Server 2012 R2 remains deferred.
+Freeze-qualified proof completed on Windows Server 2022 x64:
 
-Stage 06 is not frozen yet.
+- MetaEditor 5.0.0.6235 strict compile;
+- 0 errors / 0 warnings for Bridge EA, SelfTest and AccountProbe;
+- non-empty EX5 artifacts;
+- modern-host MQL self-test PASS;
+- 35/35 Stage-06 static regressions PASS;
+- complete MQL source-manifest binding PASS;
+- final evidence-bound audit `PASS_STAGE06_FINAL_CLEARANCE`;
+- freeze artifact provenance recorded in `docs/reviews/STAGE_06_FREEZE_RECORD.md`.
+
+Per ADR-0010 and the frozen Stage-04 account-compatibility contract, real STANDARD_LIKE and CENT_LIKE broker validation is deferred to Stage 36/38 and is not a Stage-06 freeze blocker.
+
+Windows Server 2012 R2 remains deferred and was not used as freeze-qualified evidence.
+
+Stage 06 is FINALIZED / FROZEN v1.0.0.
 
 
 ## Stage 07 Active Scope
@@ -159,4 +172,4 @@ Completed/started without crossing the Stage-06 external-proof boundary:
 - Stage-07 communication config draft;
 - ADR-0009 proposed.
 
-Production MQL5 ZeroMQ/TCP integration remains gated on Stage-06 external clearance/freeze.
+Stage-06 clearance is complete. Production MQL5 ZeroMQ/TCP transport implementation may now proceed under the frozen Stage-06 bridge contract; live broker-risk enablement remains governed by later stages.
