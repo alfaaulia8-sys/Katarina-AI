@@ -38,7 +38,7 @@ All queues are bounded. Critical execution and risk-state traffic has priority o
 
 Python codec work may proceed now. It must validate the 52-byte header, CRC32C, frozen schema layouts, bounded UTF-8 tails, embedded snapshot records, and exact scaled integers. It must reproduce Stage-04 golden vectors.
 
-MQL5 codec integration waits for Stage-06 external clearance so the Stage-06 proof candidate is not mutated.
+Stage 06 is frozen. MQL5 codec integration may now proceed as Stage-07 code without changing frozen Stage-06 bridge semantics.
 
 ## ZeroMQ capability gate
 
@@ -50,10 +50,10 @@ Production defaults are localhost-only. Transport routing identity is metadata, 
 
 ## Acceptance draft
 
-Stage 07 cannot freeze until Stage 06 is externally cleared; Python and MQL5 codecs match all golden vectors; cross-language bytes match; ZeroMQ and TCP integrations pass; reconnect/backpressure tests pass; binding mismatches fail closed; and final audit passes.
+Stage 06 is already frozen. Stage 07 cannot freeze until Python and MQL5 codecs match all golden vectors; cross-language bytes match; ZeroMQ and TCP integrations pass; reconnect/backpressure tests pass; binding mismatches fail closed; and final audit passes.
 
 ## Current boundary
 
-Allowed now: research, architecture, Python transport contracts, Python KAT1 conformance, and in-memory tests.
+Allowed now: research, architecture, Python transport runtime, MQL5 KAT1 codec, ZeroMQ/TCP communication adapters, and integration tests—provided frozen Stage-06 safety semantics are not weakened.
 
-Blocked until Stage-06 proof: modifying the Stage-06 MQL bridge for live ZeroMQ/TCP integration, enabling external execution commands, or claiming production communication is operational.
+Still blocked in Stage 07: live broker-risk enablement and any production-ready claim before the later governed validation stages.
