@@ -283,6 +283,9 @@ void OnStart(void)
    Print("PASS: ",detail);
 
    KatWriteHandshakeEvidence(passed,detail);
+   // Test-harness only: allow the final nonblocking ACK to reach the local
+   // ROUTER before the adapter performs its production linger=0 shutdown.
+   Sleep(100);
    transport.Stop();
 
    if(MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
