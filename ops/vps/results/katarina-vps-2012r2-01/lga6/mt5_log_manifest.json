@@ -1,0 +1,26 @@
+[
+    {
+        "output_file":  "mt5_log_01_metaeditor.txt",
+        "source_name":  "metaeditor.log",
+        "last_write_utc":  "2026-09-30T11:08:08.0231952Z",
+        "source_size_bytes":  87176
+    },
+    {
+        "output_file":  "mt5_log_02_20260929.txt",
+        "source_name":  "20260929.log",
+        "last_write_utc":  "2026-09-29T04:24:43.9810980Z",
+        "source_size_bytes":  2602
+    },
+    {
+        "output_file":  "mt5_log_03_20260928.txt",
+        "source_name":  "20260928.log",
+        "last_write_utc":  "2026-09-28T01:46:23.7609146Z",
+        "source_size_bytes":  698
+    },
+    {
+        "output_file":  "mt5_log_04_20260927.txt",
+        "source_name":  "20260927.log",
+        "last_write_utc":  "2026-09-27T15:20:48.7774282Z",
+        "source_size_bytes":  7626
+    }
+]
