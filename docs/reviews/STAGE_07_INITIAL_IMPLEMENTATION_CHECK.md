@@ -1,6 +1,6 @@
 # Stage 07 — Initial Implementation Check
 
-**Status:** PARTIAL PASS / MQL5 LIVE INTEGRATION GATED
+**Status:** ACTIVE IMPLEMENTATION / SESSION SUPERVISOR ADDED
 **Stage:** 07/40
 **Version:** 0.1.0
 
@@ -19,7 +19,11 @@
 - embedded snapshot-record support;
 - golden-vector decode/re-encode tests;
 - corrupt magic/CRC/flag tests;
-- bounded transport backpressure test.
+- bounded transport backpressure test;
+- fail-closed Python KAT1 session supervisor;
+- HEARTBEAT presence → HELLO → HELLO_ACK state machine;
+- stale-session detection and reconnect handshake reset;
+- explicit separation of communication readiness from live-risk readiness.
 
 ## Frozen boundaries preserved
 
@@ -32,15 +36,15 @@
 
 ## Current gate
 
-Production MQL5 communication integration is intentionally blocked until Stage 06 has real MetaEditor/MT5 clearance evidence.
+Stage 06 is FROZEN, so MQL5 communication implementation is now unblocked. Live broker-risk enablement remains outside Stage 07 and stays governed by later stages.
 
-After Stage-06 freeze, Stage 07 continues with:
+Stage 07 continues with:
 
-1. MQL5 KAT1 codec;
-2. MQL5 golden-vector conformance;
-3. ZeroMQ capability spike;
-4. ZeroMQ live adapter;
-5. native TCP fallback;
-6. heartbeat/reconnect supervisor;
-7. disconnect/backpressure/binding tests;
+1. Python session supervisor CI proof;
+2. MQL5 KAT1 codec;
+3. MQL5 golden-vector conformance;
+4. ZeroMQ capability spike;
+5. ZeroMQ live adapter;
+6. native TCP fallback;
+7. cross-language heartbeat/reconnect/binding tests;
 8. final Stage-07 audit.
