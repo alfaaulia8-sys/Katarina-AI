@@ -1,9 +1,9 @@
 {
     "schema_version":  1,
-    "agent_version":  "1.2.1",
+    "agent_version":  "1.2.2",
     "agent_id":  "katarina-vps-2012r2-01",
     "computer_name":  "WIN-4TTT19K3CL8",
-    "state":  "ERROR",
-    "error":  "The remote server returned an error: (404) Not Found.",
-    "updated_utc":  "2026-10-03T12:24:06.8586599Z"
+    "state":  "ONLINE",
+    "error":  "",
+    "updated_utc":  "2026-10-03T12:24:23.4340310Z"
 }
