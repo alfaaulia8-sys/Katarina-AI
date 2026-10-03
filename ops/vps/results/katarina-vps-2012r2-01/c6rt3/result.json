@@ -1,0 +1,14 @@
+{
+    "schema_version":  1,
+    "request_id":  "c6rt3",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "task":  "STAGE06_CLEARANCE",
+    "started_utc":  "2026-10-03T17:00:02.9163391Z",
+    "completed_utc":  "2026-10-03T17:00:02.9476088Z",
+    "duration_ms":  31,
+    "status":  "FAIL",
+    "exit_code":  1,
+    "details":  {
+
+                }
+}
