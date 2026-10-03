@@ -95,6 +95,55 @@ class Kat1CodecTests(unittest.TestCase):
         with self.assertRaises(Kat1ProtocolError):
             self.codec.decode(bytes(raw))
 
+    def test_reconcile_len32_records_roundtrip(self) -> None:
+        values = {
+            "request_id": b"\x10" * 16,
+            "snapshot_id": b"\x20" * 16,
+            "first_event_cursor": 7,
+            "last_event_cursor": 9,
+            "position_count": 2,
+            "order_count": 1,
+            "discrepancy_count": 2,
+            "recovery_state": 3,
+            "discrepancies": [b"alpha", b"\x00\x01\x02"],
+        }
+        raw = self.codec.encode(
+            message_type=313,
+            schema_version=1,
+            sequence=10,
+            source_time_ns=123,
+            stream_id=77,
+            boot_id=88,
+            values=values,
+        )
+        frame = self.codec.decode(raw)
+        self.assertEqual(frame.values["discrepancies"], values["discrepancies"])
+        self.assertEqual(self.codec.reencode(frame), raw)
+
+    def test_reconcile_discrepancy_count_mismatch_rejected(self) -> None:
+        values = {
+            "request_id": b"\x10" * 16,
+            "snapshot_id": b"\x20" * 16,
+            "first_event_cursor": 7,
+            "last_event_cursor": 9,
+            "position_count": 0,
+            "order_count": 0,
+            "discrepancy_count": 1,
+            "recovery_state": 3,
+            "discrepancies": [],
+        }
+        raw = self.codec.encode(
+            message_type=313,
+            schema_version=1,
+            sequence=10,
+            source_time_ns=123,
+            stream_id=77,
+            boot_id=88,
+            values=values,
+        )
+        with self.assertRaises(Kat1ProtocolError):
+            self.codec.decode(raw)
+
     def test_unknown_flag_rejected(self) -> None:
         raw = bytearray.fromhex(self.golden["vectors"][0]["hex"])
         flags = struct.unpack_from("<H", raw, 14)[0]
