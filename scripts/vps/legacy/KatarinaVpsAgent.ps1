@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.2.2"
+$AgentVersion = "1.2.3"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -177,6 +177,21 @@ function Redact-ResultText {
         '$1=[REDACTED]'
     )
     return $value
+}
+
+function Get-ShortWorkKey {
+    param([string]$RequestId)
+
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($RequestId)
+        $hash = $sha.ComputeHash($bytes)
+        $hex = ([BitConverter]::ToString($hash)).Replace("-","").ToLowerInvariant()
+        return ("r_" + $hex.Substring(0,16))
+    }
+    finally {
+        $sha.Dispose()
+    }
 }
 
 function Test-HandledRequest {
@@ -391,7 +406,7 @@ while ($true) {
                 }
 
                 $ref = [string]$validated.ref
-                $requestWork = Join-Path $workRoot $requestId
+                $requestWork = Join-Path $workRoot (Get-ShortWorkKey -RequestId $requestId)
                 $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
                 $localRequest = Join-Path $requestWork "request.json"
                 $requestText | Set-Content -Path $localRequest -Encoding UTF8
