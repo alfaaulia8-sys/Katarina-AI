@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.2.1"
+$AgentVersion = "1.2.2"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -66,7 +66,7 @@ function Get-GitHubFile {
     )
 
     $escaped = ($Path -split "/" | ForEach-Object { [Uri]::EscapeDataString($_) }) -join "/"
-    $uri = "https://api.github.com/repos/$Repo/contents/$escaped?ref=$([Uri]::EscapeDataString($Ref))"
+    $uri = ("https://api.github.com/repos/{0}/contents/{1}?ref={2}" -f $Repo, $escaped, [Uri]::EscapeDataString($Ref))
     $item = Invoke-GitHubJson -Method "GET" -Uri $uri -Headers $Headers
     $raw = [Convert]::FromBase64String(($item.content -replace "\s",""))
     return [Text.Encoding]::UTF8.GetString($raw)
@@ -149,7 +149,7 @@ function Download-RepoSnapshot {
     $extract = Join-Path $Destination "src"
     New-Item -ItemType Directory -Force -Path $extract | Out-Null
 
-    $uri = "https://api.github.com/repos/$Repo/zipball/$([Uri]::EscapeDataString($Ref))"
+    $uri = ("https://api.github.com/repos/{0}/zipball/{1}" -f $Repo, [Uri]::EscapeDataString($Ref))
     Invoke-WebRequest -Uri $uri -Headers $Headers -OutFile $zip -UseBasicParsing
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -364,7 +364,14 @@ catch {
 
 while ($true) {
     try {
-        $listUri = "https://api.github.com/repos/$repo/contents/$requestsDir?ref=$([Uri]::EscapeDataString($branch))"
+        $listUri = ("https://api.github.com/repos/{0}/contents/{1}?ref={2}" -f $repo, $requestsDir, [Uri]::EscapeDataString($branch))
+        Write-JsonFile $startupStatePath ([ordered]@{
+            phase = "QUEUE_POLL"
+            agent_version = $AgentVersion
+            agent_id = $agentId
+            queue_path = $requestsDir
+            time_utc = [DateTime]::UtcNow.ToString("o")
+        })
         $items = Invoke-GitHubJson -Method "GET" -Uri $listUri -Headers $headers
 
         foreach ($item in @($items | Where-Object { $_.name -like "*.json" } | Sort-Object name)) {
@@ -456,6 +463,9 @@ while ($true) {
             request_id = $null
             time_utc = [DateTime]::UtcNow.ToString("o")
             error = (Redact-ResultText $_.Exception.Message)
+            phase = "QUEUE_POLL"
+            queue_path = $requestsDir
+            request_uri = $listUri
         }
         Write-JsonFile (Join-Path $installRoot "last_error.json") $errorRecord
         Publish-AgentHealth -State "ERROR" -ErrorText ([string]$errorRecord.error)
