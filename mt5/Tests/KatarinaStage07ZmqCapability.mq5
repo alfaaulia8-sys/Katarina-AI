@@ -127,7 +127,16 @@ void OnStart(void)
             break;
            }
 
-         if(transport.FramesSent()!=1 || transport.FramesReceived()!=1)
+         // Acknowledge the echo before the Python ROUTER is allowed to close.
+         // This removes a ZeroMQ linger=0 race from the capability harness.
+         if(!transport.SendFrame(actual))
+           {
+            detail="adapter ACK send failed";
+            Print("FAIL: ",detail);
+            break;
+           }
+
+         if(transport.FramesSent()!=2 || transport.FramesReceived()!=1)
            {
             detail="adapter frame counters mismatch";
             Print("FAIL: ",detail);
@@ -135,7 +144,7 @@ void OnStart(void)
            }
 
          passed=true;
-         detail="raw KAT1 CKatZmqDealerByteTransport roundtrip PASS";
+         detail="raw KAT1 CKatZmqDealerByteTransport acknowledged roundtrip PASS";
          Print("PASS: ",detail);
          break;
         }
