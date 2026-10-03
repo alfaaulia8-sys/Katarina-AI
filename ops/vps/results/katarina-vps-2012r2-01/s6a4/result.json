@@ -3,9 +3,9 @@
     "request_id":  "s6a4",
     "agent_id":  "katarina-vps-2012r2-01",
     "task":  "STAGE06_COMPILE_PROOF",
-    "started_utc":  "2026-10-03T14:10:29.6696787Z",
-    "completed_utc":  "2026-10-03T14:10:35.3259281Z",
-    "duration_ms":  5656,
+    "started_utc":  "2026-10-03T14:11:04.9978032Z",
+    "completed_utc":  "2026-10-03T14:11:09.7165535Z",
+    "duration_ms":  4719,
     "status":  "PASS",
     "exit_code":  0,
     "details":  {
