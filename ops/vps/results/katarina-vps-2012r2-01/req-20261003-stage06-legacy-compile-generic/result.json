@@ -1,0 +1,15 @@
+{
+    "schema_version":  1,
+    "request_id":  "req-20261003-stage06-legacy-compile-generic",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "task":  "STAGE06_COMPILE_PROOF",
+    "started_utc":  "2026-10-03T12:40:17.2411381Z",
+    "completed_utc":  "2026-10-03T12:40:20.8817638Z",
+    "duration_ms":  3641,
+    "status":  "FAIL",
+    "exit_code":  1,
+    "details":  {
+                    "validation_scope":  "LEGACY_EXPLORATORY_COMPILE_ONLY",
+                    "freeze_qualified":  false
+                }
+}
