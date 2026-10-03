@@ -157,24 +157,35 @@ public:
 
    bool              ReceiveFrame(uchar &frame[])
      {
-      ArrayResize(frame,0);
+      ArrayResize(frame,KAT1_MAX_FRAME_BYTES);
       if(!Started())
-        {
-         m_receive_failures++;
-         return(false);
-        }
-
-      ZmqMsg message;
-      if(!m_socket.recv(message,true))
-         return(false);
-
-      message.getData(frame);
-      if(ArraySize(frame)<=0)
         {
          m_receive_failures++;
          ArrayResize(frame,0);
          return(false);
         }
+
+      // Use the raw libzmq receive count for binary KAT1 frames. The generic
+      // ZmqMsg wrapper is convenient for strings/messages but hides the exact
+      // byte count we need for strict frame_length validation.
+      const int received=zmq_recv(m_socket.ref(),
+                                  frame,
+                                  (size_t)KAT1_MAX_FRAME_BYTES,
+                                  ZMQ_DONTWAIT);
+      if(received<0)
+        {
+         ArrayResize(frame,0);
+         return(false);
+        }
+
+      if(received<=0 || received>KAT1_MAX_FRAME_BYTES)
+        {
+         m_receive_failures++;
+         ArrayResize(frame,0);
+         return(false);
+        }
+
+      ArrayResize(frame,received);
 
       SKat1Header header;
       string error="";
