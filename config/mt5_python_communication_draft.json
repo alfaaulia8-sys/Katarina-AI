@@ -110,7 +110,9 @@
     "zeromq_spike": false,
     "zeromq_live_adapter": false,
     "tcp_fallback": false,
-    "session_supervisor": true
+    "session_supervisor": true,
+    "python_tcp_fallback": true,
+    "mql5_codec_baseline": true
   },
   "unblocked_by_stage06_freeze": [
     "MQL5_KAT1_CODEC",
@@ -121,5 +123,22 @@
   "still_blocked_until_later_governed_stages": [
     "LIVE_BROKER_RISK_ENABLEMENT",
     "PRODUCTION_READY_CLAIM"
-  ]
+  ],
+  "evidence": {
+    "python_communication_baseline": {
+      "run_id": 37160644610,
+      "head_sha": "aca5cde0c6c47de611c8aa18ff27b33c3def0ae6",
+      "artifact": "stage07-python-communication-evidence",
+      "digest": "sha256:8c889d83d423d9ab08b2b7d7fa57ec85434af17dc8fce7b21a3c9da9af637d16",
+      "result": "PASS"
+    },
+    "mql5_kat1_codec_baseline": {
+      "run_id": 37160551216,
+      "head_sha": "e8baa15a8585aab7387f6d7d379d7a66dcae442f",
+      "artifact": "stage07-mql5-kat1-codec-evidence",
+      "digest": "sha256:07bc29defc19d2c03c884b5c4516c8d8fe371f7a9e68ed2bdea5c98744358df5",
+      "vectors": 13,
+      "result": "PASS"
+    }
+  }
 }
