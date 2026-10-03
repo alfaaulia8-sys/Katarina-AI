@@ -12,6 +12,14 @@ from katarina.adapters.transport.kat1_codec import (
     SchemaCatalog,
 )
 from katarina.adapters.transport.memory import create_memory_transport_pair
+from katarina.adapters.transport.session import (
+    HELLO,
+    HELLO_ACK,
+    HEARTBEAT,
+    Kat1SessionSupervisor,
+    SessionFault,
+    SessionState,
+)
 from katarina.ports.transport import (
     TransportBackpressureError,
     TransportPeer,
@@ -103,6 +111,217 @@ class Kat1CodecTests(unittest.TestCase):
                 values=frame.values,
                 flags=frame.header.flags | CRITICAL_MESSAGE,
             )
+
+
+class Kat1SessionSupervisorTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.codec = Kat1Codec(SchemaCatalog.from_path(SCHEMA))
+
+    def _heartbeat(
+        self,
+        *,
+        sequence: int = 1,
+        stream_id: int = 77,
+        boot_id: int = 88,
+        source_time_ns: int = 1_000_000_000,
+    ) -> ReceivedTransportFrame:
+        raw = self.codec.encode(
+            message_type=HEARTBEAT,
+            schema_version=1,
+            sequence=sequence,
+            source_time_ns=source_time_ns,
+            stream_id=stream_id,
+            boot_id=boot_id,
+            values={
+                "uptime_ms": 1000,
+                "latest_produced_sequence": sequence,
+                "latest_consumed_command_sequence": 0,
+                "critical_queue_depth": 0,
+                "market_queue_depth": 0,
+                "last_broker_observation_ns": source_time_ns,
+                "transport_state": 1,
+            },
+        )
+        return ReceivedTransportFrame(
+            frame=raw,
+            peer=TransportPeer(
+                route_id=b"mt5",
+                stream_id=stream_id,
+                boot_id=boot_id,
+            ),
+        )
+
+    def _hello_ack(
+        self,
+        *,
+        sequence: int = 2,
+        stream_id: int = 77,
+        boot_id: int = 88,
+        broker_login: int = 123456,
+        broker_server: str = "Broker-Demo",
+        account_id: bytes | None = None,
+        source_time_ns: int = 1_100_000_000,
+    ) -> ReceivedTransportFrame:
+        raw = self.codec.encode(
+            message_type=HELLO_ACK,
+            schema_version=1,
+            sequence=sequence,
+            source_time_ns=source_time_ns,
+            stream_id=stream_id,
+            boot_id=boot_id,
+            values={
+                "account_id": account_id or (b"\x11" * 16),
+                "broker_login": broker_login,
+                "terminal_build": 6235,
+                "ea_build_version": 1000,
+                "stream_id": stream_id,
+                "boot_id_echo": boot_id,
+                "capability_bits": 0,
+                "account_mode": 1,
+                "trade_mode": 1,
+                "execution_mode": 0,
+                "recovery_state": 1,
+                "money_scale": 2,
+                "account_currency_digits": 2,
+                "ea_source_hash": b"\x22" * 32,
+                "account_unit_profile_revision": 1,
+                "broker_server": broker_server,
+                "account_currency": "USD",
+            },
+        )
+        return ReceivedTransportFrame(
+            frame=raw,
+            peer=TransportPeer(
+                route_id=b"mt5",
+                stream_id=stream_id,
+                boot_id=boot_id,
+            ),
+        )
+
+    def _supervisor(self) -> Kat1SessionSupervisor:
+        return Kat1SessionSupervisor(
+            codec=self.codec,
+            client_instance_id=b"\xAA" * 16,
+            heartbeat_interval_ms=1000,
+            stale_after_ms=5000,
+        )
+
+    def test_presence_emits_read_only_hello_but_never_live_risk_ready(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+
+        send = supervisor.observe(
+            self._heartbeat(),
+            now_ns=1_000_000_000,
+        )
+
+        self.assertIsNotNone(send)
+        self.assertEqual(supervisor.state, SessionState.HELLO_SENT)
+        self.assertFalse(supervisor.communication_ready)
+        self.assertFalse(supervisor.live_risk_ready)
+
+        hello = self.codec.decode(send.frame)
+        self.assertEqual(hello.header.message_type, HELLO)
+        self.assertEqual(hello.header.stream_id, 77)
+        self.assertEqual(hello.header.boot_id, 88)
+        self.assertEqual(hello.values["requested_execution_mode"], 0)
+
+    def test_hello_ack_requires_explicit_recovery_before_ready(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+        supervisor.observe(self._heartbeat(), now_ns=1_000_000_000)
+
+        supervisor.observe(
+            self._hello_ack(),
+            now_ns=1_100_000_000,
+        )
+
+        self.assertEqual(supervisor.state, SessionState.RECOVERING)
+        self.assertFalse(supervisor.communication_ready)
+        self.assertFalse(supervisor.live_risk_ready)
+        self.assertEqual(supervisor.binding.broker_login, 123456)
+
+        supervisor.mark_recovered(now_ns=1_200_000_000)
+        self.assertEqual(supervisor.state, SessionState.READY)
+        self.assertTrue(supervisor.communication_ready)
+        self.assertFalse(supervisor.live_risk_ready)
+
+    def test_stale_session_requires_fresh_presence_and_rehandshake(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+        first_send = supervisor.observe(
+            self._heartbeat(),
+            now_ns=1_000_000_000,
+        )
+        first_hello = self.codec.decode(first_send.frame)
+        self.assertEqual(first_hello.header.sequence, 1)
+
+        supervisor.observe(
+            self._hello_ack(),
+            now_ns=1_100_000_000,
+        )
+        supervisor.mark_recovered(now_ns=1_200_000_000)
+
+        self.assertTrue(
+            supervisor.check_stale(now_ns=6_200_000_001)
+        )
+        self.assertEqual(supervisor.state, SessionState.STALE)
+        self.assertFalse(supervisor.communication_ready)
+
+        second_send = supervisor.observe(
+            self._heartbeat(sequence=3, source_time_ns=6_300_000_000),
+            now_ns=6_300_000_000,
+        )
+        second_hello = self.codec.decode(second_send.frame)
+        self.assertEqual(supervisor.state, SessionState.HELLO_SENT)
+        self.assertEqual(second_hello.header.sequence, 2)
+        self.assertEqual(second_hello.values["last_known_stream_id"], 77)
+
+        supervisor.observe(
+            self._hello_ack(sequence=4, source_time_ns=6_400_000_000),
+            now_ns=6_400_000_000,
+        )
+        self.assertEqual(supervisor.state, SessionState.RECOVERING)
+
+    def test_same_stream_rebinding_to_different_account_faults(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+        supervisor.observe(self._heartbeat(), now_ns=1_000_000_000)
+        supervisor.observe(self._hello_ack(), now_ns=1_100_000_000)
+        supervisor.mark_recovered(now_ns=1_200_000_000)
+        supervisor.check_stale(now_ns=6_200_000_001)
+
+        supervisor.observe(
+            self._heartbeat(sequence=3, source_time_ns=6_300_000_000),
+            now_ns=6_300_000_000,
+        )
+        with self.assertRaises(SessionFault):
+            supervisor.observe(
+                self._hello_ack(
+                    sequence=4,
+                    broker_login=999999,
+                    source_time_ns=6_400_000_000,
+                ),
+                now_ns=6_400_000_000,
+            )
+        self.assertEqual(supervisor.state, SessionState.FAULTED)
+
+    def test_transport_metadata_binding_mismatch_faults(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+        heartbeat = self._heartbeat()
+        bad = ReceivedTransportFrame(
+            frame=heartbeat.frame,
+            peer=TransportPeer(
+                route_id=b"mt5",
+                stream_id=999,
+                boot_id=88,
+            ),
+        )
+        with self.assertRaises(SessionFault):
+            supervisor.observe(bad, now_ns=1_000_000_000)
+        self.assertEqual(supervisor.state, SessionState.FAULTED)
 
 
 class MemoryTransportTests(unittest.IsolatedAsyncioTestCase):
