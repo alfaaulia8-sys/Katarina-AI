@@ -6,7 +6,9 @@ param(
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$AgentVersion = "1.1.0"
+try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
+
+$AgentVersion = "1.1.1"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -21,10 +23,10 @@ function Write-JsonFile {
 function Unprotect-Token {
     param([string]$Path)
     $encrypted = [IO.File]::ReadAllBytes($Path)
-    $plain = [Security.Cryptography.ProtectedData]::Unprotect(
+    $plain = [System.Security.Cryptography.ProtectedData]::Unprotect(
         $encrypted,
         $null,
-        [Security.Cryptography.DataProtectionScope]::LocalMachine
+        [System.Security.Cryptography.DataProtectionScope]::LocalMachine
     )
     return [Text.Encoding]::UTF8.GetString($plain)
 }
