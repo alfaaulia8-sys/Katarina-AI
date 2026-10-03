@@ -8,7 +8,7 @@
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
 | 06 | MT5 Bridge EA | ✅ FINALIZED / FROZEN v1.0.0 — Bridge design v0.5.0 |
-| 07 | MT5-Python Communication | 🟡 IMPLEMENTATION ACTIVE — ZeroMQ + cross-language handshake PASS; recovery gate next |
+| 07 | MT5-Python Communication | 🟡 IMPLEMENTATION ACTIVE — ZeroMQ/handshake + Python recovery/sequence gates PASS; cross-language recovery next |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
 | 10 | Database & Memory V1 | ⬜ |
