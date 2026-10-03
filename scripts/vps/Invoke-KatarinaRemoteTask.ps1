@@ -71,6 +71,110 @@ function Resolve-Executable {
     return $null
 }
 
+function Resolve-ExistingCandidates {
+    param([string[]]$Candidates)
+
+    $found = @()
+    foreach ($candidate in $Candidates) {
+        if ([string]::IsNullOrWhiteSpace($candidate)) { continue }
+
+        try {
+            if ($candidate.IndexOf("*") -ge 0 -or $candidate.IndexOf("?") -ge 0) {
+                foreach ($item in @(Get-ChildItem -Path $candidate -ErrorAction SilentlyContinue)) {
+                    if ($item -and -not $item.PSIsContainer) {
+                        $found += $item.FullName
+                    }
+                }
+            }
+            elseif (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                $found += (Resolve-Path -LiteralPath $candidate).Path
+            }
+        } catch {}
+    }
+
+    return @($found | Where-Object { $_ } | Sort-Object -Unique)
+}
+
+function Get-RelevantRegistryHints {
+    $hints = @()
+    $roots = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    )
+
+    foreach ($root in $roots) {
+        try {
+            foreach ($item in @(Get-ItemProperty -Path $root -ErrorAction SilentlyContinue)) {
+                $name = [string]$item.DisplayName
+                if ($name -match "(?i)(MetaTrader|MetaQuotes|MT5|Python|Git)") {
+                    $hints += [ordered]@{
+                        display_name = $name
+                        display_version = [string]$item.DisplayVersion
+                        install_location = [string]$item.InstallLocation
+                        publisher = [string]$item.Publisher
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    return @($hints | Select-Object -First 50)
+}
+
+function Get-Mt5Discovery {
+    $instances = @()
+    $origins = @()
+
+    try {
+        $origins = @(
+            Get-ChildItem -Path "C:\Users\*\AppData\Roaming\MetaQuotes\Terminal\*\origin.txt" -ErrorAction SilentlyContinue
+        )
+    } catch {}
+
+    foreach ($origin in $origins) {
+        try {
+            $originText = (Get-Content -LiteralPath $origin.FullName -Raw -ErrorAction Stop).Trim()
+            $dataPath = Split-Path -Parent $origin.FullName
+            $terminalPath = $null
+            $metaEditorPath = $null
+
+            if ($originText) {
+                if (Test-Path -LiteralPath $originText -PathType Leaf) {
+                    $terminalPath = (Resolve-Path -LiteralPath $originText).Path
+                }
+                elseif (Test-Path -LiteralPath $originText -PathType Container) {
+                    $candidateTerminal = Join-Path $originText "terminal64.exe"
+                    if (Test-Path -LiteralPath $candidateTerminal -PathType Leaf) {
+                        $terminalPath = (Resolve-Path -LiteralPath $candidateTerminal).Path
+                    }
+                }
+
+                $installDir = $originText
+                if ($terminalPath) { $installDir = Split-Path -Parent $terminalPath }
+                elseif ([IO.Path]::GetExtension($originText)) { $installDir = Split-Path -Parent $originText }
+
+                if ($installDir) {
+                    $candidateMeta = Join-Path $installDir "metaeditor64.exe"
+                    if (Test-Path -LiteralPath $candidateMeta -PathType Leaf) {
+                        $metaEditorPath = (Resolve-Path -LiteralPath $candidateMeta).Path
+                    }
+                }
+            }
+
+            $instances += [ordered]@{
+                terminal_data_path = $dataPath
+                origin = $originText
+                terminal = $terminalPath
+                metaeditor = $metaEditorPath
+                mql5_exists = (Test-Path -LiteralPath (Join-Path $dataPath "MQL5"))
+                tester_exists = (Test-Path -LiteralPath (Join-Path $dataPath "Tester"))
+            }
+        } catch {}
+    }
+
+    return @($instances)
+}
+
 function Get-ArgValue {
     param($ArgsObject, [string]$Name, $Default = $null)
     if ($null -eq $ArgsObject) { return $Default }
@@ -182,18 +286,84 @@ try {
                     }
                 }
 
-            $python = Resolve-Executable @("python.exe","python")
-            $git = Resolve-Executable @("git.exe","git")
-            $metaeditor = Resolve-Executable @(
-                (Get-ArgValue $request.args "metaeditor_path" ""),
-                "metaeditor64.exe"
+            $pythonCandidates = @()
+            $pathPython = Resolve-Executable @("python.exe","python")
+            if ($pathPython) { $pythonCandidates += $pathPython }
+            $pythonCandidates += Resolve-ExistingCandidates @(
+                "C:\Python*\python.exe",
+                "C:\Program Files\Python*\python.exe",
+                "C:\Program Files (x86)\Python*\python.exe",
+                "C:\Users\*\AppData\Local\Programs\Python\Python*\python.exe",
+                "C:\PythonPortable\python.exe",
+                "C:\PortablePython\python.exe",
+                "C:\KatarinaVPSAgent\python\python.exe",
+                "C:\KatarinaVPSAgent\runtime\python\python.exe"
             )
-            $terminal = Resolve-Executable @(
+            $pythonCandidates = @($pythonCandidates | Where-Object { $_ } | Sort-Object -Unique)
+
+            $gitCandidates = @()
+            $pathGit = Resolve-Executable @("git.exe","git")
+            if ($pathGit) { $gitCandidates += $pathGit }
+            $gitCandidates += Resolve-ExistingCandidates @(
+                "C:\Program Files\Git\cmd\git.exe",
+                "C:\Program Files\Git\bin\git.exe",
+                "C:\Program Files (x86)\Git\cmd\git.exe",
+                "C:\Program Files (x86)\Git\bin\git.exe",
+                "C:\Users\*\AppData\Local\Programs\Git\cmd\git.exe",
+                "C:\PortableGit\cmd\git.exe"
+            )
+            $gitCandidates = @($gitCandidates | Where-Object { $_ } | Sort-Object -Unique)
+
+            $terminalCandidates = @()
+            $pathTerminal = Resolve-Executable @(
                 (Get-ArgValue $request.args "terminal_path" ""),
                 "terminal64.exe"
             )
+            if ($pathTerminal) { $terminalCandidates += $pathTerminal }
+            $terminalCandidates += Resolve-ExistingCandidates @(
+                "C:\Program Files\*\terminal64.exe",
+                "C:\Program Files (x86)\*\terminal64.exe",
+                "C:\MetaTrader 5\terminal64.exe",
+                "C:\MT5\terminal64.exe",
+                "C:\Trading\*\terminal64.exe"
+            )
+
+            $metaEditorCandidates = @()
+            $pathMetaEditor = Resolve-Executable @(
+                (Get-ArgValue $request.args "metaeditor_path" ""),
+                "metaeditor64.exe"
+            )
+            if ($pathMetaEditor) { $metaEditorCandidates += $pathMetaEditor }
+            $metaEditorCandidates += Resolve-ExistingCandidates @(
+                "C:\Program Files\*\metaeditor64.exe",
+                "C:\Program Files (x86)\*\metaeditor64.exe",
+                "C:\MetaTrader 5\metaeditor64.exe",
+                "C:\MT5\metaeditor64.exe",
+                "C:\Trading\*\metaeditor64.exe"
+            )
+
+            $mt5Instances = Get-Mt5Discovery
+            foreach ($instance in $mt5Instances) {
+                if ($instance.terminal) { $terminalCandidates += [string]$instance.terminal }
+                if ($instance.metaeditor) { $metaEditorCandidates += [string]$instance.metaeditor }
+            }
+
+            $terminalCandidates = @($terminalCandidates | Where-Object { $_ } | Sort-Object -Unique)
+            $metaEditorCandidates = @($metaEditorCandidates | Where-Object { $_ } | Sort-Object -Unique)
+
+            $commonDataPaths = @()
+            try {
+                foreach ($common in @(Get-ChildItem -Path "C:\Users\*\AppData\Roaming\MetaQuotes\Terminal\Common" -Directory -ErrorAction SilentlyContinue)) {
+                    $commonDataPaths += $common.FullName
+                }
+            } catch {}
+            $commonDataPaths = @($commonDataPaths | Sort-Object -Unique)
+
+            $registryHints = Get-RelevantRegistryHints
 
             $inventory = [ordered]@{
+                schema_version = 2
+                discovery_mode = "DEEP_TARGETED"
                 agent_id = $AgentId
                 computer_name = $env:COMPUTERNAME
                 os_caption = $os.Caption
@@ -205,16 +375,29 @@ try {
                 logical_processors = [int]$cs.NumberOfLogicalProcessors
                 memory_bytes = [int64]$cs.TotalPhysicalMemory
                 disks = $disks
-                python = $python
-                git = $git
-                metaeditor = $metaeditor
-                terminal = $terminal
+                python = $(if ($pythonCandidates.Count -gt 0) { $pythonCandidates[0] } else { $null })
+                python_candidates = $pythonCandidates
+                git = $(if ($gitCandidates.Count -gt 0) { $gitCandidates[0] } else { $null })
+                git_candidates = $gitCandidates
+                metaeditor = $(if ($metaEditorCandidates.Count -gt 0) { $metaEditorCandidates[0] } else { $null })
+                metaeditor_candidates = $metaEditorCandidates
+                terminal = $(if ($terminalCandidates.Count -gt 0) { $terminalCandidates[0] } else { $null })
+                terminal_candidates = $terminalCandidates
+                mt5_instances = $mt5Instances
+                terminal_common_data_paths = $commonDataPaths
+                registry_hints = $registryHints
                 generated_utc = [DateTime]::UtcNow.ToString("o")
             }
+
             Write-JsonFile (Join-Path $OutputDir "host_inventory.json") $inventory
-            "HOST_INVENTORY PASS" | Set-Content $stdoutPath -Encoding UTF8
+            "HOST_INVENTORY DEEP DISCOVERY PASS" | Set-Content $stdoutPath -Encoding UTF8
             "" | Set-Content $stderrPath -Encoding UTF8
             $details["inventory"] = "host_inventory.json"
+            $details["mt5_instances"] = @($mt5Instances).Count
+            $details["terminal_candidates"] = @($terminalCandidates).Count
+            $details["metaeditor_candidates"] = @($metaEditorCandidates).Count
+            $details["python_candidates"] = @($pythonCandidates).Count
+            $details["git_candidates"] = @($gitCandidates).Count
         }
 
         "REPO_STATIC_TESTS" {
