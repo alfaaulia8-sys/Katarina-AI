@@ -196,7 +196,7 @@ $clearance = [ordered]@{
 $clearance | ConvertTo-Json -Depth 10 | Set-Content -Path $clearancePath -Encoding UTF8
 
 $report = @()
-$report += "# STAGE 06 — FINAL AUDIT CANDIDATE"
+$report += "# STAGE 06 - FINAL AUDIT CANDIDATE"
 $report += ""
 $report += "**Result:** PASS_STAGE06_FINAL_CLEARANCE  "
 $report += "**Bridge design:** v$designVersion  "
