@@ -97,7 +97,10 @@
     "memory_adapter": "src/katarina/adapters/transport/memory.py",
     "tests": "tests/unit/transport/test_stage07_communication.py",
     "initial_check": "docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md",
-    "session_supervisor": "src/katarina/adapters/transport/session.py"
+    "session_supervisor": "src/katarina/adapters/transport/session.py",
+    "python_zmq_router": "src/katarina/adapters/transport/zmq.py",
+    "mql5_zmq_dealer": "mt5/Include/Katarina/Stage07/ZmqDealerTransport.mqh",
+    "mql5_system_messages": "mt5/Include/Katarina/Stage07/Kat1SystemMessages.mqh"
   },
   "progress": {
     "research": true,
@@ -107,12 +110,13 @@
     "memory_transport": true,
     "python_golden_test_suite_prepared": true,
     "mql5_codec": false,
-    "zeromq_spike": false,
-    "zeromq_live_adapter": false,
+    "zeromq_spike": true,
+    "zeromq_live_adapter": true,
     "tcp_fallback": false,
     "session_supervisor": true,
     "python_tcp_fallback": true,
-    "mql5_codec_baseline": true
+    "mql5_codec_baseline": true,
+    "cross_language_handshake": true
   },
   "unblocked_by_stage06_freeze": [
     "MQL5_KAT1_CODEC",
@@ -126,10 +130,10 @@
   ],
   "evidence": {
     "python_communication_baseline": {
-      "run_id": 37160644610,
-      "head_sha": "aca5cde0c6c47de611c8aa18ff27b33c3def0ae6",
+      "run_id": 37161605729,
+      "head_sha": "ec393dae783d773d325763a8f341ae870f4ee029",
       "artifact": "stage07-python-communication-evidence",
-      "digest": "sha256:8c889d83d423d9ab08b2b7d7fa57ec85434af17dc8fce7b21a3c9da9af637d16",
+      "digest": "sha256:3600e7d2cfebe7d181208b9f2c56774b97525db5082797bf05a279be6d899320",
       "result": "PASS"
     },
     "mql5_kat1_codec_baseline": {
@@ -138,6 +142,25 @@
       "artifact": "stage07-mql5-kat1-codec-evidence",
       "digest": "sha256:07bc29defc19d2c03c884b5c4516c8d8fe371f7a9e68ed2bdea5c98744358df5",
       "vectors": 13,
+      "result": "PASS"
+    },
+    "zeromq_capability": {
+      "run_id": 37161762755,
+      "head_sha": "dbe76980fdc3ece12e494954a078ff79870dc9ba",
+      "artifact": "stage07-zmq-capability-evidence",
+      "digest": "sha256:bdc2157c437aa4797949b059a182be109d389518f3ae25a0eb45abab88672ecb",
+      "topology": "PYTHON_ROUTER_MT5_DEALER",
+      "raw_kat1_roundtrip": "PASS",
+      "result": "PASS"
+    },
+    "cross_language_handshake": {
+      "run_id": 37161936886,
+      "head_sha": "28453606d25596ccbf5cd7c45bd149ec36d1a02d",
+      "artifact": "stage07-cross-language-handshake-evidence",
+      "digest": "sha256:289ddfa8508ecc81b2faa2f676b023fe7cbead878619bbffd796675caf1ebb50",
+      "flow": "HEARTBEAT_HELLO_HELLO_ACK",
+      "final_state": "RECOVERING",
+      "live_risk_ready": false,
       "result": "PASS"
     }
   }
