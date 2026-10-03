@@ -10,8 +10,8 @@
 - Stage 03 — Repository Architecture: FROZEN
 - Stage 04 — KAT1 Data Protocol / Schemas: FROZEN v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
-- Stage 06 — MT5 Bridge EA: implementation + clearance automation complete; legacy external MetaEditor compile proof PASSED on Windows Server 2012 R2 (0 errors / 0 warnings for Bridge EA, SelfTest, AccountProbe), but supported-modern-host freeze proof and MT5 runtime probes are still pending
-- Stage 07 — MT5 ↔ Python Communication: research/design active; Python conformance work started; production MQL5 transport integration gated on Stage-06 proof
+- Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
+- Stage 07 — MT5 ↔ Python Communication: research/design active; Python conformance work started; production MQL5 transport implementation is now unblocked by the Stage-06 freeze
 
 ## VPS bridge status
 
@@ -47,80 +47,42 @@ Operational note:
 
 ## Stage 06 final status
 
-Design version: v0.5.0
+Status: **FINALIZED / FROZEN v1.0.0**  
+Bridge design: **v0.5.0**
 
-Implemented:
+Governed freeze evidence:
 
-- transport-neutral MT5 bridge
-- fail-closed lifecycle
-- account / position / order snapshot
-- manual trade evidence
-- standard-like + cent-like broker-native facts
-- hedging + netting support boundaries
-- MARKET / LIMIT / STOP preflight
-- mandatory native SL
-- duplicate-instance guard
-- persistent stream_id + per-boot boot_id
-- type-aware MqlTradeTransaction capture
-- health/session facts
-- broker calc source
-- bar source
-- deal history source
-- bounded timer work
-- backpressure metrics
-- numeric / tick-grid preflight
-- runtime evidence writer
-- Windows modern compatibility baseline
-- GitHub reference audit
-- compile/runtime/final-clearance automation
+- freeze-qualified host: Windows Server 2022 x64
+- host class: PREFERRED
+- GitHub Actions run: `37139117641`
+- evidence head SHA: `4e4f27461bb77e1bcf61fd707f649dc0dfe74def`
+- MetaEditor: 5.0.0.6235
+- `KatarinaBridgeEA.mq5`: 0 errors / 0 warnings / EX5 created
+- `KatarinaStage06SelfTest.mq5`: 0 errors / 0 warnings / EX5 created
+- `KatarinaStage06AccountProbe.mq5`: 0 errors / 0 warnings / EX5 created
+- modern-host MQL self-test: PASS
+- Stage-06 static regressions: 35/35 PASS
+- complete MQL source-manifest binding: PASS
+- final audit result: `PASS_STAGE06_FINAL_CLEARANCE`
+- freeze artifact: `stage06-final-freeze-evidence`
+- artifact digest: `sha256:1157e48bb8f84cf15536bb74e64673446017efc4d7461737a8d34d8c31da03fc`
+- permanent freeze record: `docs/reviews/STAGE_06_FREEZE_RECORD.md`
 
-Important Stage-06 scripts:
+Account-compatibility boundary:
 
-- scripts/mt5/check_stage06_host.ps1
-- scripts/mt5/compile_stage06.ps1
-- scripts/mt5/verify_stage06_modern_windows.ps1
-- scripts/mt5/collect_stage06_runtime_evidence.ps1
-- scripts/mt5/audit_stage06_final.ps1
-- scripts/mt5/complete_stage06.ps1
+- real STANDARD_LIKE broker validation: deferred to Stage 36/38
+- real CENT_LIKE broker validation: deferred to Stage 36/38
+- this is intentional under ADR-0010 and the frozen Stage-04 contract
+- Stage 06 makes no broker-by-broker production compatibility claim
 
-Stage-06 proof files expected:
+2012 R2 exploratory evidence remains useful but is not freeze-qualified:
 
-- build/mt5/stage06_compile_evidence.json
-- build/mt5/stage06_runtime_evidence.json
-- build/mt5/stage06_final_clearance.json
-- build/mt5/STAGE_06_FINAL_AUDIT_CANDIDATE.md
+- both MT5 installations compile Stage-06 MQL with 0 errors / 0 warnings
+- auto gold-symbol discovery resolved `XAUUSD.vx`
+- both MT5 terminals currently expose the same saved Valetax account identity, so automatic STANDARD/CENT classification correctly stops as ambiguous
+- this ambiguity is not a Stage-06 freeze blocker
 
-Stage-06 runtime evidence files:
-
-- Katarina_Stage06_self_test_result.txt
-- Katarina_Stage06_account_probe_STANDARD_LIKE.txt
-- Katarina_Stage06_account_probe_CENT_LIKE.txt
-
-Stage-06 evidence achieved on the real 2012 R2 VPS:
-
-- MetaEditor 5.0.0.6230 discovered and invoked successfully.
-- Exploratory compile result: `PASS_LEGACY_COMPILE_NOT_FREEZE_PROOF`.
-- `KatarinaBridgeEA.mq5`: 0 errors, 0 warnings, EX5 created.
-- `KatarinaStage06SelfTest.mq5`: 0 errors, 0 warnings, EX5 created.
-- `KatarinaStage06AccountProbe.mq5`: 0 errors, 0 warnings, EX5 created.
-- Compile evidence is source-hash bound.
-- MQL executable version metadata was normalized to `1.000` to satisfy MetaEditor warning-68 rules; Stage-06 bridge design version remains `0.5.0`.
-
-Stage-06 remaining external proof gates:
-
-1. repeat strict compile proof on a supported modern Windows validation host
-2. actual MQL self-test in MT5
-3. actual STANDARD_LIKE account probe
-4. actual CENT_LIKE account probe
-5. actual runtime evidence collection
-6. governed final Stage-06 audit/freeze
-
-Windows Server 2012 R2 is DEFERRED: it is useful for exploratory compile/runtime diagnostics, but evidence from this host is not freeze-qualified. A supported modern Windows validation host is still required for Stage-06 freeze.
-
-Preferred validation hosts:
-
-- Windows Server 2022 x64
-- Windows 11 x64
+Windows Server 2012 R2 remains DEFERRED for freeze proof.
 
 ## Stage 07 current status
 
@@ -149,22 +111,21 @@ Stage-07 files:
 - src/katarina/adapters/transport/memory.py
 - tests/unit/transport/test_stage07_communication.py
 
-Stage-07 production MQL5 ZeroMQ/TCP integration must NOT modify the Stage-06 MQL clearance candidate until Stage 06 has real external proof/freeze.
+Stage-06 is now frozen. Stage-07 production MQL5 ZeroMQ/TCP transport implementation may proceed against the frozen Bridge v0.5.0 contract. Any change to frozen Stage-06 behavior requires explicit governed review.
 
 ## Next recommended action
 
-Use the already-compiled Stage-06 artifacts on the detected MT5 instance to obtain runtime evidence:
+Proceed with Stage 07 — MT5 ↔ Python Communication:
 
-1. run `KatarinaStage06SelfTest` inside MT5;
-2. run `KatarinaStage06AccountProbe` on a STANDARD_LIKE account;
-3. run `KatarinaStage06AccountProbe` on a CENT_LIKE account;
-4. collect the three proof files from MT5 Common Files;
-5. keep the resulting runtime evidence as exploratory 2012 R2 evidence;
-6. separately repeat the strict compile/runtime proof on a supported modern Windows host before Stage-06 freeze.
+1. freeze the Stage-07 transport contract/ADR details;
+2. implement the Python transport runtime around the existing KAT1 codec;
+3. implement the MT5 communication adapter without changing frozen Stage-06 bridge semantics;
+4. validate heartbeat, HELLO/HELLO_ACK, reconnect, timeout and stale-session handling;
+5. validate localhost ZeroMQ primary path and native TCP fallback;
+6. test round-trip latency and tester compatibility;
+7. keep live broker-risk enablement disabled until later governed stages.
 
-The VPS bridge itself is operational and can now be used for repository tests, Stage-06 diagnostics, Stage-07 Python tests when Python becomes available, and MT5 log collection.
-
-Do not put passwords, VPS credentials, API keys, broker passwords, PATs, or private account credentials into the repository or chat.
+The VPS bridge remains available for diagnostics, repository tests, MT5 compilation/log collection and later Stage-07 runtime checks.
 
 ## Project invariant reminders
 
@@ -175,4 +136,4 @@ Do not put passwords, VPS credentials, API keys, broker passwords, PATs, or priv
 - Risk Governor is absolute.
 - live-risk readiness is separate from transport connectivity.
 - Stage 04 KAT1 is authoritative.
-- Stage 06 remains fail-closed until real proof is complete.
+- Stage 06 is frozen and remains fail-closed by contract; later stages must not weaken its safety invariants.
