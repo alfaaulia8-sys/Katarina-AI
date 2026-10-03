@@ -425,8 +425,18 @@ try {
             $script = Join-Path $RepoRoot "scripts\mt5\check_stage06_host.ps1"
             if (!(Test-Path $script)) { throw "Stage-06 host check script missing." }
 
-            $resultCode = Invoke-Captured -FilePath "powershell.exe" -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-File",$script,"-TerminalDataPath",$terminalDataPath) -StdoutPath $stdoutPath -StderrPath $stderrPath -WorkingDirectory $RepoRoot
+            $resultCode = Invoke-Captured -FilePath "powershell.exe" -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-File",$script) -StdoutPath $stdoutPath -StderrPath $stderrPath -WorkingDirectory $RepoRoot
+            $hostOut = ""
+            if (Test-Path $stdoutPath) { $hostOut += (Get-Content -Path $stdoutPath -Raw) }
+            if (Test-Path $stderrPath) { $hostOut += [Environment]::NewLine + (Get-Content -Path $stderrPath -Raw) }
+
+            if ($hostOut -match "(?im)^Class:\s*DEFERRED\s*$" -or $hostOut -match "DEFERRED:") {
+                $details["validation_class"] = "DEFERRED"
+                throw "Stage-06 host is DEFERRED and is not freeze-qualified."
+            }
+
             if ($resultCode -ne 0) { throw "Stage-06 host check failed." }
+            $details["validation_class"] = "SUPPORTED"
         }
 
         "STAGE06_COMPILE_PROOF" {
@@ -436,19 +446,62 @@ try {
                 throw "terminal_data_path is required for STAGE06_COMPILE_PROOF."
             }
 
-            $script = Join-Path $RepoRoot "scripts\mt5\verify_stage06_modern_windows.ps1"
-            if (!(Test-Path $script)) { throw "Stage-06 verifier missing." }
+            $os = Get-WmiObject Win32_OperatingSystem
+            $isDeferred2012 = ([string]$os.Caption -match "Windows Server 2012 R2")
 
-            $invoke = @("-NoProfile","-ExecutionPolicy","Bypass","-File",$script,"-TerminalDataPath",$terminalDataPath)
-            if ($metaEditorPath) { $invoke += @("-MetaEditorPath",$metaEditorPath) }
+            if ($isDeferred2012) {
+                $script = Join-Path $RepoRoot "scripts\mt5\compile_stage06.ps1"
+                if (!(Test-Path $script)) { throw "Stage-06 compile script missing." }
+
+                $invoke = @("-NoProfile","-ExecutionPolicy","Bypass","-File",$script,"-TerminalDataPath",$terminalDataPath,"-AllowDeferredHostCompile")
+                if ($metaEditorPath) { $invoke += @("-MetaEditorPath",$metaEditorPath) }
+
+                $details["validation_scope"] = "LEGACY_EXPLORATORY_COMPILE_ONLY"
+                $details["freeze_qualified"] = $false
+            }
+            else {
+                $script = Join-Path $RepoRoot "scripts\mt5\verify_stage06_modern_windows.ps1"
+                if (!(Test-Path $script)) { throw "Stage-06 verifier missing." }
+
+                $invoke = @("-NoProfile","-ExecutionPolicy","Bypass","-File",$script,"-TerminalDataPath",$terminalDataPath)
+                if ($metaEditorPath) { $invoke += @("-MetaEditorPath",$metaEditorPath) }
+
+                $details["validation_scope"] = "FULL_HOST_STATIC_COMPILE"
+                $details["freeze_qualified"] = $true
+            }
 
             $resultCode = Invoke-Captured -FilePath "powershell.exe" -ArgumentList $invoke -StdoutPath $stdoutPath -StderrPath $stderrPath -WorkingDirectory $RepoRoot
-            if ($resultCode -ne 0) { throw "Stage-06 compile proof failed." }
+
+            $buildDir = Join-Path $RepoRoot "build\mt5"
+            if (Test-Path $buildDir) {
+                foreach ($log in @(Get-ChildItem -Path $buildDir -Filter "*.compile.log" -File -ErrorAction SilentlyContinue)) {
+                    Copy-Item $log.FullName (Join-Path $OutputDir $log.Name) -Force
+                }
+            }
 
             $compileEvidence = Join-Path $RepoRoot "build\mt5\stage06_compile_evidence.json"
-            if (Test-Path $compileEvidence) {
-                Copy-Item $compileEvidence (Join-Path $OutputDir "stage06_compile_evidence.json") -Force
+            if (!(Test-Path $compileEvidence)) {
+                throw "Stage-06 compile evidence was not generated."
             }
+
+            $evidence = Get-Content -Path $compileEvidence -Raw | ConvertFrom-Json
+            if ($isDeferred2012) {
+                $expected = "PASS_LEGACY_COMPILE_NOT_FREEZE_PROOF"
+            }
+            else {
+                $expected = "PASS_COMPILE_PROOF"
+            }
+
+            if ([string]$evidence.result -ne $expected) {
+                throw "Unexpected Stage-06 compile evidence result: $($evidence.result)"
+            }
+
+            if ($resultCode -ne 0) {
+                throw "Stage-06 compile proof process failed."
+            }
+
+            Copy-Item $compileEvidence (Join-Path $OutputDir "stage06_compile_evidence.json") -Force
+            $details["compile_result"] = [string]$evidence.result
         }
 
         "STAGE06_CLEARANCE" {
