@@ -26,10 +26,110 @@ string KatResolveProbeClass(void)
    return value;
   }
 
+
+int KatGoldSymbolScore(const string symbol_name)
+  {
+   string name=symbol_name;
+   StringToUpper(name);
+
+   string description=SymbolInfoString(symbol_name,SYMBOL_DESCRIPTION);
+   StringToUpper(description);
+
+   string path=SymbolInfoString(symbol_name,SYMBOL_PATH);
+   StringToUpper(path);
+
+   string base=SymbolInfoString(symbol_name,SYMBOL_CURRENCY_BASE);
+   StringToUpper(base);
+
+   string profit=SymbolInfoString(symbol_name,SYMBOL_CURRENCY_PROFIT);
+   StringToUpper(profit);
+
+   int score=0;
+
+   if(name=="XAUUSD")
+      score=1000;
+   else if(name=="GOLD")
+      score=950;
+
+   if(base=="XAU" && profit=="USD")
+      score=MathMax(score,925);
+
+   if(StringFind(name,"XAUUSD")>=0)
+      score=MathMax(score,900);
+
+   if(StringFind(name,"XAU")>=0 && StringFind(name,"USD")>=0)
+      score=MathMax(score,850);
+
+   if(StringFind(name,"GOLD")>=0)
+      score=MathMax(score,825);
+
+   if(StringFind(description,"GOLD")>=0 || StringFind(description,"XAU")>=0)
+      score=MathMax(score,750);
+
+   if((StringFind(path,"METAL")>=0 || StringFind(path,"PRECIOUS")>=0) &&
+      (StringFind(name,"XAU")>=0 || StringFind(name,"GOLD")>=0))
+      score=MathMax(score,700);
+
+   return score;
+  }
+
+string KatResolveGoldSymbol(void)
+  {
+   string best="";
+   int best_score=0;
+
+   const int total=SymbolsTotal(false);
+   for(int i=0;i<total;i++)
+     {
+      const string candidate=SymbolName(i,false);
+      if(candidate=="")
+         continue;
+
+      const int score=KatGoldSymbolScore(candidate);
+      if(score>best_score)
+        {
+         best_score=score;
+         best=candidate;
+        }
+     }
+
+   if(best=="")
+     {
+      const int selected_total=SymbolsTotal(true);
+      for(int i=0;i<selected_total;i++)
+        {
+         const string candidate=SymbolName(i,true);
+         if(candidate=="")
+            continue;
+
+         const int score=KatGoldSymbolScore(candidate);
+         if(score>best_score)
+           {
+            best_score=score;
+            best=candidate;
+           }
+        }
+     }
+
+   if(best!="" && !SymbolSelect(best,true))
+      return "";
+
+   return best;
+  }
+
 void OnStart(void)
   {
    int failures=0;
    const string account_class=KatResolveProbeClass();
+   const string probe_symbol=KatResolveGoldSymbol();
+
+   if(probe_symbol=="")
+     {
+      Print("FAIL: no gold/XAU symbol could be resolved automatically");
+      failures++;
+     }
+   else
+      PrintFormat("PASS: auto-resolved gold symbol=%s",probe_symbol);
 
    const bool discovery_mode=(account_class=="DISCOVERY");
    const bool account_class_valid=
@@ -62,10 +162,10 @@ void OnStart(void)
      }
 
    SKatSymbolFacts symbol;
-   bool symbol_ok=KatReadSymbolFacts(_Symbol,symbol);
+   bool symbol_ok=KatReadSymbolFacts(probe_symbol,symbol);
    if(!symbol_ok)
      {
-      PrintFormat("FAIL: SymbolSpec unavailable for %s",_Symbol);
+      PrintFormat("FAIL: SymbolSpec unavailable for %s",probe_symbol);
       failures++;
      }
    else
@@ -95,7 +195,7 @@ void OnStart(void)
      }
 
    SKatHealthSample health;
-   bool health_ok=KatSampleHealth(_Symbol,health);
+   bool health_ok=KatSampleHealth(probe_symbol,health);
    if(!health_ok)
       Print("INFO: terminal currently disconnected; health sample still captured");
    else
@@ -108,7 +208,7 @@ void OnStart(void)
                   health.terminal_ping_us);
 
    SKatSessionState session;
-   bool session_ok=KatReadSessionState(_Symbol,session);
+   bool session_ok=KatReadSessionState(probe_symbol,session);
    if(!session_ok)
       Print("INFO: session state unavailable at this moment");
    else
@@ -135,7 +235,7 @@ void OnStart(void)
       KatEvidenceWrite(evidence,"proof_type",(discovery_mode ? "ACCOUNT_DISCOVERY" : "ACCOUNT_PROBE"));
       KatEvidenceWrite(evidence,"account_class",account_class);
       KatEvidenceWriteLong(evidence,"terminal_build",TerminalInfoInteger(TERMINAL_BUILD));
-      KatEvidenceWrite(evidence,"symbol",_Symbol);
+      KatEvidenceWrite(evidence,"symbol",probe_symbol);
 
       if(account_ok)
         {
