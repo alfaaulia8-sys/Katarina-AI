@@ -129,20 +129,25 @@ function Invoke-Stage06Script {
     Remove-Item -LiteralPath $evidence -Force -ErrorAction SilentlyContinue
 
     $config = Join-Path $RunRoot ("run-" + $ScriptName + "-" + ([Guid]::NewGuid().ToString("N")) + ".ini")
-    @"
-[Experts]
-AllowLiveTrading=0
-AllowDllImport=0
-Enabled=1
-Account=0
-Profile=0
-
-[StartUp]
-Script=$ScriptName
-Symbol=$Symbol
-Period=H1
-ShutdownTerminal=1
-"@ | Set-Content -LiteralPath $config -Encoding ASCII
+    $configLines = @(
+        "[Experts]",
+        "AllowLiveTrading=0",
+        "AllowDllImport=0",
+        "Enabled=1",
+        "Account=0",
+        "Profile=0",
+        "",
+        "[StartUp]",
+        ("Script=" + $ScriptName)
+    )
+    if (-not [string]::IsNullOrWhiteSpace($Symbol)) {
+        $configLines += ("Symbol=" + $Symbol)
+    }
+    $configLines += @(
+        "Period=H1",
+        "ShutdownTerminal=1"
+    )
+    $configLines | Set-Content -LiteralPath $config -Encoding ASCII
 
     $started = [DateTime]::UtcNow
     $arg = '/config:"' + $config + '"'
@@ -221,14 +226,11 @@ foreach ($instance in $instances) {
     }
 }
 
-$symbol = Read-Host "Symbol for account probe [XAUUSD]"
-if ([string]::IsNullOrWhiteSpace($symbol)) { $symbol = "XAUUSD" }
-
-Write-Step "Account discovery"
+Write-Step "Account discovery (automatic gold symbol detection)"
 $discoveries = @()
 for ($i=0; $i -lt $instances.Count; $i++) {
     Write-Host ("Probing " + $instances[$i].Name + " ...")
-    $d = Invoke-Stage06Script -Instance $instances[$i] -ScriptName "KatarinaStage06AccountProbe" -Symbol $symbol -AccountClass "DISCOVERY"
+    $d = Invoke-Stage06Script -Instance $instances[$i] -ScriptName "KatarinaStage06AccountProbe" -Symbol "" -AccountClass "DISCOVERY"
     $copy = Join-Path $RunRoot ("discovery-" + ($i+1) + ".txt")
     Copy-Item -LiteralPath $d.Path -Destination $copy -Force
     $discoveries += $d
@@ -252,18 +254,21 @@ if ($stdKey -eq $centKey) {
     throw "Selected terminals appear to use the same broker account identity. Stage 06 requires distinct account probes."
 }
 
+$standardSymbol = [string]$discoveries[$standardIndex].Values["symbol"]
+$centSymbol = [string]$discoveries[$centIndex].Values["symbol"]
+
 Write-Step "MQL self-test"
-$self = Invoke-Stage06Script -Instance $instances[$standardIndex] -ScriptName "KatarinaStage06SelfTest" -Symbol $symbol
+$self = Invoke-Stage06Script -Instance $instances[$standardIndex] -ScriptName "KatarinaStage06SelfTest" -Symbol $standardSymbol
 Copy-Item -LiteralPath $self.Path -Destination (Join-Path $RunRoot "Katarina_Stage06_self_test_result.txt") -Force
 Write-Host "Self-test PASS." -ForegroundColor Green
 
 Write-Step "STANDARD_LIKE probe"
-$std = Invoke-Stage06Script -Instance $instances[$standardIndex] -ScriptName "KatarinaStage06AccountProbe" -Symbol $symbol -AccountClass "STANDARD_LIKE"
+$std = Invoke-Stage06Script -Instance $instances[$standardIndex] -ScriptName "KatarinaStage06AccountProbe" -Symbol $standardSymbol -AccountClass "STANDARD_LIKE"
 Copy-Item -LiteralPath $std.Path -Destination (Join-Path $RunRoot "Katarina_Stage06_account_probe_STANDARD_LIKE.txt") -Force
 Write-Host "STANDARD_LIKE PASS." -ForegroundColor Green
 
 Write-Step "CENT_LIKE probe"
-$cent = Invoke-Stage06Script -Instance $instances[$centIndex] -ScriptName "KatarinaStage06AccountProbe" -Symbol $symbol -AccountClass "CENT_LIKE"
+$cent = Invoke-Stage06Script -Instance $instances[$centIndex] -ScriptName "KatarinaStage06AccountProbe" -Symbol $centSymbol -AccountClass "CENT_LIKE"
 Copy-Item -LiteralPath $cent.Path -Destination (Join-Path $RunRoot "Katarina_Stage06_account_probe_CENT_LIKE.txt") -Force
 Write-Host "CENT_LIKE PASS." -ForegroundColor Green
 
@@ -273,14 +278,16 @@ $summary = [ordered]@{
     design_version = $DesignVersion
     generated_utc = [DateTime]::UtcNow.ToString("o")
     windows_user = $identity.Name
-    symbol = $symbol
+    symbol_mode = "AUTO_PER_MT5"
     standard = [ordered]@{
+        symbol = $standardSymbol
         terminal = $instances[$standardIndex].Name
         broker_server = $std.Values["broker_server"]
         login_last4 = $std.Values["login_last4"]
         account_currency = $std.Values["account_currency"]
     }
     cent = [ordered]@{
+        symbol = $centSymbol
         terminal = $instances[$centIndex].Name
         broker_server = $cent.Values["broker_server"]
         login_last4 = $cent.Values["login_last4"]
