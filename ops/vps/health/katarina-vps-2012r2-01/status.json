@@ -4,6 +4,6 @@
     "agent_id":  "katarina-vps-2012r2-01",
     "computer_name":  "WIN-4TTT19K3CL8",
     "state":  "ERROR",
-    "error":  "The remote server returned an error: (409) Conflict.",
-    "updated_utc":  "2026-10-03T14:10:45.6072646Z"
+    "error":  "The operation has timed out.",
+    "updated_utc":  "2026-10-03T14:17:11.1859997Z"
 }
