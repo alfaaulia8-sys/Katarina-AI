@@ -251,6 +251,7 @@ $allowed = @(
     "REPO_STATIC_TESTS",
     "STAGE06_HOST_CHECK",
     "STAGE06_COMPILE_PROOF",
+    "STAGE06_RUNTIME_PROBE",
     "STAGE06_CLEARANCE",
     "STAGE07_PYTHON_TESTS",
     "COLLECT_MT5_LOGS"
@@ -502,6 +503,211 @@ try {
 
             Copy-Item $compileEvidence (Join-Path $OutputDir "stage06_compile_evidence.json") -Force
             $details["compile_result"] = [string]$evidence.result
+        }
+
+        "STAGE06_RUNTIME_PROBE" {
+            $terminalPath = Get-ArgValue $request.args "terminal_path" ""
+            $terminalDataPath = Get-ArgValue $request.args "terminal_data_path" ""
+            $terminalCommonDataPath = Get-ArgValue $request.args "terminal_common_data_path" ""
+            $mode = ([string](Get-ArgValue $request.args "mode" "SELF_TEST")).ToUpperInvariant()
+            $symbol = [string](Get-ArgValue $request.args "symbol" "EURUSD")
+            $timeoutSeconds = [int](Get-ArgValue $request.args "timeout_seconds" 120)
+
+            if (-not $terminalPath -or !(Test-Path -LiteralPath $terminalPath -PathType Leaf)) {
+                throw "terminal_path is required and must exist for STAGE06_RUNTIME_PROBE."
+            }
+            if (-not $terminalDataPath -or !(Test-Path -LiteralPath $terminalDataPath -PathType Container)) {
+                throw "terminal_data_path is required and must exist for STAGE06_RUNTIME_PROBE."
+            }
+            if (-not $terminalCommonDataPath -or !(Test-Path -LiteralPath $terminalCommonDataPath -PathType Container)) {
+                throw "terminal_common_data_path is required and must exist for STAGE06_RUNTIME_PROBE."
+            }
+            if ($timeoutSeconds -lt 15 -or $timeoutSeconds -gt 300) {
+                throw "timeout_seconds must be between 15 and 300."
+            }
+
+            $allowedModes = @("SELF_TEST","DISCOVERY","STANDARD_LIKE","CENT_LIKE")
+            if ($allowedModes -notcontains $mode) {
+                throw "Unsupported Stage-06 runtime probe mode: $mode"
+            }
+
+            $terminalResolved = (Resolve-Path -LiteralPath $terminalPath).Path
+            $activeSameTerminal = @()
+            try {
+                $activeSameTerminal = @(
+                    Get-WmiObject Win32_Process -Filter "Name='terminal64.exe'" -ErrorAction SilentlyContinue |
+                    Where-Object {
+                        $_.ExecutablePath -and
+                        ([string]$_.ExecutablePath).ToLowerInvariant() -eq $terminalResolved.ToLowerInvariant()
+                    }
+                )
+            } catch {}
+
+            if ($activeSameTerminal.Count -gt 0) {
+                throw "Target MT5 terminal is already running. Refusing headless probe to avoid interfering with the active trading session."
+            }
+
+            $scriptsDir = Join-Path $terminalDataPath "MQL5\Scripts"
+            $selfTestEx5 = Join-Path $scriptsDir "KatarinaStage06SelfTest.ex5"
+            $probeEx5 = Join-Path $scriptsDir "KatarinaStage06AccountProbe.ex5"
+
+            if ($mode -eq "SELF_TEST") {
+                if (!(Test-Path -LiteralPath $selfTestEx5 -PathType Leaf)) {
+                    throw "Compiled self-test EX5 not found. Run STAGE06_COMPILE_PROOF first."
+                }
+                $scriptName = "KatarinaStage06SelfTest"
+                $evidenceName = "Katarina_Stage06_self_test_result.txt"
+                $expectedProofType = "MQL_SELF_TEST"
+            }
+            else {
+                if (!(Test-Path -LiteralPath $probeEx5 -PathType Leaf)) {
+                    throw "Compiled account-probe EX5 not found. Run STAGE06_COMPILE_PROOF first."
+                }
+                $scriptName = "KatarinaStage06AccountProbe"
+                $evidenceName = "Katarina_Stage06_account_probe_" + $mode + ".txt"
+                $expectedProofType = $(if ($mode -eq "DISCOVERY") { "ACCOUNT_DISCOVERY" } else { "ACCOUNT_PROBE" })
+            }
+
+            $commonFiles = Join-Path $terminalCommonDataPath "Files"
+            New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
+
+            $evidencePath = Join-Path $commonFiles $evidenceName
+            Remove-Item -LiteralPath $evidencePath -Force -ErrorAction SilentlyContinue
+
+            $controlPath = Join-Path $commonFiles "Katarina_Stage06_probe_class.txt"
+            if ($mode -ne "SELF_TEST") {
+                $mode | Set-Content -Path $controlPath -Encoding ASCII
+            }
+
+            $configPath = Join-Path $OutputDir ("stage06_runtime_" + $mode + ".ini")
+            $configLines = @(
+                "[Common]",
+                "NewsEnable=0",
+                "",
+                "[Experts]",
+                "AllowLiveTrading=0",
+                "AllowDllImport=0",
+                "Enabled=1",
+                "Account=0",
+                "Profile=0",
+                "",
+                "[StartUp]",
+                ("Script=" + $scriptName),
+                ("Symbol=" + $symbol),
+                "Period=M1",
+                "ShutdownTerminal=1"
+            )
+            $configLines | Set-Content -Path $configPath -Encoding ASCII
+
+            $profileRoot = ""
+            $appDataRoaming = ""
+            $marker = "\AppData\Roaming\MetaQuotes\Terminal\"
+            $markerIndex = $terminalDataPath.IndexOf($marker,[StringComparison]::OrdinalIgnoreCase)
+            if ($markerIndex -gt 0) {
+                $profileRoot = $terminalDataPath.Substring(0,$markerIndex)
+                $appDataRoaming = Join-Path $profileRoot "AppData\Roaming"
+            }
+
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = $terminalResolved
+            $psi.Arguments = '/config:"' + $configPath + '"'
+            $psi.UseShellExecute = $false
+            $psi.CreateNoWindow = $false
+
+            if ($profileRoot -and $appDataRoaming) {
+                $psi.EnvironmentVariables["USERPROFILE"] = $profileRoot
+                $psi.EnvironmentVariables["APPDATA"] = $appDataRoaming
+                $psi.EnvironmentVariables["LOCALAPPDATA"] = (Join-Path $profileRoot "AppData\Local")
+                $psi.EnvironmentVariables["HOMEDRIVE"] = [IO.Path]::GetPathRoot($profileRoot).TrimEnd("\")
+                $psi.EnvironmentVariables["HOMEPATH"] = $profileRoot.Substring([IO.Path]::GetPathRoot($profileRoot).Length - 1)
+            }
+
+            $proc = New-Object System.Diagnostics.Process
+            $proc.StartInfo = $psi
+            [void]$proc.Start()
+            $details["launched_pid"] = $proc.Id
+
+            $deadline = [DateTime]::UtcNow.AddSeconds($timeoutSeconds)
+            while ([DateTime]::UtcNow -lt $deadline) {
+                if (Test-Path -LiteralPath $evidencePath -PathType Leaf) {
+                    break
+                }
+                if ($proc.HasExited) {
+                    Start-Sleep -Seconds 2
+                    break
+                }
+                Start-Sleep -Seconds 2
+            }
+
+            if (!(Test-Path -LiteralPath $evidencePath -PathType Leaf)) {
+                if (-not $proc.HasExited) {
+                    try { $proc.Kill() } catch {}
+                }
+
+                $recentLogs = @()
+                foreach ($root in @((Join-Path $terminalDataPath "Logs"),(Join-Path $terminalDataPath "MQL5\Logs"))) {
+                    if (Test-Path $root) {
+                        $recentLogs += Get-ChildItem -Path $root -File -ErrorAction SilentlyContinue |
+                            Sort-Object LastWriteTimeUtc -Descending |
+                            Select-Object -First 2
+                    }
+                }
+
+                $logIndex = 0
+                foreach ($log in @($recentLogs | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 4)) {
+                    $logIndex++
+                    $textLog = Get-Content -Path $log.FullName -Tail 400 -ErrorAction SilentlyContinue | Out-String
+                    $textLog = Redact-Text $textLog
+                    $outName = ("stage06_runtime_log_{0:D2}.txt" -f $logIndex)
+                    $textLog | Set-Content -Path (Join-Path $OutputDir $outName) -Encoding UTF8
+                }
+
+                throw "Stage-06 runtime evidence was not produced before timeout."
+            }
+
+            $evidenceText = Get-Content -LiteralPath $evidencePath -Raw
+            $safeEvidence = Redact-Text $evidenceText
+            $outputEvidence = Join-Path $OutputDir $evidenceName
+            $safeEvidence | Set-Content -Path $outputEvidence -Encoding UTF8
+
+            $parsed = [ordered]@{}
+            foreach ($line in Get-Content -LiteralPath $evidencePath) {
+                if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                $eq = $line.IndexOf("=")
+                if ($eq -lt 1) { continue }
+                $parsed[$line.Substring(0,$eq).Trim()] = $line.Substring($eq+1).Trim()
+            }
+
+            if (-not $parsed.Contains("result") -or [string]$parsed["result"] -ne "PASS") {
+                throw "Stage-06 runtime evidence result is not PASS."
+            }
+            if (-not $parsed.Contains("proof_type") -or [string]$parsed["proof_type"] -ne $expectedProofType) {
+                throw "Stage-06 runtime evidence proof_type mismatch."
+            }
+            if ($mode -ne "SELF_TEST") {
+                if (-not $parsed.Contains("account_class") -or [string]$parsed["account_class"] -ne $mode) {
+                    throw "Stage-06 runtime account_class mismatch."
+                }
+            }
+
+            $details["runtime_mode"] = $mode
+            $details["evidence"] = $evidenceName
+            $details["proof_type"] = [string]$parsed["proof_type"]
+            if ($parsed.Contains("terminal_build")) {
+                $details["terminal_build"] = [string]$parsed["terminal_build"]
+            }
+            if ($parsed.Contains("account_currency")) {
+                $details["account_currency"] = [string]$parsed["account_currency"]
+            }
+            if ($parsed.Contains("broker_server")) {
+                $details["broker_server"] = [string]$parsed["broker_server"]
+            }
+            if ($parsed.Contains("symbol")) {
+                $details["symbol"] = [string]$parsed["symbol"]
+            }
+
+            ("STAGE06_RUNTIME_PROBE " + $mode + " PASS") | Set-Content $stdoutPath -Encoding UTF8
+            "" | Set-Content $stderrPath -Encoding UTF8
         }
 
         "STAGE06_CLEARANCE" {
