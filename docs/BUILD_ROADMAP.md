@@ -8,7 +8,7 @@
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
 | 06 | MT5 Bridge EA | ✅ FINALIZED / FROZEN v1.0.0 — Bridge design v0.5.0 |
-| 07 | MT5-Python Communication | 🟡 IMPLEMENTATION ACTIVE — Python session/TCP + MQL5 KAT1 baseline PASS |
+| 07 | MT5-Python Communication | 🟡 IMPLEMENTATION ACTIVE — ZeroMQ + cross-language handshake PASS; recovery gate next |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
 | 10 | Database & Memory V1 | ⬜ |
@@ -174,6 +174,11 @@ Completed/started without crossing the Stage-06 external-proof boundary:
 - fail-closed Python session supervisor PASS;
 - localhost native TCP KAT1 fallback (Python side) PASS;
 - MQL5 KAT1 header/CRC32C codec baseline PASS;
-- 13/13 MQL5 golden-vector validation PASS on Windows Server 2022.
+- 13/13 MQL5 golden-vector validation PASS on Windows Server 2022;
+- Python localhost ROUTER adapter PASS;
+- MQL5 bounded DEALER byte adapter PASS;
+- raw KAT1 ZeroMQ capability roundtrip PASS;
+- cross-language HEARTBEAT → HELLO → HELLO_ACK PASS;
+- post-handshake state remains RECOVERING and live-risk false.
 
 Stage-06 clearance is complete. Production MQL5 ZeroMQ/TCP transport implementation may now proceed under the frozen Stage-06 bridge contract; live broker-risk enablement remains governed by later stages.
