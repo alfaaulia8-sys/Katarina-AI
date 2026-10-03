@@ -28,45 +28,40 @@ function Read-Evidence {
 
 function Get-TerminalInstances {
     $instances = @()
-    $originPatterns = @(
-        (Join-Path $env:APPDATA "MetaQuotes\Terminal\*\origin.txt"),
-        "C:\Users\*\AppData\Roaming\MetaQuotes\Terminal\*\origin.txt"
+
+    $known = @(
+        [pscustomobject]@{
+            Name = "MetaTrader 5 ALFA"
+            Home = "C:\Program Files\MetaTrader 5 ALFA"
+            Data = "C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\2698BCED53B80670A80FF375C9E8D6A1"
+        },
+        [pscustomobject]@{
+            Name = "MetaTrader 5"
+            Home = "C:\Program Files\MetaTrader 5"
+            Data = "C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075"
+        }
     )
 
-    $origins = @()
-    foreach ($pattern in $originPatterns) {
-        try {
-            $origins += @(Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue)
-        } catch {}
-    }
-    $origins = @($origins | Sort-Object FullName -Unique)
+    foreach ($item in $known) {
+        $terminal = Join-Path $item.Home "terminal64.exe"
+        $metaeditor = Join-Path $item.Home "metaeditor64.exe"
+        $selfTest = Join-Path $item.Data "MQL5\Scripts\KatarinaStage06SelfTest.ex5"
+        $probe = Join-Path $item.Data "MQL5\Scripts\KatarinaStage06AccountProbe.ex5"
 
-    foreach ($origin in $origins) {
-        try {
-            $home = (Get-Content -LiteralPath $origin.FullName -Raw).Trim()
-            if (-not $home) { continue }
-
-            $terminal = Join-Path $home "terminal64.exe"
-            $metaeditor = Join-Path $home "metaeditor64.exe"
-            $data = Split-Path -Parent $origin.FullName
-            $selfTest = Join-Path $data "MQL5\Scripts\KatarinaStage06SelfTest.ex5"
-            $probe = Join-Path $data "MQL5\Scripts\KatarinaStage06AccountProbe.ex5"
-
-            if ((Test-Path -LiteralPath $terminal) -and
-                (Test-Path -LiteralPath $metaeditor) -and
-                (Test-Path -LiteralPath $selfTest) -and
-                (Test-Path -LiteralPath $probe)) {
-                $instances += [pscustomobject]@{
-                    Name = Split-Path -Leaf $home
-                    Home = $home
-                    Terminal = $terminal
-                    MetaEditor = $metaeditor
-                    Data = $data
-                    SelfTest = $selfTest
-                    Probe = $probe
-                }
+        if ((Test-Path -LiteralPath $terminal) -and
+            (Test-Path -LiteralPath $metaeditor) -and
+            (Test-Path -LiteralPath $selfTest) -and
+            (Test-Path -LiteralPath $probe)) {
+            $instances += [pscustomobject]@{
+                Name = $item.Name
+                Home = $item.Home
+                Terminal = $terminal
+                MetaEditor = $metaeditor
+                Data = $item.Data
+                SelfTest = $selfTest
+                Probe = $probe
             }
-        } catch {}
+        }
     }
 
     return @($instances)
