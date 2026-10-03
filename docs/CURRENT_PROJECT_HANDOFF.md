@@ -10,30 +10,40 @@
 - Stage 03 — Repository Architecture: FROZEN
 - Stage 04 — KAT1 Data Protocol / Schemas: FROZEN v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
-- Stage 06 — MT5 Bridge EA: implementation + clearance automation complete; external MetaEditor/MT5 proof still pending
+- Stage 06 — MT5 Bridge EA: implementation + clearance automation complete; legacy external MetaEditor compile proof PASSED on Windows Server 2012 R2 (0 errors / 0 warnings for Bridge EA, SelfTest, AccountProbe), but supported-modern-host freeze proof and MT5 runtime probes are still pending
 - Stage 07 — MT5 ↔ Python Communication: research/design active; Python conformance work started; production MQL5 transport integration gated on Stage-06 proof
 
 ## VPS bridge status
 
-Implementation status: **READY FOR VPS INSTALLATION / FIRST LIVE TELEMETRY TEST**
+Implementation status: **LIVE END-TO-END CONNECTED**
 
-- Repository-driven bridge is implemented.
-- Windows Server 2012 R2 uses the legacy outbound-HTTPS PowerShell polling agent, not the unsupported GitHub Actions runner.
-- Legacy agent version: **1.1.0**.
-- Request execution is allowlisted; arbitrary shell commands are not accepted.
-- Request target, schema, request-id/filename binding, expiry, task allowlist, and Git ref are validated before repository snapshot execution.
-- Processed request IDs use exact matching to prevent collisions such as `req-001` vs `req-0010`.
-- Malformed request files are isolated per item so one bad request does not block later valid requests.
+- Agent: `katarina-vps-2012r2-01`.
+- Windows Server 2012 R2 uses the legacy outbound-HTTPS PowerShell polling agent.
+- ChatGPT → GitHub request queue → VPS task execution → GitHub result write-back has been proven with multiple `HOST_INVENTORY` requests.
+- Agent v1.2.2 is currently running successfully; repository source is v1.2.3 with shortened local work paths for the Windows 260-character path limit.
+- Request execution remains allowlisted; arbitrary shell commands are not accepted.
 - Results remain text-only and secret-redacted before upload.
 - No inbound VPS command port is required.
+- Deep host discovery is enabled.
 
-Remaining live bridge gate:
+Detected on the real VPS:
 
-1. install `scripts/vps/legacy/Install-KatarinaVpsAgent.ps1` on the real Windows Server 2012 R2 VPS;
-2. confirm the scheduled task `KatarinaVPSAgent` starts;
-3. submit one `HOST_INVENTORY` request targeted to `katarina-vps-2012r2-01`;
-4. verify the VPS writes the result into `ops/vps/results/<agent>/<request>/`;
-5. use that evidence to decide the Python/MT5 compatibility path.
+- Windows Server 2012 R2 Standard x64
+- PowerShell 4.0
+- MetaTrader 5 ALFA:
+  - `C:\Program Files\MetaTrader 5 ALFA\terminal64.exe`
+  - `C:\Program Files\MetaTrader 5 ALFA\metaeditor64.exe`
+- MetaTrader 5 generic / MetaQuotes:
+  - `C:\Program Files\MetaTrader 5\terminal64.exe`
+  - `C:\Program Files\MetaTrader 5\metaeditor64.exe`
+- Two valid MT5 terminal data folders with `MQL5` and `Tester`.
+- MT5 Common data path detected under the Administrator profile.
+- Python executable: not detected.
+- Git CLI: not detected.
+
+Operational note:
+
+- Long request IDs can trigger the Windows Server 2012 R2 legacy MAX_PATH limit in the currently installed v1.2.2 agent. Short request IDs work. Repository agent v1.2.3 hashes request IDs into short local work-directory names; install source on the VPS at the next maintenance update.
 
 ## Stage 06 final status
 
@@ -86,16 +96,26 @@ Stage-06 runtime evidence files:
 - Katarina_Stage06_account_probe_STANDARD_LIKE.txt
 - Katarina_Stage06_account_probe_CENT_LIKE.txt
 
+Stage-06 evidence achieved on the real 2012 R2 VPS:
+
+- MetaEditor 5.0.0.6230 discovered and invoked successfully.
+- Exploratory compile result: `PASS_LEGACY_COMPILE_NOT_FREEZE_PROOF`.
+- `KatarinaBridgeEA.mq5`: 0 errors, 0 warnings, EX5 created.
+- `KatarinaStage06SelfTest.mq5`: 0 errors, 0 warnings, EX5 created.
+- `KatarinaStage06AccountProbe.mq5`: 0 errors, 0 warnings, EX5 created.
+- Compile evidence is source-hash bound.
+- MQL executable version metadata was normalized to `1.000` to satisfy MetaEditor warning-68 rules; Stage-06 bridge design version remains `0.5.0`.
+
 Stage-06 remaining external proof gates:
 
-1. actual MetaEditor compile on supported modern Windows
+1. repeat strict compile proof on a supported modern Windows validation host
 2. actual MQL self-test in MT5
 3. actual STANDARD_LIKE account probe
 4. actual CENT_LIKE account probe
 5. actual runtime evidence collection
 6. governed final Stage-06 audit/freeze
 
-Windows Server 2012 R2 is deferred and is not a Stage-06 freeze blocker.
+Windows Server 2012 R2 is DEFERRED: it is useful for exploratory compile/runtime diagnostics, but evidence from this host is not freeze-qualified. A supported modern Windows validation host is still required for Stage-06 freeze.
 
 Preferred validation hosts:
 
@@ -133,18 +153,16 @@ Stage-07 production MQL5 ZeroMQ/TCP integration must NOT modify the Stage-06 MQL
 
 ## Next recommended action
 
-Install the already-implemented legacy Katarina VPS Agent on the real Windows Server 2012 R2 host, then run the first read-only `HOST_INVENTORY` request.
+Use the already-compiled Stage-06 artifacts on the detected MT5 instance to obtain runtime evidence:
 
-Expected flow:
+1. run `KatarinaStage06SelfTest` inside MT5;
+2. run `KatarinaStage06AccountProbe` on a STANDARD_LIKE account;
+3. run `KatarinaStage06AccountProbe` on a CENT_LIKE account;
+4. collect the three proof files from MT5 Common Files;
+5. keep the resulting runtime evidence as exploratory 2012 R2 evidence;
+6. separately repeat the strict compile/runtime proof on a supported modern Windows host before Stage-06 freeze.
 
-GitHub repository
-→ legacy Windows Server 2012 R2 polling agent over outbound HTTPS
-→ allowlisted host inventory/test task
-→ redacted text evidence
-→ `ops/vps/results/<agent>/<request>/`
-→ ChatGPT reviews the evidence and applies the next repository change
-
-For modern Windows validation hosts, the repository also retains the GitHub Actions self-hosted runner workflow.
+The VPS bridge itself is operational and can now be used for repository tests, Stage-06 diagnostics, Stage-07 Python tests when Python becomes available, and MT5 log collection.
 
 Do not put passwords, VPS credentials, API keys, broker passwords, PATs, or private account credentials into the repository or chat.
 
