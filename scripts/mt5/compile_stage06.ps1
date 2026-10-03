@@ -3,7 +3,10 @@ param(
     [string]$TerminalDataPath,
 
     [Parameter(Mandatory=$false)]
-    [string]$MetaEditorPath = ""
+    [string]$MetaEditorPath = "",
+
+    [Parameter(Mandatory=$false)]
+    [switch]$AllowDeferredHostCompile
 )
 
 $ErrorActionPreference = "Stop"
@@ -59,6 +62,10 @@ function Assert-Stage06Host {
     param($Profile)
 
     if ($Profile.validation_class -eq "DEFERRED") {
+        if ($AllowDeferredHostCompile) {
+            Write-Warning "Windows Server 2012 R2 compile is exploratory only and cannot produce Stage 06 freeze proof."
+            return
+        }
         throw "Windows Server 2012 R2 is intentionally deferred and cannot produce the current Stage 06 freeze proof."
     }
 
@@ -309,14 +316,21 @@ $evidence = [ordered]@{
         zero_warnings = $true
         ex5_required = $true
         windows_server_2012_r2_deferred = $true
+        deferred_host_compile_allowed = [bool]$AllowDeferredHostCompile
+        freeze_qualified = ($hostProfile.validation_class -ne "DEFERRED")
     }
-    result = "PASS_COMPILE_PROOF"
+    result = $(if ($hostProfile.validation_class -eq "DEFERRED") { "PASS_LEGACY_COMPILE_NOT_FREEZE_PROOF" } else { "PASS_COMPILE_PROOF" })
 }
 
 $evidence | ConvertTo-Json -Depth 8 | Set-Content -Path $evidencePath -Encoding UTF8
 
 Write-Host ""
-Write-Host "Katarina Stage 06 compile proof PASSED"
+if ($hostProfile.validation_class -eq "DEFERRED") {
+    Write-Host "Katarina Stage 06 legacy exploratory compile PASSED"
+    Write-Host "NOTE: This is NOT Stage 06 freeze proof."
+} else {
+    Write-Host "Katarina Stage 06 compile proof PASSED"
+}
 Write-Host "Host:       $($hostProfile.normalized) [$($hostProfile.validation_class)]"
 Write-Host "MetaEditor: $($metaEditorInfo.VersionInfo.FileVersion)"
 Write-Host "Evidence:   $evidencePath"
