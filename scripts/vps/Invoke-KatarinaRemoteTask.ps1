@@ -763,6 +763,7 @@ After PASS, return to ChatGPT and type:
                     generated_utc = [DateTime]::UtcNow.ToString("o")
                     common_files = @()
                     runtime_runs = @()
+                    mt5_instances = @()
                 }
 
                 if (Test-Path $commonFiles) {
@@ -782,6 +783,43 @@ After PASS, return to ChatGPT and type:
                         $manifest.common_files += [pscustomobject]$item
                     }
                 }
+
+                try {
+                    $activeTerminals = @(
+                        Get-WmiObject Win32_Process -Filter "Name='terminal64.exe'" -ErrorAction SilentlyContinue
+                    )
+                } catch {
+                    $activeTerminals = @()
+                }
+
+                try {
+                    foreach ($origin in @(Get-ChildItem -Path "C:\Users\*\AppData\Roaming\MetaQuotes\Terminal\*\origin.txt" -ErrorAction SilentlyContinue)) {
+                        try {
+                            $home = (Get-Content -LiteralPath $origin.FullName -Raw -ErrorAction Stop).Trim()
+                            $data = Split-Path -Parent $origin.FullName
+                            $terminal = Join-Path $home "terminal64.exe"
+                            $selfTest = Join-Path $data "MQL5\Scripts\KatarinaStage06SelfTest.ex5"
+                            $probe = Join-Path $data "MQL5\Scripts\KatarinaStage06AccountProbe.ex5"
+
+                            $isRunning = $false
+                            foreach ($p in $activeTerminals) {
+                                if ($p.ExecutablePath -and [string]::Equals($p.ExecutablePath,$terminal,[StringComparison]::OrdinalIgnoreCase)) {
+                                    $isRunning = $true
+                                    break
+                                }
+                            }
+
+                            $manifest.mt5_instances += [pscustomobject]@{
+                                home = $home
+                                data = $data
+                                terminal_exists = (Test-Path -LiteralPath $terminal -PathType Leaf)
+                                self_test_ex5 = (Test-Path -LiteralPath $selfTest -PathType Leaf)
+                                account_probe_ex5 = (Test-Path -LiteralPath $probe -PathType Leaf)
+                                terminal_running = $isRunning
+                            }
+                        } catch {}
+                    }
+                } catch {}
 
                 if (Test-Path $runtimeRoot) {
                     foreach ($dir in @(Get-ChildItem -Path $runtimeRoot -Directory -ErrorAction SilentlyContinue |
