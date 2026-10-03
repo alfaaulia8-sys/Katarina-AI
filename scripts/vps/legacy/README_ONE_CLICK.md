@@ -1,4 +1,4 @@
-# KATARINA AI One-Click VPS Bootstrap v1.2.1
+# KATARINA AI One-Click VPS Bootstrap v1.2.2
 
 Target: **Windows Server 2012 R2 x64**
 
@@ -19,7 +19,7 @@ Required PAT scope:
 
 Do not paste the PAT into ChatGPT.
 
-## v1.2.1 behavior
+## v1.2.2 behavior
 
 - Connects to GitHub **before** preflight.
 - Uploads installer/bootstrap diagnostics to:
@@ -38,3 +38,8 @@ After installation, normal troubleshooting should not require screenshots. In Ch
 - `cek koneksi VPS`
 - `cek error VPS`
 - `ambil log MT5 terbaru`
+
+
+## Upgrade behavior
+
+v1.2.2 stops any previously running `KatarinaVPSAgent` Scheduled Task before replacing the agent script, removes stale startup/error diagnostic state, recreates the task, and then waits for fresh `ONLINE` health.
