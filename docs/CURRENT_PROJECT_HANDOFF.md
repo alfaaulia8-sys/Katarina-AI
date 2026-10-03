@@ -11,7 +11,7 @@
 - Stage 04 — KAT1 Data Protocol / Schemas: FROZEN v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
-- Stage 07 — MT5 ↔ Python Communication: research/design active; Python conformance work started; production MQL5 transport implementation is now unblocked by the Stage-06 freeze
+- Stage 07 — MT5 ↔ Python Communication: IMPLEMENTATION ACTIVE; Python session/TCP baseline PASS; MQL5 KAT1 13-vector baseline PASS; ZeroMQ capability/integration still pending
 
 ## VPS bridge status
 
@@ -88,6 +88,13 @@ Windows Server 2012 R2 remains DEFERRED for freeze proof.
 
 Research/design completed or started:
 
+- Python fail-closed session supervisor PASS (presence → HELLO → HELLO_ACK → RECOVERING → READY only after explicit recovery);
+- stale/reconnect handshake regression PASS;
+- same-stream account rebinding fail-closed regression PASS;
+- localhost-only native TCP KAT1 framing PASS on Python side;
+- MQL5 KAT1 header + CRC32C codec baseline compiled 0 errors / 0 warnings;
+- MQL5 13/13 frozen golden vectors PASS on Windows Server 2022;
+
 - GitHub prior-art review
 - localhost ZeroMQ topology draft
 - Python ROUTER / MT5 DEALER draft
@@ -117,11 +124,11 @@ Stage-06 is now frozen. Stage-07 production MQL5 ZeroMQ/TCP transport implementa
 
 Proceed with Stage 07 — MT5 ↔ Python Communication:
 
-1. freeze the Stage-07 transport contract/ADR details;
-2. implement the Python transport runtime around the existing KAT1 codec;
-3. implement the MT5 communication adapter without changing frozen Stage-06 bridge semantics;
-4. validate heartbeat, HELLO/HELLO_ACK, reconnect, timeout and stale-session handling;
-5. validate localhost ZeroMQ primary path and native TCP fallback;
+1. run ZeroMQ capability spike on modern Windows/MT5;
+2. implement Python ROUTER adapter and MQL5 DEALER adapter;
+3. complete full MQL5 payload codec / cross-language byte-equality beyond the current header+CRC baseline;
+4. implement MQL5 native TCP fallback against the proven Python server;
+5. validate cross-language heartbeat, HELLO/HELLO_ACK, stale/reconnect and binding mismatch behavior;
 6. test round-trip latency and tester compatibility;
 7. keep live broker-risk enablement disabled until later governed stages.
 
