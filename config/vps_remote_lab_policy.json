@@ -71,6 +71,10 @@
     "COLLECT_MT5_LOGS": {
       "risk": "READ_ONLY",
       "workspace_required": false
+    },
+    "STAGE06_RUNTIME_PROBE": {
+      "risk": "READ_ONLY_MT5_RUNTIME",
+      "workspace_required": true
     }
   },
   "modern_windows": {
