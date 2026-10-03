@@ -9,13 +9,31 @@
 
 input string InpAccountClass="UNSPECIFIED";
 
+string KatResolveProbeClass(void)
+  {
+   if(!MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
+      return InpAccountClass;
+
+   int handle=FileOpen("Katarina_Stage06_probe_class.txt",
+                       FILE_READ|FILE_TXT|FILE_ANSI|FILE_COMMON);
+   if(handle==INVALID_HANDLE)
+      return InpAccountClass;
+
+   string value=FileReadString(handle);
+   FileClose(handle);
+   StringTrimLeft(value);
+   StringTrimRight(value);
+   return value;
+  }
+
 void OnStart(void)
   {
    int failures=0;
+   const string account_class=KatResolveProbeClass();
 
    const bool account_class_valid=
-      (InpAccountClass=="STANDARD_LIKE" ||
-       InpAccountClass=="CENT_LIKE");
+      (account_class=="STANDARD_LIKE" ||
+       account_class=="CENT_LIKE");
 
    if(!account_class_valid)
      {
@@ -98,7 +116,7 @@ void OnStart(void)
                   (int)session.symbol_trade_allowed,
                   session.session_count_today);
 
-   const string class_token=KatEvidenceSafeToken(InpAccountClass);
+   const string class_token=KatEvidenceSafeToken(account_class);
    const int evidence=KatOpenEvidenceFile("account_probe_"+class_token+".txt");
 
    if(evidence==INVALID_HANDLE)
@@ -113,7 +131,7 @@ void OnStart(void)
       KatEvidenceWrite(evidence,"design_version",KAT_STAGE06_DESIGN_VERSION);
       KatEvidenceWriteLong(evidence,"generated_epoch_seconds",(long)TimeGMT());
       KatEvidenceWrite(evidence,"proof_type","ACCOUNT_PROBE");
-      KatEvidenceWrite(evidence,"account_class",InpAccountClass);
+      KatEvidenceWrite(evidence,"account_class",account_class);
       KatEvidenceWriteLong(evidence,"terminal_build",TerminalInfoInteger(TERMINAL_BUILD));
       KatEvidenceWrite(evidence,"symbol",_Symbol);
 
@@ -173,4 +191,7 @@ void OnStart(void)
       Print("Katarina Stage 06 account probe PASSED");
    else
       PrintFormat("Katarina Stage 06 account probe FAILED: %d",failures);
+
+   if(MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
+      TerminalClose(failures==0 ? 0 : 7);
   }
