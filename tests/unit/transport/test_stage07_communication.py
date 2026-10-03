@@ -686,6 +686,67 @@ class Kat1SessionSupervisorTests(unittest.TestCase):
             )
         self.assertEqual(supervisor.state, SessionState.FAULTED)
 
+    def test_python_sequence_starts_above_mt5_consumed_command_floor(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+
+        raw = self.codec.encode(
+            message_type=HEARTBEAT,
+            schema_version=1,
+            sequence=50,
+            source_time_ns=1_000_000_000,
+            stream_id=77,
+            boot_id=88,
+            values={
+                "uptime_ms": 1000,
+                "latest_produced_sequence": 50,
+                "latest_consumed_command_sequence": 41,
+                "critical_queue_depth": 0,
+                "market_queue_depth": 0,
+                "last_broker_observation_ns": 1_000_000_000,
+                "transport_state": 1,
+            },
+        )
+        send = supervisor.observe(
+            ReceivedTransportFrame(
+                frame=raw,
+                peer=TransportPeer(route_id=b"mt5", stream_id=77, boot_id=88),
+            ),
+            now_ns=1_000_000_000,
+        )
+        hello = self.codec.decode(send.frame)
+        self.assertEqual(hello.header.sequence, 42)
+
+    def test_duplicate_mt5_sequence_faults(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+        first = self._heartbeat(sequence=1)
+        supervisor.observe(first, now_ns=1_000_000_000)
+
+        duplicate = self._heartbeat(
+            sequence=1,
+            source_time_ns=1_100_000_000,
+        )
+        with self.assertRaises(SessionFault):
+            supervisor.observe(duplicate, now_ns=1_100_000_000)
+        self.assertEqual(supervisor.state, SessionState.FAULTED)
+
+    def test_mt5_sequence_gap_faults(self) -> None:
+        supervisor = self._supervisor()
+        supervisor.start()
+        supervisor.observe(
+            self._heartbeat(sequence=1),
+            now_ns=1_000_000_000,
+        )
+
+        gap = self._hello_ack(
+            sequence=3,
+            source_time_ns=1_100_000_000,
+        )
+        with self.assertRaises(SessionFault):
+            supervisor.observe(gap, now_ns=1_100_000_000)
+        self.assertEqual(supervisor.state, SessionState.FAULTED)
+
     def test_transport_metadata_binding_mismatch_faults(self) -> None:
         supervisor = self._supervisor()
         supervisor.start()
