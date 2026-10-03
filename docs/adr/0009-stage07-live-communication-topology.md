@@ -31,4 +31,4 @@ Production defaults are localhost-only. Public bind is prohibited by the frozen 
 
 ## Gate
 
-This ADR stays Proposed until Stage-07 integration tests prove the topology on modern Windows/MT5 and Stage-06 external clearance is complete.
+Stage-06 clearance is complete. This ADR stays Proposed only until Stage-07 cross-language integration tests prove the ROUTER/DEALER primary path, native TCP fallback, reconnect behavior, and fail-closed binding on modern Windows/MT5.
