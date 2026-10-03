@@ -1,0 +1,7 @@
+{
+    "phase":  "QUEUE_POLL",
+    "agent_version":  "1.2.2",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "queue_path":  "ops/vps/requests/legacy",
+    "time_utc":  "2026-10-03T12:24:24.8404686Z"
+}
