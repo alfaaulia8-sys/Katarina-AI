@@ -1,0 +1,14 @@
+{
+    "schema_version":  1,
+    "request_id":  "lga6",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "task":  "COLLECT_MT5_LOGS",
+    "started_utc":  "2026-10-03T14:14:28.3298012Z",
+    "completed_utc":  "2026-10-03T14:14:28.4235479Z",
+    "duration_ms":  94,
+    "status":  "PASS",
+    "exit_code":  0,
+    "details":  {
+                    "files":  4
+                }
+}
