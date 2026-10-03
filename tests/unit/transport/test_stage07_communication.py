@@ -21,6 +21,7 @@ from katarina.adapters.transport.session import (
     SessionState,
 )
 from katarina.ports.transport import (
+    ReceivedTransportFrame,
     TransportBackpressureError,
     TransportPeer,
     TransportPort,
