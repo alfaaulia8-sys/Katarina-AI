@@ -1,3 +1,29 @@
 [2026-10-03T12:01:01.0224824Z] Bootstrap session: bootstrap-20261003-120101-86f66814
 [2026-10-03T12:01:26.8646683Z] Checking authenticated GitHub connection...
 [2026-10-03T12:01:27.3802929Z] GitHub connection: PASS
+[2026-10-03T12:01:30.8646738Z] Running VPS preflight...
+[2026-10-03T12:01:31.2865424Z] 
+[2026-10-03T12:01:31.2865424Z] KATARINA VPS PREFLIGHT v1.1.1
+[2026-10-03T12:01:31.2865424Z] Target baseline: Windows Server 2012 R2 x64
+[2026-10-03T12:01:31.2865424Z] 
+[2026-10-03T12:01:31.3021658Z] 
+[2026-10-03T12:01:31.3021658Z] check                           passed required detail                         
+[2026-10-03T12:01:31.3021658Z] -----                           ------ -------- ------                         
+[2026-10-03T12:01:31.3021658Z] PowerShell >= 4                   True     True 4.0                            
+[2026-10-03T12:01:31.3021658Z] Windows detected                  True     True Microsoft Windows Server 201...
+[2026-10-03T12:01:31.3021658Z] 64-bit Windows                    True     True 64-bit                         
+[2026-10-03T12:01:31.3177923Z] Windows Server 2012 R2 baseline   True    False Microsoft Windows Server 201...
+[2026-10-03T12:01:31.3177923Z] .NET CLR available                True     True 4.0.30319.42000                
+[2026-10-03T12:01:31.3177923Z] DPAPI LocalMachine round-trip     True     True LocalMachine protect/unprote...
+[2026-10-03T12:01:31.3177923Z] ZIP extraction support            True     True System.IO.Compression.FileSy...
+[2026-10-03T12:01:31.3177923Z] GitHub API over TLS 1.2           True     True HTTP 200                       
+[2026-10-03T12:01:31.3177923Z] Task Scheduler CLI                True     True                                
+[2026-10-03T12:01:31.3177923Z] Temporary file write              True     True C:\Users\ADMINI~1\AppData\Lo...
+[2026-10-03T12:01:31.3177923Z] C: free space >= 2 GB             True     True 16.51 GB free                  
+[2026-10-03T12:01:31.3177923Z] 
+[2026-10-03T12:01:31.3177923Z] 
+[2026-10-03T12:01:31.3177923Z] 
+[2026-10-03T12:01:31.3177923Z] KATARINA VPS PREFLIGHT: PASS
+[2026-10-03T12:01:31.3334203Z] Preflight: PASS
+[2026-10-03T12:01:31.3334203Z] Installing persistent agent...
+[2026-10-03T12:01:34.4521804Z] Persistent agent installed and started: PASS
