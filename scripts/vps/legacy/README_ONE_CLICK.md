@@ -1,0 +1,39 @@
+# KATARINA AI One-Click VPS Bootstrap v1.2.0
+
+Target: **Windows Server 2012 R2 x64**
+
+## Install
+
+1. Pull or download the latest `main` branch.
+2. Open:
+   `scripts\vps\legacy\`
+3. Double-click:
+   `INSTALL_KATARINA.cmd`
+4. Approve Administrator permission.
+5. Paste the GitHub Fine-Grained PAT once when requested.
+
+Required PAT scope:
+
+- Repository: `alfaaulia-katarina/Katarina-AI`
+- Repository permission: **Contents = Read and write**
+
+Do not paste the PAT into ChatGPT.
+
+## v1.2.0 behavior
+
+- Connects to GitHub **before** preflight.
+- Uploads installer/bootstrap diagnostics to:
+  `ops/vps/bootstrap/<agent>/<session>/`
+- Installs the persistent agent only after preflight passes.
+- Agent publishes runtime health to:
+  `ops/vps/health/<agent>/status.json`
+- Agent continues polling:
+  `ops/vps/requests/legacy/`
+- Task results are returned to:
+  `ops/vps/results/<agent>/<request>/`
+
+After installation, normal troubleshooting should not require screenshots. In ChatGPT, use commands such as:
+
+- `cek koneksi VPS`
+- `cek error VPS`
+- `ambil log MT5 terbaru`
