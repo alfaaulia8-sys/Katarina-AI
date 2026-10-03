@@ -3,6 +3,7 @@
 
 #include <Zmq/Zmq.mqh>
 #include <Katarina/Stage07/Kat1Codec.mqh>
+#include <Katarina/Stage07/ZmqDealerTransport.mqh>
 
 input string InpEndpoint="tcp://127.0.0.1:5567";
 input int InpTimeoutMs=8000;
@@ -71,12 +72,10 @@ void OnStart(void)
    version=Zmq::getVersion();
    Print("ZeroMQ version: ",version);
 
-   Context context("__katarina_stage07_capability__");
-   Socket socket(context,ZMQ_DEALER);
-
-   if(!socket.valid())
+   CKatZmqDealerByteTransport transport;
+   if(!transport.Start(InpEndpoint,"kat-stage07-capability",64,64))
      {
-      detail="DEALER socket creation failed";
+      detail="DEALER byte transport start failed";
       Print("FAIL: ",detail);
       KatWriteCapabilityEvidence(false,version,detail);
       if(MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
@@ -84,23 +83,15 @@ void OnStart(void)
       return;
      }
 
-   if(!socket.connect(InpEndpoint))
-     {
-      detail="DEALER connect failed: "+Zmq::errorMessage();
-      Print("FAIL: ",detail);
-      KatWriteCapabilityEvidence(false,version,detail);
-      if(MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
-         TerminalClose(7);
-      return;
-     }
-
-   // Give the DEALER a short time to establish the localhost connection.
+   // Immediate mode is enabled by the adapter. Give localhost transport a
+   // short establishment window before the first nonblocking send.
    Sleep(150);
 
-   if(!socket.send(expected,true))
+   if(!transport.SendFrame(expected))
      {
-      detail="nonblocking send failed: "+Zmq::errorMessage();
+      detail="nonblocking adapter send failed";
       Print("FAIL: ",detail);
+      transport.Stop();
       KatWriteCapabilityEvidence(false,version,detail);
       if(MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
          TerminalClose(7);
@@ -110,12 +101,9 @@ void OnStart(void)
    const uint started=GetTickCount();
    while((int)(GetTickCount()-started)<InpTimeoutMs)
      {
-      ZmqMsg reply;
-      if(socket.recv(reply,true))
+      uchar actual[];
+      if(transport.ReceiveFrame(actual))
         {
-         uchar actual[];
-         reply.getData(actual);
-
          if(!Kat1BytesEqual(expected,actual))
            {
             detail="echo payload mismatch";
@@ -139,8 +127,15 @@ void OnStart(void)
             break;
            }
 
+         if(transport.FramesSent()!=1 || transport.FramesReceived()!=1)
+           {
+            detail="adapter frame counters mismatch";
+            Print("FAIL: ",detail);
+            break;
+           }
+
          passed=true;
-         detail="raw KAT1 DEALER/ROUTER roundtrip PASS";
+         detail="raw KAT1 CKatZmqDealerByteTransport roundtrip PASS";
          Print("PASS: ",detail);
          break;
         }
@@ -153,6 +148,8 @@ void OnStart(void)
       detail="nonblocking receive timed out";
       Print("FAIL: ",detail);
      }
+
+   transport.Stop();
 
    KatWriteCapabilityEvidence(passed,version,detail);
 
