@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
 
-$InstallerVersion = "1.2.2"
+$InstallerVersion = "1.2.3"
 $AgentId = "katarina-vps-2012r2-01"
 $Repository = "alfaaulia-katarina/Katarina-AI"
 $Branch = "main"
@@ -97,9 +97,9 @@ function Get-RemoteAgentHealth {
     try {
         $path = "ops/vps/health/$AgentId/status.json"
         $escaped = ($path -split "/" | ForEach-Object { [Uri]::EscapeDataString($_) }) -join "/"
-        $uri = "https://api.github.com/repos/$Repository/contents/$escaped?ref=$([Uri]::EscapeDataString($Branch))"
+        $uri = ("https://api.github.com/repos/{0}/contents/{1}?ref={2}" -f $Repository, $escaped, [Uri]::EscapeDataString($Branch))
         $item = Invoke-RestMethod -Method GET -Uri $uri -Headers $script:Headers
-        $raw = [Convert]::FromBase64String(([string]$item.content -replace "\\s",""))
+        $raw = [Convert]::FromBase64String(([string]$item.content -replace "\s",""))
         return ([Text.Encoding]::UTF8.GetString($raw) | ConvertFrom-Json)
     } catch {
         return $null
