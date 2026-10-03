@@ -100,7 +100,8 @@
     "session_supervisor": "src/katarina/adapters/transport/session.py",
     "python_zmq_router": "src/katarina/adapters/transport/zmq.py",
     "mql5_zmq_dealer": "mt5/Include/Katarina/Stage07/ZmqDealerTransport.mqh",
-    "mql5_system_messages": "mt5/Include/Katarina/Stage07/Kat1SystemMessages.mqh"
+    "mql5_system_messages": "mt5/Include/Katarina/Stage07/Kat1SystemMessages.mqh",
+    "python_recovery_gate": "src/katarina/adapters/transport/recovery.py"
   },
   "progress": {
     "research": true,
@@ -116,7 +117,12 @@
     "session_supervisor": true,
     "python_tcp_fallback": true,
     "mql5_codec_baseline": true,
-    "cross_language_handshake": true
+    "cross_language_handshake": true,
+    "recovery_gate_python": true,
+    "reconciliation_len32_codec": true,
+    "sequence_lane_python": true,
+    "cross_language_recovery": false,
+    "mql5_persistent_sequence": false
   },
   "unblocked_by_stage06_freeze": [
     "MQL5_KAT1_CODEC",
@@ -154,14 +160,39 @@
       "result": "PASS"
     },
     "cross_language_handshake": {
-      "run_id": 37161936886,
-      "head_sha": "28453606d25596ccbf5cd7c45bd149ec36d1a02d",
+      "run_id": 37162416201,
+      "head_sha": "4179c9bb8cfd8aacd1042d113cda872f5892fa0b",
       "artifact": "stage07-cross-language-handshake-evidence",
-      "digest": "sha256:289ddfa8508ecc81b2faa2f676b023fe7cbead878619bbffd796675caf1ebb50",
+      "digest": "sha256:b05559bc4f380afcc07294425325c7c44436ab386e9cca344a9df6f610f71945",
       "flow": "HEARTBEAT_HELLO_HELLO_ACK",
       "final_state": "RECOVERING",
+      "sequence_lane_validation": "PASS",
       "live_risk_ready": false,
       "result": "PASS"
+    },
+    "python_recovery_baseline": {
+      "run_id": 37162285158,
+      "head_sha": "337b28ed0568951a7af482a3d7d9730a15a6f7da",
+      "artifact": "stage07-python-communication-evidence",
+      "digest": "sha256:a5eddef1e8e0747b2c7be48bd6fed5f2f49d1da005a10da3c9f2eaa7f6b1b07e",
+      "atomic_snapshot_reconcile": "PASS",
+      "live_risk_ready": false,
+      "result": "PASS"
+    },
+    "sequence_lane_python": {
+      "run_id": 37162431334,
+      "head_sha": "d0be38b667b64388d70e73080c8ad0f0a85467d4",
+      "artifact": "stage07-python-communication-evidence",
+      "digest": "sha256:7c28c8accba3b710abbaed053ab0b2006b5cf952641fbe1f75bb9e7145aee686",
+      "duplicate_rejection": "PASS",
+      "gap_rejection": "PASS",
+      "python_remote_floor": "PASS",
+      "result": "PASS"
     }
-  }
+  },
+  "proposed_adrs": [
+    "docs/adr/0009-stage07-live-communication-topology.md",
+    "docs/adr/0011-stage07-snapshot-recovery-integrity.md",
+    "docs/adr/0012-stage07-bidirectional-sequence-lanes.md"
+  ]
 }
