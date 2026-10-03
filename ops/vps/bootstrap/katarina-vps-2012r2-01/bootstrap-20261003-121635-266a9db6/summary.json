@@ -3,11 +3,11 @@
     "installer_version":  "1.2.2",
     "session_id":  "bootstrap-20261003-121635-266a9db6",
     "agent_id":  "katarina-vps-2012r2-01",
-    "status":  "CONNECTED",
-    "error":  "",
+    "status":  "FAILED",
+    "error":  "Persistent agent did not publish ONLINE health within 25 seconds.",
     "computer_name":  "WIN-4TTT19K3CL8",
     "os_caption":  "Microsoft Windows Server 2012 R2 Standard",
     "os_version":  "6.3.9600",
     "powershell_version":  "4.0",
-    "generated_utc":  "2026-10-03T12:16:57.7858400Z"
+    "generated_utc":  "2026-10-03T12:17:39.9353310Z"
 }
