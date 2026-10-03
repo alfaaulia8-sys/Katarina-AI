@@ -12,6 +12,7 @@ from katarina.adapters.transport.kat1_codec import (
     SchemaCatalog,
 )
 from katarina.adapters.transport.memory import create_memory_transport_pair
+from katarina.adapters.transport.tcp import Kat1TcpServerTransport
 from katarina.adapters.transport.session import (
     HELLO,
     HELLO_ACK,
@@ -23,6 +24,7 @@ from katarina.adapters.transport.session import (
 from katarina.ports.transport import (
     ReceivedTransportFrame,
     TransportBackpressureError,
+    TransportClosedError,
     TransportPeer,
     TransportPort,
     TransportState,
@@ -327,6 +329,100 @@ class Kat1SessionSupervisorTests(unittest.TestCase):
         with self.assertRaises(SessionFault):
             supervisor.observe(bad, now_ns=1_000_000_000)
         self.assertEqual(supervisor.state, SessionState.FAULTED)
+
+
+class TcpTransportTests(unittest.IsolatedAsyncioTestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.codec = Kat1Codec(SchemaCatalog.from_path(SCHEMA))
+
+    def _heartbeat_frame(self) -> bytes:
+        return self.codec.encode(
+            message_type=HEARTBEAT,
+            schema_version=1,
+            sequence=1,
+            source_time_ns=123456789,
+            stream_id=77,
+            boot_id=88,
+            values={
+                "uptime_ms": 1000,
+                "latest_produced_sequence": 1,
+                "latest_consumed_command_sequence": 0,
+                "critical_queue_depth": 0,
+                "market_queue_depth": 0,
+                "last_broker_observation_ns": 123456789,
+                "transport_state": 1,
+            },
+        )
+
+    async def test_tcp_fallback_frames_fragmented_kat1_stream(self) -> None:
+        transport = Kat1TcpServerTransport(port=0, receive_capacity=2)
+        await transport.start()
+        self.assertEqual(transport.state, TransportState.CONNECTED)
+        self.assertIsNotNone(transport.bound_port)
+
+        reader, writer = await __import__("asyncio").open_connection(
+            "127.0.0.1",
+            transport.bound_port,
+        )
+        frame = self._heartbeat_frame()
+
+        writer.write(frame[:17])
+        await writer.drain()
+        writer.write(frame[17:52])
+        await writer.drain()
+        writer.write(frame[52:])
+        await writer.drain()
+
+        received = await __import__("asyncio").wait_for(
+            transport.receive_frame(),
+            timeout=2.0,
+        )
+        self.assertEqual(received.frame, frame)
+        self.assertIsNotNone(received.peer.route_id)
+
+        await transport.send_frame(frame, peer=received.peer)
+        echoed = await __import__("asyncio").wait_for(
+            reader.readexactly(len(frame)),
+            timeout=2.0,
+        )
+        self.assertEqual(echoed, frame)
+
+        writer.close()
+        await writer.wait_closed()
+        await transport.stop()
+
+    async def test_tcp_fallback_requires_route_with_multiple_peers(self) -> None:
+        transport = Kat1TcpServerTransport(port=0)
+        await transport.start()
+
+        reader1, writer1 = await __import__("asyncio").open_connection(
+            "127.0.0.1",
+            transport.bound_port,
+        )
+        reader2, writer2 = await __import__("asyncio").open_connection(
+            "127.0.0.1",
+            transport.bound_port,
+        )
+        del reader1, reader2
+
+        for _ in range(20):
+            if transport.peer_count == 2:
+                break
+            await __import__("asyncio").sleep(0.01)
+
+        with self.assertRaises(TransportClosedError):
+            await transport.send_frame(self._heartbeat_frame())
+
+        writer1.close()
+        writer2.close()
+        await writer1.wait_closed()
+        await writer2.wait_closed()
+        await transport.stop()
+
+    def test_tcp_fallback_rejects_non_loopback_bind(self) -> None:
+        with self.assertRaises(ValueError):
+            Kat1TcpServerTransport(host="0.0.0.0", port=5000)
 
 
 class MemoryTransportTests(unittest.IsolatedAsyncioTestCase):
