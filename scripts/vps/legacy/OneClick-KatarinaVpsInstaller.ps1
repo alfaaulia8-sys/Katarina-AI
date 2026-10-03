@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
 
-$InstallerVersion = "1.2.1"
+$InstallerVersion = "1.2.2"
 $AgentId = "katarina-vps-2012r2-01"
 $Repository = "alfaaulia-katarina/Katarina-AI"
 $Branch = "main"
@@ -197,7 +197,27 @@ try {
     Log-Line "Preflight: PASS"
     Log-Line "Installing persistent agent..."
 
+    $taskName = "KatarinaVPSAgent"
+
+    # Upgrade-safe takeover: stop any previously running agent before replacing its script.
+    & schtasks.exe /Query /TN $taskName > $null 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Log-Line "Existing KatarinaVPSAgent task detected; stopping old instance..."
+        & schtasks.exe /End /TN $taskName > $null 2>&1
+        Start-Sleep -Seconds 2
+        & schtasks.exe /Delete /F /TN $taskName > $null 2>&1
+        Start-Sleep -Seconds 1
+    }
+
     New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
+
+    foreach ($stale in @("startup_state.json","last_error.json")) {
+        $stalePath = Join-Path $InstallRoot $stale
+        if (Test-Path $stalePath) {
+            Remove-Item -Path $stalePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     Copy-Item -Path $AgentSource -Destination (Join-Path $InstallRoot "KatarinaVpsAgent.ps1") -Force
 
     $config = [ordered]@{
@@ -217,7 +237,6 @@ try {
         & icacls.exe $tokenPath /inheritance:r /grant:r "*S-1-5-18:(R)" "*S-1-5-32-544:(F)" | Out-Null
     } catch {}
 
-    $taskName = "KatarinaVPSAgent"
     $targetAgent = Join-Path $InstallRoot "KatarinaVpsAgent.ps1"
     $taskCommand = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $targetAgent + '" -ConfigPath "' + $configPath + '"'
 
