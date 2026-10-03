@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.19"
+#property version   "0.190"
 #property description "Katarina AI MT5 sensor / deterministic execution-gateway bridge"
 
 #include <Katarina/BridgeState.mqh>
