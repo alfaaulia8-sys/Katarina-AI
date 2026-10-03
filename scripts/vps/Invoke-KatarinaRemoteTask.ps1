@@ -841,6 +841,41 @@ After PASS, return to ChatGPT and type:
                     }
                 }
 
+                $explicitInstances = @(
+                    [pscustomobject]@{
+                        name = "MT5_ALFA"
+                        terminal = "C:\Program Files\MetaTrader 5 ALFA\terminal64.exe"
+                        data = "C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\2698BCED53B80670A80FF375C9E8D6A1"
+                    },
+                    [pscustomobject]@{
+                        name = "MT5_GENERIC"
+                        terminal = "C:\Program Files\MetaTrader 5\terminal64.exe"
+                        data = "C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075"
+                    }
+                )
+
+                $direct = @()
+                foreach ($inst in $explicitInstances) {
+                    $isRunning = $false
+                    try {
+                        foreach ($p in @(Get-WmiObject Win32_Process -Filter "Name='terminal64.exe'" -ErrorAction SilentlyContinue)) {
+                            if ($p.ExecutablePath -and [string]::Equals($p.ExecutablePath,$inst.terminal,[StringComparison]::OrdinalIgnoreCase)) {
+                                $isRunning = $true
+                                break
+                            }
+                        }
+                    } catch {}
+
+                    $direct += [pscustomobject]@{
+                        name = $inst.name
+                        terminal_exists = (Test-Path -LiteralPath $inst.terminal -PathType Leaf)
+                        self_test_ex5 = (Test-Path -LiteralPath (Join-Path $inst.data "MQL5\Scripts\KatarinaStage06SelfTest.ex5") -PathType Leaf)
+                        account_probe_ex5 = (Test-Path -LiteralPath (Join-Path $inst.data "MQL5\Scripts\KatarinaStage06AccountProbe.ex5") -PathType Leaf)
+                        terminal_running = $isRunning
+                    }
+                }
+                $manifest["direct_instances"] = $direct
+
                 Write-JsonFile (Join-Path $OutputDir "stage06_runtime_inspection.json") $manifest
                 "STAGE06 INSPECT_RUNTIME PASS" | Set-Content $stdoutPath -Encoding UTF8
                 "" | Set-Content $stderrPath -Encoding UTF8
