@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.2.0"
+$AgentVersion = "1.2.1"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -301,6 +301,7 @@ $installRoot = Split-Path -Parent $ConfigPath
 $tokenPath = Join-Path $installRoot "token.bin"
 $handledPath = Join-Path $installRoot "handled.txt"
 $workRoot = Join-Path $installRoot "work"
+$startupStatePath = Join-Path $installRoot "startup_state.json"
 
 if (!(Test-Path $tokenPath)) {
     throw "Encrypted GitHub token not found: $tokenPath"
@@ -311,21 +312,55 @@ if (!(Test-Path $handledPath)) {
     New-Item -ItemType File -Force -Path $handledPath | Out-Null
 }
 
-$token = Unprotect-Token $tokenPath
-$headers = New-GitHubHeaders $token
-$repo = [string]$config.repository
-$branch = [string]$config.branch
-$agentId = [string]$config.agent_id
-$pollSeconds = [int]$config.poll_seconds
-$requestsDir = "ops/vps/requests/legacy"
-$resultsDir = "ops/vps/results"
+Write-JsonFile $startupStatePath ([ordered]@{
+    phase = "CONFIG_LOADED"
+    agent_version = $AgentVersion
+    time_utc = [DateTime]::UtcNow.ToString("o")
+})
 
-Write-Host "Katarina VPS Agent $AgentVersion"
-Write-Host "Agent: $agentId"
-Write-Host "Repo:  $repo"
-Write-Host "Mode:  outbound HTTPS polling / allowlisted tasks only"
+try {
+    $token = Unprotect-Token $tokenPath
 
-Publish-AgentHealth -State "ONLINE"
+    Write-JsonFile $startupStatePath ([ordered]@{
+        phase = "TOKEN_DECRYPTED"
+        agent_version = $AgentVersion
+        time_utc = [DateTime]::UtcNow.ToString("o")
+    })
+
+    $headers = New-GitHubHeaders $token
+    $repo = [string]$config.repository
+    $branch = [string]$config.branch
+    $agentId = [string]$config.agent_id
+    $pollSeconds = [int]$config.poll_seconds
+    $requestsDir = "ops/vps/requests/legacy"
+    $resultsDir = "ops/vps/results"
+
+    Write-Host "Katarina VPS Agent $AgentVersion"
+    Write-Host "Agent: $agentId"
+    Write-Host "Repo:  $repo"
+    Write-Host "Mode:  outbound HTTPS polling / allowlisted tasks only"
+
+    $probeUri = "https://api.github.com/repos/$repo"
+    [void](Invoke-GitHubJson -Method "GET" -Uri $probeUri -Headers $headers)
+
+    Write-JsonFile $startupStatePath ([ordered]@{
+        phase = "GITHUB_AUTH_OK"
+        agent_version = $AgentVersion
+        agent_id = $agentId
+        time_utc = [DateTime]::UtcNow.ToString("o")
+    })
+
+    Publish-AgentHealth -State "ONLINE"
+}
+catch {
+    Write-JsonFile $startupStatePath ([ordered]@{
+        phase = "STARTUP_FAILED"
+        agent_version = $AgentVersion
+        time_utc = [DateTime]::UtcNow.ToString("o")
+        error = (Redact-ResultText $_.Exception.Message)
+    })
+    throw
+}
 
 while ($true) {
     try {
