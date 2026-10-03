@@ -1,4 +1,4 @@
-# KATARINA AI One-Click VPS Bootstrap v1.2.0
+# KATARINA AI One-Click VPS Bootstrap v1.2.1
 
 Target: **Windows Server 2012 R2 x64**
 
@@ -19,12 +19,13 @@ Required PAT scope:
 
 Do not paste the PAT into ChatGPT.
 
-## v1.2.0 behavior
+## v1.2.1 behavior
 
 - Connects to GitHub **before** preflight.
 - Uploads installer/bootstrap diagnostics to:
   `ops/vps/bootstrap/<agent>/<session>/`
 - Installs the persistent agent only after preflight passes.
+- Installer waits for agent health and, if it does not reach ONLINE, automatically uploads Task Scheduler status, `startup_state.json`, and `last_error.json` to the bootstrap session folder.
 - Agent publishes runtime health to:
   `ops/vps/health/<agent>/status.json`
 - Agent continues polling:
