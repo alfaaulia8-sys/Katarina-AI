@@ -7,6 +7,7 @@ on:
       - ".github/workflows/stage06-modern-compile.yml"
       - "mt5/**"
       - "scripts/mt5/**"
+      - "tests/static/test_stage06_*.py"
       - "config/windows_compatibility_stage06.json"
   workflow_dispatch:
 
