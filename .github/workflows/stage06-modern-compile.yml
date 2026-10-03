@@ -82,11 +82,56 @@ jobs:
           if ($evidence.result -ne "PASS_COMPILE_PROOF") { throw "Modern compile evidence did not pass." }
           if ($evidence.host.normalized -ne "WINDOWS_SERVER_2022_X64") { throw "Unexpected host: $($evidence.host.normalized)" }
 
-      - name: Upload modern compile evidence
+      - name: Run Stage 06 MQL self-test headless
+        shell: pwsh
+        run: |
+          $commonFiles = Join-Path $env:APPDATA "MetaQuotes\Terminal\Common\Files"
+          New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
+          $evidencePath = Join-Path $commonFiles "Katarina_Stage06_self_test_result.txt"
+          Remove-Item $evidencePath -Force -ErrorAction SilentlyContinue
+
+          $config = Join-Path $env:RUNNER_TEMP "stage06-selftest.ini"
+          @"
+          [Experts]
+          AllowLiveTrading=0
+          AllowDllImport=0
+          Enabled=1
+
+          [StartUp]
+          Script=KatarinaStage06SelfTest
+          Symbol=EURUSD
+          Period=H1
+          ShutdownTerminal=1
+          "@ | Set-Content -Path $config -Encoding ASCII
+
+          $terminal = Join-Path $env:MT5_HOME "terminal64.exe"
+          $p = Start-Process -FilePath $terminal -ArgumentList @("/portable", "/config:`"$config`"") -Wait -PassThru
+          Write-Host "Terminal self-test exit code: $($p.ExitCode)"
+
+          if (!(Test-Path $evidencePath)) {
+            throw "Stage 06 self-test evidence was not created."
+          }
+
+          $values = @{}
+          foreach ($line in Get-Content $evidencePath) {
+            $idx = $line.IndexOf("=")
+            if ($idx -gt 0) { $values[$line.Substring(0,$idx)] = $line.Substring($idx+1) }
+          }
+
+          if ($values["stage"] -ne "06") { throw "Unexpected self-test stage." }
+          if ($values["design_version"] -ne "0.5.0") { throw "Unexpected self-test design version." }
+          if ($values["proof_type"] -ne "MQL_SELF_TEST") { throw "Unexpected self-test proof type." }
+          if ($values["result"] -ne "PASS") { throw "MQL self-test did not pass." }
+
+          New-Item -ItemType Directory -Force -Path "build\mt5" | Out-Null
+          Copy-Item $evidencePath "build\mt5\Katarina_Stage06_self_test_result.txt" -Force
+
+      - name: Upload modern compile and runtime evidence
         uses: actions/upload-artifact@v4
         with:
-          name: stage06-modern-compile-evidence
+          name: stage06-modern-compile-runtime-evidence
           path: |
             build/mt5/stage06_compile_evidence.json
             build/mt5/*.compile.log
+            build/mt5/Katarina_Stage06_self_test_result.txt
           retention-days: 30
