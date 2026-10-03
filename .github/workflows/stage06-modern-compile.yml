@@ -1,0 +1,60 @@
+name: Stage 06 Modern MetaEditor Proof
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stage06-modern-compile.yml"
+      - "mt5/**"
+      - "scripts/mt5/**"
+      - "config/windows_compatibility_stage06.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  modern-compile:
+    runs-on: windows-2022
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download official MetaTrader 5 installer
+        shell: pwsh
+        run: |
+          $url = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\mt5setup.exe"
+          if (!(Test-Path "$env:RUNNER_TEMP\mt5setup.exe")) { throw "MT5 installer download failed." }
+
+      - name: Install MetaTrader 5 unattended
+        shell: pwsh
+        run: |
+          $target = "C:\MT5Stage06"
+          $p = Start-Process -FilePath "$env:RUNNER_TEMP\mt5setup.exe" -ArgumentList @("/auto", "/path:`"$target`"") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "MT5 installer failed with exit code $($p.ExitCode)." }
+          if (!(Test-Path "$target\metaeditor64.exe")) { throw "MetaEditor64.exe not found after install." }
+          if (!(Test-Path "$target\terminal64.exe")) { throw "Terminal64.exe not found after install." }
+          New-Item -ItemType Directory -Force -Path "$target\MQL5\Experts" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$target\MQL5\Scripts" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$target\MQL5\Include" | Out-Null
+
+      - name: Strict Stage 06 MetaEditor compile
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\mt5\compile_stage06.ps1" -TerminalDataPath "C:\MT5Stage06" -MetaEditorPath "C:\MT5Stage06\metaeditor64.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $evidence = Get-Content ".\build\mt5\stage06_compile_evidence.json" -Raw | ConvertFrom-Json
+          if ($evidence.result -ne "PASS_COMPILE_PROOF") { throw "Modern compile evidence did not pass." }
+          if ($evidence.host.normalized -ne "WINDOWS_SERVER_2022_X64") { throw "Unexpected host: $($evidence.host.normalized)" }
+
+      - name: Upload modern compile evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage06-modern-compile-evidence
+          path: |
+            build/mt5/stage06_compile_evidence.json
+            build/mt5/*.compile.log
+          retention-days: 30
