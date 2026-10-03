@@ -98,6 +98,10 @@ Research/design completed or started:
 - Python ROUTER adapter localhost integration PASS;
 - cross-language HEARTBEAT → HELLO → HELLO_ACK PASS;
 - handshake ends RECOVERING, communication_ready=false, live_risk_ready=false as required;
+- Python atomic snapshot/reconciliation recovery gate PASS;
+- malformed chunk CRC, snapshot abort and reconciliation discrepancy fail closed;
+- proposed bidirectional sequence lanes: Python duplicate/gap/floor validation PASS;
+- ADR-0011 snapshot integrity semantics and ADR-0012 sequence lanes remain Proposed pending cross-language proof;
 
 - GitHub prior-art review
 - localhost ZeroMQ topology draft
@@ -128,12 +132,12 @@ Stage-06 is now frozen. Stage-07 production MQL5 ZeroMQ/TCP transport implementa
 
 Proceed with Stage 07 — MT5 ↔ Python Communication:
 
-1. implement snapshot + reconciliation recovery gate before communication READY;
-2. complete full MQL5 payload codec / cross-language byte-equality beyond system messages;
-3. implement MQL5 native TCP fallback against the proven Python server;
-4. prove cross-language stale/disconnect/reconnect behavior;
-5. profile round-trip latency/backpressure and timer budgets;
-6. keep Strategy Tester transport for Stage 35;
+1. implement MQL5 snapshot/reconcile system-message codec and cross-language recovery proof;
+2. implement persistent MT5→Python wire-sequence allocator and reboot continuity proof;
+3. complete remaining MQL5 payload codec / cross-language byte-equality;
+4. implement MQL5 native TCP fallback against the proven Python server;
+5. prove stale/disconnect/reconnect and sequence continuity end-to-end;
+6. profile round-trip latency/backpressure and timer budgets;
 7. keep live broker-risk enablement disabled until later governed stages.
 
 The VPS bridge remains available for diagnostics, repository tests, MT5 compilation/log collection and later Stage-07 runtime checks.
