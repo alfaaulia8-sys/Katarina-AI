@@ -1,0 +1,73 @@
+name: Stage 07 Communication
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stage07-communication.yml"
+      - "src/katarina/ports/transport.py"
+      - "src/katarina/adapters/transport/**"
+      - "tests/unit/transport/**"
+      - "protocol/**"
+      - "config/mt5_python_communication_draft.json"
+      - "docs/adr/0009-stage07-live-communication-topology.md"
+      - "docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage07-communication:
+    runs-on: windows-2022
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate frozen KAT1 vectors
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = "src"
+          python scripts/protocol/validate_kat1_vectors.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run Stage 07 transport tests
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = "src"
+          python -m unittest tests.unit.transport.test_stage07_communication -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Write Stage 07 evidence
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "build\stage07" | Out-Null
+          $evidence = [ordered]@{
+            schema_version = "1.0"
+            stage = "07"
+            generated_utc = [DateTime]::UtcNow.ToString("o")
+            git_commit = "$env:GITHUB_SHA"
+            runner_os = "$env:RUNNER_OS"
+            runner_arch = "$env:RUNNER_ARCH"
+            image = "windows-2022"
+            python_version = (python --version 2>&1 | Out-String).Trim()
+            kat1_vectors = "PASS"
+            transport_tests = "PASS"
+            live_risk_enablement = "NOT_OWNED_BY_STAGE_07"
+            result = "PASS_STAGE07_PYTHON_COMMUNICATION_BASELINE"
+          }
+          $evidence | ConvertTo-Json -Depth 8 | Set-Content -Path "build\stage07\stage07_python_communication_evidence.json" -Encoding UTF8
+
+      - name: Upload Stage 07 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage07-python-communication-evidence
+          path: build/stage07/stage07_python_communication_evidence.json
+          retention-days: 30
