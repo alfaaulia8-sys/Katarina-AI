@@ -9,7 +9,7 @@ $PreflightScript = Join-Path $PSScriptRoot "Test-KatarinaVpsPrerequisites.ps1"
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host " KATARINA AI - ONE CLICK VPS INSTALLER" -ForegroundColor Cyan
+Write-Host " KATARINA AI - ONE CLICK VPS INSTALLER v1.1.1" -ForegroundColor Cyan
 Write-Host " Windows Server 2012 R2 x64" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
@@ -39,7 +39,7 @@ if (!(Test-Path (Join-Path $PSScriptRoot "KatarinaVpsAgent.ps1"))) {
 Write-Host "[1/3] Checking Windows Server..." -ForegroundColor Cyan
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $PreflightScript
 if ($LASTEXITCODE -ne 0) {
-    throw "VPS prerequisite check failed. Installation stopped before any agent changes."
+    throw "VPS prerequisite check failed. Read the failed check(s) shown above. Installation stopped before any agent changes."
 }
 
 Write-Host ""
