@@ -102,6 +102,7 @@ class Kat1SessionSupervisor:
         self._presence_boot_id: int | None = None
         self._last_heartbeat_ns: int | None = None
         self._outbound_sequences: dict[int, int] = {}
+        self._inbound_sequences: dict[int, int] = {}
 
     @property
     def state(self) -> SessionState:
@@ -149,6 +150,7 @@ class Kat1SessionSupervisor:
 
         frame = self._codec.decode(received.frame)
         self._validate_transport_metadata(received, frame)
+        self._validate_inbound_sequence(frame)
 
         if frame.header.message_type == HEARTBEAT:
             return self._on_heartbeat(received, frame, now_ns=now_ns)
@@ -208,6 +210,9 @@ class Kat1SessionSupervisor:
                 stream_id=frame.header.stream_id,
                 boot_id=frame.header.boot_id,
                 source_time_ns=now_ns,
+                remote_consumed_command_sequence=int(
+                    frame.values["latest_consumed_command_sequence"]
+                ),
             )
             self._state = SessionState.HELLO_SENT
             return hello
@@ -277,8 +282,12 @@ class Kat1SessionSupervisor:
         stream_id: int,
         boot_id: int,
         source_time_ns: int,
+        remote_consumed_command_sequence: int,
     ) -> SessionSend:
-        sequence = self._next_outbound_sequence(stream_id)
+        sequence = self._next_outbound_sequence(
+            stream_id,
+            floor=remote_consumed_command_sequence,
+        )
         last_known_stream_id = (
             self._binding.stream_id if self._binding is not None else 0
         )
@@ -302,10 +311,31 @@ class Kat1SessionSupervisor:
         )
         return SessionSend(frame=frame, peer=peer)
 
-    def _next_outbound_sequence(self, stream_id: int) -> int:
-        sequence = self._outbound_sequences.get(stream_id, 0) + 1
+    def _next_outbound_sequence(self, stream_id: int, *, floor: int = 0) -> int:
+        if floor < 0:
+            self._fault("remote command sequence floor cannot be negative")
+        current = self._outbound_sequences.get(stream_id, 0)
+        sequence = max(current, floor) + 1
         self._outbound_sequences[stream_id] = sequence
         return sequence
+
+    def _validate_inbound_sequence(self, frame: Kat1Frame) -> None:
+        stream_id = frame.header.stream_id
+        sequence = frame.header.sequence
+        if sequence <= 0:
+            self._fault("KAT1 inbound sequence must be positive")
+
+        previous = self._inbound_sequences.get(stream_id)
+        if previous is None:
+            self._inbound_sequences[stream_id] = sequence
+            return
+
+        if sequence <= previous:
+            self._fault("duplicate or decreasing MT5 sequence")
+        if sequence != previous + 1:
+            self._fault("MT5 sequence gap requires recovery")
+
+        self._inbound_sequences[stream_id] = sequence
 
     def _validate_transport_metadata(
         self,
