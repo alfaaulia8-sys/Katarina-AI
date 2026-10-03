@@ -9,7 +9,7 @@ $designVersion = "0.5.0"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $buildDir = Join-Path $repoRoot "build\mt5"
 $compileEvidencePath = Join-Path $buildDir "stage06_compile_evidence.json"
-$runtimeEvidencePath = Join-Path $buildDir "stage06_runtime_evidence.json"
+$selfTestPath = Join-Path $buildDir "Katarina_Stage06_self_test_result.txt"
 $clearancePath = Join-Path $buildDir "stage06_final_clearance.json"
 $reportPath = Join-Path $buildDir "STAGE_06_FINAL_AUDIT_CANDIDATE.md"
 
@@ -18,31 +18,69 @@ function Assert-FileExists {
     if (!(Test-Path $Path)) { throw "$Label missing: $Path" }
 }
 
+function Read-KeyValueEvidence {
+    param([string]$Path)
+    $result = [ordered]@{}
+    foreach ($line in Get-Content -Path $Path) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $idx = $line.IndexOf("=")
+        if ($idx -lt 1) { continue }
+        $result[$line.Substring(0,$idx).Trim()] = $line.Substring($idx+1).Trim()
+    }
+    return $result
+}
+
 Assert-FileExists $compileEvidencePath "Compile evidence"
-Assert-FileExists $runtimeEvidencePath "Runtime evidence"
+Assert-FileExists $selfTestPath "MQL self-test evidence"
 
 $compile = Get-Content -Path $compileEvidencePath -Raw | ConvertFrom-Json
-$runtime = Get-Content -Path $runtimeEvidencePath -Raw | ConvertFrom-Json
+$selfTest = Read-KeyValueEvidence -Path $selfTestPath
 
 if ($compile.result -ne "PASS_COMPILE_PROOF") {
     throw "Compile proof is not PASS_COMPILE_PROOF."
 }
-if ($runtime.result -ne "PASS_RUNTIME_EVIDENCE") {
-    throw "Runtime proof is not PASS_RUNTIME_EVIDENCE."
-}
 if ($compile.bridge_design_version -ne $designVersion) {
     throw "Compile design version mismatch."
 }
-if ($runtime.bridge_design_version -ne $designVersion) {
-    throw "Runtime design version mismatch."
+if ($compile.host.validation_class -notin @("PREFERRED","COMPATIBILITY")) {
+    throw "Compile host is not freeze-qualified: $($compile.host.validation_class)"
+}
+if ($compile.policy.freeze_qualified -ne $true) {
+    throw "Compile evidence is not freeze-qualified."
 }
 
-$compileHash = (Get-FileHash -Path $compileEvidencePath -Algorithm SHA256).Hash
-if ($runtime.compile_evidence_sha256 -ne $compileHash) {
-    throw "Runtime evidence is not bound to the current compile evidence."
+$requiredTargets = @(
+    "KatarinaBridgeEA.mq5",
+    "KatarinaStage06SelfTest.mq5",
+    "KatarinaStage06AccountProbe.mq5"
+)
+
+foreach ($target in $requiredTargets) {
+    $record = $compile.compile | Where-Object { $_.target -eq $target }
+    if ($null -eq $record) { throw "Compile evidence missing target: $target" }
+    if ([int]$record.errors -ne 0) { throw "Compile errors detected for $target" }
+    if ([int]$record.warnings -ne 0) { throw "Compile warnings detected for $target" }
+    if ([int64]$record.artifact_bytes -le 0) { throw "EX5 artifact missing/empty for $target" }
+    if ([string]::IsNullOrWhiteSpace([string]$record.artifact_sha256)) {
+        throw "EX5 SHA-256 missing for $target"
+    }
 }
 
-# Rebuild the exact expected MQL source manifest and compare it with the compile proof.
+foreach ($key in @("stage","design_version","proof_type","terminal_build","failures","result")) {
+    if (-not $selfTest.Contains($key)) { throw "MQL self-test evidence missing: $key" }
+}
+if ($selfTest["stage"] -ne "06") { throw "MQL self-test stage mismatch." }
+if ($selfTest["design_version"] -ne $designVersion) { throw "MQL self-test design mismatch." }
+if ($selfTest["proof_type"] -ne "MQL_SELF_TEST") { throw "MQL self-test proof_type mismatch." }
+if ($selfTest["result"] -ne "PASS") { throw "MQL self-test did not pass." }
+if ([int]$selfTest["failures"] -ne 0) { throw "MQL self-test reported failures." }
+
+$terminalBuild = 0
+if (-not [int]::TryParse([string]$selfTest["terminal_build"], [ref]$terminalBuild) -or $terminalBuild -le 0) {
+    throw "MQL self-test terminal_build is invalid."
+}
+
+# Rebuild the exact expected MQL source manifest and compare it with compile proof.
 $expectedFiles = @(
     (Join-Path $repoRoot "mt5\Experts\KatarinaBridgeEA.mq5"),
     (Join-Path $repoRoot "mt5\Tests\KatarinaStage06SelfTest.mq5"),
@@ -73,16 +111,16 @@ if ($compiledManifest.Count -ne $currentManifest.Count) {
     throw "Compile source manifest count differs from current Stage-06 source tree."
 }
 
-foreach ($path in $currentManifest.Keys) {
-    if (-not $compiledManifest.ContainsKey($path)) {
-        throw "Current source was not part of compile proof: $path"
+foreach ($sourcePath in $currentManifest.Keys) {
+    if (-not $compiledManifest.ContainsKey($sourcePath)) {
+        throw "Current source was not part of compile proof: $sourcePath"
     }
-    if ($compiledManifest[$path] -ne $currentManifest[$path]) {
-        throw "Source changed after compile proof: $path"
+    if ($compiledManifest[$sourcePath] -ne $currentManifest[$sourcePath]) {
+        throw "Source changed after compile proof: $sourcePath"
     }
 }
 
-# Re-run all Stage-06 Python/static regressions against the same checkout.
+# Re-run all Stage-06 Python/static regressions against this exact checkout.
 $python = Get-Command $PythonExe -ErrorAction SilentlyContinue
 if (-not $python) { throw "Python executable not found: $PythonExe" }
 
@@ -98,29 +136,6 @@ finally {
     Pop-Location
 }
 
-# Validate runtime record identity and result again.
-$runtimeFiles = @(
-    "Katarina_Stage06_self_test_result.txt",
-    "Katarina_Stage06_account_probe_STANDARD_LIKE.txt",
-    "Katarina_Stage06_account_probe_CENT_LIKE.txt"
-)
-foreach ($name in $runtimeFiles) {
-    $record = $runtime.runtime_records | Where-Object { $_.file -eq $name }
-    if ($null -eq $record) { throw "Runtime manifest missing record: $name" }
-    if ($record.values.result -ne "PASS") { throw "Runtime record failed: $name" }
-    if ($record.values.design_version -ne $designVersion) {
-        throw "Runtime record design version mismatch: $name"
-    }
-}
-
-$selfRecord = $runtime.runtime_records | Where-Object { $_.file -eq "Katarina_Stage06_self_test_result.txt" }
-$stdRecord = $runtime.runtime_records | Where-Object { $_.file -eq "Katarina_Stage06_account_probe_STANDARD_LIKE.txt" }
-$centRecord = $runtime.runtime_records | Where-Object { $_.file -eq "Katarina_Stage06_account_probe_CENT_LIKE.txt" }
-
-if ($selfRecord.values.proof_type -ne "MQL_SELF_TEST") { throw "Invalid self-test proof type." }
-if ($stdRecord.values.account_class -ne "STANDARD_LIKE") { throw "Invalid standard account proof class." }
-if ($centRecord.values.account_class -ne "CENT_LIKE") { throw "Invalid cent account proof class." }
-
 $gitCommit = ""
 $gitDirty = $null
 try {
@@ -133,31 +148,48 @@ try {
     $gitDirty = $null
 }
 
+$compileHash = (Get-FileHash -Path $compileEvidencePath -Algorithm SHA256).Hash
+$selfTestHash = (Get-FileHash -Path $selfTestPath -Algorithm SHA256).Hash
+
 $clearance = [ordered]@{
-    schema_version = "1.0"
+    schema_version = "1.1"
     stage = "06"
     bridge_design_version = $designVersion
     generated_utc = [DateTime]::UtcNow.ToString("o")
     git_commit = $gitCommit
     git_dirty = $gitDirty
     compile_evidence_sha256 = $compileHash
-    runtime_evidence_sha256 = (Get-FileHash -Path $runtimeEvidencePath -Algorithm SHA256).Hash
+    mql_self_test_sha256 = $selfTestHash
     source_manifest_entries = $currentManifest.Count
+    host = [ordered]@{
+        normalized = [string]$compile.host.normalized
+        validation_class = [string]$compile.host.validation_class
+        metaeditor_version = [string]$compile.metaeditor.file_version
+        terminal_build = $terminalBuild
+    }
     static_regressions = [ordered]@{
-        bridge = 21
+        bridge = 25
         windows = 10
-        total = 31
+        total = 35
         result = "PASS"
     }
     proof = [ordered]@{
         metaeditor_compile = "PASS"
+        bridge_ex5 = "PASS"
+        self_test_ex5 = "PASS"
+        account_probe_harness_ex5 = "PASS"
         mql_self_test = "PASS"
-        standard_like_account_probe = "PASS"
-        cent_like_account_probe = "PASS"
-        runtime_evidence_binding = "PASS"
         source_manifest_binding = "PASS"
+        standard_like_real_account_probe = "DEFERRED_STAGE_36_38"
+        cent_like_real_account_probe = "DEFERRED_STAGE_36_38"
     }
-    windows_server_2012_r2 = "DEFERRED_NOT_A_FREEZE_BLOCKER"
+    production_broker_compatibility_claim = $false
+    governance = [ordered]@{
+        adr = "docs/adr/0010-stage06-freeze-gate-alignment.md"
+        stage04_account_contract = "docs/architecture/STANDARD_CENT_ACCOUNT_COMPATIBILITY.md"
+        broker_validation_stage = "36/38"
+    }
+    windows_server_2012_r2 = "DEFERRED_NOT_USED_FOR_FREEZE_PROOF"
     result = "PASS_STAGE06_FINAL_CLEARANCE"
 }
 
@@ -166,31 +198,40 @@ $clearance | ConvertTo-Json -Depth 10 | Set-Content -Path $clearancePath -Encodi
 $report = @()
 $report += "# STAGE 06 — FINAL AUDIT CANDIDATE"
 $report += ""
-$report += "**Result:** PASS_STAGE06_FINAL_CLEARANCE"
-$report += "**Bridge design:** v$designVersion"
-$report += "**Generated UTC:** $($clearance.generated_utc)"
+$report += "**Result:** PASS_STAGE06_FINAL_CLEARANCE  "
+$report += "**Bridge design:** v$designVersion  "
+$report += "**Generated UTC:** $($clearance.generated_utc)  "
 $report += "**Git commit:** $gitCommit"
 $report += ""
-$report += "## Evidence"
+$report += "## Freeze Evidence"
 $report += ""
-$report += "- MetaEditor compile: PASS"
-$report += "- MQL self-test: PASS"
-$report += "- STANDARD_LIKE account probe: PASS"
-$report += "- CENT_LIKE account probe: PASS"
-$report += "- Runtime evidence binding: PASS"
-$report += "- Full MQL source-manifest binding: PASS"
-$report += "- Stage-06 static regressions: 31/31 PASS"
-$report += "- Windows Server 2012 R2: deferred, not a freeze blocker"
+$report += "- Modern Windows MetaEditor strict compile: PASS"
+$report += "- KatarinaBridgeEA: 0 errors / 0 warnings / EX5: PASS"
+$report += "- KatarinaStage06SelfTest: 0 errors / 0 warnings / EX5: PASS"
+$report += "- KatarinaStage06AccountProbe harness: 0 errors / 0 warnings / EX5: PASS"
+$report += "- Modern-host MQL self-test: PASS"
+$report += "- Full Stage-06 MQL source-manifest binding: PASS"
+$report += "- Stage-06 static regressions: 35/35 PASS"
 $report += ""
-$report += "## Important"
+$report += "## Account Compatibility Boundary"
 $report += ""
-$report += "This file is generated evidence for the human/project-owner freeze review."
-$report += "It does not silently rewrite canonical frozen documents or claim a freeze before review."
-$report -join "`r`n" | Set-Content -Path $reportPath -Encoding UTF8
+$report += "- Real STANDARD_LIKE broker probe: DEFERRED TO STAGE 36/38"
+$report += "- Real CENT_LIKE broker probe: DEFERRED TO STAGE 36/38"
+$report += "- Account probe harness remains implemented and compiled."
+$report += "- No broker-by-broker production compatibility claim is made by Stage 06."
+$report += "- This aligns with frozen Stage-04 STANDARD/CENT compatibility contract and ADR-0010."
+$report += ""
+$report += "## Host Boundary"
+$report += ""
+$report += "- Freeze proof host: $($compile.host.normalized) [$($compile.host.validation_class)]"
+$report += "- Windows Server 2012 R2 remains deferred and is not used as freeze proof."
+$report += ""
+$report += "This generated file is evidence for the governed Stage-06 freeze."
+$report -join [Environment]::NewLine | Set-Content -Path $reportPath -Encoding UTF8
 
 Write-Host ""
 Write-Host "PASS: Stage 06 final clearance evidence is complete."
 Write-Host "Clearance: $clearancePath"
 Write-Host "Report:    $reportPath"
 Write-Host ""
-Write-Host "The only remaining action is the governed repository freeze commit/review."
+Write-Host "Real STANDARD/CENT broker probes remain mandatory at Stage 36/38 before production compatibility claims."
