@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "request_id": "c6rt2",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE06_CLEARANCE",
+  "created_utc": "2026-10-03T16:05:00Z",
+  "expires_utc": "2026-10-03T18:05:00Z",
+  "ref": "main",
+  "args": {
+    "mode": "COLLECT_RUNTIME",
+    "terminal_common_data_path": "C:\\Users\\Administrator\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common"
+  }
+}
