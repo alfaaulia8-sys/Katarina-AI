@@ -749,6 +749,69 @@ After PASS, return to ChatGPT and type:
                 break
             }
 
+            if ($mode -eq "INSPECT_RUNTIME") {
+                $terminalCommonDataPath = Get-ArgValue $request.args "terminal_common_data_path" ""
+                if (-not $terminalCommonDataPath) {
+                    throw "terminal_common_data_path is required for INSPECT_RUNTIME."
+                }
+
+                $commonFiles = Join-Path $terminalCommonDataPath "Files"
+                $runtimeRoot = "C:\KatarinaStage06Runtime"
+                $manifest = [ordered]@{
+                    schema_version = 1
+                    stage = "06"
+                    generated_utc = [DateTime]::UtcNow.ToString("o")
+                    common_files = @()
+                    runtime_runs = @()
+                }
+
+                if (Test-Path $commonFiles) {
+                    foreach ($f in @(Get-ChildItem -Path $commonFiles -File -ErrorAction SilentlyContinue |
+                        Where-Object { $_.Name -like "Katarina_Stage06_*" } |
+                        Sort-Object LastWriteTimeUtc -Descending)) {
+                        $item = [ordered]@{
+                            name = $f.Name
+                            size_bytes = [int64]$f.Length
+                            last_write_utc = $f.LastWriteTimeUtc.ToString("o")
+                            sha256 = (Get-FileHash -Path $f.FullName -Algorithm SHA256).Hash
+                        }
+                        if ($f.Extension -eq ".txt" -and $f.Length -lt 65536) {
+                            $txt = Get-Content -Path $f.FullName -Raw -ErrorAction SilentlyContinue
+                            $item["content"] = Redact-Text $txt
+                        }
+                        $manifest.common_files += [pscustomobject]$item
+                    }
+                }
+
+                if (Test-Path $runtimeRoot) {
+                    foreach ($dir in @(Get-ChildItem -Path $runtimeRoot -Directory -ErrorAction SilentlyContinue |
+                        Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 10)) {
+                        $entry = [ordered]@{
+                            name = $dir.Name
+                            last_write_utc = $dir.LastWriteTimeUtc.ToString("o")
+                            files = @()
+                        }
+                        foreach ($f in @(Get-ChildItem -Path $dir.FullName -File -ErrorAction SilentlyContinue |
+                            Sort-Object Name)) {
+                            $entry.files += [pscustomobject]@{
+                                name = $f.Name
+                                size_bytes = [int64]$f.Length
+                                last_write_utc = $f.LastWriteTimeUtc.ToString("o")
+                            }
+                        }
+                        $manifest.runtime_runs += [pscustomobject]$entry
+                    }
+                }
+
+                Write-JsonFile (Join-Path $OutputDir "stage06_runtime_inspection.json") $manifest
+                "STAGE06 INSPECT_RUNTIME PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = "INSPECT_RUNTIME"
+                $details["common_files"] = @($manifest.common_files).Count
+                $details["runtime_runs"] = @($manifest.runtime_runs).Count
+                break
+            }
+
             if ($mode -eq "COLLECT_RUNTIME") {
                 $terminalCommonDataPath = Get-ArgValue $request.args "terminal_common_data_path" ""
                 if (-not $terminalCommonDataPath) {
