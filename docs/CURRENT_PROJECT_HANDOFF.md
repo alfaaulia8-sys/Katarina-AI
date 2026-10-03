@@ -11,7 +11,7 @@
 - Stage 04 — KAT1 Data Protocol / Schemas: FROZEN v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
-- Stage 07 — MT5 ↔ Python Communication: IMPLEMENTATION ACTIVE; Python session/TCP baseline PASS; MQL5 KAT1 13-vector baseline PASS; ZeroMQ capability/integration still pending
+- Stage 07 — MT5 ↔ Python Communication: IMPLEMENTATION ACTIVE; Python session/TCP PASS; MQL5 KAT1 13-vector PASS; ZeroMQ ROUTER↔DEALER PASS; cross-language HEARTBEAT→HELLO→HELLO_ACK PASS
 
 ## VPS bridge status
 
@@ -94,6 +94,10 @@ Research/design completed or started:
 - localhost-only native TCP KAT1 framing PASS on Python side;
 - MQL5 KAT1 header + CRC32C codec baseline compiled 0 errors / 0 warnings;
 - MQL5 13/13 frozen golden vectors PASS on Windows Server 2022;
+- ZeroMQ capability + production DEALER byte adapter PASS on Windows Server 2022;
+- Python ROUTER adapter localhost integration PASS;
+- cross-language HEARTBEAT → HELLO → HELLO_ACK PASS;
+- handshake ends RECOVERING, communication_ready=false, live_risk_ready=false as required;
 
 - GitHub prior-art review
 - localhost ZeroMQ topology draft
@@ -124,12 +128,12 @@ Stage-06 is now frozen. Stage-07 production MQL5 ZeroMQ/TCP transport implementa
 
 Proceed with Stage 07 — MT5 ↔ Python Communication:
 
-1. run ZeroMQ capability spike on modern Windows/MT5;
-2. implement Python ROUTER adapter and MQL5 DEALER adapter;
-3. complete full MQL5 payload codec / cross-language byte-equality beyond the current header+CRC baseline;
-4. implement MQL5 native TCP fallback against the proven Python server;
-5. validate cross-language heartbeat, HELLO/HELLO_ACK, stale/reconnect and binding mismatch behavior;
-6. test round-trip latency and tester compatibility;
+1. implement snapshot + reconciliation recovery gate before communication READY;
+2. complete full MQL5 payload codec / cross-language byte-equality beyond system messages;
+3. implement MQL5 native TCP fallback against the proven Python server;
+4. prove cross-language stale/disconnect/reconnect behavior;
+5. profile round-trip latency/backpressure and timer budgets;
+6. keep Strategy Tester transport for Stage 35;
 7. keep live broker-risk enablement disabled until later governed stages.
 
 The VPS bridge remains available for diagnostics, repository tests, MT5 compilation/log collection and later Stage-07 runtime checks.
