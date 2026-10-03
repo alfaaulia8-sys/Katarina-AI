@@ -18,6 +18,12 @@ param(
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+try {
+    Add-Type -AssemblyName System.Security -ErrorAction Stop
+} catch {
+    # Type can already be loaded on Windows Server 2012 R2.
+}
+
 function Assert-Administrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
@@ -29,10 +35,10 @@ function Assert-Administrator {
 function Protect-Token {
     param([string]$PlainToken,[string]$Path)
     $bytes = [Text.Encoding]::UTF8.GetBytes($PlainToken)
-    $encrypted = [Security.Cryptography.ProtectedData]::Protect(
+    $encrypted = [System.Security.Cryptography.ProtectedData]::Protect(
         $bytes,
         $null,
-        [Security.Cryptography.DataProtectionScope]::LocalMachine
+        [System.Security.Cryptography.DataProtectionScope]::LocalMachine
     )
     [IO.File]::WriteAllBytes($Path,$encrypted)
 }
@@ -43,7 +49,7 @@ $preflight = Join-Path $PSScriptRoot "Test-KatarinaVpsPrerequisites.ps1"
 if (Test-Path $preflight) {
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $preflight
     if ($LASTEXITCODE -ne 0) {
-        throw "VPS prerequisite preflight failed. Fix the failed checks before installation."
+        throw "VPS prerequisite preflight failed. Installation stopped before any agent changes."
     }
 }
 
@@ -74,9 +80,10 @@ $configPath = Join-Path $InstallRoot "agent.json"
 $config | ConvertTo-Json -Depth 6 | Set-Content -Path $configPath -Encoding UTF8
 
 Write-Host ""
-Write-Host "Create a GitHub fine-grained PAT for this ONE private repository only."
-Write-Host "Required repository permission: Contents = Read and write."
-Write-Host "Do NOT paste the token into ChatGPT."
+Write-Host "GitHub Fine-Grained PAT is required once." -ForegroundColor Yellow
+Write-Host "Repository: $Repository" -ForegroundColor Yellow
+Write-Host "Permission: Contents = Read and write" -ForegroundColor Yellow
+Write-Host "Do NOT paste the token into ChatGPT." -ForegroundColor Yellow
 Write-Host ""
 
 $secure = Read-Host "Paste the PAT here on the VPS only" -AsSecureString
@@ -111,12 +118,14 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 & schtasks.exe /Run /TN $taskName | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Scheduled task was created but could not be started."
+}
 
 Write-Host ""
-Write-Host "Katarina VPS Agent installed."
+Write-Host "Katarina VPS Agent installed." -ForegroundColor Green
 Write-Host "Agent ID: $AgentId"
 Write-Host "Install:  $InstallRoot"
 Write-Host "Task:     $taskName"
 Write-Host ""
 Write-Host "The agent uses outbound HTTPS only. No inbound firewall port is required."
-Write-Host "It accepts only allowlisted task IDs from ops/vps/requests."
