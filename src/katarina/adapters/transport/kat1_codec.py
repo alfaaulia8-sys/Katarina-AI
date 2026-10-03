@@ -216,6 +216,32 @@ def _decode_variables(
                 raise Kat1ProtocolError("embedded record_count mismatch")
             continue
 
+        if encoding == "repeated_len32_record":
+            if index != len(fields) - 1:
+                raise Kat1ProtocolError(
+                    "repeated_len32_record must be the final variable field"
+                )
+            records: list[bytes] = []
+            while cursor < len(variable_bytes):
+                if cursor + 4 > len(variable_bytes):
+                    raise Kat1ProtocolError("truncated len32 record header")
+                body_length = struct.unpack_from("<I", variable_bytes, cursor)[0]
+                cursor += 4
+                if body_length > int(field["max_bytes"]):
+                    raise Kat1ProtocolError("len32 record exceeds max_bytes")
+                end = cursor + body_length
+                if end > len(variable_bytes):
+                    raise Kat1ProtocolError("truncated len32 record body")
+                records.append(variable_bytes[cursor:end])
+                cursor = end
+            values[name] = records
+            if (
+                "discrepancy_count" in values
+                and values["discrepancy_count"] != len(records)
+            ):
+                raise Kat1ProtocolError("discrepancy_count mismatch")
+            continue
+
         raise Kat1ProtocolError(f"unsupported variable encoding: {encoding}")
 
     if cursor != len(variable_bytes):
@@ -271,6 +297,30 @@ def _encode_variables(
                 output.extend(
                     struct.pack("<HHI", record_type, schema_version, len(body))
                 )
+                output.extend(body)
+            continue
+
+        if encoding == "repeated_len32_record":
+            if index != len(schema.get("variable_fields", ())) - 1:
+                raise Kat1ProtocolError(
+                    "repeated_len32_record must be the final variable field"
+                )
+            if not isinstance(value, (list, tuple)):
+                raise Kat1ProtocolError(f"{name}: expected record sequence")
+            for body in value:
+                if isinstance(body, str):
+                    try:
+                        body = bytes.fromhex(body)
+                    except ValueError as exc:
+                        raise Kat1ProtocolError(
+                            "len32 record body is not valid hex"
+                        ) from exc
+                if not isinstance(body, (bytes, bytearray)):
+                    raise Kat1ProtocolError("len32 record body must be bytes")
+                body = bytes(body)
+                if len(body) > int(field["max_bytes"]):
+                    raise Kat1ProtocolError("len32 record exceeds max_bytes")
+                output.extend(struct.pack("<I", len(body)))
                 output.extend(body)
             continue
 
