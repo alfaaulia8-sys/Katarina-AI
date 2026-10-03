@@ -13,6 +13,28 @@
 - Stage 06 — MT5 Bridge EA: implementation + clearance automation complete; external MetaEditor/MT5 proof still pending
 - Stage 07 — MT5 ↔ Python Communication: research/design active; Python conformance work started; production MQL5 transport integration gated on Stage-06 proof
 
+## VPS bridge status
+
+Implementation status: **READY FOR VPS INSTALLATION / FIRST LIVE TELEMETRY TEST**
+
+- Repository-driven bridge is implemented.
+- Windows Server 2012 R2 uses the legacy outbound-HTTPS PowerShell polling agent, not the unsupported GitHub Actions runner.
+- Legacy agent version: **1.1.0**.
+- Request execution is allowlisted; arbitrary shell commands are not accepted.
+- Request target, schema, request-id/filename binding, expiry, task allowlist, and Git ref are validated before repository snapshot execution.
+- Processed request IDs use exact matching to prevent collisions such as `req-001` vs `req-0010`.
+- Malformed request files are isolated per item so one bad request does not block later valid requests.
+- Results remain text-only and secret-redacted before upload.
+- No inbound VPS command port is required.
+
+Remaining live bridge gate:
+
+1. install `scripts/vps/legacy/Install-KatarinaVpsAgent.ps1` on the real Windows Server 2012 R2 VPS;
+2. confirm the scheduled task `KatarinaVPSAgent` starts;
+3. submit one `HOST_INVENTORY` request targeted to `katarina-vps-2012r2-01`;
+4. verify the VPS writes the result into `ops/vps/results/<agent>/<request>/`;
+5. use that evidence to decide the Python/MT5 compatibility path.
+
 ## Stage 06 final status
 
 Design version: v0.5.0
@@ -111,23 +133,20 @@ Stage-07 production MQL5 ZeroMQ/TCP integration must NOT modify the Stage-06 MQL
 
 ## Next recommended action
 
-Before deeper Stage-07 integration, build a secure VPS access/testing workflow so ChatGPT can use repository-driven automation to:
+Install the already-implemented legacy Katarina VPS Agent on the real Windows Server 2012 R2 host, then run the first read-only `HOST_INVENTORY` request.
 
-- trigger compile/test work on a Windows validation machine;
-- collect build/runtime evidence;
-- retrieve logs/artifacts back into GitHub;
-- avoid exposing VPS passwords/RDP credentials.
-
-Preferred direction:
+Expected flow:
 
 GitHub repository
-→ secure self-hosted Windows runner / controlled automation
-→ MetaEditor + MT5 test host
-→ compile/test/evidence
-→ GitHub artifacts/status
-→ ChatGPT reviews/fixes from GitHub
+→ legacy Windows Server 2012 R2 polling agent over outbound HTTPS
+→ allowlisted host inventory/test task
+→ redacted text evidence
+→ `ops/vps/results/<agent>/<request>/`
+→ ChatGPT reviews the evidence and applies the next repository change
 
-Do not put passwords, VPS credentials, API keys, broker passwords, or private account credentials into the repository.
+For modern Windows validation hosts, the repository also retains the GitHub Actions self-hosted runner workflow.
+
+Do not put passwords, VPS credentials, API keys, broker passwords, PATs, or private account credentials into the repository or chat.
 
 ## Project invariant reminders
 
