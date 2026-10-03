@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$AgentVersion = "1.0.0"
+$AgentVersion = "1.1.0"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -148,6 +148,119 @@ function Redact-ResultText {
     return $value
 }
 
+function Test-HandledRequest {
+    param(
+        [string]$Path,
+        [string]$RequestId
+    )
+
+    if (!(Test-Path $Path)) {
+        return $false
+    }
+
+    foreach ($line in @(Get-Content -Path $Path -ErrorAction SilentlyContinue)) {
+        if ([string]$line -eq $RequestId) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Validate-RequestEnvelope {
+    param(
+        $Request,
+        [string]$RequestId,
+        [string]$AgentId
+    )
+
+    $required = @(
+        "schema_version",
+        "request_id",
+        "target_agent",
+        "task",
+        "created_utc",
+        "expires_utc"
+    )
+
+    foreach ($field in $required) {
+        if ($null -eq $Request.PSObject.Properties[$field]) {
+            throw "Request missing required field: $field"
+        }
+    }
+
+    if ([int]$Request.schema_version -ne 1) {
+        throw "Unsupported request schema_version: $($Request.schema_version)"
+    }
+
+    if ($RequestId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$') {
+        throw "Unsafe request filename/id: $RequestId"
+    }
+
+    if ([string]$Request.request_id -ne $RequestId) {
+        throw "Request id '$($Request.request_id)' does not match filename id '$RequestId'"
+    }
+
+    if ([string]$Request.target_agent -ne $AgentId) {
+        return $null
+    }
+
+    $created = [DateTime]::Parse(
+        [string]$Request.created_utc,
+        [Globalization.CultureInfo]::InvariantCulture,
+        [Globalization.DateTimeStyles]::AssumeUniversal
+    ).ToUniversalTime()
+
+    $expires = [DateTime]::Parse(
+        [string]$Request.expires_utc,
+        [Globalization.CultureInfo]::InvariantCulture,
+        [Globalization.DateTimeStyles]::AssumeUniversal
+    ).ToUniversalTime()
+
+    if ($expires -le $created) {
+        throw "Request expires_utc must be later than created_utc."
+    }
+
+    if ([DateTime]::UtcNow -gt $expires) {
+        throw "Request expired at $($expires.ToString('o'))"
+    }
+
+    $task = ([string]$Request.task).ToUpperInvariant()
+    $allowed = @(
+        "HOST_INVENTORY",
+        "REPO_STATIC_TESTS",
+        "STAGE06_HOST_CHECK",
+        "STAGE06_COMPILE_PROOF",
+        "STAGE06_CLEARANCE",
+        "STAGE07_PYTHON_TESTS",
+        "COLLECT_MT5_LOGS"
+    )
+
+    if ($allowed -notcontains $task) {
+        throw "Task is not allowlisted: $task"
+    }
+
+    $ref = "main"
+    if ($null -ne $Request.PSObject.Properties["ref"] -and $Request.ref) {
+        $ref = [string]$Request.ref
+    }
+
+    if (
+        $ref.Length -gt 160 -or
+        $ref -notmatch '^[A-Za-z0-9._/-]+$' -or
+        $ref.StartsWith("/") -or
+        $ref.EndsWith("/") -or
+        $ref.Contains("..") -or
+        $ref.Contains("//")
+    ) {
+        throw "Unsafe or unsupported Git ref: $ref"
+    }
+
+    return [pscustomobject]@{
+        task = $task
+        ref = $ref
+    }
+}
+
 if (!(Test-Path $ConfigPath)) {
     throw "Agent config not found: $ConfigPath"
 }
@@ -189,77 +302,89 @@ while ($true) {
         foreach ($item in @($items | Where-Object { $_.name -like "*.json" } | Sort-Object name)) {
             $requestId = [IO.Path]::GetFileNameWithoutExtension([string]$item.name)
 
-            if (Select-String -Path $handledPath -SimpleMatch -Quiet -Pattern $requestId) {
+            if (Test-HandledRequest -Path $handledPath -RequestId $requestId) {
                 continue
             }
 
-            $requestText = Get-GitHubFile -Repo $repo -Path ([string]$item.path) -Ref $branch -Headers $headers
-            $request = $requestText | ConvertFrom-Json
-
-            if ([string]$request.target_agent -ne $agentId) {
-                continue
-            }
-
-            $ref = "main"
-            if ($null -ne $request.PSObject.Properties["ref"] -and $request.ref) {
-                $ref = [string]$request.ref
-            }
-
-            $requestWork = Join-Path $workRoot $requestId
-            $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
-            $localRequest = Join-Path $requestWork "request.json"
-            $requestText | Set-Content -Path $localRequest -Encoding UTF8
-            $outputDir = Join-Path $requestWork "output"
-            New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-
-            $runner = Join-Path $repoRoot "scripts\vps\Invoke-KatarinaRemoteTask.ps1"
-            if (!(Test-Path $runner)) {
-                throw "Remote task runner missing from requested ref: $ref"
-            }
-
-            $exitCode = 0
             try {
-                & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runner -RequestFile $localRequest -OutputDir $outputDir -AgentId $agentId -RepoRoot $repoRoot
-                $exitCode = $LASTEXITCODE
-            } catch {
-                $exitCode = 1
-                $_.Exception.Message | Set-Content -Path (Join-Path $outputDir "agent_error.txt") -Encoding UTF8
-            }
+                $requestText = Get-GitHubFile -Repo $repo -Path ([string]$item.path) -Ref $branch -Headers $headers
+                $request = $requestText | ConvertFrom-Json
 
-            $allowedExtensions = @(".json",".txt",".log",".csv",".md")
-            foreach ($file in Get-ChildItem -Path $outputDir -File -ErrorAction SilentlyContinue) {
-                if ($allowedExtensions -notcontains $file.Extension.ToLowerInvariant()) {
-                    continue
-                }
-                if ($file.Length -gt 1048576) {
+                $validated = Validate-RequestEnvelope -Request $request -RequestId $requestId -AgentId $agentId
+                if ($null -eq $validated) {
                     continue
                 }
 
-                $text = Get-Content -Path $file.FullName -Raw
-                $text = Redact-ResultText $text
-                $remotePath = "$resultsDir/$agentId/$requestId/$($file.Name)"
-                Put-GitHubTextFile -Repo $repo -Path $remotePath -Branch $branch -Message "vps-agent: $agentId $requestId $($file.Name)" -Text $text -Headers $headers
-            }
+                $ref = [string]$validated.ref
+                $requestWork = Join-Path $workRoot $requestId
+                $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
+                $localRequest = Join-Path $requestWork "request.json"
+                $requestText | Set-Content -Path $localRequest -Encoding UTF8
+                $outputDir = Join-Path $requestWork "output"
+                New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
-            $receipt = [ordered]@{
-                schema_version = 1
-                agent_version = $AgentVersion
-                agent_id = $agentId
-                request_id = $requestId
-                ref = $ref
-                exit_code = $exitCode
-                completed_utc = [DateTime]::UtcNow.ToString("o")
-            }
-            $receiptText = $receipt | ConvertTo-Json -Depth 6
-            Put-GitHubTextFile -Repo $repo -Path "$resultsDir/$agentId/$requestId/agent_receipt.json" -Branch $branch -Message "vps-agent: complete $requestId" -Text $receiptText -Headers $headers
+                $runner = Join-Path $repoRoot "scripts\vps\Invoke-KatarinaRemoteTask.ps1"
+                if (!(Test-Path $runner)) {
+                    throw "Remote task runner missing from requested ref: $ref"
+                }
 
-            Add-Content -Path $handledPath -Value $requestId
+                $exitCode = 0
+                try {
+                    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runner -RequestFile $localRequest -OutputDir $outputDir -AgentId $agentId -RepoRoot $repoRoot
+                    $exitCode = $LASTEXITCODE
+                } catch {
+                    $exitCode = 1
+                    (Redact-ResultText $_.Exception.Message) | Set-Content -Path (Join-Path $outputDir "agent_error.txt") -Encoding UTF8
+                }
+
+                $allowedExtensions = @(".json",".txt",".log",".csv",".md")
+                foreach ($file in Get-ChildItem -Path $outputDir -File -ErrorAction SilentlyContinue) {
+                    if ($allowedExtensions -notcontains $file.Extension.ToLowerInvariant()) {
+                        continue
+                    }
+                    if ($file.Length -gt 1048576) {
+                        continue
+                    }
+
+                    $text = Get-Content -Path $file.FullName -Raw
+                    $text = Redact-ResultText $text
+                    $remotePath = "$resultsDir/$agentId/$requestId/$($file.Name)"
+                    Put-GitHubTextFile -Repo $repo -Path $remotePath -Branch $branch -Message "vps-agent: $agentId $requestId $($file.Name)" -Text $text -Headers $headers
+                }
+
+                $receipt = [ordered]@{
+                    schema_version = 1
+                    agent_version = $AgentVersion
+                    agent_id = $agentId
+                    request_id = $requestId
+                    task = [string]$validated.task
+                    ref = $ref
+                    exit_code = $exitCode
+                    completed_utc = [DateTime]::UtcNow.ToString("o")
+                }
+                $receiptText = $receipt | ConvertTo-Json -Depth 6
+                Put-GitHubTextFile -Repo $repo -Path "$resultsDir/$agentId/$requestId/agent_receipt.json" -Branch $branch -Message "vps-agent: complete $requestId" -Text $receiptText -Headers $headers
+
+                Add-Content -Path $handledPath -Value $requestId
+            }
+            catch {
+                $errorRecord = [ordered]@{
+                    agent_id = $agentId
+                    agent_version = $AgentVersion
+                    request_id = $requestId
+                    time_utc = [DateTime]::UtcNow.ToString("o")
+                    error = (Redact-ResultText $_.Exception.Message)
+                }
+                Write-JsonFile (Join-Path $installRoot "last_error.json") $errorRecord
+                continue
+            }
         }
     }
     catch {
         $errorRecord = [ordered]@{
             agent_id = $agentId
             agent_version = $AgentVersion
+            request_id = $null
             time_utc = [DateTime]::UtcNow.ToString("o")
             error = (Redact-ResultText $_.Exception.Message)
         }
