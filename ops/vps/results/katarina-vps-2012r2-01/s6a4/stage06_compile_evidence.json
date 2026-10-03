@@ -2,7 +2,7 @@
     "schema_version":  "1.1",
     "stage":  "06",
     "bridge_design_version":  "0.5.0",
-    "generated_utc":  "2026-10-03T14:10:35.2634297Z",
+    "generated_utc":  "2026-10-03T14:11:09.6540550Z",
     "host":  {
                  "caption":  "Microsoft Windows Server 2012 R2 Standard",
                  "version":  "6.3.9600",
@@ -106,27 +106,27 @@
                         "errors":  0,
                         "warnings":  0,
                         "artifact_path":  "C:\\Users\\Administrator\\AppData\\Roaming\\MetaQuotes\\Terminal\\2698BCED53B80670A80FF375C9E8D6A1\\MQL5\\Experts\\KatarinaBridgeEA.ex5",
-                        "artifact_bytes":  37748,
-                        "artifact_sha256":  "81284840CC1A8A4DCC458DBA93B5B5EE7B1670A3809361BA00383261639E50EB",
-                        "log_path":  "C:\\KatarinaVPSAgent\\work\\s6a4\\src\\alfaaulia-katarina-Katarina-AI-4bad9fae2d70ffa74293bc14ce3c496054a1406d\\build\\mt5\\KatarinaBridgeEA.compile.log"
+                        "artifact_bytes":  38172,
+                        "artifact_sha256":  "B284E818F4C16DED3BC87C51E8F1F2736A079D2BD033F033CF2A9212214902C0",
+                        "log_path":  "C:\\KatarinaVPSAgent\\work\\s6a4\\src\\alfaaulia-katarina-Katarina-AI-71e349d615e3d62cc3afd6ed9ed3c76030c62abd\\build\\mt5\\KatarinaBridgeEA.compile.log"
                     },
                     {
                         "target":  "KatarinaStage06SelfTest.mq5",
                         "errors":  0,
                         "warnings":  0,
                         "artifact_path":  "C:\\Users\\Administrator\\AppData\\Roaming\\MetaQuotes\\Terminal\\2698BCED53B80670A80FF375C9E8D6A1\\MQL5\\Scripts\\KatarinaStage06SelfTest.ex5",
-                        "artifact_bytes":  26422,
-                        "artifact_sha256":  "118DA790B12C701EDF9A46FB306D962A144884B12EB3DE2F8068BE52E370E88C",
-                        "log_path":  "C:\\KatarinaVPSAgent\\work\\s6a4\\src\\alfaaulia-katarina-Katarina-AI-4bad9fae2d70ffa74293bc14ce3c496054a1406d\\build\\mt5\\KatarinaStage06SelfTest.compile.log"
+                        "artifact_bytes":  26944,
+                        "artifact_sha256":  "B41BA4CAEE15AD3B4E530FB632EB3228707424EC2EC73246363D119CD7E7814F",
+                        "log_path":  "C:\\KatarinaVPSAgent\\work\\s6a4\\src\\alfaaulia-katarina-Katarina-AI-71e349d615e3d62cc3afd6ed9ed3c76030c62abd\\build\\mt5\\KatarinaStage06SelfTest.compile.log"
                     },
                     {
                         "target":  "KatarinaStage06AccountProbe.mq5",
                         "errors":  0,
                         "warnings":  0,
                         "artifact_path":  "C:\\Users\\Administrator\\AppData\\Roaming\\MetaQuotes\\Terminal\\2698BCED53B80670A80FF375C9E8D6A1\\MQL5\\Scripts\\KatarinaStage06AccountProbe.ex5",
-                        "artifact_bytes":  28294,
-                        "artifact_sha256":  "FDAE9FC6E8834DFB1D648F97B39E9C82EFB70AC39AEA9F91037F51C7D2DCB5FB",
-                        "log_path":  "C:\\KatarinaVPSAgent\\work\\s6a4\\src\\alfaaulia-katarina-Katarina-AI-4bad9fae2d70ffa74293bc14ce3c496054a1406d\\build\\mt5\\KatarinaStage06AccountProbe.compile.log"
+                        "artifact_bytes":  29354,
+                        "artifact_sha256":  "872EBDE4AD30703839C1DE7ACF6EC03CD6B68A3078D60012B4F62E086E7E8F44",
+                        "log_path":  "C:\\KatarinaVPSAgent\\work\\s6a4\\src\\alfaaulia-katarina-Katarina-AI-71e349d615e3d62cc3afd6ed9ed3c76030c62abd\\build\\mt5\\KatarinaStage06AccountProbe.compile.log"
                     }
                 ],
     "policy":  {
