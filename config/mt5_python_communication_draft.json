@@ -1,7 +1,7 @@
 {
   "stage": "07",
   "version": "0.1.0",
-  "status": "STAGE_07_PYTHON_CONFORMANCE_ACTIVE_MQL5_GATED",
+  "status": "STAGE_07_IMPLEMENTATION_ACTIVE",
   "frozen_inputs": {
     "transport_policy": "config/transport_policy.json",
     "protocol_schema": "config/protocol_schema.json",
@@ -71,13 +71,12 @@
     "ARCHITECTURE",
     "PYTHON_TRANSPORT_PORT",
     "PYTHON_KAT1_CODEC",
-    "IN_MEMORY_TESTS"
-  ],
-  "blocked_until_stage06_external_clearance": [
+    "IN_MEMORY_TESTS",
+    "SESSION_SUPERVISOR",
+    "MQL5_KAT1_CODEC",
+    "MQL5_ZEROMQ_CAPABILITY_SPIKE",
     "MQL5_ZEROMQ_INTEGRATION",
-    "MQL5_TCP_INTEGRATION",
-    "EXTERNAL_EXECUTION_COMMAND_ENABLEMENT",
-    "PRODUCTION_READY_CLAIM"
+    "MQL5_TCP_INTEGRATION"
   ],
   "acceptance_draft": [
     "STAGE06_FROZEN",
@@ -97,7 +96,8 @@
     "python_codec": "src/katarina/adapters/transport/kat1_codec.py",
     "memory_adapter": "src/katarina/adapters/transport/memory.py",
     "tests": "tests/unit/transport/test_stage07_communication.py",
-    "initial_check": "docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md"
+    "initial_check": "docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md",
+    "session_supervisor": "src/katarina/adapters/transport/session.py"
   },
   "progress": {
     "research": true,
@@ -110,6 +110,16 @@
     "zeromq_spike": false,
     "zeromq_live_adapter": false,
     "tcp_fallback": false,
-    "session_supervisor": false
-  }
+    "session_supervisor": true
+  },
+  "unblocked_by_stage06_freeze": [
+    "MQL5_KAT1_CODEC",
+    "MQL5_ZEROMQ_CAPABILITY_SPIKE",
+    "MQL5_ZEROMQ_INTEGRATION",
+    "MQL5_TCP_INTEGRATION"
+  ],
+  "still_blocked_until_later_governed_stages": [
+    "LIVE_BROKER_RISK_ENABLEMENT",
+    "PRODUCTION_READY_CLAIM"
+  ]
 }
