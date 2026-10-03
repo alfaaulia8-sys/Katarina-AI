@@ -188,6 +188,29 @@ jobs:
               if payload[:4] != b"KAT1":
                   raise RuntimeError("raw payload does not start with KAT1 magic")
               sock.send_multipart([route, payload])
+
+              # Do not close immediately with linger=0. Wait until MT5 proves
+              # it received the echo by sending the same KAT1 frame back.
+              ack_deadline = time.monotonic() + 8.0
+              ack = None
+              while time.monotonic() < ack_deadline:
+                  ack_events = dict(poller.poll(100))
+                  if sock not in ack_events:
+                      continue
+                  ack_parts = sock.recv_multipart()
+                  if len(ack_parts) != 2:
+                      raise RuntimeError(
+                          f"expected ACK identity+payload, got {len(ack_parts)} parts"
+                      )
+                  ack_route, ack = ack_parts
+                  if ack_route != route:
+                      raise RuntimeError("MT5 ACK route identity changed")
+                  if ack != payload:
+                      raise RuntimeError("MT5 ACK payload differs from echoed KAT1 frame")
+                  break
+
+              if ack is None:
+                  raise RuntimeError("timed out waiting for MT5 echo ACK")
               break
 
           if payload is None:
@@ -197,6 +220,7 @@ jobs:
               "result": "PASS",
               "endpoint": endpoint,
               "payload_bytes": len(payload),
+              "ack_bytes": len(ack),
               "magic": payload[:4].decode("ascii"),
               "route_bytes": len(route),
               "pyzmq": zmq.__version__,
