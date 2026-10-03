@@ -31,13 +31,15 @@ void OnStart(void)
    int failures=0;
    const string account_class=KatResolveProbeClass();
 
+   const bool discovery_mode=(account_class=="DISCOVERY");
    const bool account_class_valid=
       (account_class=="STANDARD_LIKE" ||
-       account_class=="CENT_LIKE");
+       account_class=="CENT_LIKE" ||
+       discovery_mode);
 
    if(!account_class_valid)
      {
-      Print("FAIL: InpAccountClass must be STANDARD_LIKE or CENT_LIKE");
+      Print("FAIL: account class must be STANDARD_LIKE, CENT_LIKE, or DISCOVERY");
       failures++;
      }
 
@@ -130,7 +132,7 @@ void OnStart(void)
       KatEvidenceWrite(evidence,"stage","06");
       KatEvidenceWrite(evidence,"design_version",KAT_STAGE06_DESIGN_VERSION);
       KatEvidenceWriteLong(evidence,"generated_epoch_seconds",(long)TimeGMT());
-      KatEvidenceWrite(evidence,"proof_type","ACCOUNT_PROBE");
+      KatEvidenceWrite(evidence,"proof_type",(discovery_mode ? "ACCOUNT_DISCOVERY" : "ACCOUNT_PROBE"));
       KatEvidenceWrite(evidence,"account_class",account_class);
       KatEvidenceWriteLong(evidence,"terminal_build",TerminalInfoInteger(TERMINAL_BUILD));
       KatEvidenceWrite(evidence,"symbol",_Symbol);
