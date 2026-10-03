@@ -212,4 +212,7 @@ void OnStart(void)
       Print("Katarina Stage 06 static MQL self-tests PASSED");
    else
       PrintFormat("Katarina Stage 06 static MQL self-tests FAILED: %d",failures);
+
+   if(MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
+      TerminalClose(failures==0 ? 0 : 6);
   }
