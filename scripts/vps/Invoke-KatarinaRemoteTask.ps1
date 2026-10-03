@@ -831,11 +831,17 @@ After PASS, return to ChatGPT and type:
                         }
                         foreach ($f in @(Get-ChildItem -Path $dir.FullName -File -ErrorAction SilentlyContinue |
                             Sort-Object Name)) {
-                            $entry.files += [pscustomobject]@{
+                            $fileInfo = [ordered]@{
                                 name = $f.Name
                                 size_bytes = [int64]$f.Length
                                 last_write_utc = $f.LastWriteTimeUtc.ToString("o")
                             }
+                            if ($f.Length -lt 65536) {
+                                try {
+                                    $fileInfo["content"] = Redact-Text (Get-Content -Path $f.FullName -Raw -ErrorAction Stop)
+                                } catch {}
+                            }
+                            $entry.files += [pscustomobject]$fileInfo
                         }
                         $manifest.runtime_runs += [pscustomobject]$entry
                     }
