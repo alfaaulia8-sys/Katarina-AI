@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.1.1"
+$AgentVersion = "1.2.0"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -101,6 +101,35 @@ function Put-GitHubTextFile {
     if ($sha) { $body["sha"] = $sha }
 
     [void](Invoke-GitHubJson -Method "PUT" -Uri $uri -Headers $Headers -Body $body)
+}
+
+function Publish-AgentHealth {
+    param(
+        [string]$State,
+        [string]$ErrorText = ""
+    )
+
+    try {
+        $payload = [ordered]@{
+            schema_version = 1
+            agent_version = $AgentVersion
+            agent_id = $agentId
+            computer_name = $env:COMPUTERNAME
+            state = $State
+            error = (Redact-ResultText $ErrorText)
+            updated_utc = [DateTime]::UtcNow.ToString("o")
+        } | ConvertTo-Json -Depth 8
+
+        Put-GitHubTextFile `
+            -Repo $repo `
+            -Path "ops/vps/health/$agentId/status.json" `
+            -Branch $branch `
+            -Message "vps-agent-health: $agentId $State" `
+            -Text $payload `
+            -Headers $headers
+    } catch {
+        # Telemetry must never stop the polling loop.
+    }
 }
 
 function Download-RepoSnapshot {
@@ -296,6 +325,8 @@ Write-Host "Agent: $agentId"
 Write-Host "Repo:  $repo"
 Write-Host "Mode:  outbound HTTPS polling / allowlisted tasks only"
 
+Publish-AgentHealth -State "ONLINE"
+
 while ($true) {
     try {
         $listUri = "https://api.github.com/repos/$repo/contents/$requestsDir?ref=$([Uri]::EscapeDataString($branch))"
@@ -378,6 +409,7 @@ while ($true) {
                     error = (Redact-ResultText $_.Exception.Message)
                 }
                 Write-JsonFile (Join-Path $installRoot "last_error.json") $errorRecord
+                Publish-AgentHealth -State "ERROR" -ErrorText ([string]$errorRecord.error)
                 continue
             }
         }
@@ -391,6 +423,7 @@ while ($true) {
             error = (Redact-ResultText $_.Exception.Message)
         }
         Write-JsonFile (Join-Path $installRoot "last_error.json") $errorRecord
+        Publish-AgentHealth -State "ERROR" -ErrorText ([string]$errorRecord.error)
     }
 
     Start-Sleep -Seconds $pollSeconds
