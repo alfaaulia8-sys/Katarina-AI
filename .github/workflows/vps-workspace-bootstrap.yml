@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/vps-workspace-bootstrap.yml"
       - "scripts/vps/Invoke-KatarinaRemoteTask.ps1"
+      - "scripts/vps/Invoke-KatarinaWorkspaceTask.ps1"
   workflow_dispatch:
 
 permissions:
