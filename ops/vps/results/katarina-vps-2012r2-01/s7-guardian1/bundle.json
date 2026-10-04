@@ -10,22 +10,22 @@
                     "execution_class":  "MUTATING",
                     "ref":  "main",
                     "exit_code":  0,
-                    "completed_utc":  "2026-10-04T11:58:27.2026247Z"
+                    "completed_utc":  "2026-10-04T11:58:55.7963801Z"
                 },
     "files":  [
                   {
                       "name":  "control_guardian_install.json",
-                      "size_bytes":  1155,
-                      "sha256":  "8a333e0eb4d56a1d1e5d015907aeb2d5491198651bb9dfa9462f8fdfc42498ce",
+                      "size_bytes":  1156,
+                      "sha256":  "7811640ac129cd7f858aa18b3977dffb171b20dcf6fcf7533888a35d60ba3abc",
                       "content_included":  true,
-                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"KATARINA_LOW_MEMORY_GUARDIAN_INSTALL\",\r\n    \"resource_profile\":  \"LEGACY_LOW_MEMORY_GUARDED\",\r\n    \"primary_command_lane\":  \"KatarinaVPSAgent\",\r\n    \"recovery_lane\":  \"KatarinaControlGuardian\",\r\n    \"fallback_recovery\":  \"KatarinaVPSAgentWatchdog\",\r\n    \"guardian_version\":  \"1.0.0\",\r\n    \"guardian_phase\":  \"COOLDOWN\",\r\n    \"guardian_process_id\":  760,\r\n    \"guardian_check_seconds\":  10,\r\n    \"primary_stale_seconds\":  45,\r\n    \"fallback_watchdog_minutes\":  1,\r\n    \"heavy_execution_concurrency\":  1,\r\n    \"snapshot_extraction_concurrency\":  1,\r\n    \"full_secondary_agents_disabled\":  true,\r\n    \"memory_before\":  {\r\n                          \"total_visible_mb\":  2047,\r\n                          \"free_physical_mb\":  479\r\n                      },\r\n    \"memory_after\":  {\r\n                         \"total_visible_mb\":  2047,\r\n                         \"free_physical_mb\":  512\r\n                     },\r\n    \"deferred_primary_reload\":  \"KatarinaGuardedDeferredRestart\",\r\n    \"deferred_primary_reload_time_local\":  \"18:59\",\r\n    \"installed_utc\":  \"2026-10-04T11:58:26.8744990Z\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"KATARINA_LOW_MEMORY_GUARDIAN_INSTALL\",\r\n    \"resource_profile\":  \"LEGACY_LOW_MEMORY_GUARDED\",\r\n    \"primary_command_lane\":  \"KatarinaVPSAgent\",\r\n    \"recovery_lane\":  \"KatarinaControlGuardian\",\r\n    \"fallback_recovery\":  \"KatarinaVPSAgentWatchdog\",\r\n    \"guardian_version\":  \"1.0.0\",\r\n    \"guardian_phase\":  \"COOLDOWN\",\r\n    \"guardian_process_id\":  2772,\r\n    \"guardian_check_seconds\":  10,\r\n    \"primary_stale_seconds\":  45,\r\n    \"fallback_watchdog_minutes\":  1,\r\n    \"heavy_execution_concurrency\":  1,\r\n    \"snapshot_extraction_concurrency\":  1,\r\n    \"full_secondary_agents_disabled\":  true,\r\n    \"memory_before\":  {\r\n                          \"total_visible_mb\":  2047,\r\n                          \"free_physical_mb\":  484\r\n                      },\r\n    \"memory_after\":  {\r\n                         \"total_visible_mb\":  2047,\r\n                         \"free_physical_mb\":  512\r\n                     },\r\n    \"deferred_primary_reload\":  \"KatarinaGuardedDeferredRestart\",\r\n    \"deferred_primary_reload_time_local\":  \"18:59\",\r\n    \"installed_utc\":  \"2026-10-04T11:58:51.8432494Z\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
                   },
                   {
                       "name":  "result.json",
                       "size_bytes":  601,
-                      "sha256":  "05b7c3b16c1c1641cf70ec3475adbaf1bd058c5e8c652a79439df8920a8eb481",
+                      "sha256":  "3ec42d7ae37742716158374d57004b8212470089395327258a15350ce75d68bb",
                       "content_included":  true,
-                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"s7-guardian1\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T11:58:23.3432503Z\",\r\n    \"completed_utc\":  \"2026-10-04T11:58:26.8744990Z\",\r\n    \"duration_ms\":  3531,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT\",\r\n                    \"resource_profile\":  \"LEGACY_LOW_MEMORY_GUARDED\",\r\n                    \"guardian_ready\":  true,\r\n                    \"result\":  \"PASS\"\r\n                }\r\n}\r\n"
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"s7-guardian1\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T11:58:48.3432505Z\",\r\n    \"completed_utc\":  \"2026-10-04T11:58:51.8432494Z\",\r\n    \"duration_ms\":  3500,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT\",\r\n                    \"resource_profile\":  \"LEGACY_LOW_MEMORY_GUARDED\",\r\n                    \"guardian_ready\":  true,\r\n                    \"result\":  \"PASS\"\r\n                }\r\n}\r\n"
                   },
                   {
                       "name":  "stderr.txt",
@@ -42,5 +42,5 @@
                       "content":  "KATARINA GUARDED LOW MEMORY CONTROL PASS\r\n"
                   }
               ],
-    "bundle_content_bytes":  1800
+    "bundle_content_bytes":  1801
 }
