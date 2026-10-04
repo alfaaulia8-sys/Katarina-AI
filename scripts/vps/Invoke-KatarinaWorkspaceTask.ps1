@@ -869,6 +869,56 @@ ShutdownTerminal=1
         })
     }
 
+    "WORKSPACE_RUNTIME_INSTALL" {
+        foreach($dir in @($WorkspaceRoot,$Runtime,$Logs)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+        $pythonRoot=Join-Path $Runtime "python"
+        $zip=Join-Path $Runtime "python-3.8.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
+        $expectedMd5="3acb1d7d9bde5a79f840167b166bb633"
+
+        if(Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+        $actualMd5=(Get-FileHash -LiteralPath $zip -Algorithm MD5).Hash.ToLowerInvariant()
+        if($actualMd5 -ne $expectedMd5) {
+            Remove-Item -LiteralPath $zip -Force
+            throw "Pinned Python runtime checksum mismatch."
+        }
+
+        if(Test-Path -LiteralPath $pythonRoot) {
+            $backup=Join-Path $Snapshots ("python_preinstall_"+[DateTime]::UtcNow.ToString("yyyyMMdd_HHmmss"))
+            Move-Item -LiteralPath $pythonRoot -Destination $backup -Force
+        }
+        New-Item -ItemType Directory -Force -Path $pythonRoot | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [IO.Compression.ZipFile]::ExtractToDirectory($zip,$pythonRoot)
+
+        $pth=Join-Path $pythonRoot "python38._pth"
+        if(Test-Path -LiteralPath $pth) {
+            $pthText=Get-Content -LiteralPath $pth -Raw
+            if($pthText -notmatch "(?m)^\.\.\\\.\.\\workspace\s*$") {
+                $pthText=$pthText.TrimEnd()+"`r`n..\..\workspace`r`n"
+                Set-Content -LiteralPath $pth -Value $pthText -Encoding ASCII
+            }
+        }
+
+        $python=Join-Path $pythonRoot "python.exe"
+        if(!(Test-Path -LiteralPath $python -PathType Leaf)) { throw "Embedded Python executable missing after extraction." }
+        $version=& $python -c "import sys; print(sys.version)"
+        if($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace(($version | Out-String))) {
+            throw "Embedded Python failed startup validation."
+        }
+        Write-Json (Join-Path $Metadata "python_runtime.json") ([ordered]@{
+            schema_version=1
+            version="3.8.10"
+            distribution="CPYTHON_EMBED_AMD64"
+            source_url=$url
+            official_md5=$expectedMd5
+            installed_utc=[DateTime]::UtcNow.ToString("o")
+            executable=$python
+            startup_validation="PASS"
+        })
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
