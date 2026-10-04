@@ -49,7 +49,7 @@ jobs:
         shell: pwsh
         run: |
           $env:PYTHONPATH = "src"
-          python -m unittest tests.unit.transport.test_stage07_communication -v
+          python -m unittest tests.unit.transport.test_stage07_communication tests.unit.transport.test_stage07_stage06_contract -v
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Write Stage 07 evidence
