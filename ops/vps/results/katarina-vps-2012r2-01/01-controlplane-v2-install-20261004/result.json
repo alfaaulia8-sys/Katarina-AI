@@ -1,0 +1,14 @@
+{
+    "schema_version":  1,
+    "request_id":  "01-controlplane-v2-install-20261004",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "task":  "STAGE07_PYTHON_TESTS",
+    "started_utc":  "2026-10-04T07:24:35.3119996Z",
+    "completed_utc":  "2026-10-04T07:24:49.0932536Z",
+    "duration_ms":  13781,
+    "status":  "FAIL",
+    "exit_code":  1,
+    "details":  {
+
+                }
+}
