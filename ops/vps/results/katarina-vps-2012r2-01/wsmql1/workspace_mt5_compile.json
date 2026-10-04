@@ -1,0 +1,103 @@
+{
+    "schema_version":  1,
+    "stage":  "07",
+    "proof_type":  "VPS_WORKSPACE_MT5_COMPILE",
+    "workspace_root":  "C:\\KatarinaDev\\workspace",
+    "terminal_data_path":  "C:\\Users\\Administrator\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075",
+    "metaeditor_path":  "C:\\Program Files\\MetaTrader 5\\metaeditor64.exe",
+    "target_count":  10,
+    "targets":  [
+                    {
+                        "target":  "KatarinaBridgeStage07EA",
+                        "kind":  "EXPERT",
+                        "process_exit_code":  0,
+                        "compile_result":  "FAIL",
+                        "ex5_exists":  false,
+                        "ex5_sha256":  null,
+                        "log_file":  "KatarinaBridgeStage07EA.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07BridgeTransportIntegration",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  0,
+                        "compile_result":  "FAIL",
+                        "ex5_exists":  false,
+                        "ex5_sha256":  null,
+                        "log_file":  "KatarinaStage07BridgeTransportIntegration.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07HandshakeIntegration",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  0,
+                        "compile_result":  "FAIL",
+                        "ex5_exists":  false,
+                        "ex5_sha256":  null,
+                        "log_file":  "KatarinaStage07HandshakeIntegration.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07Kat1CodecTest",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  1,
+                        "compile_result":  "PASS_0_ERRORS_0_WARNINGS",
+                        "ex5_exists":  true,
+                        "ex5_sha256":  "40e70fcaf4c0ad7b69dcad8f0a0b2d331570f442d8582cb7a1aeacf97bb56e9a",
+                        "log_file":  "KatarinaStage07Kat1CodecTest.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07NativeAccountRecordTest",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  1,
+                        "compile_result":  "PASS_0_ERRORS_0_WARNINGS",
+                        "ex5_exists":  true,
+                        "ex5_sha256":  "f257446790d06768bf2e6d0a7fdab58c184fceb0664fb81fa3a5a1dafb88428c",
+                        "log_file":  "KatarinaStage07NativeAccountRecordTest.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07NativeStateRecordsTest",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  1,
+                        "compile_result":  "PASS_0_ERRORS_0_WARNINGS",
+                        "ex5_exists":  true,
+                        "ex5_sha256":  "319c23f556484816d5d60cd320cfbdc1b352d56d9c2c52204659ebeda742edac",
+                        "log_file":  "KatarinaStage07NativeStateRecordsTest.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07ReconnectIntegration",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  0,
+                        "compile_result":  "FAIL",
+                        "ex5_exists":  false,
+                        "ex5_sha256":  null,
+                        "log_file":  "KatarinaStage07ReconnectIntegration.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07RecoveryIntegration",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  0,
+                        "compile_result":  "FAIL",
+                        "ex5_exists":  false,
+                        "ex5_sha256":  null,
+                        "log_file":  "KatarinaStage07RecoveryIntegration.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07WireSequenceTest",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  1,
+                        "compile_result":  "PASS_0_ERRORS_0_WARNINGS",
+                        "ex5_exists":  true,
+                        "ex5_sha256":  "43ea7b6d4e6353c8b390976423f3dd28d394997af6d9fcb3375d9c9c8f4dde2a",
+                        "log_file":  "KatarinaStage07WireSequenceTest.compile.log"
+                    },
+                    {
+                        "target":  "KatarinaStage07ZmqCapability",
+                        "kind":  "SCRIPT",
+                        "process_exit_code":  0,
+                        "compile_result":  "FAIL",
+                        "ex5_exists":  false,
+                        "ex5_sha256":  null,
+                        "log_file":  "KatarinaStage07ZmqCapability.compile.log"
+                    }
+                ],
+    "generated_utc":  "2026-10-04T02:42:53.5339250Z",
+    "result":  "FAIL"
+}
