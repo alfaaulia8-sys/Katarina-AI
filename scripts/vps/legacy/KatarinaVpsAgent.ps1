@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.2"
+$AgentVersion = "1.4.3"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -695,7 +695,8 @@ while ($true) {
                         "WORKSPACE_CONTROL_RESTART_PRIMARY",
                         "WORKSPACE_CONTROL_LITE_INSTALL_DIRECT",
                         "WORKSPACE_CONTROL_BALANCED_INSTALL_DIRECT",
-                        "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT"
+                        "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT",
+                        "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT"
                     )
                     $requiresHeavyLock = $true
                     if ([string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
