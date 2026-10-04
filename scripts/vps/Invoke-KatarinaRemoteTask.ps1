@@ -9,7 +9,10 @@ param(
     [string]$AgentId = $env:KATARINA_AGENT_ID,
 
     [Parameter(Mandatory=$false)]
-    [string]$RepoRoot = ""
+    [string]$RepoRoot = "",
+
+    [Parameter(Mandatory=$false)]
+    [switch]$NoProcessExit
 )
 
 $ErrorActionPreference = "Stop"
@@ -1763,7 +1766,12 @@ ShutdownTerminal=1
                 $python="C:\KatarinaDev\runtime\python\python.exe"
                 $profileScript=Join-Path $RepoRoot "scripts\stage07\profile_stage07_transport.py"
                 $auditScript=Join-Path $RepoRoot "scripts\stage07\audit_stage07_final.py"
-                $tcpBundle=Join-Path $RepoRoot "ops\vps\results\katarina-vps-2012r2-01\008-tcp-proof1\bundle.json"
+                $tcpRequestId="008-tcp-proof1"
+                if($null -ne $request.args.PSObject.Properties["tcp_request_id"] -and
+                   ![string]::IsNullOrWhiteSpace([string]$request.args.tcp_request_id)) {
+                    $tcpRequestId=[string]$request.args.tcp_request_id
+                }
+                $tcpBundle=Join-Path $RepoRoot ("ops\vps\results\katarina-vps-2012r2-01\"+$tcpRequestId+"\bundle.json")
                 $batchBundle=Join-Path $RepoRoot "ops\vps\results\katarina-vps-2012r2-01\s7-batch-opt1\bundle.json"
                 foreach($required in @($python,$profileScript,$auditScript,$tcpBundle,$batchBundle)) {
                     if(!(Test-Path -LiteralPath $required -PathType Leaf)) {
@@ -2767,5 +2775,8 @@ $summary = [ordered]@{
 
 Write-JsonFile (Join-Path $OutputDir "result.json") $summary
 
+if($NoProcessExit) {
+    return
+}
 if ($status -ne "PASS") { exit $resultCode }
 exit 0

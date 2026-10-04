@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.6"
+$AgentVersion = "1.4.7"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -820,44 +820,67 @@ while ($true) {
                         }
                     }
 
-                    # Never let one child task freeze the persistent command bus.
-                    $runnerArgs = @(
-                        "-NoProfile",
-                        "-ExecutionPolicy","Bypass",
-                        "-File",$runner,
-                        "-RequestFile",$localRequest,
-                        "-OutputDir",$outputDir,
-                        "-AgentId",$agentId,
-                        "-RepoRoot",$repoRoot
+                    # The two Stage-07 closeout modes run inside this persistent
+                    # PowerShell process. On the 2 GB Server 2012 R2 host this avoids
+                    # creating a second powershell.exe, which previously failed with
+                    # the process exit sentinel -65536 before any evidence was written.
+                    $sameProcessModes = @(
+                        "WORKSPACE_MT5_TCP_FALLBACK_PROOF_DIRECT",
+                        "WORKSPACE_STAGE07_CLOSEOUT_DIRECT"
                     )
-                    $child = Start-Process -FilePath "powershell.exe" -ArgumentList $runnerArgs -PassThru -WindowStyle Hidden
+                    $useSameProcess = (
+                        [string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
+                        $sameProcessModes -contains $mode
+                    )
 
-                    # Legacy 2 GB host: keep a strict default timeout, but allow
-                    # bounded extra time for known heavy Stage-07 jobs that spend
-                    # most of their time in MetaEditor/MT5 startup. Heartbeats are
-                    # still emitted every five seconds so the watchdog can tell a
-                    # slow healthy job from a frozen agent.
-                    $timeoutMs = 180000
-                    if([string]$validated.task -eq "STAGE07_PYTHON_TESTS") {
-                        switch($mode) {
-                            "WORKSPACE_MT5_COMPILE"       { $timeoutMs = 360000 }
-                            "WORKSPACE_MT5_RUNTIME_SMOKE" { $timeoutMs = 360000 }
-                            "WORKSPACE_TEST"              { $timeoutMs = 240000 }
-                            "WORKSPACE_DEPENDENCY_VERIFY" { $timeoutMs = 240000 }
-                        }
-                    }
-                    $elapsedMs = 0
-                    while (-not $child.HasExited -and $elapsedMs -lt $timeoutMs) {
+                    if($useSameProcess) {
                         Write-LocalHeartbeat -Phase "TASK_RUNNING" -RequestId $requestId
-                        Start-Sleep -Milliseconds 5000
-                        $elapsedMs += 5000
+                        & $runner -RequestFile $localRequest -OutputDir $outputDir -AgentId $agentId -RepoRoot $repoRoot -NoProcessExit
+
+                        $runnerResultPath = Join-Path $outputDir "result.json"
+                        if(!(Test-Path -LiteralPath $runnerResultPath -PathType Leaf)) {
+                            throw "Same-process remote task produced no result.json."
+                        }
+                        $runnerResult = Get-Content -LiteralPath $runnerResultPath -Raw | ConvertFrom-Json
+                        $exitCode = [int]$runnerResult.exit_code
+                        Write-LocalHeartbeat -Phase "TASK_FINISHED" -RequestId $requestId
+                    } else {
+                        # Never let one ordinary child task freeze the persistent command bus.
+                        $runnerArgs = @(
+                            "-NoProfile",
+                            "-ExecutionPolicy","Bypass",
+                            "-File",$runner,
+                            "-RequestFile",$localRequest,
+                            "-OutputDir",$outputDir,
+                            "-AgentId",$agentId,
+                            "-RepoRoot",$repoRoot
+                        )
+                        $child = Start-Process -FilePath "powershell.exe" -ArgumentList $runnerArgs -PassThru -WindowStyle Hidden
+
+                        # Legacy 2 GB host: keep a strict default timeout, but allow
+                        # bounded extra time for known heavy Stage-07 jobs.
+                        $timeoutMs = 180000
+                        if([string]$validated.task -eq "STAGE07_PYTHON_TESTS") {
+                            switch($mode) {
+                                "WORKSPACE_MT5_COMPILE"       { $timeoutMs = 360000 }
+                                "WORKSPACE_MT5_RUNTIME_SMOKE" { $timeoutMs = 360000 }
+                                "WORKSPACE_TEST"              { $timeoutMs = 240000 }
+                                "WORKSPACE_DEPENDENCY_VERIFY" { $timeoutMs = 240000 }
+                            }
+                        }
+                        $elapsedMs = 0
+                        while (-not $child.HasExited -and $elapsedMs -lt $timeoutMs) {
+                            Write-LocalHeartbeat -Phase "TASK_RUNNING" -RequestId $requestId
+                            Start-Sleep -Milliseconds 5000
+                            $elapsedMs += 5000
+                        }
+                        if (-not $child.HasExited) {
+                            try { $child.Kill() } catch {}
+                            throw ("Remote task runner exceeded {0}-second hard timeout and was terminated." -f [int]($timeoutMs/1000))
+                        }
+                        $exitCode = [int]$child.ExitCode
+                        Write-LocalHeartbeat -Phase "TASK_FINISHED" -RequestId $requestId
                     }
-                    if (-not $child.HasExited) {
-                        try { $child.Kill() } catch {}
-                        throw ("Remote task runner exceeded {0}-second hard timeout and was terminated." -f [int]($timeoutMs/1000))
-                    }
-                    $exitCode = [int]$child.ExitCode
-                    Write-LocalHeartbeat -Phase "TASK_FINISHED" -RequestId $requestId
                 } catch {
                     $exitCode = 1
                     (Redact-ResultText $_.Exception.Message) | Set-Content -Path (Join-Path $outputDir "agent_error.txt") -Encoding UTF8
