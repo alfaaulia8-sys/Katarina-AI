@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.3.1"
+$AgentVersion = "1.4.0"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -63,20 +63,57 @@ function New-GitHubHeaders {
     }
 }
 
+function Test-GitHubTransientFailure {
+    param($ErrorRecord)
+
+    try {
+        $response = $ErrorRecord.Exception.Response
+        if ($null -eq $response) { return $true }
+        $status = [int]$response.StatusCode
+        if ($status -eq 408 -or $status -eq 409 -or $status -eq 425 -or $status -eq 429) { return $true }
+        if ($status -ge 500 -and $status -le 599) { return $true }
+        return $false
+    } catch {
+        # DNS, TCP, TLS and connection-reset failures normally have no usable HTTP response.
+        return $true
+    }
+}
+
 function Invoke-GitHubJson {
     param(
         [string]$Method,
         [string]$Uri,
         [hashtable]$Headers,
-        $Body = $null
+        $Body = $null,
+        [int]$MaxAttempts = 6
     )
 
-    if ($null -eq $Body) {
-        return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $Headers
+    $json = $null
+    if ($null -ne $Body) {
+        $json = $Body | ConvertTo-Json -Depth 12
     }
 
-    $json = $Body | ConvertTo-Json -Depth 12
-    return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $Headers -ContentType "application/json" -Body $json
+    $attempt = 0
+    while ($true) {
+        $attempt++
+        try {
+            if ($null -eq $Body) {
+                return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $Headers
+            }
+            return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $Headers -ContentType "application/json" -Body $json
+        }
+        catch {
+            $transient = Test-GitHubTransientFailure $_
+            if (-not $transient -or $attempt -ge $MaxAttempts) {
+                throw
+            }
+
+            # Bounded exponential backoff: 1,2,4,8,16 seconds.
+            $delay = [Math]::Min(16,[Math]::Pow(2,$attempt-1))
+            Write-LocalHeartbeat -Phase ("GITHUB_RETRY_" + $attempt)
+            Start-Sleep -Seconds ([int]$delay)
+        }
+    }
 }
 
 function Get-GitHubFile {
@@ -202,7 +239,21 @@ function Download-RepoSnapshot {
     New-Item -ItemType Directory -Force -Path $extract | Out-Null
 
     $uri = ("https://api.github.com/repos/{0}/zipball/{1}" -f $Repo, [Uri]::EscapeDataString($Ref))
-    Invoke-WebRequest -Uri $uri -Headers $Headers -OutFile $zip -UseBasicParsing
+    $downloaded = $false
+    for($attempt=1; $attempt -le 6 -and -not $downloaded; $attempt++) {
+        try {
+            Invoke-WebRequest -Uri $uri -Headers $Headers -OutFile $zip -UseBasicParsing
+            $downloaded = $true
+        }
+        catch {
+            if(-not (Test-GitHubTransientFailure $_) -or $attempt -ge 6) { throw }
+            Write-LocalHeartbeat -Phase ("SNAPSHOT_RETRY_" + $attempt)
+            Start-Sleep -Seconds ([int][Math]::Min(16,[Math]::Pow(2,$attempt-1)))
+        }
+    }
+    if(-not $downloaded -or !(Test-Path -LiteralPath $zip -PathType Leaf)) {
+        throw "Repository snapshot download did not complete."
+    }
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [IO.Compression.ZipFile]::ExtractToDirectory($zip, $extract)
