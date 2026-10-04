@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "request_id": "00-stage07-selfheal-install-20261004",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "created_utc": "2026-10-04T05:05:00Z",
+  "expires_utc": "2026-10-04T12:00:00Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_AGENT_SELF_HEAL_INSTALL"
+  }
+}
