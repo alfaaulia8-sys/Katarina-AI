@@ -1,0 +1,12 @@
+Runtime evidence missing for KAT1_CODEC.
+At C:\KatarinaVPSAgent\work\wsrun1\src\alfaaulia-katarina-Katarina-AI-1dfa22086
+6df72cacd07a7847df984e776baaf10\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:42
+7 char:17
++                 throw "Runtime evidence missing for $($test.name)."
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Runtime evidence missing for  
+   KAT1_CODEC.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Runtime evidence missing for KAT1_CODEC.
+ 
+
+Workspace child task produced no status evidence.
