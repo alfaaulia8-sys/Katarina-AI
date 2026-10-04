@@ -123,7 +123,7 @@ switch($mode) {
         $pth=Join-Path $pythonDir "python312._pth"
         if(!(Test-Path -LiteralPath $pth -PathType Leaf)) { throw "Python embedded _pth file missing." }
         @(
-            "python38.zip",
+            "python312.zip",
             ".",
             $packagesDir,
             $Workspace,
