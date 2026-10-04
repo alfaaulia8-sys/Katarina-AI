@@ -12,6 +12,7 @@
 #define KAT7_TRANSPORT_WAITING_HELLO    1
 #define KAT7_TRANSPORT_RECOVERING       2
 #define KAT7_TRANSPORT_FAULTED          3
+#define KAT7_TRANSPORT_ACK_PENDING       4
 
 #define KAT7_HEARTBEAT_INTERVAL_MS 1000
 #define KAT7_EA_BUILD_VERSION 700
@@ -37,6 +38,58 @@ private:
    ulong  m_latest_consumed_command_sequence;
    ulong  m_latest_inbound_sequence;
    bool   m_configured;
+   uchar  m_pending_control[];
+   ushort m_pending_message_type;
+
+   bool HasPendingControl(void) const
+     {
+      return(ArraySize(m_pending_control)>0);
+     }
+
+   void ClearPendingControl(void)
+     {
+      ArrayResize(m_pending_control,0);
+      m_pending_message_type=0;
+     }
+
+   bool QueuePendingControl(const uchar &frame[],
+                            const ushort message_type)
+     {
+      if(HasPendingControl())
+         return(false);
+
+      const int size=ArraySize(frame);
+      if(size<=0)
+         return(false);
+
+      if(ArrayResize(m_pending_control,size)!=size)
+         return(false);
+
+      for(int i=0;i<size;i++)
+         m_pending_control[i]=frame[i];
+
+      m_pending_message_type=message_type;
+      return(true);
+     }
+
+   bool FlushPendingControl(void)
+     {
+      if(!HasPendingControl())
+         return(true);
+
+      if(!m_wire.SendFrame(m_pending_control))
+         return(false);
+
+      const ushort sent_type=m_pending_message_type;
+      ClearPendingControl();
+
+      if(sent_type==KAT1_MSG_HEARTBEAT)
+         m_last_heartbeat_ms=GetTickCount64();
+      else if(sent_type==KAT1_MSG_HELLO_ACK)
+         m_state=KAT7_TRANSPORT_RECOVERING;
+
+      return(true);
+     }
 
    uchar NormalizeAccountMode(void) const
      {
@@ -87,16 +140,20 @@ private:
       return(ArraySize(hash)==32);
      }
 
-   bool SendHeartbeat(void)
+   bool QueueHeartbeat(void)
      {
+      if(HasPendingControl())
+         return(true);
+
       ulong sequence=0;
       if(!m_sequence.Next(0,sequence))
          return(false);
 
       uchar frame[];
       string error="";
+      const ulong source_time_ns=SourceTimeNs();
       if(!Kat1BuildHeartbeat(sequence,
-                             SourceTimeNs(),
+                             source_time_ns,
                              m_stream_id,
                              m_boot_id,
                              GetTickCount64(),
@@ -104,17 +161,13 @@ private:
                              m_latest_consumed_command_sequence,
                              0,
                              0,
-                             SourceTimeNs(),
+                             source_time_ns,
                              1,
                              frame,
                              error))
          return(false);
 
-      if(!m_wire.SendFrame(frame))
-         return(false);
-
-      m_last_heartbeat_ms=GetTickCount64();
-      return(true);
+      return(QueuePendingControl(frame,KAT1_MSG_HEARTBEAT));
      }
 
    bool ValidateInboundSequence(const SKat1Header &header)
@@ -194,11 +247,16 @@ private:
                             error))
          return(false);
 
-      if(!m_wire.SendFrame(ack))
+      if(!QueuePendingControl(ack,KAT1_MSG_HELLO_ACK))
          return(false);
 
       m_latest_consumed_command_sequence=header.sequence;
-      m_state=KAT7_TRANSPORT_RECOVERING;
+      m_state=KAT7_TRANSPORT_ACK_PENDING;
+
+      // Best effort now; if ZeroMQ is temporarily backpressured, Pump()
+      // retries the exact same critical frame/sequence rather than allocating
+      // a new sequence and creating a protocol gap.
+      FlushPendingControl();
       return(true);
      }
 
@@ -252,6 +310,8 @@ public:
       m_latest_consumed_command_sequence=0;
       m_latest_inbound_sequence=0;
       m_configured=false;
+      ArrayResize(m_pending_control,0);
+      m_pending_message_type=0;
      }
 
    bool              Configure(const string endpoint,
@@ -298,14 +358,18 @@ public:
       m_last_heartbeat_ms=0;
       m_latest_consumed_command_sequence=0;
       m_latest_inbound_sequence=0;
+      ClearPendingControl();
 
       // Presence heartbeat advertises the bridge but never implies READY.
-      return(SendHeartbeat());
+      // Queue first; Pump retries without sequence reuse if the DEALER is not
+      // connected at the exact Start() instant.
+      return(QueueHeartbeat());
      }
 
    virtual void      Stop(void)
      {
       m_wire.Stop();
+      ClearPendingControl();
       m_state=KAT7_TRANSPORT_STOPPED;
      }
 
@@ -345,6 +409,10 @@ public:
          return;
 
       const ulong started=GetMicrosecondCount();
+
+      // Always retry an already-sequenced control frame first.
+      FlushPendingControl();
+
       int handled=0;
 
       while(handled<max_items)
@@ -367,10 +435,15 @@ public:
         }
 
       const ulong now_ms=GetTickCount64();
-      if(now_ms-m_last_heartbeat_ms>=KAT7_HEARTBEAT_INTERVAL_MS)
+      if(!HasPendingControl() &&
+         now_ms-m_last_heartbeat_ms>=KAT7_HEARTBEAT_INTERVAL_MS)
         {
-         if(!SendHeartbeat())
+         if(!QueueHeartbeat())
+           {
             Fault();
+            return;
+           }
+         FlushPendingControl();
         }
      }
   };
