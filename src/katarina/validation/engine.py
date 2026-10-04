@@ -146,6 +146,9 @@ class DataValidationEngine:
         self.register("symbol.spec", self._validate_symbol_spec)
         self.register("market.tick", self._validate_tick)
         self.register("market.bar", self._validate_bar)
+        self.register("account.state", self._validate_account_state)
+        self.register("position.state", self._validate_position_state)
+        self.register("order.state", self._validate_order_state)
 
     @property
     def symbol_specs(self) -> Mapping[int, SymbolSpecSnapshot]:
@@ -588,6 +591,392 @@ class DataValidationEngine:
                     )
                 )
         return tuple(found)
+
+    def _validate_account_state(
+        self,
+        event: EventEnvelope,
+        now_ns: int,
+    ) -> tuple[ValidationIssue, ...]:
+        del now_ns
+        payload, issues = self._mapping_payload(event)
+        if payload is None:
+            return issues
+
+        found = list(issues)
+        required = (
+            "account_id",
+            "account_revision",
+            "balance_units",
+            "equity_units",
+            "credit_units",
+            "profit_units",
+            "margin_units",
+            "free_margin_units",
+            "leverage",
+            "account_mode",
+            "trade_mode",
+            "account_currency_digits",
+            "account_unit_profile_revision",
+        )
+        found.extend(self._required_fields(payload, required, event.topic))
+
+        if "account_id" in payload and not self._is_id128(payload["account_id"]):
+            found.append(
+                ValidationIssue(
+                    code="INVALID_ACCOUNT_ID",
+                    severity=ValidationSeverity.CRITICAL,
+                    message="account_id must be a 128-bit identifier",
+                    field="payload.account_id",
+                )
+            )
+
+        for name in ("account_revision", "leverage", "account_unit_profile_revision"):
+            value = payload.get(name)
+            if value is not None and (not self._is_int(value) or int(value) <= 0):
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_ACCOUNT_STATE_VALUE",
+                        severity=ValidationSeverity.CRITICAL,
+                        message=f"{name} must be a positive integer",
+                        field=f"payload.{name}",
+                    )
+                )
+
+        for name in ("margin_units",):
+            value = payload.get(name)
+            if value is not None and (not self._is_int(value) or int(value) < 0):
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_MARGIN_VALUE",
+                        severity=ValidationSeverity.CRITICAL,
+                        message=f"{name} must be non-negative",
+                        field=f"payload.{name}",
+                    )
+                )
+
+        digits = payload.get("account_currency_digits")
+        if digits is not None and (
+            not self._is_int(digits) or int(digits) < 0 or int(digits) > 18
+        ):
+            found.append(
+                ValidationIssue(
+                    code="INVALID_ACCOUNT_CURRENCY_DIGITS",
+                    severity=ValidationSeverity.CRITICAL,
+                    message="account_currency_digits must be in 0..18",
+                    field="payload.account_currency_digits",
+                )
+            )
+
+        found.extend(
+            self._enum_issues(
+                payload,
+                {
+                    "account_mode": {1, 2, 3},
+                    "trade_mode": {1, 2, 3},
+                },
+            )
+        )
+        return tuple(found)
+
+    def _validate_position_state(
+        self,
+        event: EventEnvelope,
+        now_ns: int,
+    ) -> tuple[ValidationIssue, ...]:
+        del now_ns
+        payload, issues = self._mapping_payload(event)
+        if payload is None:
+            return issues
+
+        found = list(issues)
+        required = (
+            "account_id",
+            "position_ticket",
+            "position_identifier",
+            "instrument_id",
+            "spec_revision",
+            "position_revision",
+            "open_time_ns",
+            "update_time_ns",
+            "volume_units",
+            "open_price_units",
+            "current_price_units",
+            "sl_units",
+            "tp_units",
+            "change_kind",
+            "side",
+            "origin_class",
+        )
+        found.extend(self._required_fields(payload, required, event.topic))
+
+        if "account_id" in payload and not self._is_id128(payload["account_id"]):
+            found.append(
+                ValidationIssue(
+                    code="INVALID_ACCOUNT_ID",
+                    severity=ValidationSeverity.CRITICAL,
+                    message="account_id must be a 128-bit identifier",
+                    field="payload.account_id",
+                )
+            )
+
+        for name in ("position_ticket", "position_identifier", "position_revision"):
+            value = payload.get(name)
+            if value is not None and (not self._is_int(value) or int(value) <= 0):
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_POSITION_IDENTITY",
+                        severity=ValidationSeverity.CRITICAL,
+                        message=f"{name} must be a positive integer",
+                        field=f"payload.{name}",
+                    )
+                )
+
+        found.extend(
+            self._enum_issues(
+                payload,
+                {
+                    "change_kind": {1, 2},
+                    "origin_class": {1, 2, 3, 4, 5, 6},
+                },
+            )
+        )
+
+        change_kind = payload.get("change_kind")
+        side = payload.get("side")
+        if change_kind == 1 and side not in {1, 2}:
+            found.append(
+                ValidationIssue(
+                    code="INVALID_POSITION_SIDE",
+                    severity=ValidationSeverity.CRITICAL,
+                    message="UPSERT position requires BUY or SELL side",
+                    field="payload.side",
+                )
+            )
+
+        open_time = payload.get("open_time_ns")
+        update_time = payload.get("update_time_ns")
+        if self._is_int(open_time) and self._is_int(update_time):
+            if int(open_time) <= 0 or int(update_time) < int(open_time):
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_POSITION_TIME",
+                        severity=ValidationSeverity.CRITICAL,
+                        message="position update time cannot precede open time",
+                    )
+                )
+
+        spec = self._bound_spec(payload, found)
+        volume = payload.get("volume_units")
+        if change_kind == 1:
+            if not self._is_int(volume) or int(volume) <= 0:
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_POSITION_VOLUME",
+                        severity=ValidationSeverity.CRITICAL,
+                        message="UPSERT position requires positive volume_units",
+                        field="payload.volume_units",
+                    )
+                )
+            elif spec is not None:
+                found.extend(self._volume_issues(int(volume), spec, "volume_units"))
+
+            prices = {
+                name: payload.get(name)
+                for name in ("open_price_units", "current_price_units")
+            }
+            if all(self._is_int(value) for value in prices.values()):
+                if any(int(value) <= 0 for value in prices.values()):
+                    found.append(
+                        ValidationIssue(
+                            code="NON_POSITIVE_PRICE",
+                            severity=ValidationSeverity.CRITICAL,
+                            message="position open/current prices must be positive",
+                        )
+                    )
+                if spec is not None:
+                    found.extend(
+                        self._price_quantization_issues(
+                            {name: int(value) for name, value in prices.items()},
+                            spec,
+                        )
+                    )
+
+        if spec is not None:
+            optional_prices = {
+                name: int(value)
+                for name in ("sl_units", "tp_units")
+                if self._is_int((value := payload.get(name))) and int(value) > 0
+            }
+            found.extend(self._price_quantization_issues(optional_prices, spec))
+        return tuple(found)
+
+    def _validate_order_state(
+        self,
+        event: EventEnvelope,
+        now_ns: int,
+    ) -> tuple[ValidationIssue, ...]:
+        del now_ns
+        payload, issues = self._mapping_payload(event)
+        if payload is None:
+            return issues
+
+        found = list(issues)
+        required = (
+            "account_id",
+            "broker_order_ticket",
+            "instrument_id",
+            "spec_revision",
+            "order_revision",
+            "create_time_ns",
+            "update_time_ns",
+            "volume_initial_units",
+            "volume_current_units",
+            "price_open_units",
+            "sl_units",
+            "tp_units",
+            "change_kind",
+            "side",
+            "entry_type",
+            "origin_class",
+            "normalized_order_state",
+            "time_in_force",
+            "filling_policy",
+        )
+        found.extend(self._required_fields(payload, required, event.topic))
+
+        if "account_id" in payload and not self._is_id128(payload["account_id"]):
+            found.append(
+                ValidationIssue(
+                    code="INVALID_ACCOUNT_ID",
+                    severity=ValidationSeverity.CRITICAL,
+                    message="account_id must be a 128-bit identifier",
+                    field="payload.account_id",
+                )
+            )
+
+        for name in ("broker_order_ticket", "order_revision"):
+            value = payload.get(name)
+            if value is not None and (not self._is_int(value) or int(value) <= 0):
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_ORDER_IDENTITY",
+                        severity=ValidationSeverity.CRITICAL,
+                        message=f"{name} must be a positive integer",
+                        field=f"payload.{name}",
+                    )
+                )
+
+        found.extend(
+            self._enum_issues(
+                payload,
+                {
+                    "change_kind": {1, 2},
+                    "side": {1, 2},
+                    "entry_type": {1, 2, 3},
+                    "origin_class": {1, 2, 3, 4, 5, 6},
+                    "normalized_order_state": set(range(1, 11)),
+                    "time_in_force": {0, 1, 2, 3},
+                    "filling_policy": {0, 1, 2, 3, 4},
+                },
+            )
+        )
+
+        create_time = payload.get("create_time_ns")
+        update_time = payload.get("update_time_ns")
+        if self._is_int(create_time) and self._is_int(update_time):
+            if int(create_time) <= 0 or int(update_time) < int(create_time):
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_ORDER_TIME",
+                        severity=ValidationSeverity.CRITICAL,
+                        message="order update time cannot precede create time",
+                    )
+                )
+
+        initial = payload.get("volume_initial_units")
+        current = payload.get("volume_current_units")
+        spec = self._bound_spec(payload, found)
+        if self._is_int(initial) and self._is_int(current):
+            if int(initial) <= 0 or int(current) < 0 or int(current) > int(initial):
+                found.append(
+                    ValidationIssue(
+                        code="INVALID_ORDER_VOLUME",
+                        severity=ValidationSeverity.CRITICAL,
+                        message="order volume relationship is invalid",
+                    )
+                )
+            elif spec is not None:
+                found.extend(self._volume_issues(int(initial), spec, "volume_initial_units"))
+                if int(current) > 0:
+                    found.extend(self._volume_issues(int(current), spec, "volume_current_units"))
+
+        if spec is not None:
+            price_fields = {}
+            for name in ("price_open_units", "stop_limit_units", "sl_units", "tp_units"):
+                value = payload.get(name)
+                if self._is_int(value) and int(value) > 0:
+                    price_fields[name] = int(value)
+            found.extend(self._price_quantization_issues(price_fields, spec))
+        return tuple(found)
+
+    @staticmethod
+    def _enum_issues(
+        payload: Mapping[str, Any],
+        rules: Mapping[str, set[int]],
+    ) -> tuple[ValidationIssue, ...]:
+        issues: list[ValidationIssue] = []
+        for name, allowed in rules.items():
+            value = payload.get(name)
+            if value is None:
+                continue
+            if not DataValidationEngine._is_int(value) or int(value) not in allowed:
+                issues.append(
+                    ValidationIssue(
+                        code="UNKNOWN_ENUM_VALUE",
+                        severity=ValidationSeverity.CRITICAL,
+                        message=f"{name} is outside the frozen KAT1 enum domain",
+                        field=f"payload.{name}",
+                    )
+                )
+        return tuple(issues)
+
+    @staticmethod
+    def _volume_issues(
+        volume_units: int,
+        spec: SymbolSpecSnapshot,
+        field_name: str,
+    ) -> tuple[ValidationIssue, ...]:
+        issues: list[ValidationIssue] = []
+        if volume_units < spec.volume_min_units or volume_units > spec.volume_max_units:
+            issues.append(
+                ValidationIssue(
+                    code="VOLUME_OUT_OF_RANGE",
+                    severity=ValidationSeverity.CRITICAL,
+                    message=f"{field_name} is outside SymbolSpec volume bounds",
+                    field=f"payload.{field_name}",
+                )
+            )
+        if volume_units % spec.volume_step_units != 0:
+            issues.append(
+                ValidationIssue(
+                    code="VOLUME_OFF_STEP_GRID",
+                    severity=ValidationSeverity.CRITICAL,
+                    message=f"{field_name} is not aligned to SymbolSpec volume step",
+                    field=f"payload.{field_name}",
+                )
+            )
+        return tuple(issues)
+
+    @staticmethod
+    def _is_id128(value: Any) -> bool:
+        if isinstance(value, (bytes, bytearray)):
+            return len(value) == 16
+        if isinstance(value, str):
+            compact = value.replace("-", "")
+            return len(compact) == 32 and all(
+                ch in "0123456789abcdefABCDEF" for ch in compact
+            )
+        return False
 
     def _bound_spec(
         self,

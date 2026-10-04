@@ -1,6 +1,6 @@
 {
   "stage": "08",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "status": "STAGE_08_IMPLEMENTATION_ACTIVE",
   "frozen_inputs": {
     "protocol": "KAT1 v1.0.0",
@@ -49,7 +49,10 @@
   "implementation": {
     "engine": "src/katarina/validation/engine.py",
     "tests": "tests/unit/validation/test_stage08_validation.py",
-    "architecture": "docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md"
+    "architecture": "docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md",
+    "property_tests": "tests/unit/validation/test_stage08_properties.py",
+    "state_semantic_tests": "tests/unit/validation/test_stage08_state_semantics.py",
+    "final_audit": "scripts/stage08/audit_stage08_final.py"
   },
   "progress": {
     "baseline_engine": true,
@@ -59,8 +62,8 @@
     "history_completeness": true,
     "per_class_freshness": true,
     "readiness_integration": true,
-    "property_tests": false,
-    "account_position_order_rules": false,
-    "final_audit": false
+    "property_tests": true,
+    "account_position_order_rules": true,
+    "final_audit": true
   }
 }
