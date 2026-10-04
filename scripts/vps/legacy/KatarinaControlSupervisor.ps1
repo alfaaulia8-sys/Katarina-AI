@@ -6,6 +6,12 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
+
+$SupervisorMutex = New-Object Threading.Mutex($false,"Global\KatarinaControlSupervisor")
+$SupervisorAcquired = $false
+try { $SupervisorAcquired = $SupervisorMutex.WaitOne(0,$false) } catch { $SupervisorAcquired = $false }
+if(-not $SupervisorAcquired) { exit 0 }
+
 $LogPath = Join-Path $InstallRoot "control_supervisor.log"
 $StateRoot = Join-Path $InstallRoot "supervisor"
 New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
