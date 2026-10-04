@@ -287,26 +287,80 @@ def add_url(dialog: Any, value: str) -> None:
         time.sleep(0.5)
         return
 
-    uia = Desktop(backend="uia").window(handle=dialog.handle)
-    rect = uia.rectangle()
-    edits = []
-    for control in uia.descendants(control_type="Edit"):
+    # Current MT5 builds expose the URL editor as a SysListView32 containing
+    # an empty insertion ListItem. Double-clicking that row creates the inline
+    # edit control. This is more reliable than searching for an Edit before
+    # edit mode is active.
+    for backend in ("uia", "win32"):
         try:
-            if control.is_visible() and control.is_enabled():
-                crect = control.rectangle()
-                if crect.top > rect.top + (rect.height() // 2):
-                    edits.append(control)
+            d = Desktop(backend=backend).window(handle=dialog.handle)
+            lists = []
+            for control in d.descendants():
+                try:
+                    info = control.element_info
+                    control_type = str(getattr(info, "control_type", ""))
+                    class_name = str(getattr(info, "class_name", ""))
+                    automation_id = str(getattr(info, "automation_id", ""))
+                    if (
+                        control_type == "List"
+                        or class_name == "SysListView32"
+                        or automation_id == "10191"
+                    ):
+                        lists.append(control)
+                except Exception:
+                    pass
+
+            for list_control in lists:
+                items = []
+                try:
+                    items = list_control.descendants(control_type="ListItem")
+                except Exception:
+                    pass
+                if not items:
+                    try:
+                        items = list_control.children()
+                    except Exception:
+                        items = []
+
+                target = items[-1] if items else list_control
+                try:
+                    target.double_click_input()
+                except Exception:
+                    target.click_input()
+                    keyboard.send_keys("{F2}")
+                time.sleep(0.35)
+
+                # Inline edit exists only after the ListView item enters edit mode.
+                inline = None
+                try:
+                    uia = Desktop(backend="uia").window(handle=dialog.handle)
+                    edits = [
+                        edit for edit in uia.descendants(control_type="Edit")
+                        if edit.is_visible() and edit.is_enabled()
+                    ]
+                    if edits:
+                        inline = edits[-1]
+                except Exception:
+                    pass
+
+                if inline is not None:
+                    try:
+                        inline.set_edit_text(value)
+                    except Exception:
+                        inline.click_input()
+                        keyboard.send_keys("^a")
+                        keyboard.write(value, with_spaces=True)
+                else:
+                    keyboard.send_keys("^a")
+                    keyboard.write(value, with_spaces=True)
+
+                keyboard.send_keys("{ENTER}")
+                time.sleep(0.6)
+                return
         except Exception:
             pass
-    if edits:
-        edit = edits[-1]
-        edit.set_edit_text(value)
-        keyboard.send_keys("{ENTER}")
-        time.sleep(0.5)
-        return
 
-    raise RuntimeError("MetaTrader URL insertion row/edit control was not found")
-
+    raise RuntimeError("MetaTrader URL insertion ListView could not enter edit mode")
 
 def visible_url_texts(dialog: Any) -> list[str]:
     uia = Desktop(backend="uia").window(handle=dialog.handle)
