@@ -831,6 +831,44 @@ ShutdownTerminal=1
         if([string]$probe.result -ne "PASS"){throw "Portable Python smoke test did not pass."}
     }
 
+    "WORKSPACE_BOOTSTRAP_PYTHON" {
+        foreach($dir in @($WorkspaceRoot,$Runtime,$Evidence,$Logs)) {
+            New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        }
+        $uri="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
+        $zip=Join-Path $Runtime "python-3.8.10-embed-amd64.zip"
+        $pythonDir=Join-Path $Runtime "python"
+        if(Test-Path -LiteralPath $pythonDir) {
+            $old=Join-Path $Snapshots ("python_prebootstrap_"+[DateTime]::UtcNow.ToString("yyyyMMdd_HHmmss"))
+            New-Item -ItemType Directory -Force -Path $Snapshots | Out-Null
+            Move-Item -LiteralPath $pythonDir -Destination $old -Force
+        }
+        Invoke-WebRequest -Uri $uri -OutFile $zip -UseBasicParsing
+        $sha=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+        New-Item -ItemType Directory -Force -Path $pythonDir | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [IO.Compression.ZipFile]::ExtractToDirectory($zip,$pythonDir)
+        $python=Join-Path $pythonDir "python.exe"
+        if(!(Test-Path -LiteralPath $python -PathType Leaf)) { throw "Embedded Python extraction did not produce python.exe." }
+
+        $version=& $python -c "import sys,platform; print(sys.version.split()[0]); print(platform.architecture()[0]); print(sys.executable)"
+        if($LASTEXITCODE -ne 0) { throw "Embedded Python self-test failed." }
+        $lines=@($version)
+        if($lines.Count -lt 2 -or $lines[0] -ne "3.8.10" -or $lines[1] -ne "64bit") {
+            throw "Unexpected embedded Python identity: $($lines -join ' | ')"
+        }
+        Write-Json (Join-Path $Evidence "python_runtime.json") ([ordered]@{
+            schema_version=1
+            source_url=$uri
+            archive_sha256=$sha
+            version=$lines[0]
+            architecture=$lines[1]
+            executable=$lines[2]
+            verified_utc=[DateTime]::UtcNow.ToString("o")
+            result="PASS"
+        })
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
