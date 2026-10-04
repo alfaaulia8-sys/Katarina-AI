@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "request_id": "zz01-runtime",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "created_utc": "2026-10-04T03:27:01.137Z",
+  "expires_utc": "2026-10-04T04:12:01.137Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_RUNTIME_BOOTSTRAP"
+  }
+}
