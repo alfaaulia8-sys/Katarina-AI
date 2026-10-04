@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "request_id": "ws2",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "created_utc": "2026-10-04T01:54:47.429Z",
+  "expires_utc": "2026-10-04T02:14:47.429Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_INIT",
+    "source_sha": "bf71b6e26801795d1ab9685932993a739b62c349"
+  }
+}
