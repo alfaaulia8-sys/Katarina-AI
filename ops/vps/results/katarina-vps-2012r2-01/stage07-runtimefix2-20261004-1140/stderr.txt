@@ -1,0 +1,79 @@
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:125 char:1
++ import sys
++ ~~~~~~
+Missing closing ')' after expression in 'if' statement.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:129 char:17
++ print("pyzmq=" + zmq.__version__)
++                 ~
+You must provide a value expression following the '+' operator.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:129 char:18
++ print("pyzmq=" + zmq.__version__)
++                  ~~~~~~~~~~~~~~~
+Unexpected token 'zmq.__version__' in expression or statement.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:129 char:17
++ print("pyzmq=" + zmq.__version__)
++                 ~
+Missing closing ')' in expression.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:98 char:30
++ foreach ($Line in $Existing) {
++                              ~
+Missing closing '}' in statement block.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:129 char:33
++ print("pyzmq=" + zmq.__version__)
++                                 ~
+Unexpected token ')' in expression or statement.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:130 char:18
++ print("libzmq=" + zmq.zmq_version())
++                  ~
+You must provide a value expression following the '+' operator.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:130 char:19
++ print("libzmq=" + zmq.zmq_version())
++                   ~~~~~~~~~~~~~~~
+Unexpected token 'zmq.zmq_version' in expression or statement.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:130 char:18
++ print("libzmq=" + zmq.zmq_version())
++                  ~
+Missing closing ')' in expression.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Bootstra
+p-KatarinaPortablePython.ps1:130 char:35
++ print("libzmq=" + zmq.zmq_version())
++                                   ~
+An expression was expected after '('.
+Not all parse errors were reported.  Correct the reported errors and try again.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordEx 
+   ception
+    + FullyQualifiedErrorId : MissingEndParenthesisAfterStatement
+ 
+Portable Python bootstrap evidence is missing.
+At C:\KatarinaVPSAgent\work\stage07-runtimefix2-20261004-1140\src\alfaaulia-kat
+arina-Katarina-AI-431591d80f03886e0c97398736085ddda86b6d3d\scripts\vps\Invoke-K
+atarinaWorkspaceTask.ps1:101 char:75
++         if(!(Test-Path -LiteralPath $bootstrapEvidence -PathType Leaf)) { thr
+ow  ...
++                                                                           ~~~
+~~~
+    + CategoryInfo          : OperationStopped: (Portable Python...nce is miss 
+   ing.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Portable Python bootstrap evidence is missing.
+ 
+
+Workspace child task produced no status evidence.
