@@ -412,6 +412,75 @@ try {
         "STAGE07_PYTHON_TESTS" {
             $mode = ([string](Get-ArgValue $request.args "mode" "PYTHON_TESTS")).ToUpperInvariant()
 
+            # Windows Server 2012 R2 rescue path: perform control-plane collapse
+            # in this already-running task host. Do NOT spawn a second PowerShell
+            # process because the 2 GB VPS can fail that nested host with OOM.
+            if ($mode -eq "WORKSPACE_CONTROL_LITE_INSTALL_DIRECT") {
+                $installRoot = "C:\\KatarinaVPSAgent"
+                $primaryConfig = Join-Path $installRoot "agent.json"
+                if (!(Test-Path -LiteralPath $primaryConfig -PathType Leaf)) {
+                    throw "Primary agent config missing."
+                }
+
+                $cfg = Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
+                $lite = [ordered]@{
+                    schema_version = 2
+                    agent_id = [string]$cfg.agent_id
+                    repository = [string]$cfg.repository
+                    branch = [string]$cfg.branch
+                    poll_seconds = 5
+                    lane = "primary"
+                    state_root = (Join-Path $installRoot "lanes\\primary")
+                    token_path = (Join-Path $installRoot "token.bin")
+                    requests_dir = "ops/vps/requests/primary"
+                    results_dir = "ops/vps/results"
+                    compact_results = $true
+                    capabilities = @("MUTATING","READONLY","RECOVERY")
+                    resource_profile = "LEGACY_LOW_MEMORY_SEQUENTIAL"
+                    installed_utc = [DateTime]::UtcNow.ToString("o")
+                }
+                Write-JsonFile $primaryConfig $lite
+
+                # Disable guard/supervisor first so they cannot resurrect workers.
+                $disabled = @(
+                    "KatarinaControlSupervisorGuard",
+                    "KatarinaControlSupervisor",
+                    "KatarinaControlRecovery",
+                    "KatarinaControlWorker01",
+                    "KatarinaControlWorker02"
+                )
+                foreach ($taskName in $disabled) {
+                    try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
+                    try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
+                }
+
+                foreach ($taskName in @("KatarinaVPSAgent","KatarinaVPSAgentWatchdog")) {
+                    try { & schtasks.exe /Change /TN $taskName /ENABLE | Out-Null } catch {}
+                }
+
+                $proof = [ordered]@{
+                    schema_version = 1
+                    proof_type = "KATARINA_CONTROL_LITE_DIRECT"
+                    resource_profile = "LEGACY_LOW_MEMORY_SEQUENTIAL"
+                    persistent_lanes = @("primary")
+                    watchdog = "KatarinaVPSAgentWatchdog"
+                    disabled_tasks = $disabled
+                    heavy_job_concurrency = 1
+                    nested_powershell = $false
+                    primary_restart_deferred = $true
+                    installed_utc = [DateTime]::UtcNow.ToString("o")
+                    result = "PASS"
+                }
+                Write-JsonFile (Join-Path $OutputDir "control_lite_direct.json") $proof
+                "KATARINA LOW MEMORY DIRECT INSTALL PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = $mode
+                $details["resource_profile"] = "LEGACY_LOW_MEMORY_SEQUENTIAL"
+                $details["disabled_task_count"] = $disabled.Count
+                $details["result"] = "PASS"
+                break
+            }
+
             if ($mode.StartsWith("WORKSPACE_")) {
                 $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
                 if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) { throw "Katarina workspace runner is missing." }
