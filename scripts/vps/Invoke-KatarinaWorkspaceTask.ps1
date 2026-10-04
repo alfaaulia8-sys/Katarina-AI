@@ -111,6 +111,257 @@ switch($mode) {
         break
     }
 
+    "WORKSPACE_CONTROL_PLANE_V2_INSTALL" {
+        $installRoot="C:\KatarinaVPSAgent"
+        $tokenPath=Join-Path $installRoot "token.bin"
+        $primaryConfigPath=Join-Path $installRoot "agent.json"
+        $agentSource=Join-Path $RepoRoot "scripts\vps\legacy\KatarinaVpsAgent.ps1"
+        $watchdogSource=Join-Path $RepoRoot "scripts\vps\legacy\KatarinaVpsAgentWatchdog.ps1"
+        $supervisorSource=Join-Path $RepoRoot "scripts\vps\legacy\KatarinaControlSupervisor.ps1"
+
+        foreach($required in @($tokenPath,$primaryConfigPath,$agentSource,$watchdogSource,$supervisorSource)) {
+            if(!(Test-Path -LiteralPath $required -PathType Leaf)) { throw "Control Plane v2 prerequisite missing: $required" }
+        }
+
+        $existing=Get-Content -LiteralPath $primaryConfigPath -Raw | ConvertFrom-Json
+        $repoName=[string]$existing.repository
+        $branchName=[string]$existing.branch
+        $primaryAgentId=[string]$existing.agent_id
+        if([string]::IsNullOrWhiteSpace($repoName)){ $repoName="alfaaulia-katarina/Katarina-AI" }
+        if([string]::IsNullOrWhiteSpace($branchName)){ $branchName="main" }
+        if([string]::IsNullOrWhiteSpace($primaryAgentId)){ $primaryAgentId="katarina-vps-2012r2-01" }
+
+        New-Item -ItemType Directory -Force -Path $installRoot,(Join-Path $installRoot "lanes") | Out-Null
+        Copy-Item -LiteralPath $agentSource -Destination (Join-Path $installRoot "KatarinaVpsAgent.ps1") -Force
+        Copy-Item -LiteralPath $watchdogSource -Destination (Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1") -Force
+        Copy-Item -LiteralPath $supervisorSource -Destination (Join-Path $installRoot "KatarinaControlSupervisor.ps1") -Force
+
+        $common=[ordered]@{
+            schema_version=2
+            repository=$repoName
+            branch=$branchName
+            poll_seconds=5
+            requests_dir="ops/vps/requests/legacy"
+            results_dir="ops/vps/results"
+            token_path=$tokenPath
+            installed_utc=[DateTime]::UtcNow.ToString("o")
+        }
+
+        $primary=[ordered]@{}
+        foreach($k in $common.Keys){$primary[$k]=$common[$k]}
+        $primary.agent_id=$primaryAgentId
+        $primary.lane="primary"
+        $primary.state_root=Join-Path $installRoot "lanes\primary"
+        $primary.capabilities=@("MUTATING","READONLY","RECOVERY")
+        Write-Json $primaryConfigPath $primary
+
+        $recovery=[ordered]@{}
+        foreach($k in $common.Keys){$recovery[$k]=$common[$k]}
+        $recovery.agent_id=$primaryAgentId+"-recovery"
+        $recovery.lane="recovery"
+        $recovery.state_root=Join-Path $installRoot "lanes\recovery"
+        $recovery.capabilities=@("RECOVERY","READONLY")
+        $recoveryConfigPath=Join-Path $installRoot "agent-recovery.json"
+        Write-Json $recoveryConfigPath $recovery
+
+        $worker01=[ordered]@{}
+        foreach($k in $common.Keys){$worker01[$k]=$common[$k]}
+        $worker01.agent_id=$primaryAgentId+"-worker01"
+        $worker01.lane="worker01"
+        $worker01.state_root=Join-Path $installRoot "lanes\worker01"
+        $worker01.capabilities=@("READONLY")
+        $worker01ConfigPath=Join-Path $installRoot "agent-worker01.json"
+        Write-Json $worker01ConfigPath $worker01
+
+        $worker02=[ordered]@{}
+        foreach($k in $common.Keys){$worker02[$k]=$common[$k]}
+        $worker02.agent_id=$primaryAgentId+"-worker02"
+        $worker02.lane="worker02"
+        $worker02.state_root=Join-Path $installRoot "lanes\worker02"
+        $worker02.capabilities=@("READONLY")
+        $worker02ConfigPath=Join-Path $installRoot "agent-worker02.json"
+        Write-Json $worker02ConfigPath $worker02
+
+        $agentPath=Join-Path $installRoot "KatarinaVpsAgent.ps1"
+        $supervisorPath=Join-Path $installRoot "KatarinaControlSupervisor.ps1"
+        $watchdogPath=Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1"
+
+        $taskDefs=@(
+            [pscustomobject]@{name="KatarinaControlRecovery";config=$recoveryConfigPath},
+            [pscustomobject]@{name="KatarinaControlWorker01";config=$worker01ConfigPath},
+            [pscustomobject]@{name="KatarinaControlWorker02";config=$worker02ConfigPath}
+        )
+        foreach($td in $taskDefs) {
+            $cmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$agentPath+'" -ConfigPath "'+$td.config+'"'
+            & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN $td.name /TR $cmd | Out-Null
+            if($LASTEXITCODE -ne 0){throw "Failed to register lane task: $($td.name)"}
+        }
+
+        $supervisorCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$supervisorPath+'" -InstallRoot "'+$installRoot+'"'
+        & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN "KatarinaControlSupervisor" /TR $supervisorCmd | Out-Null
+        if($LASTEXITCODE -ne 0){throw "Failed to register KatarinaControlSupervisor."}
+        & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaControlSupervisorGuard" /TR $supervisorCmd | Out-Null
+        if($LASTEXITCODE -ne 0){throw "Failed to register KatarinaControlSupervisorGuard."}
+
+        $watchdogCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$watchdogPath+'" -InstallRoot "'+$installRoot+'"'
+        & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaVPSAgentWatchdog" /TR $watchdogCmd | Out-Null
+        if($LASTEXITCODE -ne 0){throw "Failed to register fallback watchdog."}
+
+        foreach($task in @("KatarinaControlRecovery","KatarinaControlWorker01","KatarinaControlWorker02","KatarinaControlSupervisor","KatarinaVPSAgentWatchdog")) {
+            & schtasks.exe /Run /TN $task | Out-Null
+            if($LASTEXITCODE -ne 0){throw "Failed to start Control Plane v2 task: $task"}
+        }
+
+        Start-Sleep -Seconds 10
+
+        $laneChecks=@()
+        foreach($laneName in @("recovery","worker01","worker02")) {
+            $hbPath=Join-Path $installRoot ("lanes\"+$laneName+"\heartbeat.json")
+            $ok=Test-Path -LiteralPath $hbPath -PathType Leaf
+            $hb=$null
+            if($ok){try{$hb=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json}catch{$ok=$false}}
+            $laneChecks += [ordered]@{
+                lane=$laneName
+                heartbeat_path=$hbPath
+                heartbeat_present=$ok
+                phase=$(if($hb){[string]$hb.phase}else{$null})
+                agent_version=$(if($hb){[string]$hb.agent_version}else{$null})
+                updated_utc=$(if($hb){[string]$hb.updated_utc}else{$null})
+            }
+        }
+
+        $allReady=(@($laneChecks | Where-Object { -not $_.heartbeat_present }).Count -eq 0)
+        Write-Json (Join-Path $OutputDir "control_plane_v2_install.json") ([ordered]@{
+            schema_version=1
+            proof_type="KATARINA_CONTROL_PLANE_V2_INSTALL"
+            primary_agent_id=$primaryAgentId
+            lanes=@("primary","recovery","worker01","worker02")
+            polling_seconds=5
+            supervisor_check_seconds=5
+            supervisor_stale_seconds=35
+            fallback_watchdog_minutes=1
+            primary_restart_pending=$true
+            lane_checks=$laneChecks
+            installed_utc=[DateTime]::UtcNow.ToString("o")
+            result=$(if($allReady){"PASS"}else{"FAIL"})
+        })
+        if(!$allReady){throw "One or more secondary Control Plane v2 lanes failed to publish heartbeat."}
+        break
+    }
+
+    "WORKSPACE_CONTROL_RESTART_PRIMARY" {
+        $installRoot="C:\KatarinaVPSAgent"
+        $primaryConfig=Join-Path $installRoot "agent.json"
+        $agentScript=Join-Path $installRoot "KatarinaVpsAgent.ps1"
+        if(!(Test-Path -LiteralPath $primaryConfig -PathType Leaf)){throw "Primary agent config missing."}
+        if(!(Test-Path -LiteralPath $agentScript -PathType Leaf)){throw "Primary agent script missing."}
+
+        $terminated=@()
+        try {
+            foreach($proc in @(Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
+                if($proc.CommandLine -and
+                   $proc.CommandLine.IndexOf("KatarinaVpsAgent.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                   $proc.CommandLine.IndexOf($primaryConfig,[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                    $terminated += [int]$proc.ProcessId
+                    try{[void]$proc.Terminate()}catch{}
+                }
+            }
+        } catch {}
+        Start-Sleep -Seconds 2
+
+        try{& schtasks.exe /End /TN "KatarinaVPSAgent" | Out-Null}catch{}
+        Start-Sleep -Seconds 1
+        & schtasks.exe /Run /TN "KatarinaVPSAgent" | Out-Null
+        if($LASTEXITCODE -ne 0){throw "Failed to start primary KatarinaVPSAgent task."}
+
+        $hbPath=Join-Path $installRoot "lanes\primary\heartbeat.json"
+        $deadline=[DateTime]::UtcNow.AddSeconds(25)
+        $hb=$null
+        while([DateTime]::UtcNow -lt $deadline) {
+            if(Test-Path -LiteralPath $hbPath -PathType Leaf) {
+                try{
+                    $candidate=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
+                    if([string]$candidate.agent_version -eq "1.3.0"){$hb=$candidate;break}
+                }catch{}
+            }
+            Start-Sleep -Seconds 2
+        }
+        if($null -eq $hb){throw "Primary lane did not return with agent v1.3.0 within 25 seconds."}
+
+        Write-Json (Join-Path $OutputDir "control_primary_restart.json") ([ordered]@{
+            schema_version=1
+            proof_type="KATARINA_CONTROL_PRIMARY_RESTART"
+            terminated_process_ids=$terminated
+            heartbeat_path=$hbPath
+            agent_version=[string]$hb.agent_version
+            phase=[string]$hb.phase
+            updated_utc=[string]$hb.updated_utc
+            result="PASS"
+        })
+        break
+    }
+
+    "WORKSPACE_CONTROL_STATUS" {
+        $installRoot="C:\KatarinaVPSAgent"
+        $defs=@(
+            [pscustomobject]@{lane="primary";task="KatarinaVPSAgent";config="agent.json"},
+            [pscustomobject]@{lane="recovery";task="KatarinaControlRecovery";config="agent-recovery.json"},
+            [pscustomobject]@{lane="worker01";task="KatarinaControlWorker01";config="agent-worker01.json"},
+            [pscustomobject]@{lane="worker02";task="KatarinaControlWorker02";config="agent-worker02.json"}
+        )
+        $records=@()
+        $allHealthy=$true
+        foreach($d in $defs) {
+            $configPath=Join-Path $installRoot $d.config
+            $hbPath=Join-Path $installRoot ("lanes\"+$d.lane+"\heartbeat.json")
+            $hb=$null
+            $age=$null
+            if(Test-Path -LiteralPath $hbPath -PathType Leaf) {
+                try{
+                    $hb=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
+                    $updated=[DateTime]::Parse([string]$hb.updated_utc,[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal).ToUniversalTime()
+                    $age=[math]::Round(([DateTime]::UtcNow-$updated).TotalSeconds,1)
+                }catch{}
+            }
+
+            $processCount=0
+            try {
+                $processCount=@(
+                    Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+                    Where-Object {
+                        $_.CommandLine -and
+                        $_.CommandLine.IndexOf("KatarinaVpsAgent.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                        $_.CommandLine.IndexOf($configPath,[StringComparison]::OrdinalIgnoreCase) -ge 0
+                    }
+                ).Count
+            } catch {}
+
+            $healthy=($null -ne $hb -and $null -ne $age -and $age -lt 60 -and $processCount -eq 1)
+            if(!$healthy){$allHealthy=$false}
+            $records += [ordered]@{
+                lane=[string]$d.lane
+                task=[string]$d.task
+                config=$configPath
+                process_count=$processCount
+                agent_version=$(if($hb){[string]$hb.agent_version}else{$null})
+                phase=$(if($hb){[string]$hb.phase}else{$null})
+                heartbeat_age_seconds=$age
+                healthy=$healthy
+            }
+        }
+
+        Write-Json (Join-Path $OutputDir "control_plane_status.json") ([ordered]@{
+            schema_version=1
+            proof_type="KATARINA_CONTROL_PLANE_STATUS"
+            lanes=$records
+            supervisor_log_exists=(Test-Path -LiteralPath (Join-Path $installRoot "control_supervisor.log") -PathType Leaf)
+            generated_utc=[DateTime]::UtcNow.ToString("o")
+            result=$(if($allHealthy){"PASS"}else{"FAIL"})
+        })
+        if(!$allHealthy){throw "Control Plane v2 status is not fully healthy."}
+        break
+    }
+
     "WORKSPACE_AGENT_SELF_HEAL_INSTALL" {
         $installRoot="C:\KatarinaVPSAgent"
         $agentTask="KatarinaVPSAgent"
