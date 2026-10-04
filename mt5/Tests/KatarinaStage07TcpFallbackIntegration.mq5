@@ -13,7 +13,8 @@ void WriteEvidence(const bool passed,
                    const int last_error,
                    const int frame_length,
                    const ulong frames_sent,
-                   const ulong frames_received)
+                   const ulong frames_received,
+                   const string failure_phase="")
   {
    const int handle=FileOpen("Katarina_Stage07_tcp_fallback_result.txt",
                              FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_COMMON);
@@ -30,6 +31,12 @@ void WriteEvidence(const bool passed,
    FileWrite(handle,"frames_sent="+IntegerToString((long)frames_sent));
    FileWrite(handle,"frames_received="+IntegerToString((long)frames_received));
    FileWrite(handle,"last_error="+IntegerToString(last_error));
+   FileWrite(handle,"failure_phase="+failure_phase);
+   FileWrite(handle,"program_type="+IntegerToString((int)MQLInfoInteger(MQL_PROGRAM_TYPE)));
+   FileWrite(handle,"started_from_config="+(MQLInfoInteger(MQL_STARTED_FROM_CONFIG) ? "true" : "false"));
+   FileWrite(handle,"mql_tester="+(MQLInfoInteger(MQL_TESTER) ? "true" : "false"));
+   FileWrite(handle,"mql_trade_allowed="+(MQLInfoInteger(MQL_TRADE_ALLOWED) ? "true" : "false"));
+   FileWrite(handle,"terminal_connected="+(TerminalInfoInteger(TERMINAL_CONNECTED) ? "true" : "false"));
    FileWrite(handle,"detail="+detail);
    FileWrite(handle,"result="+(passed ? "PASS" : "FAIL"));
    FileClose(handle);
@@ -56,13 +63,14 @@ void OnStart(void)
    ResetLastError();
    if(!transport.Start(KAT7_TCP_ENDPOINT,3000,5000))
      {
-      const int code=GetLastError();
+      const int code=transport.LastError();
       WriteEvidence(false,
-                    "START_FAILED_ALLOW_127_0_0_1_IN_TERMINAL_NETWORK_LIST",
+                    "START_FAILED",
                     code,
                     ArraySize(golden),
                     transport.FramesSent(),
-                    transport.FramesReceived());
+                    transport.FramesReceived(),
+                    transport.LastFailurePhase());
       return;
      }
 

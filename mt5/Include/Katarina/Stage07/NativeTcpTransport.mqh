@@ -16,6 +16,8 @@ private:
    ulong  m_frames_received;
    ulong  m_send_failures;
    ulong  m_receive_failures;
+   int    m_last_error;
+   string m_last_failure_phase;
 
    bool ParseEndpoint(const string endpoint,string &host,uint &port) const
      {
@@ -119,6 +121,8 @@ public:
       m_frames_received=0;
       m_send_failures=0;
       m_receive_failures=0;
+      m_last_error=0;
+      m_last_failure_phase="";
      }
 
                     ~CKatNativeTcpByteTransport(void)
@@ -130,29 +134,48 @@ public:
                            const uint connect_timeout_ms=3000,
                            const uint io_timeout_ms=5000)
      {
+      m_last_error=0;
+      m_last_failure_phase="";
+
       if(m_started)
          return(true);
       if(connect_timeout_ms==0 || io_timeout_ms==0)
+        {
+         m_last_failure_phase="INVALID_TIMEOUT";
          return(false);
+        }
 
       string host="";
       uint port=0;
       if(!ParseEndpoint(endpoint,host,port))
+        {
+         m_last_failure_phase="PARSE_ENDPOINT";
          return(false);
+        }
 
       ResetLastError();
       const int socket=SocketCreate(SOCKET_DEFAULT);
       if(socket==INVALID_HANDLE)
+        {
+         m_last_error=GetLastError();
+         m_last_failure_phase="SOCKET_CREATE";
          return(false);
+        }
 
+      ResetLastError();
       if(!SocketTimeouts(socket,io_timeout_ms,io_timeout_ms))
         {
+         m_last_error=GetLastError();
+         m_last_failure_phase="SOCKET_TIMEOUTS";
          SocketClose(socket);
          return(false);
         }
 
+      ResetLastError();
       if(!SocketConnect(socket,host,port,connect_timeout_ms))
         {
+         m_last_error=GetLastError();
+         m_last_failure_phase="SOCKET_CONNECT";
          SocketClose(socket);
          return(false);
         }
@@ -293,6 +316,8 @@ public:
    ulong             FramesReceived(void) const { return(m_frames_received); }
    ulong             SendFailures(void) const { return(m_send_failures); }
    ulong             ReceiveFailures(void) const { return(m_receive_failures); }
+   int               LastError(void) const { return(m_last_error); }
+   string            LastFailurePhase(void) const { return(m_last_failure_phase); }
    string            Endpoint(void) const { return(m_endpoint); }
    string            Host(void) const { return(m_host); }
    uint              Port(void) const { return(m_port); }

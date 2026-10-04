@@ -178,16 +178,11 @@ jobs:
             Remove-Item $mt5Evidence -Force -ErrorAction SilentlyContinue
 
             $config = "$env:RUNNER_TEMP\stage07-tcp-final.ini"
+            # Do not provide an [Experts] section here. The preceding UI step
+            # persisted the terminal's trusted-address settings. Supplying partial
+            # Expert settings in a startup config can shadow/reset that persisted
+            # state on a fresh terminal process.
             @(
-              "[Experts]",
-              "AllowLiveTrading=0",
-              "AllowDllImport=0",
-              "Enabled=1",
-              "Account=0",
-              "Profile=0",
-              "WebRequest=1",
-              "WebRequestUrl=127.0.0.1",
-              "",
               "[StartUp]",
               "Script=KatarinaStage07TcpFallbackIntegration",
               "Symbol=",
