@@ -1,0 +1,12 @@
+QL	0	10:18:01.797	Terminal	updating C:\Program Files\MetaTrader 5\MQL5 folder
+DJ	0	10:18:01.797	Terminal	453 files updated
+QF	0	10:18:01.836	Startup	successfully initialized from start config "C:\KatarinaVPSAgent\work\s7r5\output\stage07_sequence_phase1.ini"
+JO	0	10:18:01.901	Terminal	MetaTrader 5 x64 build 6230 started for MetaQuotes Ltd.
+LD	0	10:18:01.901	Terminal	Windows Server 2012 R2 build 9600 on KVM, 2 x Intel Xeon E-2236  @ 3.40GHz, AVX2, 0 / 1 Gb memory, 16 / 39 Gb disk, UAC, admin, GMT+7
+OH	0	10:18:01.901	Terminal	C:\Program Files\MetaTrader 5
+RS	0	10:18:01.901	Terminal	launched with C:\KatarinaVPSAgent\work\s7r5\output\stage07_sequence_phase1.ini
+KP	0	10:18:01.902	Compiler	full recompilation has been started
+HF	0	10:18:02.315	Terminal	exit with code 0
+EO	0	10:18:02.797	Terminal	stopped with 10053
+RO	0	10:18:03.237	Terminal	shutdown with 10053
+
