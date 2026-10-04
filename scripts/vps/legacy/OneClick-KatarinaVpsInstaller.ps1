@@ -4,13 +4,14 @@ $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
 
-$InstallerVersion = "1.2.3"
+$InstallerVersion = "1.2.5"
 $AgentId = "katarina-vps-2012r2-01"
 $Repository = "alfaaulia-katarina/Katarina-AI"
 $Branch = "main"
 $InstallRoot = "C:\KatarinaVPSAgent"
 $PreflightScript = Join-Path $PSScriptRoot "Test-KatarinaVpsPrerequisites.ps1"
 $AgentSource = Join-Path $PSScriptRoot "KatarinaVpsAgent.ps1"
+$WatchdogSource = Join-Path $PSScriptRoot "KatarinaVpsAgentWatchdog.ps1"
 $SessionId = "bootstrap-" + [DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + ([Guid]::NewGuid().ToString("N").Substring(0,8))
 $LocalLog = Join-Path $env:TEMP ("katarina-" + $SessionId + ".log")
 $script:Headers = $null
@@ -185,6 +186,7 @@ try {
 
     if (!(Test-Path $PreflightScript)) { throw "Missing preflight script." }
     if (!(Test-Path $AgentSource)) { throw "Missing KatarinaVpsAgent.ps1." }
+    if (!(Test-Path $WatchdogSource)) { throw "Missing KatarinaVpsAgentWatchdog.ps1." }
 
     Log-Line "Running VPS preflight..."
     $preflightOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $PreflightScript 2>&1
@@ -219,6 +221,7 @@ try {
     }
 
     Copy-Item -Path $AgentSource -Destination (Join-Path $InstallRoot "KatarinaVpsAgent.ps1") -Force
+    Copy-Item -Path $WatchdogSource -Destination (Join-Path $InstallRoot "KatarinaVpsAgentWatchdog.ps1") -Force
 
     $config = [ordered]@{
         schema_version = 1
@@ -245,6 +248,14 @@ try {
 
     & schtasks.exe /Run /TN $taskName | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "KatarinaVPSAgent task was created but failed to start." }
+
+    $watchdogTaskName = "KatarinaVPSAgentWatchdog"
+    $watchdogPath = Join-Path $InstallRoot "KatarinaVpsAgentWatchdog.ps1"
+    $watchdogCommand = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $watchdogPath + '" -InstallRoot "' + $InstallRoot + '"'
+    & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN $watchdogTaskName /TR $watchdogCommand | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Failed to create KatarinaVPSAgentWatchdog scheduled task." }
+    & schtasks.exe /Run /TN $watchdogTaskName | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "KatarinaVPSAgentWatchdog task was created but failed to start." }
 
     Log-Line "Waiting for persistent agent health..."
     $online = $false
