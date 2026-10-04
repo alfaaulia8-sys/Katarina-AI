@@ -1,11 +1,11 @@
 {
     "schema_version":  1,
-    "agent_version":  "1.3.1",
+    "agent_version":  "1.4.0",
     "agent_id":  "katarina-vps-2012r2-01-recovery",
     "lane":  "recovery",
-    "process_id":  828,
+    "process_id":  2420,
     "computer_name":  "WIN-4TTT19K3CL8",
     "state":  "ONLINE",
     "error":  "",
-    "updated_utc":  "2026-10-04T07:24:51.7182495Z"
+    "updated_utc":  "2026-10-04T08:33:33.7963753Z"
 }
