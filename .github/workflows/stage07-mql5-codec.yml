@@ -122,7 +122,7 @@ jobs:
 
           [StartUp]
           Script=KatarinaStage07Kat1CodecTest
-          Symbol=EURUSD
+          Symbol=
           Period=H1
           ShutdownTerminal=1
           "@ | Set-Content -Path $config -Encoding ASCII
