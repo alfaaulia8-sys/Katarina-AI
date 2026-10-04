@@ -36,11 +36,21 @@
     "TRANSPORT_READY"
   ],
   "sequence": {
+    "namespace": "STREAM_ID_PLUS_PRODUCER_ROLE",
+    "producer_roles": [
+      "MT5_TO_PYTHON",
+      "PYTHON_TO_MT5"
+    ],
     "assigned_after_local_coalescing": true,
     "local_capture_id_is_wire_sequence": false,
-    "monotonic_per_stream_id": true,
+    "monotonic_per_directional_lane": true,
+    "duplicate_or_decreasing": "FAIL_CLOSED",
+    "gap": "RECOVERY_REQUIRED_FAIL_CLOSED",
     "reconnect_resets_sequence": false,
-    "new_stream_id_new_namespace": true
+    "new_stream_id_new_namespace": true,
+    "python_next_sequence_floor": "HEARTBEAT.latest_consumed_command_sequence",
+    "mt5_persistence_required": true,
+    "governance": "ADR-0012_PROPOSED"
   },
   "heartbeat": {
     "draft_interval_ms": 1000,
