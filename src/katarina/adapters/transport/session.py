@@ -160,6 +160,26 @@ class Kat1SessionSupervisor:
 
         return None
 
+    def reserve_outbound_sequence(
+        self,
+        *,
+        stream_id: int,
+        floor: int = 0,
+    ) -> int:
+        """Reserve the next Python→MT5 KAT1 sequence for any Stage-07 frame.
+
+        All Python producers on one stream must share this lane. Recovery,
+        heartbeat and later command orchestration must never maintain separate
+        counters.
+        """
+        if self._state in {SessionState.STOPPED, SessionState.FAULTED}:
+            raise SessionFault(
+                "cannot reserve outbound sequence while session is stopped/faulted"
+            )
+        if stream_id <= 0:
+            raise ValueError("stream_id must be positive")
+        return self._next_outbound_sequence(stream_id, floor=floor)
+
     def check_stale(self, *, now_ns: int) -> bool:
         if self._last_heartbeat_ns is None:
             return False
