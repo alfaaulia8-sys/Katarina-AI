@@ -777,7 +777,7 @@ ShutdownTerminal=1
         foreach($dir in @($WorkspaceRoot,$Runtime)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
         $pythonRoot=Join-Path $Runtime "python"
         $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
-        $url="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
 
         if(!(Test-Path -LiteralPath $zip -PathType Leaf)) {
             Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
@@ -835,7 +835,7 @@ ShutdownTerminal=1
         foreach($dir in @($WorkspaceRoot,$Runtime,$Evidence,$Logs)) {
             New-Item -ItemType Directory -Force -Path $dir | Out-Null
         }
-        $uri="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
+        $uri="https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
         $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
         $pythonDir=Join-Path $Runtime "python"
         if(Test-Path -LiteralPath $pythonDir) {
@@ -873,7 +873,7 @@ ShutdownTerminal=1
         foreach($dir in @($WorkspaceRoot,$Runtime,$Logs)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
         $pythonRoot=Join-Path $Runtime "python"
         $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
-        $url="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
         $expectedMd5="fe8ef205f2e9c3ba44d0cf9954e1abd3"
 
         if(Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
@@ -923,7 +923,7 @@ ShutdownTerminal=1
         foreach($dir in @($WorkspaceRoot,$Runtime,$Logs)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
         $pythonDir=Join-Path $Runtime "python"
         $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
-        $url="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
 
         if(Test-Path -LiteralPath $pythonDir) { Remove-Item -LiteralPath $pythonDir -Recurse -Force }
         New-Item -ItemType Directory -Force -Path $pythonDir | Out-Null
