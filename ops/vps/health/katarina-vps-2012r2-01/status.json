@@ -4,6 +4,6 @@
     "agent_id":  "katarina-vps-2012r2-01",
     "computer_name":  "WIN-4TTT19K3CL8",
     "state":  "ERROR",
-    "error":  "Request expired at 2026-10-04T05:39:00.0000000Z",
-    "updated_utc":  "2026-10-04T08:32:34.9682501Z"
+    "error":  "The remote server returned an error: (409) Conflict.",
+    "updated_utc":  "2026-10-04T08:34:04.9057553Z"
 }
