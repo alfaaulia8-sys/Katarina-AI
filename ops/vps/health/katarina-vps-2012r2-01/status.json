@@ -1,9 +1,11 @@
 {
     "schema_version":  1,
-    "agent_version":  "1.2.5",
+    "agent_version":  "1.4.0",
     "agent_id":  "katarina-vps-2012r2-01",
+    "lane":  "primary",
+    "process_id":  3124,
     "computer_name":  "WIN-4TTT19K3CL8",
-    "state":  "ERROR",
-    "error":  "Request expired at 2026-10-04T05:39:00.0000000Z",
-    "updated_utc":  "2026-10-04T08:34:07.0932489Z"
+    "state":  "ONLINE",
+    "error":  "",
+    "updated_utc":  "2026-10-04T08:34:34.7807502Z"
 }
