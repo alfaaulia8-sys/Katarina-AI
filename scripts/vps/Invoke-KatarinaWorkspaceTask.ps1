@@ -568,6 +568,7 @@ switch($mode) {
         }
 
         $guardianRecord=$null
+        $guardianSelfTest=$null
         if($guardedProfile) {
             $guardianHeartbeatPath=Join-Path $installRoot "guardian\heartbeat.json"
             $guardianHb=$null
@@ -608,6 +609,11 @@ switch($mode) {
                 primary_agent_version=$(if($guardianHb){[string]$guardianHb.primary_agent_version}else{$null})
                 healthy=$guardianHealthy
             }
+
+            $guardianSelfTestPath=Join-Path $installRoot "guardian\selftest_result.json"
+            if(Test-Path -LiteralPath $guardianSelfTestPath -PathType Leaf) {
+                try { $guardianSelfTest=Get-Content -LiteralPath $guardianSelfTestPath -Raw | ConvertFrom-Json } catch {}
+            }
         }
 
         Write-Json (Join-Path $OutputDir "control_plane_status.json") ([ordered]@{
@@ -618,6 +624,7 @@ switch($mode) {
             expected_lanes=$expectedLanes
             lanes=$records
             guardian=$guardianRecord
+            guardian_selftest=$guardianSelfTest
             supervisor_log_exists=(Test-Path -LiteralPath (Join-Path $installRoot "control_supervisor.log") -PathType Leaf)
             generated_utc=[DateTime]::UtcNow.ToString("o")
             result=$(if($allHealthy){"PASS"}else{"FAIL"})
