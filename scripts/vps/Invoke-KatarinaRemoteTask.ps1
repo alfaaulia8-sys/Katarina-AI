@@ -1025,6 +1025,189 @@ try { & schtasks.exe /Delete /F /TN "KatarinaGuardedDeferredRestart" | Out-Null 
                 break
             }
 
+            if ($mode -eq "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT") {
+                $installRoot="C:\\KatarinaVPSAgent"
+                $primaryConfig=Join-Path $installRoot "agent.json"
+                $guardianHeartbeat=Join-Path $installRoot "guardian\\heartbeat.json"
+                $guardianState=Join-Path $installRoot "guardian\\state.json"
+                $selfTestResult=Join-Path $installRoot "guardian\\selftest_result.json"
+                $selfTestScript=Join-Path $installRoot "guardian\\KatarinaGuardianSelfTest.ps1"
+
+                if(!(Test-Path -LiteralPath $primaryConfig -PathType Leaf)){throw "Primary config missing for guardian self-test."}
+                $cfg=Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
+                if(([string]$cfg.resource_profile).ToUpperInvariant() -ne "LEGACY_LOW_MEMORY_GUARDED") {
+                    throw "Guardian self-test requires LEGACY_LOW_MEMORY_GUARDED profile."
+                }
+                if(!(Test-Path -LiteralPath $guardianHeartbeat -PathType Leaf)){throw "Guardian heartbeat missing."}
+                $gh=Get-Content -LiteralPath $guardianHeartbeat -Raw | ConvertFrom-Json
+                $ghUpdated=[DateTime]::Parse(
+                    [string]$gh.updated_utc,
+                    [Globalization.CultureInfo]::InvariantCulture,
+                    [Globalization.DateTimeStyles]::AssumeUniversal
+                ).ToUniversalTime()
+                if(([DateTime]::UtcNow-$ghUpdated).TotalSeconds -gt 30){throw "Guardian heartbeat is stale."}
+                if(([string]$gh.guardian_version) -ne "1.1.0"){throw "Guardian self-test requires guardian 1.1.0."}
+
+                try { Remove-Item -LiteralPath $selfTestResult -Force -ErrorAction SilentlyContinue } catch {}
+                @'
+$ErrorActionPreference="Continue"
+$installRoot="C:\KatarinaVPSAgent"
+$primaryConfig=Join-Path $installRoot "agent.json"
+$primaryHeartbeat=Join-Path $installRoot "lanes\primary\heartbeat.json"
+$guardianState=Join-Path $installRoot "guardian\state.json"
+$resultPath=Join-Path $installRoot "guardian\selftest_result.json"
+
+function Write-Result($Value) {
+    ConvertTo-Json -InputObject $Value -Depth 10 | Set-Content -LiteralPath $resultPath -Encoding UTF8
+}
+function Get-Primary {
+    try {
+        return @(
+            Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.CommandLine -and
+                $_.CommandLine.IndexOf("KatarinaVpsAgent.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                $_.CommandLine.IndexOf($primaryConfig,[StringComparison]::OrdinalIgnoreCase) -ge 0
+            }
+        ) | Select-Object -First 1
+    } catch { return $null }
+}
+function Read-Utc($Value) {
+    try {
+        return [DateTime]::Parse(
+            [string]$Value,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [Globalization.DateTimeStyles]::AssumeUniversal
+        ).ToUniversalTime()
+    } catch { return $null }
+}
+
+Start-Sleep -Seconds 30
+$triggerUtc=[DateTime]::UtcNow
+$old=Get-Primary
+$oldPid=$null
+if($null -ne $old){try{$oldPid=[int]$old.ProcessId}catch{}}
+
+Write-Result ([ordered]@{
+    schema_version=1
+    proof_type="KATARINA_GUARDIAN_FAILOVER_SELFTEST"
+    phase="TRIGGERING"
+    trigger_utc=$triggerUtc.ToString("o")
+    old_primary_pid=$oldPid
+    result="RUNNING"
+})
+
+if($null -eq $old) {
+    Write-Result ([ordered]@{
+        schema_version=1; proof_type="KATARINA_GUARDIAN_FAILOVER_SELFTEST";
+        trigger_utc=$triggerUtc.ToString("o"); old_primary_pid=$null;
+        result="FAIL"; reason="PRIMARY_MISSING_BEFORE_TEST"
+    })
+    exit 1
+}
+
+try { [void]$old.Terminate() } catch {}
+try { & schtasks.exe /End /TN "KatarinaVPSAgent" | Out-Null } catch {}
+
+$newPid=$null
+$guardianRestartUtc=$null
+$guardianReason=""
+$guardianStarted=$false
+$deadline=[DateTime]::UtcNow.AddSeconds(90)
+while([DateTime]::UtcNow -lt $deadline) {
+    Start-Sleep -Seconds 2
+    $candidate=Get-Primary
+    if($null -ne $candidate) {
+        try {
+            $candidatePid=[int]$candidate.ProcessId
+            if($candidatePid -ne $oldPid) {$newPid=$candidatePid}
+        } catch {}
+    }
+
+    if(Test-Path -LiteralPath $guardianState -PathType Leaf) {
+        try {
+            $gs=Get-Content -LiteralPath $guardianState -Raw | ConvertFrom-Json
+            $gsUtc=Read-Utc $gs.last_restart_utc
+            if($null -ne $gsUtc -and $gsUtc -ge $triggerUtc.AddSeconds(-2)) {
+                $guardianRestartUtc=$gsUtc
+                $guardianReason=[string]$gs.reason
+                $guardianStarted=[bool]$gs.started
+            }
+        } catch {}
+    }
+
+    $heartbeatFresh=$false
+    if($null -ne $newPid -and (Test-Path -LiteralPath $primaryHeartbeat -PathType Leaf)) {
+        try {
+            $hb=Get-Content -LiteralPath $primaryHeartbeat -Raw | ConvertFrom-Json
+            $hbUtc=Read-Utc $hb.updated_utc
+            $hbPid=[int]$hb.process_id
+            if($null -ne $hbUtc -and ([DateTime]::UtcNow-$hbUtc).TotalSeconds -lt 20 -and $hbPid -eq $newPid) {
+                $heartbeatFresh=$true
+            }
+        } catch {}
+    }
+
+    if($null -ne $newPid -and $heartbeatFresh -and $null -ne $guardianRestartUtc -and $guardianStarted) {
+        $seconds=[math]::Round(([DateTime]::UtcNow-$triggerUtc).TotalSeconds,1)
+        Write-Result ([ordered]@{
+            schema_version=1
+            proof_type="KATARINA_GUARDIAN_FAILOVER_SELFTEST"
+            trigger_utc=$triggerUtc.ToString("o")
+            old_primary_pid=$oldPid
+            new_primary_pid=$newPid
+            guardian_last_restart_utc=$guardianRestartUtc.ToString("o")
+            guardian_reason=$guardianReason
+            guardian_started=$guardianStarted
+            recovery_seconds=$seconds
+            result="PASS"
+        })
+        try { & schtasks.exe /Delete /F /TN "KatarinaGuardianSelfTest" | Out-Null } catch {}
+        exit 0
+    }
+}
+
+Write-Result ([ordered]@{
+    schema_version=1
+    proof_type="KATARINA_GUARDIAN_FAILOVER_SELFTEST"
+    trigger_utc=$triggerUtc.ToString("o")
+    old_primary_pid=$oldPid
+    new_primary_pid=$newPid
+    guardian_last_restart_utc=$(if($null -ne $guardianRestartUtc){$guardianRestartUtc.ToString("o")}else{$null})
+    guardian_reason=$guardianReason
+    guardian_started=$guardianStarted
+    result="FAIL"
+    reason="RECOVERY_NOT_PROVEN_WITHIN_90_SECONDS"
+})
+try { & schtasks.exe /Delete /F /TN "KatarinaGuardianSelfTest" | Out-Null } catch {}
+exit 1
+'@ | Set-Content -LiteralPath $selfTestScript -Encoding ASCII
+
+                $dummyTime=(Get-Date).AddHours(1).ToString("HH:mm")
+                $testCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$selfTestScript+'"'
+                & schtasks.exe /Create /F /SC ONCE /ST $dummyTime /RU SYSTEM /RL HIGHEST /TN "KatarinaGuardianSelfTest" /TR $testCmd | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to register guardian self-test task."}
+                & schtasks.exe /Run /TN "KatarinaGuardianSelfTest" | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to start guardian self-test task."}
+
+                Write-JsonFile (Join-Path $OutputDir "guardian_selftest_arm.json") ([ordered]@{
+                    schema_version=1
+                    proof_type="KATARINA_GUARDIAN_SELFTEST_ARM"
+                    guardian_version=[string]$gh.guardian_version
+                    guardian_process_id=$gh.process_id
+                    trigger_delay_seconds=30
+                    recovery_deadline_seconds=90
+                    local_result_path=$selfTestResult
+                    armed_utc=[DateTime]::UtcNow.ToString("o")
+                    result="PASS_ARMED"
+                })
+                "KATARINA GUARDIAN SELFTEST ARMED" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["result"]="PASS_ARMED"
+                break
+            }
+
             # Stable rescue/update mode is intentionally independent from
             # the adaptive balanced installer above. It is the fail-safe path
             # for the 2 GB Server 2012 R2 host when secondary lanes cannot stay healthy.
