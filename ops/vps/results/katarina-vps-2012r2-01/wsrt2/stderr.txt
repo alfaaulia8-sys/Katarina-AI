@@ -1,0 +1,14 @@
+Portable Python/pyzmq probe failed.
+At C:\KatarinaVPSAgent\work\wsrt2\src\alfaaulia-katarina-Katarina-AI-324d1ecef7
+0413e9aae7643ccd61f68fd1a5ad35\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:174
+ char:36
++         if($proc.ExitCode -ne 0) { throw "Portable Python/pyzmq probe failed.
+" }
++                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~
+    + CategoryInfo          : OperationStopped: (Portable Python/pyzmq probe f 
+   ailed.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Portable Python/pyzmq probe failed.
+ 
+
+Workspace child task produced no status evidence.
