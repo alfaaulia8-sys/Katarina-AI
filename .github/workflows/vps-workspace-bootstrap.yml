@@ -9,6 +9,9 @@ on:
       - "scripts/vps/Invoke-KatarinaWorkspaceTask.ps1"
       - "scripts/vps/Apply-KatarinaWorkspaceChangeset.ps1"
       - "scripts/vps/Bootstrap-KatarinaPortablePython.ps1"
+      - "scripts/vps/legacy/KatarinaVpsAgent.ps1"
+      - "scripts/vps/legacy/KatarinaVpsAgentWatchdog.ps1"
+      - "scripts/vps/legacy/KatarinaControlGuardian.ps1"
   workflow_dispatch:
 
 permissions:
