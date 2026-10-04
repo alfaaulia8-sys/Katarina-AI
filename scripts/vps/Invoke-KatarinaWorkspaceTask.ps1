@@ -776,8 +776,8 @@ ShutdownTerminal=1
     "WORKSPACE_PYTHON_BOOTSTRAP" {
         foreach($dir in @($WorkspaceRoot,$Runtime)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
         $pythonRoot=Join-Path $Runtime "python"
-        $zip=Join-Path $Runtime "python-3.8.10-embed-amd64.zip"
-        $url="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
+        $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
 
         if(!(Test-Path -LiteralPath $zip -PathType Leaf)) {
             Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
@@ -792,7 +792,7 @@ ShutdownTerminal=1
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [IO.Compression.ZipFile]::ExtractToDirectory($zip,$pythonRoot)
 
-        $pth=Join-Path $pythonRoot "python38._pth"
+        $pth=Join-Path $pythonRoot "python312._pth"
         if(Test-Path -LiteralPath $pth) {
             $lines=@(Get-Content -LiteralPath $pth)
             $lines=@($lines | ForEach-Object {
@@ -809,7 +809,7 @@ ShutdownTerminal=1
 
         Write-Json (Join-Path $Metadata "python_runtime.json") ([ordered]@{
             schema_version=1
-            version="3.8.10"
+            version="3.12.10"
             architecture="amd64"
             source_url=$url
             package_size=8211403
@@ -835,8 +835,8 @@ ShutdownTerminal=1
         foreach($dir in @($WorkspaceRoot,$Runtime,$Evidence,$Logs)) {
             New-Item -ItemType Directory -Force -Path $dir | Out-Null
         }
-        $uri="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
-        $zip=Join-Path $Runtime "python-3.8.10-embed-amd64.zip"
+        $uri="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
+        $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
         $pythonDir=Join-Path $Runtime "python"
         if(Test-Path -LiteralPath $pythonDir) {
             $old=Join-Path $Snapshots ("python_prebootstrap_"+[DateTime]::UtcNow.ToString("yyyyMMdd_HHmmss"))
@@ -854,7 +854,7 @@ ShutdownTerminal=1
         $version=& $python -c "import sys,platform; print(sys.version.split()[0]); print(platform.architecture()[0]); print(sys.executable)"
         if($LASTEXITCODE -ne 0) { throw "Embedded Python self-test failed." }
         $lines=@($version)
-        if($lines.Count -lt 2 -or $lines[0] -ne "3.8.10" -or $lines[1] -ne "64bit") {
+        if($lines.Count -lt 2 -or $lines[0] -ne "3.12.10" -or $lines[1] -ne "64bit") {
             throw "Unexpected embedded Python identity: $($lines -join ' | ')"
         }
         Write-Json (Join-Path $Evidence "python_runtime.json") ([ordered]@{
@@ -872,9 +872,9 @@ ShutdownTerminal=1
     "WORKSPACE_RUNTIME_INSTALL" {
         foreach($dir in @($WorkspaceRoot,$Runtime,$Logs)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
         $pythonRoot=Join-Path $Runtime "python"
-        $zip=Join-Path $Runtime "python-3.8.10-embed-amd64.zip"
-        $url="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
-        $expectedMd5="3acb1d7d9bde5a79f840167b166bb633"
+        $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
+        $expectedMd5="fe8ef205f2e9c3ba44d0cf9954e1abd3"
 
         if(Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
         Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
@@ -892,7 +892,7 @@ ShutdownTerminal=1
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [IO.Compression.ZipFile]::ExtractToDirectory($zip,$pythonRoot)
 
-        $pth=Join-Path $pythonRoot "python38._pth"
+        $pth=Join-Path $pythonRoot "python312._pth"
         if(Test-Path -LiteralPath $pth) {
             $pthText=Get-Content -LiteralPath $pth -Raw
             if($pthText -notmatch "(?m)^\.\.\\\.\.\\workspace\s*$") {
@@ -909,7 +909,7 @@ ShutdownTerminal=1
         }
         Write-Json (Join-Path $Metadata "python_runtime.json") ([ordered]@{
             schema_version=1
-            version="3.8.10"
+            version="3.12.10"
             distribution="CPYTHON_EMBED_AMD64"
             source_url=$url
             official_md5=$expectedMd5
@@ -922,8 +922,8 @@ ShutdownTerminal=1
     "WORKSPACE_BOOTSTRAP_PYTHON" {
         foreach($dir in @($WorkspaceRoot,$Runtime,$Logs)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
         $pythonDir=Join-Path $Runtime "python"
-        $zip=Join-Path $Runtime "python-3.8.10-embed-amd64.zip"
-        $url="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
+        $zip=Join-Path $Runtime "python-3.12.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.8.10/python-3.12.10-embed-amd64.zip"
 
         if(Test-Path -LiteralPath $pythonDir) { Remove-Item -LiteralPath $pythonDir -Recurse -Force }
         New-Item -ItemType Directory -Force -Path $pythonDir | Out-Null
@@ -946,7 +946,7 @@ ShutdownTerminal=1
         Write-Json (Join-Path $Metadata "python_runtime.json") ([ordered]@{
             schema_version=1
             distribution="CPYTHON_EMBEDDABLE"
-            version="3.8.10"
+            version="3.12.10"
             architecture="amd64"
             source_url=$url
             archive_sha256=$zipHash
