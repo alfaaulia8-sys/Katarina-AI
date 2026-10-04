@@ -82,8 +82,8 @@ if (!(Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
     New-Item -ItemType Directory -Force -Path (Join-Path $PythonRoot "Lib\site-packages") | Out-Null
 }
 
-# The embeddable runtime is isolated by python312._pth. Normalize it on every run,
-# including when another workspace task has replaced the Python directory.
+# Normalize the embeddable runtime path on every run. Another workspace task may
+# replace the Python directory, so this must not live only inside first-install logic.
 $Pth = Join-Path $PythonRoot "python312._pth"
 if (!(Test-Path -LiteralPath $Pth -PathType Leaf)) {
     throw "Embedded Python python312._pth is missing."
@@ -91,83 +91,39 @@ if (!(Test-Path -LiteralPath $Pth -PathType Leaf)) {
 
 $Existing = @(Get-Content -LiteralPath $Pth)
 $Updated = @()
-$RequiredPaths = @("Lib\\site-packages","..\\..\\workspace","..\\..\\workspace\\src")
+$RequiredPaths = @("Lib\site-packages","..\..\workspace","..\..\workspace\src")
 $Seen = @{}
 $HaveImportSite = $false
 
 foreach ($Line in $Existing) {
     $Trimmed = ([string]$Line).Trim()
-    if ($Trimmed -match '^\\s*#?\\s*import site\\s*
-$VersionStderr = Join-Path $OutputDir "python_version_error.txt"
-$Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @("--version") -StdoutPath $VersionStdout -StderrPath $VersionStderr
-if($Exit -ne 0) { throw "Portable Python executable failed to start." }
-
-$GetPip = Join-Path $DownloadRoot "get-pip.py"
-if (!(Test-Path -LiteralPath $GetPip -PathType Leaf)) {
-    Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile $GetPip -UseBasicParsing
-}
-
-$GetPipOut = Join-Path $OutputDir "get_pip.log"
-$GetPipErr = Join-Path $OutputDir "get_pip_error.log"
-$Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @($GetPip,"--disable-pip-version-check","--no-warn-script-location") -StdoutPath $GetPipOut -StderrPath $GetPipErr
-if($Exit -ne 0) { throw "get-pip failed for portable Python." }
-
-$Requirements = Join-Path $SourceRoot "requirements-stage07.txt"
-if(Test-Path -LiteralPath $Requirements -PathType Leaf) {
-    $PipOut = Join-Path $OutputDir "pip_install.log"
-    $PipErr = Join-Path $OutputDir "pip_install_error.log"
-    $Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @("-m","pip","install","--disable-pip-version-check","--only-binary=:all:","-r",$Requirements) -StdoutPath $PipOut -StderrPath $PipErr
-    if($Exit -ne 0) { throw "Stage-07 Python dependency installation failed." }
-}
-
-$ProbeScript = Join-Path $OutputDir "python_probe.py"
-@'
-import sys
-print(sys.version)
-import zmq
-import tornado
-print("pyzmq=" + zmq.__version__)
-print("libzmq=" + zmq.zmq_version())
-print("tornado=" + tornado.version)
-'@ | Set-Content -LiteralPath $ProbeScript -Encoding ASCII
-
-$ProbeOut = Join-Path $OutputDir "python_probe.txt"
-$ProbeErr = Join-Path $OutputDir "python_probe_error.txt"
-$Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @($ProbeScript) -StdoutPath $ProbeOut -StderrPath $ProbeErr
-if($Exit -ne 0) { throw "Portable Python dependency probe failed." }
-
-$Evidence = [ordered]@{
-    schema_version = 1
-    runtime = "CPYTHON_EMBEDDABLE"
-    python_version = $Version
-    python_exe = $PythonExe
-    workspace = $SourceRoot
-    requirements = $(if (Test-Path -LiteralPath $Requirements) { $Requirements } else { $null })
-    result = "PASS"
-    completed_utc = [DateTime]::UtcNow.ToString("o")
-}
-$Evidence | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputDir "python_bootstrap.json") -Encoding UTF8
-exit 0
-) {
+    if ($Trimmed -match '^\s*#?\s*import site\s*$') {
         if (-not $HaveImportSite) {
             $Updated += "import site"
             $HaveImportSite = $true
         }
         continue
     }
+
     foreach ($Required in $RequiredPaths) {
-        if ($Trimmed -ieq $Required) { $Seen[$Required] = $true }
+        if ($Trimmed -ieq $Required) {
+            $Seen[$Required] = $true
+        }
     }
     $Updated += $Line
 }
 
 foreach ($Required in $RequiredPaths) {
-    if (-not $Seen.ContainsKey($Required)) { $Updated += $Required }
+    if (-not $Seen.ContainsKey($Required)) {
+        $Updated += $Required
+    }
 }
-if (-not $HaveImportSite) { $Updated += "import site" }
+if (-not $HaveImportSite) {
+    $Updated += "import site"
+}
 
 $Updated | Set-Content -LiteralPath $Pth -Encoding ASCII
-New-Item -ItemType Directory -Force -Path (Join-Path $PythonRoot "Lib\\site-packages") | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $PythonRoot "Lib\site-packages") | Out-Null
 
 $VersionStdout = Join-Path $OutputDir "python_version.txt"
 $VersionStderr = Join-Path $OutputDir "python_version_error.txt"
