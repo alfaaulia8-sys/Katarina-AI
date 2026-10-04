@@ -515,6 +515,263 @@ ShutdownTerminal=1
         })
     }
 
+    "WORKSPACE_ZMQ_RUNTIME" {
+        if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
+
+        $terminalPath=[string]$request.args.terminal_path
+        $terminalDataPath=[string]$request.args.terminal_data_path
+        if([string]::IsNullOrWhiteSpace($terminalPath) -or !(Test-Path -LiteralPath $terminalPath -PathType Leaf)) {
+            throw "terminal_path is required for WORKSPACE_ZMQ_RUNTIME."
+        }
+        if([string]::IsNullOrWhiteSpace($terminalDataPath) -or !(Test-Path -LiteralPath $terminalDataPath -PathType Container)) {
+            throw "terminal_data_path is required for WORKSPACE_ZMQ_RUNTIME."
+        }
+
+        $terminalResolved=(Resolve-Path -LiteralPath $terminalPath).Path
+        $running=@()
+        try {
+            $running=@(
+                Get-WmiObject Win32_Process -Filter "Name='terminal64.exe'" -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.ExecutablePath -and
+                    [string]::Equals([string]$_.ExecutablePath,$terminalResolved,[StringComparison]::OrdinalIgnoreCase)
+                }
+            )
+        } catch {}
+        if($running.Count -gt 0) {
+            throw "Target MT5 terminal is already running; refusing ZeroMQ runtime test."
+        }
+
+        $profileMarker="\AppData\Roaming\MetaQuotes\Terminal\"
+        $profileIndex=$terminalDataPath.IndexOf($profileMarker,[StringComparison]::OrdinalIgnoreCase)
+        if($profileIndex -le 0) { throw "Unable to derive MT5 user profile from terminal_data_path." }
+        $profileRoot=$terminalDataPath.Substring(0,$profileIndex)
+        $expectedUser=Split-Path -Leaf $profileRoot
+        $appDataRoaming=Join-Path $profileRoot "AppData\Roaming"
+        $commonFiles=Join-Path $appDataRoaming "MetaQuotes\Terminal\Common\Files"
+        New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
+
+        $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"))
+        if(!$python) { throw "Portable Python runtime is not available." }
+
+        $mqlLibraries=Join-Path $terminalDataPath "MQL5\Libraries"
+        foreach($dllName in @("libzmq.dll","libsodium.dll")) {
+            if(!(Test-Path -LiteralPath (Join-Path $mqlLibraries $dllName) -PathType Leaf)) {
+                throw "MT5 ZeroMQ DLL missing: $dllName. Run WORKSPACE_MT5_COMPILE first."
+            }
+        }
+
+        $pythonScript=Join-Path $OutputDir "workspace_zmq_router.py"
+        $ready=Join-Path $OutputDir "workspace_zmq_ready.txt"
+        $pythonResult=Join-Path $OutputDir "workspace_zmq_python_result.json"
+        $pythonStdout=Join-Path $OutputDir "workspace_zmq_python_stdout.txt"
+        $pythonStderr=Join-Path $OutputDir "workspace_zmq_python_stderr.txt"
+        Remove-Item -LiteralPath $ready,$pythonResult,$pythonStdout,$pythonStderr -Force -ErrorAction SilentlyContinue
+
+        $pythonCode=@'
+import json
+import pathlib
+import time
+import zmq
+
+endpoint = "tcp://127.0.0.1:5567"
+ready = pathlib.Path(r"__READY__")
+result = pathlib.Path(r"__RESULT__")
+
+ctx = zmq.Context.instance()
+sock = ctx.socket(zmq.ROUTER)
+sock.linger = 0
+sock.bind(endpoint)
+ready.write_text(endpoint, encoding="utf-8")
+
+poller = zmq.Poller()
+poller.register(sock, zmq.POLLIN)
+deadline = time.monotonic() + 20.0
+payload = None
+route = None
+ack = None
+
+try:
+    while time.monotonic() < deadline:
+        events = dict(poller.poll(100))
+        if sock not in events:
+            continue
+        parts = sock.recv_multipart()
+        if len(parts) != 2:
+            raise RuntimeError(f"expected ROUTER identity+payload, got {len(parts)} parts")
+        route, payload = parts
+        if payload[:4] != b"KAT1":
+            raise RuntimeError("raw payload does not start with KAT1 magic")
+        if len(payload) != 104:
+            raise RuntimeError(f"unexpected KAT1 payload size: {len(payload)}")
+
+        sock.send_multipart([route, payload])
+
+        ack_deadline = time.monotonic() + 8.0
+        while time.monotonic() < ack_deadline:
+            ack_events = dict(poller.poll(100))
+            if sock not in ack_events:
+                continue
+            ack_parts = sock.recv_multipart()
+            if len(ack_parts) != 2:
+                raise RuntimeError(f"expected ACK identity+payload, got {len(ack_parts)} parts")
+            ack_route, ack = ack_parts
+            if ack_route != route:
+                raise RuntimeError("MT5 ACK route identity changed")
+            if ack != payload:
+                raise RuntimeError("MT5 ACK payload differs from echoed KAT1 frame")
+            break
+
+        if ack is None:
+            raise RuntimeError("timed out waiting for MT5 echo ACK")
+        break
+
+    if payload is None:
+        raise RuntimeError("timed out waiting for MT5 DEALER KAT1 frame")
+
+    result.write_text(json.dumps({
+        "result": "PASS",
+        "endpoint": endpoint,
+        "payload_bytes": len(payload),
+        "ack_bytes": len(ack),
+        "magic": payload[:4].decode("ascii"),
+        "route_bytes": len(route),
+        "pyzmq": zmq.__version__,
+        "libzmq": zmq.zmq_version(),
+    }, indent=2), encoding="utf-8")
+finally:
+    sock.close(0)
+'@
+        $pythonCode=$pythonCode.Replace("__READY__",$ready.Replace("\","\\")).Replace("__RESULT__",$pythonResult.Replace("\","\\"))
+        $pythonCode | Set-Content -LiteralPath $pythonScript -Encoding UTF8
+
+        $peer=Start-Process -FilePath $python -ArgumentList @($pythonScript) -PassThru -NoNewWindow -RedirectStandardOutput $pythonStdout -RedirectStandardError $pythonStderr
+        $readyDeadline=[DateTime]::UtcNow.AddSeconds(10)
+        while([DateTime]::UtcNow -lt $readyDeadline -and !(Test-Path -LiteralPath $ready -PathType Leaf)) {
+            if($peer.HasExited) {
+                $detail=""
+                if(Test-Path -LiteralPath $pythonStderr) { $detail=Get-Content -LiteralPath $pythonStderr -Raw }
+                throw "Python ZeroMQ ROUTER exited before ready. $detail"
+            }
+            Start-Sleep -Milliseconds 100
+        }
+        if(!(Test-Path -LiteralPath $ready -PathType Leaf)) {
+            try { $peer.Kill() } catch {}
+            throw "Python ZeroMQ ROUTER did not become ready."
+        }
+
+        $mt5Evidence=Join-Path $commonFiles "Katarina_Stage07_zmq_capability_result.txt"
+        Remove-Item -LiteralPath $mt5Evidence -Force -ErrorAction SilentlyContinue
+
+        $config=Join-Path $OutputDir "mt5_runtime_ZMQ_CAPABILITY.ini"
+        @"
+[Experts]
+AllowLiveTrading=0
+AllowDllImport=1
+Enabled=1
+Account=0
+Profile=0
+
+[StartUp]
+Script=KatarinaStage07ZmqCapability
+Period=H1
+ShutdownTerminal=1
+"@ | Set-Content -LiteralPath $config -Encoding ASCII
+
+        $launcher=Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaInteractiveMt5.ps1"
+        if(!(Test-Path -LiteralPath $launcher -PathType Leaf)) {
+            try { $peer.Kill() } catch {}
+            throw "Safe interactive MT5 launcher is missing."
+        }
+        $launchEvidence=Join-Path $OutputDir "interactive_ZMQ_CAPABILITY.json"
+        $launchStdout=Join-Path $OutputDir "interactive_ZMQ_CAPABILITY_stdout.txt"
+        $launchStderr=Join-Path $OutputDir "interactive_ZMQ_CAPABILITY_stderr.txt"
+        $launcherArgs=@(
+            "-NoProfile",
+            "-ExecutionPolicy","Bypass",
+            "-File",$launcher,
+            "-TerminalPath",$terminalResolved,
+            "-ConfigPath",$config,
+            "-ExpectedUser",$expectedUser,
+            "-TimeoutSeconds",30,
+            "-OutputPath",$launchEvidence
+        )
+        & powershell.exe $launcherArgs 1> $launchStdout 2> $launchStderr
+        $launcherExit=$LASTEXITCODE
+        if($launcherExit -ne 0) {
+            try { $peer.Kill() } catch {}
+            $detail=""
+            if(Test-Path -LiteralPath $launchStderr) { $detail=Get-Content -LiteralPath $launchStderr -Raw }
+            throw "Interactive MT5 ZeroMQ launch failed. $detail"
+        }
+
+        if(!$peer.WaitForExit(15000)) {
+            try { $peer.Kill() } catch {}
+            throw "Python ZeroMQ ROUTER did not terminate after MT5 roundtrip."
+        }
+        if($peer.ExitCode -ne 0) {
+            $detail=""
+            if(Test-Path -LiteralPath $pythonStderr) { $detail=Get-Content -LiteralPath $pythonStderr -Raw }
+            throw "Python ZeroMQ ROUTER failed. $detail"
+        }
+
+        if(!(Test-Path -LiteralPath $mt5Evidence -PathType Leaf)) {
+            throw "MT5 ZeroMQ capability evidence missing."
+        }
+        if(!(Test-Path -LiteralPath $pythonResult -PathType Leaf)) {
+            throw "Python ZeroMQ capability evidence missing."
+        }
+
+        $mqlText=Get-Content -LiteralPath $mt5Evidence -Raw
+        foreach($required in @(
+            "stage=07",
+            "proof_type=MQL5_ZEROMQ_CAPABILITY",
+            "dlls_allowed=1",
+            "raw_kat1_bytes=104",
+            "result=PASS"
+        )) {
+            if($mqlText -notmatch [regex]::Escape($required)) {
+                throw "MT5 ZeroMQ evidence missing marker: $required"
+            }
+        }
+
+        $py=Get-Content -LiteralPath $pythonResult -Raw | ConvertFrom-Json
+        if([string]$py.result -ne "PASS" -or
+           [int]$py.payload_bytes -ne 104 -or
+           [int]$py.ack_bytes -ne 104 -or
+           [string]$py.magic -ne "KAT1") {
+            throw "Python ZeroMQ evidence is invalid."
+        }
+
+        $mqlDest=Join-Path $OutputDir "Katarina_Stage07_zmq_capability_result.txt"
+        Copy-Item -LiteralPath $mt5Evidence -Destination $mqlDest -Force
+        $launchResult=Get-Content -LiteralPath $launchEvidence -Raw | ConvertFrom-Json
+
+        Write-Json (Join-Path $OutputDir "workspace_zmq_runtime.json") ([ordered]@{
+            schema_version=1
+            stage="07"
+            proof_type="VPS_WORKSPACE_ZEROMQ_RUNTIME"
+            host=(Get-WmiObject Win32_OperatingSystem).Caption
+            topology="PYTHON_ROUTER_MT5_DEALER"
+            endpoint=[string]$py.endpoint
+            python_executable=$python
+            pyzmq=[string]$py.pyzmq
+            python_libzmq=[string]$py.libzmq
+            mql_zmq_dependency_commit="f332ee903fb8f27cbf28a8169824b8130e2aaab2"
+            terminal=$terminalResolved
+            session_id=[int]$launchResult.session_id
+            session_user=[string]$launchResult.session_user
+            symbol_policy="TERMINAL_NATIVE_SYMBOL_FIELD_OMITTED"
+            allow_live_trading=$false
+            allow_dll_import=$true
+            raw_kat1_bytes=104
+            echo_ack="PASS"
+            mt5_evidence_sha256=(Get-FileHash -LiteralPath $mqlDest -Algorithm SHA256).Hash.ToLowerInvariant()
+            python_evidence_sha256=(Get-FileHash -LiteralPath $pythonResult -Algorithm SHA256).Hash.ToLowerInvariant()
+            result="PASS"
+        })
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
