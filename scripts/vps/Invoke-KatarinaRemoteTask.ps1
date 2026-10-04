@@ -424,10 +424,16 @@ try {
                     Where-Object { $_.ExecutablePath -and [string]::Equals($_.ExecutablePath,$terminalPath,[StringComparison]::OrdinalIgnoreCase) })
                 if ($running.Count -gt 0) { throw "Target MT5 terminal is already running; refusing headless runtime probe." }
 
-                $runDir = Join-Path $OutputDir "runtime"
-                New-Item -ItemType Directory -Force -Path $runDir | Out-Null
-                $configPath = Join-Path $runDir "stage07_sequence.ini"
-                @"
+                $commonFiles = "C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\Common\Files"
+                New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
+                $marker = Join-Path $commonFiles "Katarina_Stage07_wire_sequence_phase.txt"
+                $evidence = Join-Path $commonFiles "Katarina_Stage07_wire_sequence_result.txt"
+                Remove-Item $marker,$evidence -Force -ErrorAction SilentlyContinue
+
+                function Invoke-Stage07SequencePhase {
+                    param([int]$Phase)
+                    $configPath = Join-Path $OutputDir ("stage07_sequence_phase" + $Phase + ".ini")
+                    @"
 [Experts]
 AllowLiveTrading=0
 AllowDllImport=0
@@ -440,32 +446,34 @@ Symbol=XAUUSD
 Period=H1
 ShutdownTerminal=1
 "@ | Set-Content $configPath -Encoding ASCII
-
-                $before = [DateTime]::UtcNow
-                $p = Start-Process -FilePath $terminalPath -ArgumentList @("/config:`"$configPath`"") -PassThru
-                if (-not $p.WaitForExit(90000)) {
-                    try { $p.Kill() } catch {}
-                    throw "Stage-07 wire sequence runtime timed out."
+                    $p = Start-Process -FilePath $terminalPath -ArgumentList @("/config:`"$configPath`"") -PassThru
+                    if (-not $p.WaitForExit(90000)) {
+                        try { $p.Kill() } catch {}
+                        throw "Stage-07 wire sequence phase $Phase timed out."
+                    }
+                    Start-Sleep -Milliseconds 500
                 }
 
-                Start-Sleep -Milliseconds 500
-                $logs = @(
-                    Get-ChildItem -Path (Join-Path $terminalDataPath "MQL5\Logs") -File -ErrorAction SilentlyContinue |
-                    Where-Object { $_.LastWriteTimeUtc -ge $before.AddSeconds(-2) } |
-                    Sort-Object LastWriteTimeUtc -Descending
-                )
-                $joined = ""
-                foreach ($log in $logs) {
-                    $joined += (Get-Content $log.FullName -Raw -ErrorAction SilentlyContinue) + [Environment]::NewLine
-                }
-                $joined = Redact-Text $joined
-                $joined | Set-Content (Join-Path $OutputDir "stage07_sequence_runtime.log") -Encoding UTF8
+                Invoke-Stage07SequencePhase -Phase 1
+                if (!(Test-Path $evidence) -or !(Test-Path $marker)) { throw "Stage-07 sequence phase-1 evidence missing." }
+                $phase1 = Get-Content $evidence -Raw
+                if ($phase1 -notmatch "result=PHASE1_PASS") { throw "Stage-07 sequence phase 1 did not pass." }
 
-                if ($joined -notmatch "KATARINA_STAGE07_WIRE_SEQUENCE_TEST result=PASS failures=0") {
-                    throw "Stage-07 wire sequence runtime self-test did not report PASS."
+                Remove-Item $evidence -Force
+                Invoke-Stage07SequencePhase -Phase 2
+                if (!(Test-Path $evidence)) { throw "Stage-07 sequence phase-2 evidence missing." }
+                $phase2 = Get-Content $evidence -Raw
+                $phase2 | Set-Content (Join-Path $OutputDir "stage07_sequence_runtime.txt") -Encoding UTF8
+                if ($phase2 -notmatch "result=PASS" -or
+                    $phase2 -notmatch "observed_last=2" -or
+                    $phase2 -notmatch "allocated_next=3") {
+                    throw "Stage-07 wire sequence restart continuity failed."
                 }
+
                 $details["mode"] = "MT5_SEQUENCE_RUNTIME"
-                $details["runtime_result"] = "PASS"
+                $details["runtime_result"] = "PASS_RESTART_CONTINUITY"
+                $details["observed_last"] = 2
+                $details["allocated_next"] = 3
                 break
             }
 
