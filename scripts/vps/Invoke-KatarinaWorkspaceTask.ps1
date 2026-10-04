@@ -100,11 +100,31 @@ switch($mode) {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
         if(!$python) { throw "Workspace Python runtime is not available yet." }
-        Push-Location $Workspace
-        try {
-            & $python -m unittest tests.unit.transport.test_stage07_communication tests.unit.transport.test_stage07_stage06_contract -v
-            if($LASTEXITCODE -ne 0) { throw "Workspace tests failed." }
-        } finally { Pop-Location }
+
+        $runner=Join-Path $OutputDir "workspace_test_runner.py"
+        $workspacePy=$Workspace.Replace("\","\\")
+        @"
+import pathlib
+import sys
+import unittest
+
+root = pathlib.Path(r"$workspacePy")
+sys.path.insert(0, str(root))
+sys.path.insert(0, str(root / "src"))
+
+names = [
+    "tests.unit.transport.test_stage07_communication",
+    "tests.unit.transport.test_stage07_stage06_contract",
+]
+suite = unittest.defaultTestLoader.loadTestsFromNames(names)
+result = unittest.TextTestRunner(verbosity=2).run(suite)
+raise SystemExit(0 if result.wasSuccessful() else 1)
+"@ | Set-Content -LiteralPath $runner -Encoding ASCII
+
+        $stdout=Join-Path $OutputDir "workspace_test_stdout.txt"
+        $stderr=Join-Path $OutputDir "workspace_test_stderr.txt"
+        $p=Start-Process -FilePath $python -ArgumentList @($runner) -Wait -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        if($p.ExitCode -ne 0) { throw "Workspace tests failed." }
     }
 
     default { throw "Unsupported workspace mode: $mode" }
