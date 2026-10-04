@@ -412,6 +412,63 @@ try {
         "STAGE07_PYTHON_TESTS" {
             $mode = ([string](Get-ArgValue $request.args "mode" "PYTHON_TESTS")).ToUpperInvariant()
 
+            if ($mode -eq "MT5_SEQUENCE_RUNTIME") {
+                $terminalPath = Get-ArgValue $request.args "terminal_path" ""
+                $terminalDataPath = Get-ArgValue $request.args "terminal_data_path" ""
+                if (-not $terminalPath -or -not $terminalDataPath) { throw "terminal_path and terminal_data_path are required." }
+
+                $scriptPath = Join-Path $terminalDataPath "MQL5\Scripts\KatarinaStage07WireSequenceTest.ex5"
+                if (!(Test-Path $scriptPath)) { throw "Stage-07 wire sequence EX5 missing; compile first." }
+
+                $running = @(Get-WmiObject Win32_Process -Filter "Name='terminal64.exe'" -ErrorAction SilentlyContinue |
+                    Where-Object { $_.ExecutablePath -and [string]::Equals($_.ExecutablePath,$terminalPath,[StringComparison]::OrdinalIgnoreCase) })
+                if ($running.Count -gt 0) { throw "Target MT5 terminal is already running; refusing headless runtime probe." }
+
+                $runDir = Join-Path $OutputDir "runtime"
+                New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+                $configPath = Join-Path $runDir "stage07_sequence.ini"
+                @"
+[Experts]
+AllowLiveTrading=0
+AllowDllImport=0
+Enabled=1
+Account=0
+Profile=0
+[StartUp]
+Script=KatarinaStage07WireSequenceTest
+Symbol=XAUUSD
+Period=H1
+ShutdownTerminal=1
+"@ | Set-Content $configPath -Encoding ASCII
+
+                $before = [DateTime]::UtcNow
+                $p = Start-Process -FilePath $terminalPath -ArgumentList @("/config:`"$configPath`"") -PassThru
+                if (-not $p.WaitForExit(90000)) {
+                    try { $p.Kill() } catch {}
+                    throw "Stage-07 wire sequence runtime timed out."
+                }
+
+                Start-Sleep -Milliseconds 500
+                $logs = @(
+                    Get-ChildItem -Path (Join-Path $terminalDataPath "MQL5\Logs") -File -ErrorAction SilentlyContinue |
+                    Where-Object { $_.LastWriteTimeUtc -ge $before.AddSeconds(-2) } |
+                    Sort-Object LastWriteTimeUtc -Descending
+                )
+                $joined = ""
+                foreach ($log in $logs) {
+                    $joined += (Get-Content $log.FullName -Raw -ErrorAction SilentlyContinue) + [Environment]::NewLine
+                }
+                $joined = Redact-Text $joined
+                $joined | Set-Content (Join-Path $OutputDir "stage07_sequence_runtime.log") -Encoding UTF8
+
+                if ($joined -notmatch "KATARINA_STAGE07_WIRE_SEQUENCE_TEST result=PASS failures=0") {
+                    throw "Stage-07 wire sequence runtime self-test did not report PASS."
+                }
+                $details["mode"] = "MT5_SEQUENCE_RUNTIME"
+                $details["runtime_result"] = "PASS"
+                break
+            }
+
             if ($mode -eq "MT5_COMPILE") {
                 $terminalDataPath = Get-ArgValue $request.args "terminal_data_path" ""
                 $metaEditorPath = Get-ArgValue $request.args "metaeditor_path" ""
