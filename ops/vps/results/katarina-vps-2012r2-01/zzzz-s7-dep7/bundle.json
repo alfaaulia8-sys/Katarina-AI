@@ -1,0 +1,67 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.0",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "zzzz-s7-dep7",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "READONLY",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-04T11:32:07.3588731Z"
+                },
+    "files":  [
+                  {
+                      "name":  "dependency_verification.json",
+                      "size_bytes":  921,
+                      "sha256":  "b42ae81a6d67895e9657564f1c8f131c60c7797cd82d364124e84d28e22555b3",
+                      "content_included":  true,
+                      "content":  "{\"libzmq_version\": \"4.3.5\", \"proof_type\": \"VPS_PYTHON_DEPENDENCY_VERIFICATION\", \"python_executable\": \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\python.exe\", \"python_pth\": [\"python312.zip\", \".\", \"\", \"# Uncomment to run site.main() automatically\", \"import site\", \"Lib\\\\site-packages\", \"..\\\\..\\\\workspace\", \"..\\\\..\\\\workspace\\\\src\"], \"python_version\": \"3.12.10\", \"pyzmq_version\": \"27.2.0\", \"result\": \"PASS\", \"schema_version\": 1, \"stage\": \"07\", \"sys_path\": [\"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\python312.zip\", \"C:\\\\KatarinaDev\\\\runtime\\\\python\", \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\Lib\\\\site-packages\", \"C:\\\\KatarinaDev\\\\workspace\", \"C:\\\\KatarinaDev\\\\workspace\\\\src\"], \"tornado_module\": \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\Lib\\\\site-packages\\\\tornado\\\\__init__.py\", \"tornado_version\": \"6.5.10\", \"verified_utc\": \"2026-10-04T11:31:47.952635+00:00\", \"zmq_module\": \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\Lib\\\\site-packages\\\\zmq\\\\__init__.py\"}\r\n"
+                  },
+                  {
+                      "name":  "dependency_verify_stderr.txt",
+                      "size_bytes":  0,
+                      "sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "content_included":  true,
+                      "content":  ""
+                  },
+                  {
+                      "name":  "dependency_verify_stdout.txt",
+                      "size_bytes":  921,
+                      "sha256":  "b42ae81a6d67895e9657564f1c8f131c60c7797cd82d364124e84d28e22555b3",
+                      "content_included":  true,
+                      "content":  "{\"libzmq_version\": \"4.3.5\", \"proof_type\": \"VPS_PYTHON_DEPENDENCY_VERIFICATION\", \"python_executable\": \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\python.exe\", \"python_pth\": [\"python312.zip\", \".\", \"\", \"# Uncomment to run site.main() automatically\", \"import site\", \"Lib\\\\site-packages\", \"..\\\\..\\\\workspace\", \"..\\\\..\\\\workspace\\\\src\"], \"python_version\": \"3.12.10\", \"pyzmq_version\": \"27.2.0\", \"result\": \"PASS\", \"schema_version\": 1, \"stage\": \"07\", \"sys_path\": [\"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\python312.zip\", \"C:\\\\KatarinaDev\\\\runtime\\\\python\", \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\Lib\\\\site-packages\", \"C:\\\\KatarinaDev\\\\workspace\", \"C:\\\\KatarinaDev\\\\workspace\\\\src\"], \"tornado_module\": \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\Lib\\\\site-packages\\\\tornado\\\\__init__.py\", \"tornado_version\": \"6.5.10\", \"verified_utc\": \"2026-10-04T11:31:47.952635+00:00\", \"zmq_module\": \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\Lib\\\\site-packages\\\\zmq\\\\__init__.py\"}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  536,
+                      "sha256":  "df29cb393adb26a806d5cd4bbeee666a5346d9a502821ce652f642f1d4e25ca4",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"zzzz-s7-dep7\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T11:31:20.4995008Z\",\r\n    \"completed_utc\":  \"2026-10-04T11:32:06.2651251Z\",\r\n    \"duration_ms\":  45766,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_DEPENDENCY_VERIFY\",\r\n                    \"workspace_root\":  \"C:\\\\KatarinaDev\",\r\n                    \"workspace_files\":  207\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "workspace_status.json",
+                      "size_bytes":  280,
+                      "sha256":  "40ff3292b654e5ba2bc721964816245655b0de07387afae99ac122c01c69fcf6",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"mode\":  \"WORKSPACE_DEPENDENCY_VERIFY\",\r\n    \"root\":  \"C:\\\\KatarinaDev\",\r\n    \"workspace\":  \"C:\\\\KatarinaDev\\\\workspace\",\r\n    \"file_count\":  207,\r\n    \"python_runtime\":  \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\python.exe\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  2662
+}
