@@ -1,0 +1,5 @@
+3.8.10 (tags/v3.8.10:3d8993a, May  3 2021, 11:48:03) [MSC v.1928 64 bit (AMD64)]
+25.0.0
+C:\KatarinaDev\runtime\python\python.exe
+
+
