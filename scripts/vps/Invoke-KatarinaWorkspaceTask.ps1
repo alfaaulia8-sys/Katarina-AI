@@ -311,6 +311,199 @@ switch($mode) {
         if($failed) { throw "One or more Stage-07 workspace MT5 targets failed strict compilation." }
     }
 
+    "WORKSPACE_MT5_RUNTIME_SMOKE" {
+        if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
+
+        $terminalPath=[string]$request.args.terminal_path
+        $terminalDataPath=[string]$request.args.terminal_data_path
+        if([string]::IsNullOrWhiteSpace($terminalPath) -or !(Test-Path -LiteralPath $terminalPath -PathType Leaf)) {
+            throw "terminal_path is required for WORKSPACE_MT5_RUNTIME_SMOKE."
+        }
+        if([string]::IsNullOrWhiteSpace($terminalDataPath) -or !(Test-Path -LiteralPath $terminalDataPath -PathType Container)) {
+            throw "terminal_data_path is required for WORKSPACE_MT5_RUNTIME_SMOKE."
+        }
+
+        $terminalResolved=(Resolve-Path -LiteralPath $terminalPath).Path
+        $running=@()
+        try {
+            $running=@(
+                Get-WmiObject Win32_Process -Filter "Name='terminal64.exe'" -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.ExecutablePath -and
+                    [string]::Equals([string]$_.ExecutablePath,$terminalResolved,[StringComparison]::OrdinalIgnoreCase)
+                }
+            )
+        } catch {}
+        if($running.Count -gt 0) {
+            throw "Target MT5 terminal is already running; refusing headless workspace runtime test."
+        }
+
+        $markerPath="\AppData\Roaming\MetaQuotes\Terminal\"
+        $markerIndex=$terminalDataPath.IndexOf($markerPath,[StringComparison]::OrdinalIgnoreCase)
+        if($markerIndex -le 0) { throw "Unable to derive MT5 user profile from terminal_data_path." }
+        $profileRoot=$terminalDataPath.Substring(0,$markerIndex)
+        $appDataRoaming=Join-Path $profileRoot "AppData\Roaming"
+        $localAppData=Join-Path $profileRoot "AppData\Local"
+        $driveRoot=[IO.Path]::GetPathRoot($profileRoot)
+        $homeDrive=$driveRoot.TrimEnd("\")
+        $homePath=$profileRoot.Substring($driveRoot.Length-1)
+
+        $commonFiles=Join-Path $appDataRoaming "MetaQuotes\Terminal\Common\Files"
+        New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
+
+        function Invoke-WorkspaceMt5Script {
+            param(
+                [string]$ScriptName,
+                [string]$ConfigTag,
+                [int]$TimeoutSeconds=90
+            )
+            $config=Join-Path $OutputDir ("mt5_runtime_"+$ConfigTag+".ini")
+            @"
+[Experts]
+AllowLiveTrading=0
+AllowDllImport=0
+Enabled=1
+Account=0
+Profile=0
+
+[StartUp]
+Script=$ScriptName
+Symbol=
+Period=H1
+ShutdownTerminal=1
+"@ | Set-Content -LiteralPath $config -Encoding ASCII
+
+            $psi=New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName=$terminalResolved
+            $psi.Arguments='/config:"'+$config+'"'
+            $psi.UseShellExecute=$false
+            $psi.CreateNoWindow=$false
+            $psi.WorkingDirectory=Split-Path -Parent $terminalResolved
+            $psi.EnvironmentVariables["USERPROFILE"]=$profileRoot
+            $psi.EnvironmentVariables["APPDATA"]=$appDataRoaming
+            $psi.EnvironmentVariables["LOCALAPPDATA"]=$localAppData
+            $psi.EnvironmentVariables["HOMEDRIVE"]=$homeDrive
+            $psi.EnvironmentVariables["HOMEPATH"]=$homePath
+
+            $proc=New-Object System.Diagnostics.Process
+            $proc.StartInfo=$psi
+            [void]$proc.Start()
+            if(!$proc.WaitForExit($TimeoutSeconds*1000)) {
+                try { $proc.Kill() } catch {}
+                throw "MT5 runtime script timed out: $ScriptName"
+            }
+            Start-Sleep -Milliseconds 700
+            return [int]$proc.ExitCode
+        }
+
+        $records=@()
+
+        $simpleTests=@(
+            [pscustomobject]@{
+                name="KAT1_CODEC"
+                script="KatarinaStage07Kat1CodecTest"
+                file="Katarina_Stage07_kat1_codec_result.txt"
+                required=@("stage=07","vectors=13","failures=0","result=PASS")
+            },
+            [pscustomobject]@{
+                name="NATIVE_ACCOUNT"
+                script="KatarinaStage07NativeAccountRecordTest"
+                file="Katarina_Stage07_native_account_record_result.txt"
+                required=@("stage=07","result=PASS")
+            },
+            [pscustomobject]@{
+                name="NATIVE_STATE"
+                script="KatarinaStage07NativeStateRecordsTest"
+                file="Katarina_Stage07_native_state_records_result.txt"
+                required=@("stage=07","result=PASS")
+            }
+        )
+
+        foreach($test in $simpleTests) {
+            $evidence=Join-Path $commonFiles ([string]$test.file)
+            Remove-Item -LiteralPath $evidence -Force -ErrorAction SilentlyContinue
+            $exitCode=Invoke-WorkspaceMt5Script -ScriptName ([string]$test.script) -ConfigTag ([string]$test.name)
+            if(!(Test-Path -LiteralPath $evidence -PathType Leaf)) {
+                throw "Runtime evidence missing for $($test.name)."
+            }
+            $evidenceText=Get-Content -LiteralPath $evidence -Raw
+            foreach($required in @($test.required)) {
+                if($evidenceText -notmatch [regex]::Escape([string]$required)) {
+                    throw "Runtime evidence for $($test.name) missing required marker: $required"
+                }
+            }
+            $dest=Join-Path $OutputDir ([string]$test.file)
+            Copy-Item -LiteralPath $evidence -Destination $dest -Force
+            $records += [ordered]@{
+                test=[string]$test.name
+                script=[string]$test.script
+                process_exit_code=$exitCode
+                evidence=[string]$test.file
+                evidence_sha256=(Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLowerInvariant()
+                result="PASS"
+            }
+        }
+
+        $sequenceMarker=Join-Path $commonFiles "Katarina_Stage07_wire_sequence_phase.txt"
+        $sequenceEvidence=Join-Path $commonFiles "Katarina_Stage07_wire_sequence_result.txt"
+        Remove-Item -LiteralPath $sequenceMarker,$sequenceEvidence -Force -ErrorAction SilentlyContinue
+
+        $phase1Exit=Invoke-WorkspaceMt5Script -ScriptName "KatarinaStage07WireSequenceTest" -ConfigTag "WIRE_SEQUENCE_PHASE1"
+        if(!(Test-Path -LiteralPath $sequenceEvidence -PathType Leaf) -or
+           !(Test-Path -LiteralPath $sequenceMarker -PathType Leaf)) {
+            throw "Wire-sequence phase-1 evidence or marker missing."
+        }
+        $phase1Text=Get-Content -LiteralPath $sequenceEvidence -Raw
+        if($phase1Text -notmatch "result=PHASE1_PASS") {
+            throw "Wire-sequence phase 1 did not pass."
+        }
+
+        Remove-Item -LiteralPath $sequenceEvidence -Force
+        $phase2Exit=Invoke-WorkspaceMt5Script -ScriptName "KatarinaStage07WireSequenceTest" -ConfigTag "WIRE_SEQUENCE_PHASE2"
+        if(!(Test-Path -LiteralPath $sequenceEvidence -PathType Leaf)) {
+            throw "Wire-sequence phase-2 evidence missing."
+        }
+        $phase2Text=Get-Content -LiteralPath $sequenceEvidence -Raw
+        foreach($required in @("result=PASS","observed_last=2","allocated_next=3")) {
+            if($phase2Text -notmatch [regex]::Escape($required)) {
+                throw "Wire-sequence phase-2 evidence missing marker: $required"
+            }
+        }
+        if(Test-Path -LiteralPath $sequenceMarker) {
+            throw "Wire-sequence phase marker was not cleaned after phase 2."
+        }
+
+        $sequenceDest=Join-Path $OutputDir "Katarina_Stage07_wire_sequence_result.txt"
+        Copy-Item -LiteralPath $sequenceEvidence -Destination $sequenceDest -Force
+        $records += [ordered]@{
+            test="WIRE_SEQUENCE_RESTART"
+            script="KatarinaStage07WireSequenceTest"
+            phase1_exit_code=$phase1Exit
+            phase2_exit_code=$phase2Exit
+            evidence="Katarina_Stage07_wire_sequence_result.txt"
+            evidence_sha256=(Get-FileHash -LiteralPath $sequenceDest -Algorithm SHA256).Hash.ToLowerInvariant()
+            observed_last=2
+            allocated_next=3
+            result="PASS"
+        }
+
+        Write-Json (Join-Path $OutputDir "workspace_mt5_runtime_smoke.json") ([ordered]@{
+            schema_version=1
+            stage="07"
+            proof_type="VPS_WORKSPACE_MT5_RUNTIME_SMOKE"
+            host=(Get-WmiObject Win32_OperatingSystem).Caption
+            terminal_path=$terminalResolved
+            terminal_data_path=$terminalDataPath
+            profile_root=$profileRoot
+            symbol_policy="TERMINAL_NATIVE_EMPTY_STARTUP_SYMBOL"
+            allow_live_trading=$false
+            allow_dll_import=$false
+            tests=$records
+            generated_utc=[DateTime]::UtcNow.ToString("o")
+            result="PASS"
+        })
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
