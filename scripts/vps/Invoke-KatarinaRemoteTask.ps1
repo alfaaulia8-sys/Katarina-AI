@@ -867,8 +867,10 @@ try {
                     agent_id=[string]$cfg.agent_id
                     repository=[string]$cfg.repository
                     branch=[string]$cfg.branch
-                    poll_seconds=5
+                    poll_seconds=8
                     lane="primary"
+                    github_health_mode="TRANSITIONS_ONLY"
+                    github_health_repeat_seconds=21600
                     state_root=(Join-Path $installRoot "lanes\\primary")
                     token_path=$tokenPath
                     requests_dir="ops/vps/requests/primary"
@@ -1050,8 +1052,10 @@ try { & schtasks.exe /Delete /F /TN "KatarinaGuardedDeferredRestart" | Out-Null 
                     agent_id=[string]$cfg.agent_id
                     repository=[string]$cfg.repository
                     branch=[string]$cfg.branch
-                    poll_seconds=5
+                    poll_seconds=8
                     lane="primary"
+                    github_health_mode="TRANSITIONS_ONLY"
+                    github_health_repeat_seconds=21600
                     state_root=(Join-Path $installRoot "lanes\\primary")
                     token_path=$tokenPath
                     requests_dir="ops/vps/requests/primary"
@@ -1059,6 +1063,7 @@ try { & schtasks.exe /Delete /F /TN "KatarinaGuardedDeferredRestart" | Out-Null 
                     compact_results=$true
                     capabilities=@("MUTATING","READONLY","RECOVERY")
                     resource_profile="LEGACY_LOW_MEMORY_SEQUENTIAL"
+                    github_write_profile="SPARSE_TRANSITION_ONLY"
                     installed_utc=[DateTime]::UtcNow.ToString("o")
                 }
                 Write-JsonFile $primaryConfig $stable
