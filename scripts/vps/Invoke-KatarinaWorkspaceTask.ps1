@@ -492,6 +492,18 @@ switch($mode) {
             [pscustomobject]@{lane="worker01";task="KatarinaControlWorker01";config="agent-worker01.json"},
             [pscustomobject]@{lane="worker02";task="KatarinaControlWorker02";config="agent-worker02.json"}
         )
+        $resourceProfile=""
+        $primaryConfigPath=Join-Path $installRoot "agent.json"
+        if(Test-Path -LiteralPath $primaryConfigPath -PathType Leaf) {
+            try {
+                $primaryCfg=Get-Content -LiteralPath $primaryConfigPath -Raw | ConvertFrom-Json
+                if($null -ne $primaryCfg.PSObject.Properties["resource_profile"]) {
+                    $resourceProfile=([string]$primaryCfg.resource_profile).ToUpperInvariant()
+                }
+            } catch {}
+        }
+        $primaryOnly=($resourceProfile -eq "LEGACY_LOW_MEMORY_SEQUENTIAL")
+
         $records=@()
         $allHealthy=$true
         foreach($d in $defs) {
@@ -519,23 +531,29 @@ switch($mode) {
                 ).Count
             } catch {}
 
+            $expected=(!$primaryOnly -or [string]$d.lane -eq "primary")
             $healthy=($null -ne $hb -and $null -ne $age -and $age -lt 60 -and $processCount -eq 1)
-            if(!$healthy){$allHealthy=$false}
+            $stateOk=$(if($expected){$healthy}else{$processCount -eq 0})
+            if(!$stateOk){$allHealthy=$false}
             $records += [ordered]@{
                 lane=[string]$d.lane
                 task=[string]$d.task
                 config=$configPath
+                expected=$expected
                 process_count=$processCount
                 agent_version=$(if($hb){[string]$hb.agent_version}else{$null})
                 phase=$(if($hb){[string]$hb.phase}else{$null})
                 heartbeat_age_seconds=$age
                 healthy=$healthy
+                state_ok=$stateOk
             }
         }
 
         Write-Json (Join-Path $OutputDir "control_plane_status.json") ([ordered]@{
             schema_version=1
             proof_type="KATARINA_CONTROL_PLANE_STATUS"
+            resource_profile=$resourceProfile
+            primary_only=$primaryOnly
             lanes=$records
             supervisor_log_exists=(Test-Path -LiteralPath (Join-Path $installRoot "control_supervisor.log") -PathType Leaf)
             generated_utc=[DateTime]::UtcNow.ToString("o")
