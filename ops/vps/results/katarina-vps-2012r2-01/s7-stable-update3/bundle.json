@@ -1,0 +1,46 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.2",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "s7-stable-update3",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-04T11:53:25.1557509Z"
+                },
+    "files":  [
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  608,
+                      "sha256":  "ea425665cd6ff728df2b621bde3140abc8b33916798fbc72c94031c78e0dae33",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"s7-stable-update3\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T11:53:23.8119996Z\",\r\n    \"completed_utc\":  \"2026-10-04T11:53:25.0151607Z\",\r\n    \"duration_ms\":  1203,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT\",\r\n                    \"resource_profile\":  \"LEGACY_LOW_MEMORY_SEQUENTIAL\",\r\n                    \"deferred_restart\":  true,\r\n                    \"result\":  \"PASS\"\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stable_control_update.json",
+                      "size_bytes":  569,
+                      "sha256":  "d667eb61e30973079e189d01d11cca2967fcc4c2de95dbb6a11b864cf719cd44",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"KATARINA_STABLE_CONTROL_UPDATE_DIRECT\",\r\n    \"resource_profile\":  \"LEGACY_LOW_MEMORY_SEQUENTIAL\",\r\n    \"installed_agent_sha256\":  \"60bbddbf0f5a80f2fd5e162eb62f8f73d6cf277bdd6e779a289df67893353ec3\",\r\n    \"installed_watchdog_sha256\":  \"7f2d870561750de6d1edc9e4a88b68573b5401c95ae39eecf5233e7b16ab827b\",\r\n    \"secondary_lanes_disabled\":  true,\r\n    \"heavy_execution_concurrency\":  1,\r\n    \"deferred_restart_task\":  \"KatarinaPrimaryDeferredRestart\",\r\n    \"deferred_restart_time_local\":  \"18:54\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  37,
+                      "sha256":  "3b57761c4639211b583a6adef6febd4fc7156356cf1902654d325077bdffcb6e",
+                      "content_included":  true,
+                      "content":  "KATARINA STABLE CONTROL UPDATE PASS\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  1216
+}
