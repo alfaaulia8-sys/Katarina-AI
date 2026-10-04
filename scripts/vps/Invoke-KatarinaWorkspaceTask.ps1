@@ -368,7 +368,6 @@ Profile=0
 
 [StartUp]
 Script=$ScriptName
-Symbol=
 Period=H1
 ShutdownTerminal=1
 "@ | Set-Content -LiteralPath $config -Encoding ASCII
