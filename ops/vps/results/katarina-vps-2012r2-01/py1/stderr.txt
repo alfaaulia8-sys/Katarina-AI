@@ -1,0 +1,75 @@
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:185 c
+har:83
++         & $python -c "import sys; print(sys.version); import zmq, tornado; pr
+int ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+Unexpected token 'pyzmq='+zmq.__version__); print('libzmq='+zmq.zmq_version());
+ print('tornado='+tornado.version)" 2>&1 | Set-Content -LiteralPath $probe -Enc
+oding UTF8
+        if($LASTEXITCODE -ne 0) { throw "Portable Python dependency probe faile
+d." }
+    }
+    "WORKSPACE_SNAPSHOT" {
+        if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "W
+orkspace is not initialized." }
+        $label=[string]$request.args.label
+        if([string]::IsNullOrWhiteSpace($label)) { $label="manual" }
+        if($label -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]' in expression or state
+ment.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:185 c
+har:83
++         & $python -c "import sys; print(sys.version); import zmq, tornado; pr
+int ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+Missing closing ')' after expression in 'if' statement.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:92 ch
+ar:34
++     "WORKSPACE_BOOTSTRAP_PYTHON" {
++                                  ~
+Missing closing '}' in statement block.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:221 c
+har:3
++ })
++   ~
+Missing condition in switch statement clause.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:222 c
+har:1
++ ) { throw "Unsafe snapshot label." }
++ ~
+Unexpected token ')' in expression or statement.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:235 c
+har:5
++     }
++     ~
+Unexpected token '}' in expression or statement.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:237 c
+har:22
++     "WORKSPACE_READ" {
++                      ~
+Unexpected token '{' in expression or statement.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:262 c
+har:22
++     "WORKSPACE_TEST" {
++                      ~
+Unexpected token '{' in expression or statement.
+At C:\KatarinaVPSAgent\work\py1\src\alfaaulia-katarina-Katarina-AI-25789183a5c9
+e2bd7087abe96f9785b8d8ccbd98\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:274 c
+har:1
++ }
++ ~
+Unexpected token '}' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordEx 
+   ception
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+
