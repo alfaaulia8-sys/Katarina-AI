@@ -4,6 +4,6 @@
     "agent_id":  "katarina-vps-2012r2-01",
     "computer_name":  "WIN-4TTT19K3CL8",
     "state":  "ERROR",
-    "error":  "Task is not allowlisted: STAGE06_RUNTIME_PROBE",
-    "updated_utc":  "2026-10-03T16:15:45.7385983Z"
+    "error":  "The remote server returned an error: (409) Conflict.",
+    "updated_utc":  "2026-10-04T01:50:30.3911302Z"
 }
