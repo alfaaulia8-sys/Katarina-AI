@@ -1,0 +1,17 @@
+Collecting pip
+  Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+Collecting setuptools
+  Downloading setuptools-84.0.0-py3-none-any.whl.metadata (6.6 kB)
+Collecting wheel
+  Downloading wheel-0.48.0-py3-none-any.whl.metadata (2.3 kB)
+Collecting packaging>=24.0 (from wheel)
+  Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+   ---------------------------------------- 1.8/1.8 MB 11.1 MB/s  0:00:00
+Downloading setuptools-84.0.0-py3-none-any.whl (818 kB)
+   ---------------------------------------- 818.2/818.2 kB 4.4 MB/s  0:00:00
+Downloading wheel-0.48.0-py3-none-any.whl (33 kB)
+Downloading packaging-26.3-py3-none-any.whl (129 kB)
+Installing collected packages: setuptools, pip, packaging, wheel
+
+Successfully installed packaging-26.3 pip-26.2.1 setuptools-84.0.0 wheel-0.48.0
