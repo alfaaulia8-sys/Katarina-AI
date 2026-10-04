@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "request_id": "wsruntime312b",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "created_utc": "2026-10-04T03:27:46.021Z",
+  "expires_utc": "2026-10-04T03:57:46.021Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_RUNTIME_INSTALL"
+  }
+}
