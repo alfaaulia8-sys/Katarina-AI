@@ -1,0 +1,53 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.0",
+                    "agent_id":  "katarina-vps-2012r2-01-recovery",
+                    "lane":  "recovery",
+                    "request_id":  "cp-recover-primary",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "RECOVERY",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-04T08:34:50.9057883Z"
+                },
+    "files":  [
+                  {
+                      "name":  "control_primary_restart.json",
+                      "size_bytes":  416,
+                      "sha256":  "151128a74d38b3634f27c02aaea2303d2aad1e964ac5ccc70c4b8e3e1b4fabab",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"KATARINA_CONTROL_PRIMARY_RESTART\",\r\n    \"terminated_process_ids\":  [\r\n                                   2212\r\n                               ],\r\n    \"heartbeat_path\":  \"C:\\\\KatarinaVPSAgent\\\\lanes\\\\primary\\\\heartbeat.json\",\r\n    \"agent_version\":  \"1.4.0\",\r\n    \"phase\":  \"QUEUE_POLL\",\r\n    \"updated_utc\":  \"2026-10-04T08:34:36.2495085Z\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  557,
+                      "sha256":  "630a10248001444bc0fcdf08419078b0922fd368dabc7a52a551b176e3e1fdbd",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"cp-recover-primary\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01-recovery\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T08:34:20.0151616Z\",\r\n    \"completed_utc\":  \"2026-10-04T08:34:47.7182552Z\",\r\n    \"duration_ms\":  27703,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_CONTROL_RESTART_PRIMARY\",\r\n                    \"workspace_root\":  \"C:\\\\KatarinaDev\",\r\n                    \"workspace_files\":  207\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "workspace_status.json",
+                      "size_bytes":  286,
+                      "sha256":  "1306e17e7a477ea91091e4dfb862b95f77d708dccfb977f8662b1a9266f4e335",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"mode\":  \"WORKSPACE_CONTROL_RESTART_PRIMARY\",\r\n    \"root\":  \"C:\\\\KatarinaDev\",\r\n    \"workspace\":  \"C:\\\\KatarinaDev\\\\workspace\",\r\n    \"file_count\":  207,\r\n    \"python_runtime\":  \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\python.exe\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  1263
+}
