@@ -50,7 +50,7 @@
     "new_stream_id_new_namespace": true,
     "python_next_sequence_floor": "HEARTBEAT.latest_consumed_command_sequence",
     "mt5_persistence_required": true,
-    "governance": "ADR-0012_PROPOSED"
+    "governance": "ADR-0012_ACCEPTED"
   },
   "heartbeat": {
     "draft_interval_ms": 1000,
@@ -138,7 +138,9 @@
     "cross_language_recovery": true,
     "mql5_persistent_sequence": true,
     "concrete_bridge_transport": true,
-    "account_id_cross_language": true
+    "account_id_cross_language": true,
+    "cross_process_reconnect": true,
+    "native_account_record": true
   },
   "unblocked_by_stage06_freeze": [
     "MQL5_KAT1_CODEC",
@@ -229,13 +231,36 @@
       "live_risk_ready": false,
       "stage06_source_modified": false,
       "result": "PASS"
+    },
+    "cross_process_reconnect": {
+      "run_id": 37166695631,
+      "head_sha": "ced99e3d13924e368b05a171d24dffe490ef1fa0",
+      "artifact": "stage07-cross-process-reconnect-evidence",
+      "digest": "sha256:a6a340a756d802200f63d33231be6d8d94511e4d637641a87bca24705461f286",
+      "mt5_lane": "1..7_then_8..14",
+      "python_lane": "1..4_then_5..8",
+      "stream_id_stable": true,
+      "boot_id_changed": true,
+      "repeated_recovery": "PASS",
+      "live_risk_ready": false,
+      "result": "PASS"
+    },
+    "native_account_record": {
+      "run_id": 37166747989,
+      "head_sha": "aedd3f9428f4354a38fa172257c0d3f81d17eefe",
+      "artifact": "stage07-native-account-record-evidence",
+      "digest": "sha256:5d072eac738085e38e5502167e181855d5139c46c4b6bb9b30ad33ed2359aef2",
+      "body_bytes": 144,
+      "cross_language_byte_equality": "PASS",
+      "negative_money_roundtrip": "PASS",
+      "result": "PASS"
     }
   },
   "proposed_adrs": [
-    "docs/adr/0009-stage07-live-communication-topology.md",
-    "docs/adr/0012-stage07-bidirectional-sequence-lanes.md"
+    "docs/adr/0009-stage07-live-communication-topology.md"
   ],
   "accepted_adrs": [
-    "docs/adr/0011-stage07-snapshot-recovery-integrity.md"
+    "docs/adr/0011-stage07-snapshot-recovery-integrity.md",
+    "docs/adr/0012-stage07-bidirectional-sequence-lanes.md"
   ]
 }
