@@ -1,0 +1,22 @@
+Python ZeroMQ ROUTER exited before ready. Traceback (most recent call last):
+  File "C:\KatarinaVPSAgent\work\wszmq-1019\output\workspace_zmq_router.py", li
+ne 4, in <module>
+    import zmq
+ModuleNotFoundError: No module named 'zmq'
+At C:\KatarinaVPSAgent\work\wszmq-1019\src\alfaaulia-katarina-Katarina-AI-35a7c
+06cbc541b407332a858d6d30ed4723a5131\scripts\vps\Invoke-KatarinaWorkspaceTask.ps
+1:655 char:17
++                 throw "Python ZeroMQ ROUTER exited before ready. $detail"
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Python ZeroMQ R...e named 'zm 
+   q'
+:String) [], RuntimeException
+    + FullyQualifiedErrorId : Python ZeroMQ ROUTER exited before ready. Traceb 
+   ack (most recent call last):
+      File "C:\KatarinaVPSAgent\work\wszmq-1019\output\workspace_zmq_router.py 
+   ", line 4, in <module>
+    import zmq
+ModuleNotFoundError: No module named 'zmq'
+ 
+
+Workspace child task produced no status evidence.
