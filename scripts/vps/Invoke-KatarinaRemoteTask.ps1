@@ -415,7 +415,9 @@ try {
             if ($mode -eq "MT5_SEQUENCE_RUNTIME") {
                 $terminalPath = Get-ArgValue $request.args "terminal_path" ""
                 $terminalDataPath = Get-ArgValue $request.args "terminal_data_path" ""
+                $symbol = Get-ArgValue $request.args "symbol" "XAUUSD.vx"
                 if (-not $terminalPath -or -not $terminalDataPath) { throw "terminal_path and terminal_data_path are required." }
+                if (-not $symbol) { throw "symbol is required for Stage-07 sequence runtime." }
 
                 $scriptPath = Join-Path $terminalDataPath "MQL5\Scripts\KatarinaStage07WireSequenceTest.ex5"
                 if (!(Test-Path $scriptPath)) { throw "Stage-07 wire sequence EX5 missing; compile first." }
@@ -442,7 +444,7 @@ Account=0
 Profile=0
 [StartUp]
 Script=KatarinaStage07WireSequenceTest
-Symbol=XAUUSD
+Symbol=$symbol
 Period=H1
 ShutdownTerminal=1
 "@ | Set-Content $configPath -Encoding ASCII
