@@ -126,11 +126,16 @@ Governance:
 
 ## Next recommended action
 
-Proceed to **Stage 08 — Data Validation Engine**.
+Proceed with Stage 08 — Data Validation Engine:
 
-Stage 08 may consume the frozen Stage-07 communication output but must not weaken Stage-04 KAT1, Stage-05 readiness/risk gates, Stage-06 bridge safety, or Stage-07 fail-closed transport/recovery semantics. Live broker-risk enablement remains disabled.
+1. freeze validation taxonomy and dispositions;
+2. bind validation before analytical state promotion;
+3. add SymbolSpec-aware market-data checks;
+4. add history completeness and per-class freshness;
+5. connect validation state to readiness without enabling execution;
+6. add property/regression tests and final audit.
 
-The VPS bridge remains available for diagnostics, repository tests, MT5 compilation/log collection and compatibility checks. Heavy legacy-host work should continue to use sparse GitHub writes and bounded local execution.
+Stage-07 transport is frozen. Behavioral changes require governed review.
 
 ## Project invariant reminders
 

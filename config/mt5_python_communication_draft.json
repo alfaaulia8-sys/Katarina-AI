@@ -120,7 +120,8 @@
     "native_tcp_integration_test": "mt5/Tests/KatarinaStage07TcpFallbackIntegration.mq5",
     "transport_profile": "scripts/stage07/profile_stage07_transport.py",
     "final_audit": "scripts/stage07/audit_stage07_final.py",
-    "freeze_record": "docs/reviews/STAGE_07_FREEZE_RECORD.md"
+    "freeze_record": "docs/reviews/STAGE_07_FREEZE_RECORD.md",
+    "native_tcp_test": "mt5/Tests/KatarinaStage07TcpFallbackIntegration.mq5"
   },
   "progress": {
     "research": true,
@@ -146,7 +147,9 @@
     "account_id_cross_language": true,
     "cross_process_reconnect": true,
     "native_account_record": true,
-    "final_clearance": true
+    "final_clearance": true,
+    "native_tcp_cross_language": true,
+    "backpressure_latency_profile": true
   },
   "unblocked_by_stage06_freeze": [
     "MQL5_KAT1_CODEC",
@@ -267,14 +270,13 @@
       "artifact": "stage07-final-clearance-evidence",
       "artifact_id": 11306007351,
       "digest": "sha256:d95c9f12816017ea87291582ffdded60c0d298035ca82bc55c689e1f94df2532",
-      "native_tcp_fallback": "PASS_STAGE07_NATIVE_TCP_FALLBACK",
+      "native_tcp_result": "PASS_STAGE07_NATIVE_TCP_FALLBACK",
       "native_tcp_ex5_sha256": "c9518375d0b06736ab5f26a62ac2ec5ceadf623f1336b3eccad732ce1aeb1ce4",
-      "backpressure_latency_profile": "PASS_STAGE07_BACKPRESSURE_LATENCY_PROFILE",
       "tcp_p99_ms": 0.202,
       "codec_p99_us": 290.3,
-      "final_audit": "PASS_STAGE07_FINAL_CLEARANCE",
-      "ready_for_stage08": true,
+      "timer_budget_us": 2000,
       "live_risk_ready": false,
+      "ready_for_stage08": true,
       "result": "PASS_STAGE07_FINAL_CLEARANCE"
     }
   },
@@ -295,22 +297,10 @@
   },
   "acceptance_status": "ALL_GATES_PASS",
   "freeze": {
-    "frozen": true,
     "version": "1.0.0",
-    "freeze_date": "2026-10-04",
-    "final_result": "PASS_STAGE07_FINAL_CLEARANCE",
-    "freeze_qualified_host": "Windows Server 2022 x64",
-    "run_id": 37209799384,
-    "head_sha": "f83ab5eb6f57b2c30428122f69a807c9ace673f1",
-    "artifact": "stage07-final-clearance-evidence",
-    "artifact_id": 11306007351,
-    "artifact_digest": "sha256:d95c9f12816017ea87291582ffdded60c0d298035ca82bc55c689e1f94df2532",
-    "native_tcp_ex5_sha256": "c9518375d0b06736ab5f26a62ac2ec5ceadf623f1336b3eccad732ce1aeb1ce4",
-    "regression_tests": "37/37 PASS",
-    "tcp_p99_ms": 0.202,
-    "codec_p99_us": 290.3,
-    "inherited_timer_budget_us": 2000,
-    "ready_for_stage08": true,
-    "live_risk_ready": false
+    "date": "2026-10-04",
+    "final_clearance_run_id": 37209799384,
+    "live_risk_ready": false,
+    "ready_for_stage08": true
   }
 }
