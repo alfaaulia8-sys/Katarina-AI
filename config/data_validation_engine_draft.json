@@ -1,0 +1,49 @@
+{
+  "stage": "08",
+  "version": "0.1.0",
+  "status": "STAGE_08_IMPLEMENTATION_ACTIVE",
+  "frozen_inputs": {
+    "protocol": "KAT1 v1.0.0",
+    "bridge": "Stage 06 v1.0.0 / Bridge v0.5.0",
+    "communication": "Stage 07 v1.0.0"
+  },
+  "authority": {
+    "may_trade": false,
+    "may_arm_execution": false,
+    "may_size_positions": false,
+    "may_submit_orders": false,
+    "dispositions": [
+      "ACCEPT",
+      "QUARANTINE",
+      "REJECT"
+    ]
+  },
+  "baseline_policy": {
+    "max_event_age_ns": 5000000000,
+    "max_future_skew_ns": 1000000000,
+    "require_external_source_time": true,
+    "reject_non_finite_numbers": true
+  },
+  "fail_closed": {
+    "validator_exception": "REJECT",
+    "stale_data": "REJECT",
+    "future_clock_skew": "REJECT",
+    "non_finite_number": "REJECT",
+    "missing_required_field": "QUARANTINE"
+  },
+  "implementation": {
+    "engine": "src/katarina/validation/engine.py",
+    "tests": "tests/unit/validation/test_stage08_validation.py",
+    "architecture": "docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md"
+  },
+  "progress": {
+    "baseline_engine": true,
+    "baseline_tests": true,
+    "ingest_binding": false,
+    "symbol_spec_rules": false,
+    "history_completeness": false,
+    "readiness_integration": false,
+    "property_tests": false,
+    "final_audit": false
+  }
+}

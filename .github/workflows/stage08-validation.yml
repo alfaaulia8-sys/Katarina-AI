@@ -1,0 +1,32 @@
+name: Stage 08 Data Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stage08-validation.yml"
+      - "src/katarina/validation/**"
+      - "tests/unit/validation/**"
+      - "config/data_validation_engine_draft.json"
+      - "docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Stage 08 baseline tests
+        shell: bash
+        run: |
+          export PYTHONPATH=src
+          python -m unittest tests.unit.validation.test_stage08_validation -v

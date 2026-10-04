@@ -9,7 +9,9 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 03 — Repository Architecture: ✅ FROZEN v1.0.0
 - Stage 04 — Data Protocol / Schemas: ✅ FROZEN — KAT1 v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: ✅ FROZEN — v1.0.0
-- Stage 06 — MT5 Bridge EA: 🟡 CLEARANCE AUTOMATION COMPLETE — v0.5.0 / external proof pending
+- Stage 06 — MT5 Bridge EA: ✅ FROZEN v1.0.0 — Bridge design v0.5.0
+- Stage 07 — MT5 ↔ Python Communication: ✅ FROZEN v1.0.0 — `PASS_STAGE07_FINAL_CLEARANCE`
+- Stage 08 — Data Validation Engine: 🟡 IMPLEMENTATION ACTIVE
 
 ## KAT1 v1.0.0
 
@@ -209,34 +211,26 @@ Deferred:
 The modern compile proof requires zero errors, zero warnings, fresh non-empty EX5 artifacts, and SHA-256 evidence. See `docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md`.
 
 
-## Stage 07 — MT5 ↔ Python Communication
+## Stage 07 — MT5 ↔ Python Communication (Frozen v1.0.0)
 
-Stage 07 has started in a gated mode while Stage 06 waits for external MetaEditor/MT5 proof.
+Final clearance: `PASS_STAGE07_FINAL_CLEARANCE` on run `37209799384`.
 
-Current work:
+Frozen outcomes include ZeroMQ primary transport, native TCP fallback, exact KAT1 byte equality, recovery/reconciliation, reconnect sequence continuity, and bounded backpressure. Live risk remains disabled.
 
-- GitHub prior-art research;
-- localhost ZeroMQ ROUTER/DEALER topology draft;
-- native local TCP fallback design using KAT1 frame_length;
-- application-owned Python TransportPort;
-- bounded in-memory transport adapter;
-- schema-driven Python KAT1 codec;
-- golden-vector round-trip tests;
-- corrupt frame / CRC / flag rejection tests.
+See `docs/reviews/STAGE_07_FREEZE_RECORD.md`.
 
-Current files:
+## Stage 08 — Data Validation Engine
 
-- `docs/reviews/STAGE_07_COMMUNICATION_RESEARCH.md`
-- `docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md`
-- `docs/adr/0009-stage07-live-communication-topology.md`
-- `config/mt5_python_communication_draft.json`
-- `src/katarina/ports/transport.py`
-- `src/katarina/adapters/transport/kat1_codec.py`
-- `src/katarina/adapters/transport/memory.py`
-- `tests/unit/transport/test_stage07_communication.py`
+Stage 08 is active. Its baseline validates decoded ingest and classifies data as `ACCEPT`, `QUARANTINE`, or `REJECT`.
 
-Production MQL5 ZeroMQ/TCP integration remains blocked until Stage-06 external clearance is complete.
+It is deliberately non-trading and cannot arm execution, size positions, create trade candidates, or submit broker orders.
 
+Initial files:
+
+- `src/katarina/validation/engine.py`
+- `config/data_validation_engine_draft.json`
+- `docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md`
+- `tests/unit/validation/test_stage08_validation.py`
 
 ## VPS Remote Lab Bridge
 
