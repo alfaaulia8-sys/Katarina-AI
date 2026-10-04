@@ -1,0 +1,15 @@
+One or more Stage-07 workspace MT5 targets failed strict compilation.
+At C:\KatarinaVPSAgent\work\wsmql1\src\alfaaulia-katarina-Katarina-AI-2bc9ad178
+c3bac778abac9323e82c0325e7c89e5\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:27
+2 char:23
++         if($failed) { throw "One or more Stage-07 workspace MT5 targets faile
+d s ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo          : OperationStopped: (One or more Sta...ct compilat 
+   ion.:String) [], RuntimeException
+    + FullyQualifiedErrorId : One or more Stage-07 workspace MT5 targets faile 
+   d strict compilation.
+ 
+
+Workspace child task produced no status evidence.
