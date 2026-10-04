@@ -32,6 +32,7 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check -r requirements-stage07.txt
+          python -m pip install --disable-pip-version-check pywinauto
 
       - name: Run Stage 07 Python regressions
         shell: pwsh
@@ -101,31 +102,15 @@ jobs:
           if (!(Test-Path $artifact)) { throw "Native TCP EX5 missing." }
           "TCP_EX5_SHA256=$((Get-FileHash $artifact -Algorithm SHA256).Hash.ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Configure localhost socket allow-list
+      - name: Configure localhost socket allow-list through MT5 UI
         shell: pwsh
         run: |
-          $configDir = Join-Path $env:MT5_HOME "config"
-          New-Item -ItemType Directory -Force -Path $configDir | Out-Null
-          $common = Join-Path $configDir "common.ini"
-
-          $existing = ""
-          if (Test-Path $common) {
-            try { $existing = Get-Content $common -Raw -ErrorAction Stop } catch {}
+          python .\scripts\stage07\configure_mt5_network_allowlist.py --terminal "$env:MT5_HOME\terminal64.exe" --output ".\build\stage07\stage07_mt5_allowlist_ui.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $ui = Get-Content ".\build\stage07\stage07_mt5_allowlist_ui.json" -Raw | ConvertFrom-Json
+          if ($ui.result -ne "PASS_MT5_NETWORK_ALLOWLIST_UI") {
+            throw "MT5 localhost allow-list UI automation did not pass."
           }
-
-          # Dedicated ephemeral CI terminal: localhost is the only permitted network target.
-          @"
-          [Experts]
-          AllowDllImport=0
-          Enabled=1
-          Account=0
-          Profile=0
-          Chart=0
-          WebRequest=1
-          WebRequestUrl=127.0.0.1
-          "@ | Set-Content -Path $common -Encoding Unicode
-
-          Write-Host "Configured dedicated CI terminal localhost allow-list at $common"
 
       - name: Run cross-language native TCP fallback
         shell: pwsh
@@ -311,6 +296,7 @@ jobs:
           name: stage07-final-clearance-evidence
           path: |
             build/stage07/KatarinaStage07TcpFallbackIntegration.compile.log
+            build/stage07/stage07_mt5_allowlist_ui.json
             build/stage07/Katarina_Stage07_tcp_fallback_result.txt
             build/stage07/stage07_native_tcp_python_result.json
             build/stage07/stage07_native_tcp_fallback_evidence.json
