@@ -1,11 +1,11 @@
 {
     "schema_version":  1,
-    "agent_version":  "1.4.0",
+    "agent_version":  "1.4.1",
     "agent_id":  "katarina-vps-2012r2-01",
     "lane":  "primary",
-    "process_id":  2088,
+    "process_id":  3336,
     "computer_name":  "WIN-4TTT19K3CL8",
-    "state":  "ERROR",
-    "error":  "Exception calling \"ExtractToDirectory\" with \"2\" argument(s): \"Not enough storage is available to process this command.\r\n\"",
-    "updated_utc":  "2026-10-04T11:36:11.1714259Z"
+    "state":  "ONLINE",
+    "error":  "",
+    "updated_utc":  "2026-10-04T11:47:22.1557578Z"
 }
