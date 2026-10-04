@@ -17,7 +17,7 @@ from katarina.validation.engine import (
 )
 
 
-NOW = 20_000_000_000
+NOW = 2_000_000_000_000_000_000
 
 
 class Stage08DataValidationTests(unittest.TestCase):
