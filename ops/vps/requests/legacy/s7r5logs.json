@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "request_id": "s7r5logs",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "COLLECT_MT5_LOGS",
+  "created_utc": "2026-10-04T03:19:06.195Z",
+  "expires_utc": "2026-10-04T03:49:06.195Z",
+  "ref": "main",
+  "args": {
+    "terminal_data_path": "C:\\Program Files\\MetaTrader 5",
+    "max_files": 10,
+    "tail_lines": 800
+  }
+}
