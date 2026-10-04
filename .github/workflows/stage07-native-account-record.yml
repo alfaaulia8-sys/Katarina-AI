@@ -129,6 +129,7 @@ jobs:
         run: |
           @'
           import hashlib
+          import json
           import pathlib
           import sys
 
@@ -207,17 +208,19 @@ jobs:
 
           out = root / "build" / "stage07" / "stage07_native_account_record_evidence.json"
           out.write_text(
-              """{
-  "schema_version": "1.0",
-  "stage": "07",
-  "record_type": "ACCOUNT_STATE",
-  "body_bytes": 144,
-  "cross_language_byte_equality": "PASS",
-  "money_scale": 2,
-  "negative_money_roundtrip": "PASS",
-  "result": "PASS_STAGE07_NATIVE_ACCOUNT_RECORD"
-}
-""",
+              json.dumps(
+                  {
+                      "schema_version": "1.0",
+                      "stage": "07",
+                      "record_type": "ACCOUNT_STATE",
+                      "body_bytes": 144,
+                      "cross_language_byte_equality": "PASS",
+                      "money_scale": 2,
+                      "negative_money_roundtrip": "PASS",
+                      "result": "PASS_STAGE07_NATIVE_ACCOUNT_RECORD",
+                  },
+                  indent=2,
+              ),
               encoding="utf-8",
           )
           print("Stage-07 native ACCOUNT_STATE MQL/Python body equality PASS")
