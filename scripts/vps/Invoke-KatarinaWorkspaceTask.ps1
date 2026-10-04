@@ -283,27 +283,56 @@ switch($mode) {
         & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaVPSAgentWatchdog" /TR $watchdogCmd | Out-Null
         if($LASTEXITCODE -ne 0){throw "Failed to register fallback watchdog."}
 
-        foreach($task in @("KatarinaControlRecovery","KatarinaControlWorker01","KatarinaControlWorker02","KatarinaControlSupervisor","KatarinaVPSAgentWatchdog")) {
-            & schtasks.exe /Run /TN $task | Out-Null
-            if($LASTEXITCODE -ne 0){throw "Failed to start Control Plane v2 task: $task"}
+        $laneTaskMap=[ordered]@{
+            recovery="KatarinaControlRecovery"
+            worker01="KatarinaControlWorker01"
+            worker02="KatarinaControlWorker02"
         }
-
-        Start-Sleep -Seconds 10
-
         $laneChecks=@()
         foreach($laneName in @("recovery","worker01","worker02")) {
+            $taskName=[string]$laneTaskMap[$laneName]
+            try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
+            Start-Sleep -Milliseconds 500
+            & schtasks.exe /Run /TN $taskName | Out-Null
+            if($LASTEXITCODE -ne 0){throw "Failed to start Control Plane v2 lane task: $taskName"}
+
             $hbPath=Join-Path $installRoot ("lanes\"+$laneName+"\heartbeat.json")
-            $ok=Test-Path -LiteralPath $hbPath -PathType Leaf
             $hb=$null
-            if($ok){try{$hb=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json}catch{$ok=$false}}
+            $deadline=[DateTime]::UtcNow.AddSeconds(25)
+            while([DateTime]::UtcNow -lt $deadline) {
+                if(Test-Path -LiteralPath $hbPath -PathType Leaf) {
+                    try {
+                        $candidate=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
+                        $updated=[DateTime]::Parse(
+                            [string]$candidate.updated_utc,
+                            [Globalization.CultureInfo]::InvariantCulture,
+                            [Globalization.DateTimeStyles]::AssumeUniversal
+                        ).ToUniversalTime()
+                        $fresh=(([DateTime]::UtcNow-$updated).TotalSeconds -lt 20)
+                        if($fresh -and [string]$candidate.agent_version -eq "1.4.0") {
+                            $hb=$candidate
+                            break
+                        }
+                    } catch {}
+                }
+                Start-Sleep -Seconds 1
+            }
+            $ok=($null -ne $hb)
             $laneChecks += [ordered]@{
                 lane=$laneName
+                task=$taskName
                 heartbeat_path=$hbPath
                 heartbeat_present=$ok
                 phase=$(if($hb){[string]$hb.phase}else{$null})
                 agent_version=$(if($hb){[string]$hb.agent_version}else{$null})
                 updated_utc=$(if($hb){[string]$hb.updated_utc}else{$null})
             }
+        }
+
+        foreach($task in @("KatarinaControlSupervisor","KatarinaVPSAgentWatchdog")) {
+            try { & schtasks.exe /End /TN $task | Out-Null } catch {}
+            & schtasks.exe /Run /TN $task | Out-Null
+            if($LASTEXITCODE -ne 0){throw "Failed to start Control Plane v2 task: $task"}
         }
 
         $allReady=(@($laneChecks | Where-Object { -not $_.heartbeat_present }).Count -eq 0)
@@ -359,7 +388,7 @@ switch($mode) {
             if(Test-Path -LiteralPath $hbPath -PathType Leaf) {
                 try{
                     $candidate=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
-                    if([string]$candidate.agent_version -match '^1\.3\.'){$hb=$candidate;break}
+                    if([string]$candidate.agent_version -match '^1\.(3|4)\.'){$hb=$candidate;break}
                 }catch{}
             }
             Start-Sleep -Seconds 2
