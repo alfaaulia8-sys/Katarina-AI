@@ -1,0 +1,57 @@
+name: Stage 09 Health Safety
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stage09-health-safety.yml"
+      - "src/katarina/health/**"
+      - "tests/unit/health/**"
+      - "scripts/stage09/**"
+      - "config/health_safety_engine_draft.json"
+      - "docs/architecture/KATARINA_HEALTH_SAFETY_ENGINE_DRAFT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Stage 09 tests
+        shell: bash
+        run: |
+          export PYTHONPATH=src
+          python -m unittest discover -s tests/unit/health -p 'test_*.py' -v 2>&1 | tee stage09-tests.txt
+          grep -E "Ran [0-9]+ tests" stage09-tests.txt
+          grep -E "^OK$" stage09-tests.txt
+      - name: Run Stage 09 final audit
+        shell: bash
+        run: |
+          export PYTHONPATH=src
+          mkdir -p build/stage09
+          python scripts/stage09/audit_stage09_final.py --repo-root . --output build/stage09/stage09_final_clearance.json
+          python - <<'PY'
+          import json
+          with open("build/stage09/stage09_final_clearance.json", encoding="utf-8") as f:
+              data=json.load(f)
+          assert data["result"] == "PASS_STAGE09_FINAL_CLEARANCE"
+          assert data["ready_for_stage10"] is True
+          assert data["live_risk_ready"] is False
+          PY
+      - name: Upload Stage 09 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage09-final-clearance-evidence
+          path: |
+            stage09-tests.txt
+            build/stage09/stage09_final_clearance.json
+          retention-days: 90
