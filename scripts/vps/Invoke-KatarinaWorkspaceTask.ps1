@@ -615,13 +615,21 @@ switch($mode) {
 
         $verifyScript=Join-Path $OutputDir "dependency_verify.py"
         @'
+import datetime
 import json
 import pathlib
 import sys
 import zmq
 import tornado
 
+python_dir = pathlib.Path(sys.executable).resolve().parent
+pth_path = python_dir / "python312._pth"
+pth_lines = pth_path.read_text(encoding="ascii").splitlines() if pth_path.exists() else []
+
 payload = {
+    "schema_version": 1,
+    "stage": "07",
+    "proof_type": "VPS_PYTHON_DEPENDENCY_VERIFICATION",
     "python_executable": str(pathlib.Path(sys.executable).resolve()),
     "python_version": sys.version.split()[0],
     "pyzmq_version": zmq.__version__,
@@ -630,6 +638,9 @@ payload = {
     "tornado_version": tornado.version,
     "tornado_module": str(pathlib.Path(tornado.__file__).resolve()),
     "sys_path": list(sys.path),
+    "python_pth": pth_lines,
+    "verified_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "result": "PASS",
 }
 print(json.dumps(payload, sort_keys=True))
 '@ | Set-Content -LiteralPath $verifyScript -Encoding ASCII
@@ -665,21 +676,10 @@ print(json.dumps(payload, sort_keys=True))
             }
         }
 
-        Write-Json (Join-Path $OutputDir "dependency_verification.json") ([ordered]@{
-            schema_version=1
-            stage="07"
-            proof_type="VPS_PYTHON_DEPENDENCY_VERIFICATION"
-            python_executable=[string]$probe.python_executable
-            python_version=[string]$probe.python_version
-            pyzmq=[string]$probe.pyzmq_version
-            libzmq=[string]$probe.libzmq_version
-            zmq_module=[string]$probe.zmq_module
-            tornado=[string]$probe.tornado_version
-            tornado_module=[string]$probe.tornado_module
-            python_pth=$pthLines
-            verified_utc=[DateTime]::UtcNow.ToString("o")
-            result="PASS"
-        })
+        # The canonical Python probe already emitted valid UTF-8 JSON.
+        # Copy it directly so Windows PowerShell 4 never needs to serialize the
+        # dependency evidence object (ConvertTo-Json can fail on this legacy host).
+        Copy-Item -LiteralPath $verifyOut -Destination (Join-Path $OutputDir "dependency_verification.json") -Force
         break
     }
 
