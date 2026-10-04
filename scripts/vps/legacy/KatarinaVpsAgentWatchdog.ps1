@@ -7,7 +7,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$HeartbeatPath = Join-Path $InstallRoot "heartbeat.json"
+$LaneHeartbeatPath = Join-Path $InstallRoot "lanes\primary\heartbeat.json"
+$LegacyHeartbeatPath = Join-Path $InstallRoot "heartbeat.json"
 $StatePath = Join-Path $InstallRoot "watchdog_state.json"
 $LogPath = Join-Path $InstallRoot "watchdog.log"
 
@@ -53,8 +54,14 @@ $now = [DateTime]::UtcNow
 $reason = $null
 $heartbeat = $null
 
-if (Test-Path -LiteralPath $HeartbeatPath -PathType Leaf) {
-    try { $heartbeat = Get-Content -LiteralPath $HeartbeatPath -Raw | ConvertFrom-Json } catch {}
+$heartbeatCandidate = $null
+if (Test-Path -LiteralPath $LaneHeartbeatPath -PathType Leaf) {
+    $heartbeatCandidate = $LaneHeartbeatPath
+} elseif (Test-Path -LiteralPath $LegacyHeartbeatPath -PathType Leaf) {
+    $heartbeatCandidate = $LegacyHeartbeatPath
+}
+if ($heartbeatCandidate) {
+    try { $heartbeat = Get-Content -LiteralPath $heartbeatCandidate -Raw | ConvertFrom-Json } catch {}
 }
 
 if ($null -eq $heartbeat) {
