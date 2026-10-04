@@ -31,6 +31,13 @@ class RecoveryFault(RuntimeError):
 
 
 @dataclass(frozen=True, slots=True)
+class SnapshotRecord:
+    record_type: int
+    schema_version: int
+    body: bytes
+
+
+@dataclass(frozen=True, slots=True)
 class SnapshotSummary:
     snapshot_id: str
     base_sequence: int
@@ -83,6 +90,7 @@ class Kat1RecoveryGate:
         self._expected_record_count = 0
         self._expected_total_payload_bytes = 0
         self._chunks: list[bytes] = []
+        self._records: list[SnapshotRecord] = []
         self._record_count = 0
         self._snapshot_summary: SnapshotSummary | None = None
 
@@ -101,6 +109,12 @@ class Kat1RecoveryGate:
     @property
     def snapshot_summary(self) -> SnapshotSummary | None:
         return self._snapshot_summary
+
+    @property
+    def snapshot_records(self) -> tuple[SnapshotRecord, ...]:
+        if self._state not in (RecoveryState.WAITING_RECONCILE, RecoveryState.COMPLETE):
+            return ()
+        return tuple(self._records)
 
     def start(self, *, snapshot_request_id: bytes) -> None:
         self._require_id128(snapshot_request_id, "snapshot_request_id")
@@ -223,6 +237,7 @@ class Kat1RecoveryGate:
         self._expected_record_count = expected_records
         self._expected_total_payload_bytes = expected_bytes
         self._chunks = []
+        self._records = []
         self._record_count = 0
         self._state = RecoveryState.SNAPSHOT_ACTIVE
 
@@ -256,7 +271,25 @@ class Kat1RecoveryGate:
         if len(self._chunks) >= self._expected_chunk_count:
             self._fault("SNAPSHOT_CHUNK exceeds expected chunk count")
 
+        parsed_records: list[SnapshotRecord] = []
+        for record in records:
+            record_type = int(record["record_type"])
+            schema_version = int(record["schema_version"])
+            body = bytes(record["body"])
+            if record_type < 1 or record_type > 7:
+                self._fault("SNAPSHOT_CHUNK contains unknown snapshot record_type")
+            if schema_version <= 0:
+                self._fault("SNAPSHOT_CHUNK contains invalid record schema_version")
+            parsed_records.append(
+                SnapshotRecord(
+                    record_type=record_type,
+                    schema_version=schema_version,
+                    body=body,
+                )
+            )
+
         self._chunks.append(bytes(variable_bytes))
+        self._records.extend(parsed_records)
         self._record_count += record_count
 
     def _on_snapshot_commit(self, frame: Kat1Frame) -> None:
@@ -354,6 +387,7 @@ class Kat1RecoveryGate:
         self._expected_record_count = 0
         self._expected_total_payload_bytes = 0
         self._chunks = []
+        self._records = []
         self._record_count = 0
         self._snapshot_summary = None
 
