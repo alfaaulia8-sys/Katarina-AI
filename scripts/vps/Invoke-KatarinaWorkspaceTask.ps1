@@ -502,7 +502,22 @@ switch($mode) {
                 }
             } catch {}
         }
-        $primaryOnly=($resourceProfile -eq "LEGACY_LOW_MEMORY_SEQUENTIAL")
+        $expectedLanes=@("primary")
+        if($resourceProfile -eq "LEGACY_LOW_MEMORY_BALANCED") {
+            $watchdogConfigPath=Join-Path $installRoot "watchdog_lanes.json"
+            if(Test-Path -LiteralPath $watchdogConfigPath -PathType Leaf) {
+                try {
+                    $watchdogCfg=Get-Content -LiteralPath $watchdogConfigPath -Raw | ConvertFrom-Json
+                    $configured=@($watchdogCfg.lanes | ForEach-Object { ([string]$_.lane).ToLowerInvariant() } | Where-Object { $_ })
+                    if($configured.Count -gt 0) {
+                        $expectedLanes=@($configured | Sort-Object -Unique)
+                    }
+                } catch {}
+            }
+        } elseif($resourceProfile -ne "LEGACY_LOW_MEMORY_SEQUENTIAL") {
+            $expectedLanes=@("primary","recovery","worker01","worker02")
+        }
+        $primaryOnly=($expectedLanes.Count -eq 1 -and $expectedLanes -contains "primary")
 
         $records=@()
         $allHealthy=$true
@@ -531,7 +546,7 @@ switch($mode) {
                 ).Count
             } catch {}
 
-            $expected=(!$primaryOnly -or [string]$d.lane -eq "primary")
+            $expected=($expectedLanes -contains ([string]$d.lane).ToLowerInvariant())
             $healthy=($null -ne $hb -and $null -ne $age -and $age -lt 60 -and $processCount -eq 1)
             $stateOk=$(if($expected){$healthy}else{$processCount -eq 0})
             if(!$stateOk){$allHealthy=$false}
@@ -554,6 +569,7 @@ switch($mode) {
             proof_type="KATARINA_CONTROL_PLANE_STATUS"
             resource_profile=$resourceProfile
             primary_only=$primaryOnly
+            expected_lanes=$expectedLanes
             lanes=$records
             supervisor_log_exists=(Test-Path -LiteralPath (Join-Path $installRoot "control_supervisor.log") -PathType Leaf)
             generated_utc=[DateTime]::UtcNow.ToString("o")
