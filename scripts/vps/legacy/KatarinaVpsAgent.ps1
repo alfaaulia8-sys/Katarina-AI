@@ -379,6 +379,16 @@ if (!(Test-Path $handledPath)) {
     New-Item -ItemType File -Force -Path $handledPath | Out-Null
 }
 
+# Enforce exactly one agent process per lane on this host.
+$mutexLaneName = ($lane -replace '[^A-Za-z0-9_.-]','_')
+$instanceMutex = New-Object Threading.Mutex($false,("Global\KatarinaVpsAgent_" + $mutexLaneName))
+$instanceAcquired = $false
+try { $instanceAcquired = $instanceMutex.WaitOne(0,$false) } catch { $instanceAcquired = $false }
+if(-not $instanceAcquired) {
+    Write-Host "Another Katarina agent instance already owns lane '$lane'. Exiting duplicate process."
+    exit 0
+}
+
 Write-JsonFile $startupStatePath ([ordered]@{
     phase = "CONFIG_LOADED"
     agent_version = $AgentVersion
@@ -520,7 +530,24 @@ while ($true) {
                 }
 
                 $exitCode = 0
+                $mutationMutex = $null
+                $mutationAcquired = $false
                 try {
+                    if($executionClass -eq "MUTATING") {
+                        $mutationMutex = New-Object Threading.Mutex($false,"Global\KatarinaWorkspaceMutation")
+                        $lockWaitMs = 0
+                        while(-not $mutationAcquired -and $lockWaitMs -lt 180000) {
+                            try { $mutationAcquired = $mutationMutex.WaitOne(1000,$false) } catch { $mutationAcquired = $false }
+                            if(-not $mutationAcquired) {
+                                Write-LocalHeartbeat -Phase "WAITING_MUTATION_LOCK" -RequestId $requestId
+                                $lockWaitMs += 1000
+                            }
+                        }
+                        if(-not $mutationAcquired) {
+                            throw "Timed out waiting for the global Katarina workspace mutation lock."
+                        }
+                    }
+
                     # Never let one child task freeze the persistent command bus.
                     $runnerArgs = @(
                         "-NoProfile",
@@ -548,6 +575,13 @@ while ($true) {
                 } catch {
                     $exitCode = 1
                     (Redact-ResultText $_.Exception.Message) | Set-Content -Path (Join-Path $outputDir "agent_error.txt") -Encoding UTF8
+                } finally {
+                    if($mutationAcquired -and $null -ne $mutationMutex) {
+                        try { $mutationMutex.ReleaseMutex() } catch {}
+                    }
+                    if($null -ne $mutationMutex) {
+                        try { $mutationMutex.Dispose() } catch {}
+                    }
                 }
 
                 $allowedExtensions = @(".json",".txt",".log",".csv",".md")
