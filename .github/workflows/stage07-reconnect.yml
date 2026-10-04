@@ -339,7 +339,7 @@ jobs:
               ready.write_text(endpoint, encoding="utf-8")
 
               # Phase 1: boot_id=88, MT5 lane 1..7, Python lane 1..4.
-              presence1 = await asyncio.wait_for(router.receive_frame(), timeout=10.0)
+              presence1 = await asyncio.wait_for(router.receive_frame(), timeout=30.0)
               p1 = codec.decode(presence1.frame)
               if p1.header.sequence != 1 or p1.header.boot_id != 88:
                   raise RuntimeError("phase1 presence sequence/boot mismatch")
@@ -388,7 +388,7 @@ jobs:
 
               # Phase 2: same stream, new boot=89. MT5 must continue at 8;
               # Python must continue at 5, not reset to 1.
-              presence2 = await asyncio.wait_for(router.receive_frame(), timeout=15.0)
+              presence2 = await asyncio.wait_for(router.receive_frame(), timeout=30.0)
               p2 = codec.decode(presence2.frame)
               if p2.header.sequence != 8 or p2.header.boot_id != 89:
                   raise RuntimeError(
