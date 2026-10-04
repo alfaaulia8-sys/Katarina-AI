@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "C:\KatarinaVPSAgent\work\wstest1\output\workspace_test_runner.py", line 13, in <module>
+    suite = unittest.defaultTestLoader.loadTestsFromNames(names)
+  File "unittest\loader.py", line 220, in loadTestsFromNames
+  File "unittest\loader.py", line 220, in <listcomp>
+  File "unittest\loader.py", line 154, in loadTestsFromName
+  File "C:\KatarinaDev\workspace\tests\unit\transport\test_stage07_communication.py", line 8, in <module>
+    from katarina.adapters.transport.kat1_codec import (
+  File "C:\KatarinaDev\workspace\src\katarina\__init__.py", line 7, in <module>
+    __all__: tuple[str, ...] = ()
+TypeError: 'type' object is not subscriptable
