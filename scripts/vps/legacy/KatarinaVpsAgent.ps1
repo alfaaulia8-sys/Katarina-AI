@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.2.4"
+$AgentVersion = "1.2.5"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -18,6 +18,28 @@ function Read-JsonFile {
 function Write-JsonFile {
     param([string]$Path, $Value)
     $Value | ConvertTo-Json -Depth 12 | Set-Content -Path $Path -Encoding UTF8
+}
+
+function Write-LocalHeartbeat {
+    param(
+        [string]$Phase,
+        [string]$RequestId = ""
+    )
+
+    try {
+        $payload = [ordered]@{
+            schema_version = 1
+            agent_version = $AgentVersion
+            agent_id = $(if($agentId){$agentId}else{""})
+            phase = $Phase
+            request_id = $RequestId
+            process_id = $PID
+            updated_utc = [DateTime]::UtcNow.ToString("o")
+        }
+        Write-JsonFile $heartbeatPath $payload
+    } catch {
+        # Heartbeat failure must never stop the agent.
+    }
 }
 
 function Unprotect-Token {
@@ -317,6 +339,7 @@ $tokenPath = Join-Path $installRoot "token.bin"
 $handledPath = Join-Path $installRoot "handled.txt"
 $workRoot = Join-Path $installRoot "work"
 $startupStatePath = Join-Path $installRoot "startup_state.json"
+$heartbeatPath = Join-Path $installRoot "heartbeat.json"
 
 if (!(Test-Path $tokenPath)) {
     throw "Encrypted GitHub token not found: $tokenPath"
@@ -365,6 +388,7 @@ try {
         time_utc = [DateTime]::UtcNow.ToString("o")
     })
 
+    Write-LocalHeartbeat -Phase "ONLINE"
     Publish-AgentHealth -State "ONLINE"
 }
 catch {
@@ -379,6 +403,7 @@ catch {
 
 while ($true) {
     try {
+        Write-LocalHeartbeat -Phase "QUEUE_POLL"
         $listUri = ("https://api.github.com/repos/{0}/contents/{1}?ref={2}" -f $repo, $requestsDir, [Uri]::EscapeDataString($branch))
         Write-JsonFile $startupStatePath ([ordered]@{
             phase = "QUEUE_POLL"
@@ -406,6 +431,7 @@ while ($true) {
                 }
 
                 $ref = [string]$validated.ref
+                Write-LocalHeartbeat -Phase "REQUEST_START" -RequestId $requestId
                 $requestWork = Join-Path $workRoot (Get-ShortWorkKey -RequestId $requestId)
                 $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
                 $localRequest = Join-Path $requestWork "request.json"
@@ -432,11 +458,18 @@ while ($true) {
                     )
                     $child = Start-Process -FilePath "powershell.exe" -ArgumentList $runnerArgs -PassThru -WindowStyle Hidden
                     $timeoutMs = 180000
-                    if (-not $child.WaitForExit($timeoutMs)) {
+                    $elapsedMs = 0
+                    while (-not $child.HasExited -and $elapsedMs -lt $timeoutMs) {
+                        Write-LocalHeartbeat -Phase "TASK_RUNNING" -RequestId $requestId
+                        Start-Sleep -Milliseconds 5000
+                        $elapsedMs += 5000
+                    }
+                    if (-not $child.HasExited) {
                         try { $child.Kill() } catch {}
                         throw "Remote task runner exceeded 180-second hard timeout and was terminated."
                     }
                     $exitCode = [int]$child.ExitCode
+                    Write-LocalHeartbeat -Phase "TASK_FINISHED" -RequestId $requestId
                 } catch {
                     $exitCode = 1
                     (Redact-ResultText $_.Exception.Message) | Set-Content -Path (Join-Path $outputDir "agent_error.txt") -Encoding UTF8
@@ -471,6 +504,7 @@ while ($true) {
                 Put-GitHubTextFile -Repo $repo -Path "$resultsDir/$agentId/$requestId/agent_receipt.json" -Branch $branch -Message "vps-agent: complete $requestId" -Text $receiptText -Headers $headers
 
                 Add-Content -Path $handledPath -Value $requestId
+                Write-LocalHeartbeat -Phase "REQUEST_COMPLETE" -RequestId $requestId
             }
             catch {
                 $errorRecord = [ordered]@{
@@ -501,5 +535,6 @@ while ($true) {
         Publish-AgentHealth -State "ERROR" -ErrorText ([string]$errorRecord.error)
     }
 
+    Write-LocalHeartbeat -Phase "SLEEP"
     Start-Sleep -Seconds $pollSeconds
 }
