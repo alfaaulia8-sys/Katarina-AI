@@ -1,0 +1,91 @@
+name: VPS Workspace Bootstrap
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/vps-workspace-bootstrap.yml"
+      - "scripts/vps/Invoke-KatarinaRemoteTask.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workspace-runner-smoke:
+    runs-on: windows-2022
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse remote task runner
+        shell: pwsh
+        run: |
+          $text = Get-Content '.\scripts\vps\Invoke-KatarinaRemoteTask.ps1' -Raw
+          [void][scriptblock]::Create($text)
+          Write-Host 'PASS_RUNNER_PARSE'
+
+      - name: Run host inventory smoke
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path '.\build\workspace-smoke\inventory' | Out-Null
+          @{
+            schema_version = 1
+            request_id = 'ci-inventory'
+            target_agent = 'ci-agent'
+            task = 'HOST_INVENTORY'
+            created_utc = [DateTime]::UtcNow.ToString('o')
+            expires_utc = [DateTime]::UtcNow.AddMinutes(10).ToString('o')
+            ref = 'main'
+            args = @{}
+          } | ConvertTo-Json -Depth 8 | Set-Content '.\build\workspace-smoke\inventory-request.json' -Encoding UTF8
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\scripts\vps\Invoke-KatarinaRemoteTask.ps1' -RequestFile '.\build\workspace-smoke\inventory-request.json' -OutputDir '.\build\workspace-smoke\inventory' -AgentId 'ci-agent' -RepoRoot $env:GITHUB_WORKSPACE
+          if ($LASTEXITCODE -ne 0) { throw 'HOST_INVENTORY smoke failed.' }
+          if (!(Test-Path '.\build\workspace-smoke\inventory\result.json')) { throw 'result.json missing.' }
+          if (!(Test-Path '.\build\workspace-smoke\inventory\host_inventory.json')) { throw 'host_inventory.json missing.' }
+
+      - name: Run workspace init and status smoke
+        shell: pwsh
+        run: |
+          Remove-Item 'C:\KatarinaDev' -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path '.\build\workspace-smoke\init' | Out-Null
+          @{
+            schema_version = 1
+            request_id = 'ci-workspace-init'
+            target_agent = 'ci-agent'
+            task = 'STAGE07_PYTHON_TESTS'
+            created_utc = [DateTime]::UtcNow.ToString('o')
+            expires_utc = [DateTime]::UtcNow.AddMinutes(10).ToString('o')
+            ref = 'main'
+            args = @{ mode = 'WORKSPACE_INIT'; force_rebaseline = $false; source_sha = $env:GITHUB_SHA }
+          } | ConvertTo-Json -Depth 8 | Set-Content '.\build\workspace-smoke\init-request.json' -Encoding UTF8
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\scripts\vps\Invoke-KatarinaRemoteTask.ps1' -RequestFile '.\build\workspace-smoke\init-request.json' -OutputDir '.\build\workspace-smoke\init' -AgentId 'ci-agent' -RepoRoot $env:GITHUB_WORKSPACE
+          if ($LASTEXITCODE -ne 0) { throw 'WORKSPACE_INIT smoke failed.' }
+          if (!(Test-Path '.\build\workspace-smoke\init\result.json')) { throw 'workspace init result missing.' }
+          if (!(Test-Path '.\build\workspace-smoke\init\workspace_init.json')) { throw 'workspace init evidence missing.' }
+          New-Item -ItemType Directory -Force -Path '.\build\workspace-smoke\status' | Out-Null
+          @{
+            schema_version = 1
+            request_id = 'ci-workspace-status'
+            target_agent = 'ci-agent'
+            task = 'STAGE07_PYTHON_TESTS'
+            created_utc = [DateTime]::UtcNow.ToString('o')
+            expires_utc = [DateTime]::UtcNow.AddMinutes(10).ToString('o')
+            ref = 'main'
+            args = @{ mode = 'WORKSPACE_STATUS' }
+          } | ConvertTo-Json -Depth 8 | Set-Content '.\build\workspace-smoke\status-request.json' -Encoding UTF8
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\scripts\vps\Invoke-KatarinaRemoteTask.ps1' -RequestFile '.\build\workspace-smoke\status-request.json' -OutputDir '.\build\workspace-smoke\status' -AgentId 'ci-agent' -RepoRoot $env:GITHUB_WORKSPACE
+          if ($LASTEXITCODE -ne 0) { throw 'WORKSPACE_STATUS smoke failed.' }
+          $status = Get-Content '.\build\workspace-smoke\status\workspace_status.json' -Raw | ConvertFrom-Json
+          if ($status.clean -ne $true) { throw 'Fresh workspace is unexpectedly dirty.' }
+          Write-Host 'PASS_VPS_WORKSPACE_BOOTSTRAP'
+
+      - name: Upload workspace bootstrap evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vps-workspace-bootstrap-evidence
+          path: build/workspace-smoke/**
+          retention-days: 30
