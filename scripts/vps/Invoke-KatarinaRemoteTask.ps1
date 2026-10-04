@@ -1400,6 +1400,162 @@ try { & schtasks.exe /Delete /F /TN "KatarinaPrimaryDeferredRestart" | Out-Null 
                 break
             }
 
+            if ($mode -eq "WORKSPACE_STAGE07_BATCH") {
+                $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
+                if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) {
+                    throw "Katarina workspace runner is missing."
+                }
+                if ($null -eq $request.args.PSObject.Properties["steps"] -or $null -eq $request.args.steps) {
+                    throw "WORKSPACE_STAGE07_BATCH requires steps."
+                }
+
+                $steps = @($request.args.steps)
+                if ($steps.Count -lt 1 -or $steps.Count -gt 6) {
+                    throw "WORKSPACE_STAGE07_BATCH allows 1 to 6 steps."
+                }
+
+                # Heavy MT5 compile/runtime modes are already internally batched
+                # and keep their own dedicated requests/timeouts. This coordinator
+                # intentionally combines only lightweight validation work so one
+                # GitHub request/result pair can cover several checks safely.
+                $allowedBatchModes = @(
+                    "WORKSPACE_DEPENDENCY_VERIFY",
+                    "WORKSPACE_TEST",
+                    "WORKSPACE_CONTROL_STATUS"
+                )
+
+                $batchStarted = [DateTime]::UtcNow
+                $batchRecords = @()
+                $batchFailed = $false
+                $batchFailure = ""
+
+                for ($i = 0; $i -lt $steps.Count; $i++) {
+                    $step = $steps[$i]
+                    $stepMode = ""
+                    if ($null -ne $step.PSObject.Properties["mode"]) {
+                        $stepMode = ([string]$step.mode).ToUpperInvariant()
+                    }
+                    if ($allowedBatchModes -notcontains $stepMode) {
+                        throw "Batch step $($i + 1) uses unsupported mode: $stepMode"
+                    }
+
+                    $stepArgs = [ordered]@{ mode = $stepMode }
+                    if ($null -ne $step.PSObject.Properties["args"] -and $null -ne $step.args) {
+                        foreach ($prop in $step.args.PSObject.Properties) {
+                            if ([string]$prop.Name -ne "mode") {
+                                $stepArgs[[string]$prop.Name] = $prop.Value
+                            }
+                        }
+                    }
+
+                    $stepId = ("{0}-b{1:D2}" -f [string]$request.request_id,($i + 1))
+                    $stepRequestPath = Join-Path $OutputDir ("batch_step_{0:D2}_request.json" -f ($i + 1))
+                    $stepOutputDir = Join-Path $OutputDir ("batch_step_{0:D2}" -f ($i + 1))
+                    New-Item -ItemType Directory -Force -Path $stepOutputDir | Out-Null
+
+                    $stepRequest = [ordered]@{
+                        schema_version = 1
+                        request_id = $stepId
+                        target_agent = [string]$request.target_agent
+                        task = "STAGE07_PYTHON_TESTS"
+                        execution_class = "READONLY"
+                        created_utc = [DateTime]::UtcNow.ToString("o")
+                        expires_utc = [string]$request.expires_utc
+                        ref = [string]$request.ref
+                        args = $stepArgs
+                    }
+                    Write-JsonFile $stepRequestPath $stepRequest
+
+                    $stepStarted = [DateTime]::UtcNow
+                    $stepOk = $true
+                    $stepError = ""
+                    try {
+                        # Same-process invocation is deliberate: no extra nested
+                        # PowerShell process is created on the 2 GB legacy VPS.
+                        & $workspaceRunner -RequestFile $stepRequestPath -OutputDir $stepOutputDir -RepoRoot $RepoRoot
+                    }
+                    catch {
+                        $stepOk = $false
+                        $stepError = Redact-Text ([string]$_.Exception.Message)
+                    }
+
+                    $stepStatus = $null
+                    $stepStatusPath = Join-Path $stepOutputDir "workspace_status.json"
+                    if (Test-Path -LiteralPath $stepStatusPath -PathType Leaf) {
+                        try { $stepStatus = Get-Content -LiteralPath $stepStatusPath -Raw | ConvertFrom-Json } catch {}
+                    }
+                    if ($null -eq $stepStatus -or [string]$stepStatus.result -ne "PASS") {
+                        $stepOk = $false
+                        if ([string]::IsNullOrWhiteSpace($stepError)) {
+                            $stepError = "Workspace step did not produce PASS status evidence."
+                        }
+                    }
+
+                    # Promote only compact evidence to the parent output. Logs stay
+                    # local on the VPS; the agent will upload one compact bundle.
+                    $promoted = @()
+                    foreach ($file in @(Get-ChildItem -LiteralPath $stepOutputDir -File -ErrorAction SilentlyContinue)) {
+                        $ext = $file.Extension.ToLowerInvariant()
+                        if ($ext -notin @(".json",".txt")) { continue }
+                        if ($file.Length -gt 262144) { continue }
+                        $destName = ("batch_{0:D2}_{1}" -f ($i + 1),$file.Name)
+                        Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $OutputDir $destName) -Force
+                        $promoted += $destName
+                    }
+
+                    $stepCompleted = [DateTime]::UtcNow
+                    $batchRecords += [ordered]@{
+                        index = ($i + 1)
+                        mode = $stepMode
+                        started_utc = $stepStarted.ToString("o")
+                        completed_utc = $stepCompleted.ToString("o")
+                        duration_ms = [int64]($stepCompleted - $stepStarted).TotalMilliseconds
+                        promoted_evidence = $promoted
+                        result = $(if($stepOk){"PASS"}else{"FAIL"})
+                        error = $stepError
+                    }
+
+                    if (-not $stepOk) {
+                        $batchFailed = $true
+                        $batchFailure = ("step {0} ({1}): {2}" -f ($i + 1),$stepMode,$stepError)
+                        break
+                    }
+                }
+
+                $batchCompleted = [DateTime]::UtcNow
+                $batchSummary = [ordered]@{
+                    schema_version = 1
+                    proof_type = "KATARINA_STAGE07_LOCAL_BATCH"
+                    request_id = [string]$request.request_id
+                    execution_model = "SAME_PROCESS_SEQUENTIAL"
+                    github_write_model = "ONE_REQUEST_ONE_RESULT_BUNDLE"
+                    snapshot_downloads = 1
+                    child_powershell_processes = 0
+                    requested_step_count = $steps.Count
+                    completed_step_count = $batchRecords.Count
+                    steps = $batchRecords
+                    started_utc = $batchStarted.ToString("o")
+                    completed_utc = $batchCompleted.ToString("o")
+                    duration_ms = [int64]($batchCompleted - $batchStarted).TotalMilliseconds
+                    result = $(if($batchFailed){"FAIL"}else{"PASS"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "stage07_batch_summary.json") $batchSummary
+
+                $details["mode"] = $mode
+                $details["execution_model"] = "SAME_PROCESS_SEQUENTIAL"
+                $details["requested_steps"] = $steps.Count
+                $details["completed_steps"] = $batchRecords.Count
+                $details["result"] = [string]$batchSummary.result
+
+                if ($batchFailed) {
+                    throw ("Stage-07 local batch failed: " + $batchFailure)
+                }
+
+                "KATARINA STAGE07 LOCAL BATCH PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                break
+            }
+
             if ($mode.StartsWith("WORKSPACE_")) {
                 $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
                 if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) { throw "Katarina workspace runner is missing." }
