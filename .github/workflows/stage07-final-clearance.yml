@@ -192,22 +192,22 @@ jobs:
             Remove-Item $mt5Evidence -Force -ErrorAction SilentlyContinue
 
             $config = "$env:RUNNER_TEMP\stage07-tcp-final.ini"
-            @"
-            [Experts]
-            AllowLiveTrading=0
-            AllowDllImport=0
-            Enabled=1
-            Account=0
-            Profile=0
-            WebRequest=1
-            WebRequestUrl=127.0.0.1
-
-            [StartUp]
-            Script=KatarinaStage07TcpFallbackIntegration
-            Symbol=
-            Period=H1
-            ShutdownTerminal=1
-            "@ | Set-Content -Path $config -Encoding ASCII
+            @(
+              "[Experts]",
+              "AllowLiveTrading=0",
+              "AllowDllImport=0",
+              "Enabled=1",
+              "Account=0",
+              "Profile=0",
+              "WebRequest=1",
+              "WebRequestUrl=127.0.0.1",
+              "",
+              "[StartUp]",
+              "Script=KatarinaStage07TcpFallbackIntegration",
+              "Symbol=",
+              "Period=H1",
+              "ShutdownTerminal=1"
+            ) | Set-Content -Path $config -Encoding ASCII
 
             $terminal = Start-Process -FilePath "$env:MT5_HOME\terminal64.exe" -ArgumentList @("/portable", "/config:`"$config`"") -Wait -PassThru
             Write-Host "Terminal exit code: $($terminal.ExitCode)"
