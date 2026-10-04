@@ -1,0 +1,10 @@
+{
+    "schema_version":  1,
+    "terminal":  "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+    "config":  "C:\\KatarinaVPSAgent\\work\\wsrun3\\output\\mt5_runtime_NATIVE_STATE.ini",
+    "expected_user":  "Administrator",
+    "session_id":  2,
+    "session_user":  "WIN-4TTT19K3CL8\\Administrator",
+    "terminal_exit_code":  558081,
+    "result":  "PASS"
+}
