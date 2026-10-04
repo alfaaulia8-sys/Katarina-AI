@@ -262,5 +262,14 @@
   "accepted_adrs": [
     "docs/adr/0011-stage07-snapshot-recovery-integrity.md",
     "docs/adr/0012-stage07-bidirectional-sequence-lanes.md"
-  ]
+  ],
+  "symbol_binding": {
+    "runtime_policy": "TERMINAL_NATIVE",
+    "bridge_primary_symbol": "MQL5__Symbol",
+    "startup_config_symbol": "EMPTY_INHERIT_TERMINAL_CONTEXT",
+    "observed_position_order_symbols": "BROKER_NATIVE_EXACT_NAME",
+    "suffix_prefix_normalization_in_transport": false,
+    "hardcoded_runtime_symbol": false,
+    "note": "Strategy stages may impose an instrument policy later; Stage 07 transport must not rewrite broker symbol names."
+  }
 }
