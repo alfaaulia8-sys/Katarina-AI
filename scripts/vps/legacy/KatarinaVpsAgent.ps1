@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.3"
+$AgentVersion = "1.4.4"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -170,51 +170,107 @@ function Publish-AgentHealth {
 
     try {
         $now=[DateTime]::UtcNow
-        $shouldPublish=$true
+        $normalizedError=(Redact-ResultText $ErrorText)
+
+        # GitHub is a sparse command/evidence bus, not a heartbeat database.
+        # Primary publishes only state/error transitions. Secondary lanes are
+        # local-only by default because watchdog/guardian health is local.
+        $mode="TRANSITIONS_ONLY"
+        if($lane -ne "primary"){ $mode="LOCAL_ONLY" }
+        try {
+            if($null -ne $config.PSObject.Properties["github_health_mode"] -and $config.github_health_mode) {
+                $mode=([string]$config.github_health_mode).ToUpperInvariant()
+            }
+        } catch {}
+
+        $repeatSeconds=21600
+        try {
+            if($null -ne $config.PSObject.Properties["github_health_repeat_seconds"] -and
+               [int]$config.github_health_repeat_seconds -gt 0) {
+                $repeatSeconds=[int]$config.github_health_repeat_seconds
+            }
+        } catch {}
+
+        $previous=$null
         if($healthStatePath -and (Test-Path -LiteralPath $healthStatePath -PathType Leaf)) {
+            try { $previous=Get-Content -LiteralPath $healthStatePath -Raw | ConvertFrom-Json } catch {}
+        }
+
+        $sameState=$false
+        $sameError=$false
+        $elapsedSeconds=[double]::PositiveInfinity
+        if($null -ne $previous) {
+            $sameState=([string]$previous.state -eq $State)
+            $previousError=""
+            try { $previousError=[string]$previous.error } catch {}
+            $sameError=($previousError -eq $normalizedError)
             try {
-                $previous=Get-Content -LiteralPath $healthStatePath -Raw | ConvertFrom-Json
                 $last=[DateTime]::Parse(
                     [string]$previous.last_published_utc,
                     [Globalization.CultureInfo]::InvariantCulture,
                     [Globalization.DateTimeStyles]::AssumeUniversal
                 ).ToUniversalTime()
-                if(
-                    [string]$previous.state -eq $State -and
-                    [int]$previous.process_id -eq $PID -and
-                    (($now-$last).TotalSeconds -lt 60)
-                ) {
-                    $shouldPublish=$false
-                }
+                $elapsedSeconds=($now-$last).TotalSeconds
             } catch {}
         }
-        if(-not $shouldPublish){ return }
 
-        $payload = [ordered]@{
-            schema_version = 1
-            agent_version = $AgentVersion
-            agent_id = $agentId
-            lane = $lane
-            process_id = $PID
-            computer_name = $env:COMPUTERNAME
-            state = $State
-            error = (Redact-ResultText $ErrorText)
-            updated_utc = $now.ToString("o")
-        } | ConvertTo-Json -Depth 8
+        $shouldPublish=$true
+        switch($mode) {
+            "LOCAL_ONLY" {
+                $shouldPublish=$false
+            }
+            "TRANSITIONS_ONLY" {
+                if($sameState -and $sameError) { $shouldPublish=$false }
+            }
+            "PERIODIC" {
+                if($sameState -and $sameError -and $elapsedSeconds -lt $repeatSeconds) {
+                    $shouldPublish=$false
+                }
+            }
+            default {
+                # Safe default is sparse transition-only telemetry.
+                if($sameState -and $sameError) { $shouldPublish=$false }
+            }
+        }
 
-        Put-GitHubTextFile `
-            -Repo $repo `
-            -Path "ops/vps/health/$agentId/status.json" `
-            -Branch $branch `
-            -Message "vps-agent-health: $agentId $State" `
-            -Text $payload `
-            -Headers $headers
+        if($shouldPublish) {
+            $payload = [ordered]@{
+                schema_version = 2
+                agent_version = $AgentVersion
+                agent_id = $agentId
+                lane = $lane
+                process_id = $PID
+                computer_name = $env:COMPUTERNAME
+                state = $State
+                error = $normalizedError
+                telemetry_mode = $mode
+                updated_utc = $now.ToString("o")
+            } | ConvertTo-Json -Depth 8
+
+            Put-GitHubTextFile `
+                -Repo $repo `
+                -Path "ops/vps/health/$agentId/status.json" `
+                -Branch $branch `
+                -Message "vps-agent-health: $agentId $State" `
+                -Text $payload `
+                -Headers $headers
+        }
 
         if($healthStatePath) {
+            $lastPublished=$null
+            if($shouldPublish) {
+                $lastPublished=$now.ToString("o")
+            } elseif($null -ne $previous) {
+                try { $lastPublished=[string]$previous.last_published_utc } catch {}
+            }
             Write-JsonFile $healthStatePath ([ordered]@{
+                schema_version=2
                 state=$State
+                error=$normalizedError
                 process_id=$PID
-                last_published_utc=$now.ToString("o")
+                github_health_mode=$mode
+                last_published_utc=$lastPublished
+                last_local_observed_utc=$now.ToString("o")
             })
         }
     } catch {
