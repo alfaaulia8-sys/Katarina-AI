@@ -1,0 +1,9 @@
+LN	0	05:07:09.166	Network	'374880962': scanning network for access points
+EH	0	05:07:12.967	Network	'374880962': scanning network finished
+HO	0	11:07:10.619	Network	'374880962': scanning network for access points
+DJ	0	11:07:14.534	Network	'374880962': scanning network finished
+CM	0	17:07:10.025	Network	'374880962': scanning network for access points
+NE	0	17:07:13.689	Network	'374880962': scanning network finished
+QS	0	23:07:10.976	Network	'374880962': scanning network for access points
+GG	0	23:07:14.763	Network	'374880962': scanning network finished
+
