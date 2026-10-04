@@ -433,10 +433,18 @@ try {
                 Copy-Item $testSource $testDest -Force
                 if (Test-Path $testEx5) { Remove-Item $testEx5 -Force }
 
-                $resultCode = Invoke-Captured -FilePath $metaEditorPath -ArgumentList @("/compile:$testDest","/log:$compileLog") -StdoutPath $stdoutPath -StderrPath $stderrPath -WorkingDirectory $RepoRoot
+                $mqlRoot = Join-Path $terminalDataPath "MQL5"
+                $compileArgs = @(
+                    "/compile:`"$testDest`"",
+                    "/inc:`"$mqlRoot`"",
+                    "/log:`"$compileLog`""
+                )
+                Start-Process -FilePath $metaEditorPath -ArgumentList $compileArgs -Wait | Out-Null
+                $resultCode = 0
                 $logText = ""
                 if (Test-Path $compileLog) { $logText = Get-Content $compileLog -Raw }
-                if ($resultCode -ne 0 -or !(Test-Path $testEx5) -or $logText -notmatch "0 errors, 0 warnings") {
+                if (!(Test-Path $compileLog) -or !(Test-Path $testEx5) -or $logText -notmatch "0 errors, 0 warnings") {
+                    if (Test-Path $compileLog) { $logText | Set-Content $stdoutPath -Encoding UTF8 }
                     throw "Stage-07 MT5 wire sequence compile failed."
                 }
 
