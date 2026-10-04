@@ -3,6 +3,7 @@
 
 #include <Katarina/Stage07/Kat1Codec.mqh>
 #include <Katarina/Stage07/Kat1SystemMessages.mqh>
+#include <Katarina/Stage07/IdentityV1.mqh>
 #include <Katarina/Stage07/ZmqDealerTransport.mqh>
 
 input string InpEndpoint="tcp://127.0.0.1:5568";
@@ -172,8 +173,16 @@ void OnStart(void)
      }
 
    uchar account_id[];
-   ArrayResize(account_id,16);
-   ArrayInitialize(account_id,0x11);
+   if(!Kat1BuildAccountId("Katarina-CI",123456,account_id,error))
+     {
+      detail="account_id build failed: "+error;
+      Print("FAIL: ",detail);
+      transport.Stop();
+      KatWriteHandshakeEvidence(false,detail);
+      if(MQLInfoInteger(MQL_STARTED_FROM_CONFIG))
+         TerminalClose(7);
+      return;
+     }
 
    uchar source_hash[];
    ArrayResize(source_hash,32);
