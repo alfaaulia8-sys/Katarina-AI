@@ -1,0 +1,46 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.0",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "s7-lite-direct1",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-04T11:22:44.2027385Z"
+                },
+    "files":  [
+                  {
+                      "name":  "control_lite_direct.json",
+                      "size_bytes":  808,
+                      "sha256":  "dbbc7b14f1d5557943b17ec13cbbe0e0e2a071c171ea2c3c73df6dcead3e6127",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"KATARINA_CONTROL_LITE_DIRECT\",\r\n    \"resource_profile\":  \"LEGACY_LOW_MEMORY_SEQUENTIAL\",\r\n    \"persistent_lanes\":  [\r\n                             \"primary\"\r\n                         ],\r\n    \"watchdog\":  \"KatarinaVPSAgentWatchdog\",\r\n    \"disabled_tasks\":  [\r\n                           \"KatarinaControlSupervisorGuard\",\r\n                           \"KatarinaControlSupervisor\",\r\n                           \"KatarinaControlRecovery\",\r\n                           \"KatarinaControlWorker01\",\r\n                           \"KatarinaControlWorker02\"\r\n                       ],\r\n    \"heavy_job_concurrency\":  1,\r\n    \"nested_powershell\":  false,\r\n    \"primary_restart_deferred\":  true,\r\n    \"installed_utc\":  \"2026-10-04T11:22:40.2495326Z\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  605,
+                      "sha256":  "33057c45030ebd5de5f06afc7cb4aeac35f0ad589720a8c0f5ed69cfee9e6964",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"s7-lite-direct1\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T11:22:36.2963750Z\",\r\n    \"completed_utc\":  \"2026-10-04T11:22:40.9682473Z\",\r\n    \"duration_ms\":  4672,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_CONTROL_LITE_INSTALL_DIRECT\",\r\n                    \"resource_profile\":  \"LEGACY_LOW_MEMORY_SEQUENTIAL\",\r\n                    \"disabled_task_count\":  5,\r\n                    \"result\":  \"PASS\"\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  41,
+                      "sha256":  "978771db3acb91d5dce891df9bc1a0f229aedc1896e2b892a94fccc836c2bac3",
+                      "content_included":  true,
+                      "content":  "KATARINA LOW MEMORY DIRECT INSTALL PASS\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  1456
+}
