@@ -393,7 +393,26 @@ class Stage08DataValidationTests(unittest.TestCase):
             now_ns=NOW,
         )
         gate.promote(
-            self.event("account.state", {"balance_units": 10000}),
+            self.event(
+                "account.state",
+                {
+                    "account_id": bytes.fromhex(
+                        "00112233445566778899aabbccddeeff"
+                    ),
+                    "account_revision": 1,
+                    "balance_units": 10000,
+                    "equity_units": 10000,
+                    "credit_units": 0,
+                    "profit_units": 0,
+                    "margin_units": 0,
+                    "free_margin_units": 10000,
+                    "leverage": 500,
+                    "account_mode": 1,
+                    "trade_mode": 3,
+                    "account_currency_digits": 2,
+                    "account_unit_profile_revision": 1,
+                },
+            ),
             now_ns=NOW,
         )
 
