@@ -1,7 +1,7 @@
 {
   "stage": "07",
-  "version": "0.1.0",
-  "status": "STAGE_07_IMPLEMENTATION_ACTIVE",
+  "version": "1.0.0",
+  "status": "STAGE_07_FINALIZED_FROZEN",
   "frozen_inputs": {
     "transport_policy": "config/transport_policy.json",
     "protocol_schema": "config/protocol_schema.json",
@@ -57,7 +57,7 @@
     "draft_stale_after_ms": 5000,
     "real_heartbeat_required_after_reconnect": true,
     "reconnect_itself_marks_ready": false,
-    "tunable_until_stage07_profile": true
+    "tunable_until_stage07_profile": false
   },
   "queues": {
     "bounded": true,
@@ -115,7 +115,12 @@
     "stage07_bridge_ea": "mt5/Experts/KatarinaBridgeStage07EA.mq5",
     "stage07_bridge_transport": "mt5/Include/Katarina/Stage07/BridgeTransport.mqh",
     "mql5_recovery_codec": "mt5/Include/Katarina/Stage07/Kat1RecoveryMessages.mqh",
-    "mql5_wire_sequence": "mt5/Include/Katarina/Stage07/WireSequence.mqh"
+    "mql5_wire_sequence": "mt5/Include/Katarina/Stage07/WireSequence.mqh",
+    "mql5_native_tcp": "mt5/Include/Katarina/Stage07/NativeTcpTransport.mqh",
+    "native_tcp_integration_test": "mt5/Tests/KatarinaStage07TcpFallbackIntegration.mq5",
+    "transport_profile": "scripts/stage07/profile_stage07_transport.py",
+    "final_audit": "scripts/stage07/audit_stage07_final.py",
+    "freeze_record": "docs/reviews/STAGE_07_FREEZE_RECORD.md"
   },
   "progress": {
     "research": true,
@@ -124,10 +129,10 @@
     "python_kat1_codec": true,
     "memory_transport": true,
     "python_golden_test_suite_prepared": true,
-    "mql5_codec": false,
+    "mql5_codec": true,
     "zeromq_spike": true,
     "zeromq_live_adapter": true,
-    "tcp_fallback": false,
+    "tcp_fallback": true,
     "session_supervisor": true,
     "python_tcp_fallback": true,
     "mql5_codec_baseline": true,
@@ -140,7 +145,8 @@
     "concrete_bridge_transport": true,
     "account_id_cross_language": true,
     "cross_process_reconnect": true,
-    "native_account_record": true
+    "native_account_record": true,
+    "final_clearance": true
   },
   "unblocked_by_stage06_freeze": [
     "MQL5_KAT1_CODEC",
@@ -254,12 +260,27 @@
       "cross_language_byte_equality": "PASS",
       "negative_money_roundtrip": "PASS",
       "result": "PASS"
+    },
+    "final_clearance": {
+      "run_id": 37209799384,
+      "head_sha": "f83ab5eb6f57b2c30428122f69a807c9ace673f1",
+      "artifact": "stage07-final-clearance-evidence",
+      "artifact_id": 11306007351,
+      "digest": "sha256:d95c9f12816017ea87291582ffdded60c0d298035ca82bc55c689e1f94df2532",
+      "native_tcp_fallback": "PASS_STAGE07_NATIVE_TCP_FALLBACK",
+      "native_tcp_ex5_sha256": "c9518375d0b06736ab5f26a62ac2ec5ceadf623f1336b3eccad732ce1aeb1ce4",
+      "backpressure_latency_profile": "PASS_STAGE07_BACKPRESSURE_LATENCY_PROFILE",
+      "tcp_p99_ms": 0.202,
+      "codec_p99_us": 290.3,
+      "final_audit": "PASS_STAGE07_FINAL_CLEARANCE",
+      "ready_for_stage08": true,
+      "live_risk_ready": false,
+      "result": "PASS_STAGE07_FINAL_CLEARANCE"
     }
   },
-  "proposed_adrs": [
-    "docs/adr/0009-stage07-live-communication-topology.md"
-  ],
+  "proposed_adrs": [],
   "accepted_adrs": [
+    "docs/adr/0009-stage07-live-communication-topology.md",
     "docs/adr/0011-stage07-snapshot-recovery-integrity.md",
     "docs/adr/0012-stage07-bidirectional-sequence-lanes.md"
   ],
@@ -271,5 +292,25 @@
     "suffix_prefix_normalization_in_transport": false,
     "hardcoded_runtime_symbol": false,
     "note": "Strategy stages may impose an instrument policy later; Stage 07 transport must not rewrite broker symbol names."
+  },
+  "acceptance_status": "ALL_GATES_PASS",
+  "freeze": {
+    "frozen": true,
+    "version": "1.0.0",
+    "freeze_date": "2026-10-04",
+    "final_result": "PASS_STAGE07_FINAL_CLEARANCE",
+    "freeze_qualified_host": "Windows Server 2022 x64",
+    "run_id": 37209799384,
+    "head_sha": "f83ab5eb6f57b2c30428122f69a807c9ace673f1",
+    "artifact": "stage07-final-clearance-evidence",
+    "artifact_id": 11306007351,
+    "artifact_digest": "sha256:d95c9f12816017ea87291582ffdded60c0d298035ca82bc55c689e1f94df2532",
+    "native_tcp_ex5_sha256": "c9518375d0b06736ab5f26a62ac2ec5ceadf623f1336b3eccad732ce1aeb1ce4",
+    "regression_tests": "37/37 PASS",
+    "tcp_p99_ms": 0.202,
+    "codec_p99_us": 290.3,
+    "inherited_timer_budget_us": 2000,
+    "ready_for_stage08": true,
+    "live_risk_ready": false
   }
 }

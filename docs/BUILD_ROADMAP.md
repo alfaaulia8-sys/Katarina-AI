@@ -8,7 +8,7 @@
 | 04 | Data Protocol / Schemas | ✅ FINALIZED / FROZEN — KAT1 v1.0.0 |
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
 | 06 | MT5 Bridge EA | ✅ FINALIZED / FROZEN v1.0.0 — Bridge design v0.5.0 |
-| 07 | MT5-Python Communication | 🟡 IMPLEMENTATION ACTIVE — ZeroMQ/handshake + Python recovery/sequence gates PASS; cross-language recovery next |
+| 07 | MT5-Python Communication | ✅ FINALIZED / FROZEN v1.0.0 |
 | 08 | Data Validation Engine | ⬜ |
 | 09 | Health & Safety Engine | ⬜ |
 | 10 | Database & Memory V1 | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 06 is FINALIZED / FROZEN v1.0.0. Stage 07 communication development may now proceed against the frozen Bridge v0.5.0 contract.**
+**Stage 07 is FINALIZED / FROZEN v1.0.0 with `PASS_STAGE07_FINAL_CLEARANCE`. Stage 08 — Data Validation Engine is now unblocked and ready to start.**
 
 ## Frozen Stage 04 Scope
 
@@ -157,28 +157,58 @@ Windows Server 2012 R2 remains deferred and was not used as freeze-qualified evi
 Stage 06 is FINALIZED / FROZEN v1.0.0.
 
 
-## Stage 07 Active Scope
+## Frozen Stage 07 Scope
 
-Completed/started without crossing the Stage-06 external-proof boundary:
+Stage 07 MT5 ↔ Python Communication is **FINALIZED / FROZEN v1.0.0**.
 
-- GitHub prior-art research for MQL5/Python ZeroMQ communication;
-- localhost ZeroMQ ROUTER (Python) / DEALER (MT5) topology draft;
-- native localhost TCP fallback design using native KAT1 frame_length;
-- initial HEARTBEAT → HELLO → HELLO_ACK route/handshake design;
-- application-owned Python TransportPort;
-- bounded in-memory transport adapter for tests;
-- Python schema-driven KAT1 codec;
-- Stage-04 golden-vector round-trip tests;
-- Stage-07 communication config draft;
-- ADR-0009 proposed;
-- fail-closed Python session supervisor PASS;
-- localhost native TCP KAT1 fallback (Python side) PASS;
-- MQL5 KAT1 header/CRC32C codec baseline PASS;
-- 13/13 MQL5 golden-vector validation PASS on Windows Server 2022;
-- Python localhost ROUTER adapter PASS;
-- MQL5 bounded DEALER byte adapter PASS;
-- raw KAT1 ZeroMQ capability roundtrip PASS;
-- cross-language HEARTBEAT → HELLO → HELLO_ACK PASS;
-- post-handshake state remains RECOVERING and live-risk false.
+Frozen communication contract:
 
-Stage-06 clearance is complete. Production MQL5 ZeroMQ/TCP transport implementation may now proceed under the frozen Stage-06 bridge contract; live broker-risk enablement remains governed by later stages.
+- Python owns the localhost ZeroMQ ROUTER primary endpoint;
+- MT5 uses a bounded DEALER peer and one complete KAT1 frame per ZeroMQ message;
+- native localhost TCP is the governed fallback and uses KAT1 `frame_length` directly, with no secondary application envelope;
+- KAT1 remains the authoritative application wire contract;
+- MT5 emits presence HEARTBEAT before HELLO/HELLO_ACK and presence never implies READY;
+- communication readiness requires binding validation, atomic snapshot recovery and reconciliation;
+- sequence namespaces remain directional and persistent across reconnect for a stable stream;
+- duplicate/decreasing sequence fails closed and gaps require recovery;
+- reconnect does not reset sequence state;
+- queues are bounded and critical control frames are retried without sequence reallocation;
+- transport endpoints are localhost-only and public bind remains prohibited;
+- Stage-06 timer/queue safety budgets are preserved;
+- Stage 07 does not submit broker orders and does not grant live-risk readiness.
+
+Freeze-qualified proof completed on Windows Server 2022 x64:
+
+- 37/37 Stage-07 Python regressions PASS;
+- MQL5 KAT1 codec and 13 frozen golden vectors PASS;
+- ZeroMQ ROUTER ↔ DEALER raw KAT1 roundtrip PASS;
+- HEARTBEAT → HELLO → HELLO_ACK PASS;
+- cross-language snapshot/reconciliation and byte equality PASS;
+- persistent MT5/Python sequence continuity across process reconnect PASS;
+- native TCP MQL5 ↔ Python KAT1 byte equality PASS;
+- native TCP proof compiled 0 errors / 0 warnings;
+- native TCP EX5 SHA-256: `c9518375d0b06736ab5f26a62ac2ec5ceadf623f1336b3eccad732ce1aeb1ce4`;
+- bounded backpressure profile PASS;
+- TCP loopback p99: **0.202 ms**;
+- KAT1 codec decode p99: **290.3 µs**;
+- inherited Stage-06 timer budget: **2000 µs**;
+- final evidence-bound audit: `PASS_STAGE07_FINAL_CLEARANCE`;
+- `ready_for_stage08=true`;
+- `live_risk_ready=false`.
+
+Governed final evidence:
+
+- GitHub Actions run: `37209799384`
+- evidence head SHA: `f83ab5eb6f57b2c30428122f69a807c9ace673f1`
+- artifact: `stage07-final-clearance-evidence`
+- artifact ID: `11306007351`
+- artifact digest: `sha256:d95c9f12816017ea87291582ffdded60c0d298035ca82bc55c689e1f94df2532`
+- permanent freeze record: `docs/reviews/STAGE_07_FREEZE_RECORD.md`
+
+ADR-0009, ADR-0011 and ADR-0012 are accepted as the frozen Stage-07 communication governance.
+
+Stage 07 is frozen. Any change to its transport topology, KAT1 framing, recovery semantics, sequence semantics or security boundary requires governed review. Live broker-risk enablement and production-readiness claims remain blocked until later roadmap stages.
+
+## Next Stage
+
+**Stage 08 — Data Validation Engine is unblocked and ready to start.**

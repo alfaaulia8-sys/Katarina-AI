@@ -1,7 +1,7 @@
 # ADR-0009 — Stage-07 Live Communication Topology
 
-**Status:** Proposed
-**Stage:** 07
+**Status:** Accepted
+**Stage:** 07\n**Accepted:** 2026-10-04
 
 ## Decision
 
@@ -31,4 +31,4 @@ Production defaults are localhost-only. Public bind is prohibited by the frozen 
 
 ## Gate
 
-Stage-06 clearance is complete. This ADR stays Proposed only until Stage-07 cross-language integration tests prove the ROUTER/DEALER primary path, native TCP fallback, reconnect behavior, and fail-closed binding on modern Windows/MT5.
+The gate is satisfied. Stage-07 cross-language integration proved the ROUTER/DEALER primary path, native TCP fallback, reconnect behavior and fail-closed binding on modern Windows/MT5. Final governed clearance is `PASS_STAGE07_FINAL_CLEARANCE` from GitHub Actions run `37209799384` (head `f83ab5eb6f57b2c30428122f69a807c9ace673f1`).

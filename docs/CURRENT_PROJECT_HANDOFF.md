@@ -1,6 +1,6 @@
 # Katarina AI — Current Project Handoff
 
-**Updated:** 2026-10-03
+**Updated:** 2026-10-04
 **Purpose:** Persistent cross-chat handoff for continuing development after a chat is deleted or replaced.
 
 ## Current roadmap position
@@ -11,7 +11,7 @@
 - Stage 04 — KAT1 Data Protocol / Schemas: FROZEN v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
-- Stage 07 — MT5 ↔ Python Communication: IMPLEMENTATION ACTIVE; Python session/TCP PASS; MQL5 KAT1 13-vector PASS; ZeroMQ ROUTER↔DEALER PASS; cross-language HEARTBEAT→HELLO→HELLO_ACK PASS
+- Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: UNBLOCKED / READY TO START
 
 ## VPS bridge status
 
@@ -20,7 +20,7 @@ Implementation status: **LIVE END-TO-END CONNECTED**
 - Agent: `katarina-vps-2012r2-01`.
 - Windows Server 2012 R2 uses the legacy outbound-HTTPS PowerShell polling agent.
 - ChatGPT → GitHub request queue → VPS task execution → GitHub result write-back has been proven with multiple `HOST_INVENTORY` requests.
-- Agent v1.2.2 is currently running successfully; repository source is v1.2.3 with shortened local work paths for the Windows 260-character path limit.
+- Stage-07 VPS control work introduced sparse transition-only GitHub health telemetry, compact result bundles, local watchdog/guardian recovery and low-memory batching. Recent proven request receipts use agent v1.4.6; repository agent source has later low-memory changes. The VPS remains an operational/compatibility lab rather than the Stage-07 freeze-qualified host.
 - Request execution remains allowlisted; arbitrary shell commands are not accepted.
 - Results remain text-only and secret-redacted before upload.
 - No inbound VPS command port is required.
@@ -43,7 +43,7 @@ Detected on the real VPS:
 
 Operational note:
 
-- Long request IDs can trigger the Windows Server 2012 R2 legacy MAX_PATH limit in the currently installed v1.2.2 agent. Short request IDs work. Repository agent v1.2.3 hashes request IDs into short local work-directory names; install source on the VPS at the next maintenance update.
+- Keep request IDs compact on the legacy host and prefer local/batched execution for heavy work. GitHub is now used as a sparse command/evidence bus rather than a heartbeat database, reducing write volume and avoiding unnecessary process pressure.
 
 ## Stage 06 final status
 
@@ -84,63 +84,53 @@ Account-compatibility boundary:
 
 Windows Server 2012 R2 remains DEFERRED for freeze proof.
 
-## Stage 07 current status
+## Stage 07 final status
 
-Research/design completed or started:
+Status: **FINALIZED / FROZEN v1.0.0**
 
-- Python fail-closed session supervisor PASS (presence → HELLO → HELLO_ACK → RECOVERING → READY only after explicit recovery);
-- stale/reconnect handshake regression PASS;
-- same-stream account rebinding fail-closed regression PASS;
-- localhost-only native TCP KAT1 framing PASS on Python side;
-- MQL5 KAT1 header + CRC32C codec baseline compiled 0 errors / 0 warnings;
-- MQL5 13/13 frozen golden vectors PASS on Windows Server 2022;
-- ZeroMQ capability + production DEALER byte adapter PASS on Windows Server 2022;
-- Python ROUTER adapter localhost integration PASS;
-- cross-language HEARTBEAT → HELLO → HELLO_ACK PASS;
-- handshake ends RECOVERING, communication_ready=false, live_risk_ready=false as required;
-- Python atomic snapshot/reconciliation recovery gate PASS;
-- malformed chunk CRC, snapshot abort and reconciliation discrepancy fail closed;
-- proposed bidirectional sequence lanes: Python duplicate/gap/floor validation PASS;
-- ADR-0011 snapshot integrity semantics and ADR-0012 sequence lanes remain Proposed pending cross-language proof;
+Governed final evidence:
 
-- GitHub prior-art review
-- localhost ZeroMQ topology draft
-- Python ROUTER / MT5 DEALER draft
-- native localhost TCP fallback design
-- heartbeat / reconnect design
-- TransportPort abstraction
-- Python schema-driven KAT1 codec
-- bounded in-memory transport adapter
-- Stage-04 golden-vector round-trip tests
-- ADR-0009 proposed
+- freeze-qualified host: Windows Server 2022 x64
+- GitHub Actions run: `37209799384`
+- evidence head SHA: `f83ab5eb6f57b2c30428122f69a807c9ace673f1`
+- artifact: `stage07-final-clearance-evidence`
+- artifact ID: `11306007351`
+- artifact digest: `sha256:d95c9f12816017ea87291582ffdded60c0d298035ca82bc55c689e1f94df2532`
+- final audit: `PASS_STAGE07_FINAL_CLEARANCE`
+- permanent record: `docs/reviews/STAGE_07_FREEZE_RECORD.md`
 
-Stage-07 files:
+Frozen Stage-07 capabilities:
 
-- docs/reviews/STAGE_07_COMMUNICATION_RESEARCH.md
-- docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md
-- docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md
-- docs/adr/0009-stage07-live-communication-topology.md
-- config/mt5_python_communication_draft.json
-- src/katarina/ports/transport.py
-- src/katarina/adapters/transport/kat1_codec.py
-- src/katarina/adapters/transport/memory.py
-- tests/unit/transport/test_stage07_communication.py
+- Python localhost ZeroMQ ROUTER primary / MT5 DEALER peer;
+- one raw KAT1 frame per ZeroMQ message;
+- native localhost TCP fallback with KAT1 frame-length framing and no secondary envelope;
+- 13/13 frozen KAT1 MQL5 golden vectors PASS;
+- fail-closed binding and session supervision;
+- atomic snapshot/reconciliation recovery PASS;
+- directional persistent sequence lanes with duplicate/gap rejection;
+- cross-process reconnect preserves stream sequence continuity;
+- native TCP cross-language MQL5 ↔ Python byte equality PASS;
+- 37/37 Stage-07 regression tests PASS;
+- bounded backpressure/critical-frame retry PASS;
+- TCP loopback p99 0.202 ms and codec decode p99 290.3 µs on the freeze-qualified run;
+- Stage-06 2000 µs timer budget preserved;
+- no broker order submission introduced;
+- `live_risk_ready=false`.
 
-Stage-06 is now frozen. Stage-07 production MQL5 ZeroMQ/TCP transport implementation may proceed against the frozen Bridge v0.5.0 contract. Any change to frozen Stage-06 behavior requires explicit governed review.
+Governance:
+
+- ADR-0009 is accepted after primary ZeroMQ, native TCP fallback, reconnect and fail-closed binding proofs passed.
+- ADR-0011 and ADR-0012 remain accepted.
+- Stage-07 changes now require governed review.
+- Windows Server 2012 R2 remains useful for compatibility/operations, but Windows Server 2022 evidence is the freeze-qualified basis.
 
 ## Next recommended action
 
-Proceed with Stage 07 — MT5 ↔ Python Communication:
+Proceed to **Stage 08 — Data Validation Engine**.
 
-1. implement MQL5 snapshot/reconcile system-message codec and cross-language recovery proof;
-2. implement persistent MT5→Python wire-sequence allocator and reboot continuity proof;
-3. complete remaining MQL5 payload codec / cross-language byte-equality;
-4. implement MQL5 native TCP fallback against the proven Python server;
-5. prove stale/disconnect/reconnect and sequence continuity end-to-end;
-6. profile round-trip latency/backpressure and timer budgets;
-7. keep live broker-risk enablement disabled until later governed stages.
+Stage 08 may consume the frozen Stage-07 communication output but must not weaken Stage-04 KAT1, Stage-05 readiness/risk gates, Stage-06 bridge safety, or Stage-07 fail-closed transport/recovery semantics. Live broker-risk enablement remains disabled.
 
-The VPS bridge remains available for diagnostics, repository tests, MT5 compilation/log collection and later Stage-07 runtime checks.
+The VPS bridge remains available for diagnostics, repository tests, MT5 compilation/log collection and compatibility checks. Heavy legacy-host work should continue to use sparse GitHub writes and bounded local execution.
 
 ## Project invariant reminders
 
@@ -151,4 +141,4 @@ The VPS bridge remains available for diagnostics, repository tests, MT5 compilat
 - Risk Governor is absolute.
 - live-risk readiness is separate from transport connectivity.
 - Stage 04 KAT1 is authoritative.
-- Stage 06 is frozen and remains fail-closed by contract; later stages must not weaken its safety invariants.
+- Stage 06 is frozen and remains fail-closed by contract; later stages must not weaken its safety invariants.\n- Stage 07 is frozen; later stages must preserve its localhost-only transport, KAT1 framing, recovery, binding and sequence invariants.
