@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.2.5"
+$AgentVersion = "1.3.0"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -323,9 +323,18 @@ function Validate-RequestEnvelope {
         throw "Unsafe or unsupported Git ref: $ref"
     }
 
+    $executionClass = "MUTATING"
+    if($null -ne $Request.PSObject.Properties["execution_class"] -and $Request.execution_class) {
+        $executionClass = ([string]$Request.execution_class).ToUpperInvariant()
+    }
+    if(@("MUTATING","READONLY","RECOVERY") -notcontains $executionClass) {
+        throw "Unsupported execution_class: $executionClass"
+    }
+
     return [pscustomobject]@{
         task = $task
         ref = $ref
+        execution_class = $executionClass
     }
 }
 
@@ -335,17 +344,37 @@ if (!(Test-Path $ConfigPath)) {
 
 $config = Read-JsonFile $ConfigPath
 $installRoot = Split-Path -Parent $ConfigPath
+
+$lane = "primary"
+if($null -ne $config.PSObject.Properties["lane"] -and $config.lane) {
+    $lane = ([string]$config.lane).ToLowerInvariant()
+}
+
+$stateRoot = Join-Path $installRoot ("lanes\" + $lane)
+if($null -ne $config.PSObject.Properties["state_root"] -and $config.state_root) {
+    $stateRoot = [string]$config.state_root
+}
+
 $tokenPath = Join-Path $installRoot "token.bin"
-$handledPath = Join-Path $installRoot "handled.txt"
-$workRoot = Join-Path $installRoot "work"
-$startupStatePath = Join-Path $installRoot "startup_state.json"
-$heartbeatPath = Join-Path $installRoot "heartbeat.json"
+if($null -ne $config.PSObject.Properties["token_path"] -and $config.token_path) {
+    $tokenPath = [string]$config.token_path
+}
+
+$handledPath = Join-Path $stateRoot "handled.txt"
+$workRoot = Join-Path $stateRoot "work"
+$startupStatePath = Join-Path $stateRoot "startup_state.json"
+$heartbeatPath = Join-Path $stateRoot "heartbeat.json"
+
+$capabilities = @("MUTATING","READONLY","RECOVERY")
+if($null -ne $config.PSObject.Properties["capabilities"] -and $config.capabilities) {
+    $capabilities = @($config.capabilities | ForEach-Object { ([string]$_).ToUpperInvariant() })
+}
 
 if (!(Test-Path $tokenPath)) {
     throw "Encrypted GitHub token not found: $tokenPath"
 }
 
-New-Item -ItemType Directory -Force -Path $workRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $stateRoot,$workRoot | Out-Null
 if (!(Test-Path $handledPath)) {
     New-Item -ItemType File -Force -Path $handledPath | Out-Null
 }
@@ -371,10 +400,17 @@ try {
     $agentId = [string]$config.agent_id
     $pollSeconds = [int]$config.poll_seconds
     $requestsDir = "ops/vps/requests/legacy"
+    if($null -ne $config.PSObject.Properties["requests_dir"] -and $config.requests_dir) {
+        $requestsDir = [string]$config.requests_dir
+    }
     $resultsDir = "ops/vps/results"
+    if($null -ne $config.PSObject.Properties["results_dir"] -and $config.results_dir) {
+        $resultsDir = [string]$config.results_dir
+    }
 
     Write-Host "Katarina VPS Agent $AgentVersion"
     Write-Host "Agent: $agentId"
+    Write-Host "Lane:  $lane"
     Write-Host "Repo:  $repo"
     Write-Host "Mode:  outbound HTTPS polling / allowlisted tasks only"
 
@@ -428,6 +464,45 @@ while ($true) {
                 $validated = Validate-RequestEnvelope -Request $request -RequestId $requestId -AgentId $agentId
                 if ($null -eq $validated) {
                     continue
+                }
+
+                $executionClass = [string]$validated.execution_class
+                if($capabilities -notcontains $executionClass) {
+                    throw "Lane '$lane' does not allow execution_class '$executionClass'."
+                }
+
+                $mode = ""
+                if($null -ne $request.PSObject.Properties["args"] -and $request.args -and
+                   $null -ne $request.args.PSObject.Properties["mode"] -and $request.args.mode) {
+                    $mode = ([string]$request.args.mode).ToUpperInvariant()
+                }
+
+                $readOnlyModes = @(
+                    "WORKSPACE_DEPENDENCY_VERIFY",
+                    "WORKSPACE_TEST",
+                    "WORKSPACE_CONTROL_STATUS"
+                )
+                $recoveryModes = @(
+                    "WORKSPACE_CONTROL_RESTART_PRIMARY",
+                    "WORKSPACE_CONTROL_STATUS"
+                )
+
+                if($lane -like "worker*") {
+                    if($executionClass -ne "READONLY") {
+                        throw "Worker lanes accept READONLY requests only."
+                    }
+                    if([string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and $readOnlyModes -notcontains $mode) {
+                        throw "Worker lane rejected unsafe Stage-07 mode: $mode"
+                    }
+                }
+
+                if($lane -eq "recovery") {
+                    if($executionClass -eq "RECOVERY" -and $recoveryModes -notcontains $mode) {
+                        throw "Recovery lane rejected unsupported recovery mode: $mode"
+                    }
+                    if($executionClass -eq "READONLY" -and [string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and $readOnlyModes -notcontains $mode) {
+                        throw "Recovery lane rejected unsafe read-only mode: $mode"
+                    }
                 }
 
                 $ref = [string]$validated.ref
