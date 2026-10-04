@@ -1,0 +1,54 @@
+{
+    "schema_version":  1,
+    "proof_type":  "KATARINA_CONTROL_PLANE_V2_INSTALL",
+    "primary_agent_id":  "katarina-vps-2012r2-01",
+    "lanes":  [
+                  "primary",
+                  "recovery",
+                  "worker01",
+                  "worker02"
+              ],
+    "polling_seconds":  {
+                            "primary":  5,
+                            "recovery":  5,
+                            "worker01":  10,
+                            "worker02":  10
+                        },
+    "queue_isolation":  true,
+    "compact_results":  true,
+    "supervisor_check_seconds":  5,
+    "supervisor_stale_seconds":  35,
+    "fallback_watchdog_minutes":  1,
+    "primary_restart_pending":  true,
+    "lane_checks":  [
+                        {
+                            "lane":  "recovery",
+                            "task":  "KatarinaControlRecovery",
+                            "heartbeat_path":  "C:\\KatarinaVPSAgent\\lanes\\recovery\\heartbeat.json",
+                            "heartbeat_present":  true,
+                            "phase":  "ONLINE",
+                            "agent_version":  "1.4.0",
+                            "updated_utc":  "2026-10-04T08:33:33.7963753Z"
+                        },
+                        {
+                            "lane":  "worker01",
+                            "task":  "KatarinaControlWorker01",
+                            "heartbeat_path":  "C:\\KatarinaVPSAgent\\lanes\\worker01\\heartbeat.json",
+                            "heartbeat_present":  true,
+                            "phase":  "ONLINE",
+                            "agent_version":  "1.4.0",
+                            "updated_utc":  "2026-10-04T08:33:40.1244996Z"
+                        },
+                        {
+                            "lane":  "worker02",
+                            "task":  "KatarinaControlWorker02",
+                            "heartbeat_path":  "C:\\KatarinaVPSAgent\\lanes\\worker02\\heartbeat.json",
+                            "heartbeat_present":  true,
+                            "phase":  "ONLINE",
+                            "agent_version":  "1.4.0",
+                            "updated_utc":  "2026-10-04T08:33:45.4057478Z"
+                        }
+                    ],
+    "installed_utc":  "2026-10-04T08:33:46.7651237Z",
+    "result":  "PASS"
+}
