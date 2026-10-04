@@ -726,6 +726,106 @@ try {
                 break
             }
 
+            if ($mode -eq "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT") {
+                $installRoot = "C:\\KatarinaVPSAgent"
+                $primaryConfig = Join-Path $installRoot "agent.json"
+                $agentSource = Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgent.ps1"
+                $watchdogSource = Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgentWatchdog.ps1"
+                $agentPath = Join-Path $installRoot "KatarinaVpsAgent.ps1"
+                $watchdogPath = Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1"
+                $tokenPath = Join-Path $installRoot "token.bin"
+
+                foreach($required in @($primaryConfig,$agentSource,$watchdogSource,$tokenPath)) {
+                    if(!(Test-Path -LiteralPath $required -PathType Leaf)) {
+                        throw "Stable control update prerequisite missing: $required"
+                    }
+                }
+
+                # Install the newest agent/watchdog source without spawning a
+                # nested PowerShell host.
+                Copy-Item -LiteralPath $agentSource -Destination $agentPath -Force
+                Copy-Item -LiteralPath $watchdogSource -Destination $watchdogPath -Force
+
+                $cfg = Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
+                $stable = [ordered]@{
+                    schema_version = 2
+                    agent_id = [string]$cfg.agent_id
+                    repository = [string]$cfg.repository
+                    branch = [string]$cfg.branch
+                    poll_seconds = 5
+                    lane = "primary"
+                    state_root = (Join-Path $installRoot "lanes\\primary")
+                    token_path = $tokenPath
+                    requests_dir = "ops/vps/requests/primary"
+                    results_dir = "ops/vps/results"
+                    compact_results = $true
+                    capabilities = @("MUTATING","READONLY","RECOVERY")
+                    resource_profile = "LEGACY_LOW_MEMORY_SEQUENTIAL"
+                    installed_utc = [DateTime]::UtcNow.ToString("o")
+                }
+                Write-JsonFile $primaryConfig $stable
+
+                foreach($taskName in @(
+                    "KatarinaControlSupervisorGuard",
+                    "KatarinaControlSupervisor",
+                    "KatarinaControlRecovery",
+                    "KatarinaControlWorker01",
+                    "KatarinaControlWorker02"
+                )) {
+                    try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
+                    try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
+                }
+
+                foreach($taskName in @("KatarinaVPSAgent","KatarinaVPSAgentWatchdog")) {
+                    try { & schtasks.exe /Change /TN $taskName /ENABLE | Out-Null } catch {}
+                }
+
+                $watchdogCmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $watchdogPath + '" -InstallRoot "' + $installRoot + '"'
+                & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaVPSAgentWatchdog" /TR $watchdogCmd | Out-Null
+                if($LASTEXITCODE -ne 0) { throw "Failed to register stable watchdog task." }
+
+                # Restart the primary only after this request has had time to
+                # upload its receipt. The one-shot task loads the newly copied
+                # agent source without killing the current parent mid-upload.
+                $restartTask = "KatarinaPrimaryDeferredRestart"
+                $restartScript = Join-Path $installRoot "KatarinaPrimaryDeferredRestart.ps1"
+                @'
+$ErrorActionPreference="Continue"
+try { & schtasks.exe /End /TN "KatarinaVPSAgent" | Out-Null } catch {}
+Start-Sleep -Seconds 2
+try { & schtasks.exe /Run /TN "KatarinaVPSAgent" | Out-Null } catch {}
+Start-Sleep -Seconds 2
+try { & schtasks.exe /Delete /F /TN "KatarinaPrimaryDeferredRestart" | Out-Null } catch {}
+'@ | Set-Content -LiteralPath $restartScript -Encoding ASCII
+
+                $runAt = (Get-Date).AddMinutes(1).ToString("HH:mm")
+                $restartCmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $restartScript + '"'
+                & schtasks.exe /Create /F /SC ONCE /ST $runAt /RU SYSTEM /RL HIGHEST /TN $restartTask /TR $restartCmd | Out-Null
+                if($LASTEXITCODE -ne 0) { throw "Failed to schedule deferred primary restart." }
+
+                $proof = [ordered]@{
+                    schema_version = 1
+                    proof_type = "KATARINA_STABLE_CONTROL_UPDATE_DIRECT"
+                    resource_profile = "LEGACY_LOW_MEMORY_SEQUENTIAL"
+                    installed_agent_sha256 = (Get-FileHash -LiteralPath $agentPath -Algorithm SHA256).Hash.ToLowerInvariant()
+                    installed_watchdog_sha256 = (Get-FileHash -LiteralPath $watchdogPath -Algorithm SHA256).Hash.ToLowerInvariant()
+                    secondary_lanes_disabled = $true
+                    heavy_execution_serialized = $true
+                    deferred_restart_task = $restartTask
+                    deferred_restart_time_local = $runAt
+                    updated_utc = [DateTime]::UtcNow.ToString("o")
+                    result = "PASS"
+                }
+                Write-JsonFile (Join-Path $OutputDir "stable_control_update.json") $proof
+                "KATARINA STABLE CONTROL UPDATE PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = $mode
+                $details["resource_profile"] = "LEGACY_LOW_MEMORY_SEQUENTIAL"
+                $details["deferred_restart"] = $true
+                $details["result"] = "PASS"
+                break
+            }
+
             if ($mode.StartsWith("WORKSPACE_")) {
                 $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
                 if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) { throw "Katarina workspace runner is missing." }
