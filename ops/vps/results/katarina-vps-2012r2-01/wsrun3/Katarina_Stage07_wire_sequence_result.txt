@@ -1,0 +1,4 @@
+stage=07
+result=PASS
+observed_last=2
+allocated_next=3
