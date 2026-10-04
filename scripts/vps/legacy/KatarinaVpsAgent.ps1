@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.4"
+$AgentVersion = "1.4.5"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -687,29 +687,70 @@ while ($true) {
                 Write-LocalHeartbeat -Phase "REQUEST_START" -RequestId $requestId
                 $requestWork = Join-Path $workRoot (Get-ShortWorkKey -RequestId $requestId)
 
-                # Snapshot download/extraction is itself memory intensive on the
-                # 2 GB Windows Server 2012 R2 host. Serialize this phase across
-                # all lanes before the heavier execution lock is considered.
-                $snapshotMutex = New-Object System.Threading.Mutex($false,"Global\KatarinaSnapshotExtraction")
-                $snapshotAcquired = $false
-                $snapshotWaitMs = 0
-                while (-not $snapshotAcquired -and $snapshotWaitMs -lt 180000) {
-                    try { $snapshotAcquired = $snapshotMutex.WaitOne(1000,$false) } catch { $snapshotAcquired = $false }
-                    if (-not $snapshotAcquired) {
-                        Write-LocalHeartbeat -Phase "WAITING_SNAPSHOT_LOCK" -RequestId $requestId
-                        $snapshotWaitMs += 1000
+                # Control-plane operations should never pay the RAM/time cost of
+                # extracting the full repository. Fetch only the few scripts the
+                # control runner can reference. Heavy compile/runtime work keeps
+                # the full serialized snapshot path below.
+                $fastControlModes = @(
+                    "WORKSPACE_CONTROL_STATUS",
+                    "WORKSPACE_CONTROL_RESTART_PRIMARY",
+                    "WORKSPACE_CONTROL_LITE_INSTALL_DIRECT",
+                    "WORKSPACE_CONTROL_BALANCED_INSTALL_DIRECT",
+                    "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT",
+                    "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT",
+                    "WORKSPACE_CONTROL_GUARDIAN_DIAG_DIRECT",
+                    "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT"
+                )
+                $useFastControl = (
+                    [string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
+                    $fastControlModes -contains $mode
+                )
+
+                if($useFastControl) {
+                    Write-LocalHeartbeat -Phase "CONTROL_SPARSE_FETCH" -RequestId $requestId
+                    try { Remove-Item -LiteralPath $requestWork -Recurse -Force -ErrorAction SilentlyContinue } catch {}
+                    $repoRoot = Join-Path $requestWork "controlsrc"
+                    New-Item -ItemType Directory -Force -Path $repoRoot | Out-Null
+
+                    $controlFiles = @(
+                        "scripts/vps/Invoke-KatarinaRemoteTask.ps1",
+                        "scripts/vps/Invoke-KatarinaWorkspaceTask.ps1",
+                        "scripts/vps/legacy/KatarinaVpsAgent.ps1",
+                        "scripts/vps/legacy/KatarinaVpsAgentWatchdog.ps1",
+                        "scripts/vps/legacy/KatarinaControlGuardian.ps1"
+                    )
+                    foreach($relativePath in $controlFiles) {
+                        $text = Get-GitHubFile -Repo $repo -Path $relativePath -Ref $ref -Headers $headers
+                        $destination = Join-Path $repoRoot ($relativePath -replace "/","\")
+                        $parent = Split-Path -Parent $destination
+                        New-Item -ItemType Directory -Force -Path $parent | Out-Null
+                        $text | Set-Content -LiteralPath $destination -Encoding UTF8
                     }
-                }
-                if (-not $snapshotAcquired) {
-                    try { $snapshotMutex.Dispose() } catch {}
-                    throw "Timed out waiting for the global Katarina snapshot-extraction lock."
-                }
-                try {
-                    Write-LocalHeartbeat -Phase "SNAPSHOT_EXTRACT" -RequestId $requestId
-                    $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
-                } finally {
-                    try { $snapshotMutex.ReleaseMutex() } catch {}
-                    try { $snapshotMutex.Dispose() } catch {}
+                } else {
+                    # Snapshot download/extraction is itself memory intensive on the
+                    # 2 GB Windows Server 2012 R2 host. Serialize this phase across
+                    # all lanes before the heavier execution lock is considered.
+                    $snapshotMutex = New-Object System.Threading.Mutex($false,"Global\KatarinaSnapshotExtraction")
+                    $snapshotAcquired = $false
+                    $snapshotWaitMs = 0
+                    while (-not $snapshotAcquired -and $snapshotWaitMs -lt 180000) {
+                        try { $snapshotAcquired = $snapshotMutex.WaitOne(1000,$false) } catch { $snapshotAcquired = $false }
+                        if (-not $snapshotAcquired) {
+                            Write-LocalHeartbeat -Phase "WAITING_SNAPSHOT_LOCK" -RequestId $requestId
+                            $snapshotWaitMs += 1000
+                        }
+                    }
+                    if (-not $snapshotAcquired) {
+                        try { $snapshotMutex.Dispose() } catch {}
+                        throw "Timed out waiting for the global Katarina snapshot-extraction lock."
+                    }
+                    try {
+                        Write-LocalHeartbeat -Phase "SNAPSHOT_EXTRACT" -RequestId $requestId
+                        $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
+                    } finally {
+                        try { $snapshotMutex.ReleaseMutex() } catch {}
+                        try { $snapshotMutex.Dispose() } catch {}
+                    }
                 }
 
                 $localRequest = Join-Path $requestWork "request.json"
@@ -752,7 +793,9 @@ while ($true) {
                         "WORKSPACE_CONTROL_LITE_INSTALL_DIRECT",
                         "WORKSPACE_CONTROL_BALANCED_INSTALL_DIRECT",
                         "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT",
-                        "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT"
+                        "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT",
+                        "WORKSPACE_CONTROL_GUARDIAN_DIAG_DIRECT",
+                        "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT"
                     )
                     $requiresHeavyLock = $true
                     if ([string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
