@@ -359,6 +359,79 @@ switch($mode) {
         break
     }
 
+    "WORKSPACE_CONTROL_LITE_INSTALL" {
+        $installRoot="C:\KatarinaVPSAgent"
+        $primaryConfig=Join-Path $installRoot "agent.json"
+        $agentSource=Join-Path $RepoRoot "scripts\vps\legacy\KatarinaVpsAgent.ps1"
+        $watchdogSource=Join-Path $RepoRoot "scripts\vps\legacy\KatarinaVpsAgentWatchdog.ps1"
+        if(!(Test-Path -LiteralPath $primaryConfig -PathType Leaf)){throw "Primary agent config missing."}
+        if(!(Test-Path -LiteralPath $agentSource -PathType Leaf)){throw "Agent source missing."}
+        if(!(Test-Path -LiteralPath $watchdogSource -PathType Leaf)){throw "Watchdog source missing."}
+
+        $cfg=Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
+        $lite=[ordered]@{
+            schema_version=2
+            agent_id=[string]$cfg.agent_id
+            repository=[string]$cfg.repository
+            branch=[string]$cfg.branch
+            poll_seconds=5
+            lane="primary"
+            state_root=(Join-Path $installRoot "lanes\primary")
+            token_path=(Join-Path $installRoot "token.bin")
+            requests_dir="ops/vps/requests/primary"
+            results_dir="ops/vps/results"
+            compact_results=$true
+            capabilities=@("MUTATING","READONLY","RECOVERY")
+            resource_profile="LEGACY_LOW_MEMORY_SEQUENTIAL"
+            installed_utc=[DateTime]::UtcNow.ToString("o")
+        }
+        Write-Json $primaryConfig $lite
+        Copy-Item -LiteralPath $agentSource -Destination (Join-Path $installRoot "KatarinaVpsAgent.ps1") -Force
+        Copy-Item -LiteralPath $watchdogSource -Destination (Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1") -Force
+
+        $disabled=@(
+            "KatarinaControlRecovery",
+            "KatarinaControlWorker01",
+            "KatarinaControlWorker02",
+            "KatarinaControlSupervisor",
+            "KatarinaControlSupervisorGuard"
+        )
+        foreach($taskName in $disabled) {
+            try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
+            try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
+        }
+
+        foreach($taskName in @("KatarinaVPSAgent","KatarinaVPSAgentWatchdog")) {
+            try { & schtasks.exe /Change /TN $taskName /ENABLE | Out-Null } catch {}
+        }
+
+        $memory=$null
+        try {
+            $os=Get-WmiObject Win32_OperatingSystem
+            $memory=[ordered]@{
+                total_visible_mb=[math]::Round(([double]$os.TotalVisibleMemorySize/1024),0)
+                free_physical_mb=[math]::Round(([double]$os.FreePhysicalMemory/1024),0)
+                total_virtual_mb=[math]::Round(([double]$os.TotalVirtualMemorySize/1024),0)
+                free_virtual_mb=[math]::Round(([double]$os.FreeVirtualMemory/1024),0)
+            }
+        } catch {}
+
+        Write-Json (Join-Path $OutputDir "control_lite_install.json") ([ordered]@{
+            schema_version=1
+            proof_type="KATARINA_CONTROL_LITE_INSTALL"
+            resource_profile="LEGACY_LOW_MEMORY_SEQUENTIAL"
+            persistent_lanes=@("primary")
+            watchdog="KatarinaVPSAgentWatchdog"
+            disabled_tasks=$disabled
+            heavy_job_concurrency=1
+            memory=$memory
+            primary_restart_recommended=$true
+            installed_utc=[DateTime]::UtcNow.ToString("o")
+            result="PASS"
+        })
+        break
+    }
+
     "WORKSPACE_CONTROL_RESTART_PRIMARY" {
         $installRoot="C:\KatarinaVPSAgent"
         $primaryConfig=Join-Path $installRoot "agent.json"
