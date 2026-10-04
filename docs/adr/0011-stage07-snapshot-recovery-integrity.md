@@ -1,6 +1,6 @@
 # ADR-0011 — Stage-07 Snapshot Recovery Integrity Semantics
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Stage:** 07  
 **Protocol affected:** KAT1 v1.0.0 implementation clarification only
 
@@ -85,7 +85,22 @@ must not mark the session READY.
 
 Live-risk readiness remains outside Stage 07 even after communication recovery.
 
-## Gate
+## Acceptance evidence
 
-Promote this ADR from Proposed only after Python and MQL5 generate identical bytes
-and CRCs for snapshot/reconciliation fixtures on modern Windows/MT5.
+Accepted after cross-language proof on Windows Server 2022 / MetaTrader 5:
+
+- workflow run: `37165923929`;
+- head SHA: `54f15339cfd2e54089ae56c16b49939b9162a82f`;
+- artifact: `stage07-cross-language-recovery-evidence`;
+- artifact digest: `sha256:06b51f4eca249cda577e3a3037720cb68fde046b1f35374bf06015a995a63ca9`;
+- Python → MQL5 SNAPSHOT_REQUEST byte equality: PASS;
+- MQL5 → Python SNAPSHOT_BEGIN/CHUNK/COMMIT byte equality: PASS;
+- Python → MQL5 RECONCILE_REQUEST byte equality: PASS;
+- MQL5 → Python RECONCILE_REPORT byte equality: PASS;
+- chunk and aggregate CRC32C: PASS;
+- atomic snapshot and clean reconciliation: PASS;
+- final communication state: READY;
+- live-risk readiness: false.
+
+Acceptance does not freeze Stage 07 as a whole; it only resolves the
+snapshot/reconciliation integrity semantics recorded by this ADR.
