@@ -1,0 +1,33 @@
+
+Python path configuration:
+  PYTHONHOME = 'C:\KatarinaDev\runtime\python'
+  PYTHONPATH = (not set)
+  program name = 'C:\KatarinaDev\runtime\python\python.exe'
+  isolated = 1
+  environment = 0
+  user site = 1
+  safe_path = 1
+  import site = 1
+  is in build tree = 0
+  stdlib dir = 'C:\KatarinaDev\runtime\python\Lib'
+  sys._base_executable = 'C:\\KatarinaDev\\runtime\\python\\python.exe'
+  sys.base_prefix = 'C:\\KatarinaDev\\runtime\\python'
+  sys.base_exec_prefix = 'C:\\KatarinaDev\\runtime\\python'
+  sys.platlibdir = 'DLLs'
+  sys.executable = 'C:\\KatarinaDev\\runtime\\python\\python.exe'
+  sys.prefix = 'C:\\KatarinaDev\\runtime\\python'
+  sys.exec_prefix = 'C:\\KatarinaDev\\runtime\\python'
+  sys.path = [
+    'C:\\KatarinaDev\\runtime\\python\\python38.zip',
+    'C:\\KatarinaDev\\runtime\\python',
+    'C:\\KatarinaDev\\runtime\\packages',
+    'C:\\KatarinaDev\\workspace',
+    'C:\\KatarinaDev\\workspace\\src',
+  ]
+Fatal Python error: init_fs_encoding: failed to get the Python codec of the filesystem encoding
+Python runtime state: core initialized
+ModuleNotFoundError: No module named 'encodings'
+
+Current thread 0x000008e8 (most recent call first):
+  <no Python frame>
+
