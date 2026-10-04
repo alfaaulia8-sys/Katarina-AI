@@ -1,0 +1,11 @@
+python.exe : C:\KatarinaDev\runtime\python\python.exe: No module named pip
+At C:\KatarinaVPSAgent\work\py2\src\alfaaulia-katarina-Katarina-AI-17759cb39ec5
+8bab0be5be7f8d1bb221383b8383\scripts\vps\Bootstrap-KatarinaPortablePython.ps1:8
+3 char:1
++ & $PythonExe -m pip --version *> $null
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\KatarinaDev\...odule named pip 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
