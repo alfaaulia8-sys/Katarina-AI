@@ -422,6 +422,84 @@ try {
                 $details["workspace_root"] = "C:\KatarinaDev"
                 break
             }
+            if ($mode -eq "WORKSPACE_INIT" -or $mode -eq "WORKSPACE_STATUS") {
+                $workspaceRoot = "C:\KatarinaDev"
+                $workspace = Join-Path $workspaceRoot "workspace"
+                $metadataDir = Join-Path $workspaceRoot "metadata"
+                $evidenceDir = Join-Path $workspaceRoot "evidence"
+                $artifactDir = Join-Path $workspaceRoot "artifacts"
+                $snapshotDir = Join-Path $workspaceRoot "snapshots"
+                $logDir = Join-Path $workspaceRoot "logs"
+
+                foreach ($dir in @($workspaceRoot,$metadataDir,$evidenceDir,$artifactDir,$snapshotDir,$logDir)) {
+                    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+                }
+
+                if ($mode -eq "WORKSPACE_INIT") {
+                    if (Test-Path $workspace) {
+                        $backup = Join-Path $snapshotDir ("pre_init_" + [DateTime]::UtcNow.ToString("yyyyMMdd_HHmmss"))
+                        Move-Item $workspace $backup -Force
+                    }
+                    New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+
+                    $excludeTop = @(".git","ops")
+                    foreach ($item in Get-ChildItem -Path $RepoRoot -Force) {
+                        if ($excludeTop -contains $item.Name) { continue }
+                        Copy-Item $item.FullName (Join-Path $workspace $item.Name) -Recurse -Force
+                    }
+
+                    $baseline = [ordered]@{
+                        schema_version = 1
+                        workspace_version = "1.0"
+                        source_ref = [string]$request.ref
+                        initialized_utc = [DateTime]::UtcNow.ToString("o")
+                        computer_name = $env:COMPUTERNAME
+                        root = $workspaceRoot
+                        development_mode = "VPS_FIRST"
+                        github_role = "COMMAND_BUS_AND_CANONICAL_RELEASE"
+                    }
+                    Write-JsonFile (Join-Path $metadataDir "workspace.json") $baseline
+                }
+
+                if (!(Test-Path $workspace)) { throw "Katarina development workspace is not initialized." }
+
+                $files = @(Get-ChildItem -Path $workspace -File -Recurse -ErrorAction Stop)
+                $manifest = @()
+                foreach ($file in $files) {
+                    $relative = $file.FullName.Substring($workspace.Length).TrimStart("\")
+                    $manifest += [ordered]@{
+                        path = ($relative -replace "\\","/")
+                        size = [int64]$file.Length
+                        sha256 = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                    }
+                }
+                $manifest = @($manifest | Sort-Object path)
+                $manifestPayload = [ordered]@{
+                    schema_version = 1
+                    generated_utc = [DateTime]::UtcNow.ToString("o")
+                    file_count = $manifest.Count
+                    files = $manifest
+                }
+                Write-JsonFile (Join-Path $metadataDir "manifest.json") $manifestPayload
+
+                $statusOut = [ordered]@{
+                    schema_version = 1
+                    mode = $mode
+                    root = $workspaceRoot
+                    workspace = $workspace
+                    file_count = $manifest.Count
+                    metadata_exists = (Test-Path (Join-Path $metadataDir "workspace.json"))
+                    result = "PASS"
+                }
+                Write-JsonFile (Join-Path $OutputDir "workspace_status.json") $statusOut
+                "KATARINA WORKSPACE $mode PASS files=$($manifest.Count)" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = $mode
+                $details["workspace_root"] = $workspaceRoot
+                $details["file_count"] = $manifest.Count
+                break
+            }
+
             if ($mode -eq "MT5_SEQUENCE_RUNTIME") {
                 $terminalPath = Get-ArgValue $request.args "terminal_path" ""
                 $terminalDataPath = Get-ArgValue $request.args "terminal_data_path" ""
