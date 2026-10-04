@@ -1,0 +1,12 @@
+Python ZeroMQ ROUTER failed. 
+At C:\KatarinaVPSAgent\work\wszmq1\src\alfaaulia-katarina-Katarina-AI-33669fd87
+e751da15cc13742e72bec4bffd14dec\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:71
+5 char:13
++             throw "Python ZeroMQ ROUTER failed. $detail"
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Python ZeroMQ ROUTER failed.  
+   :String) [], RuntimeException
+    + FullyQualifiedErrorId : Python ZeroMQ ROUTER failed. 
+ 
+
+Workspace child task produced no status evidence.
