@@ -898,7 +898,7 @@ try {
                     try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
                 }
 
-                $guardianCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$guardianPath+'" -InstallRoot "'+$installRoot+'" -CheckSeconds 10 -IdleStaleSeconds 90 -BusyStaleSeconds 420 -MissingHeartbeatGraceSeconds 60 -RestartCooldownSeconds 90'
+                $guardianCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$guardianPath+'"'
                 & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN "KatarinaControlGuardian" /TR $guardianCmd | Out-Null
                 if($LASTEXITCODE -ne 0){throw "Failed to register KatarinaControlGuardian."}
                 try { & schtasks.exe /Change /TN "KatarinaControlGuardian" /ENABLE | Out-Null } catch {}
