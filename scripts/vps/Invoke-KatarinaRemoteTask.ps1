@@ -590,8 +590,23 @@ try {
                     Where-Object { $_.ExecutablePath -and [string]::Equals($_.ExecutablePath,$terminalPath,[StringComparison]::OrdinalIgnoreCase) })
                 if ($running.Count -gt 0) { throw "Target MT5 terminal is already running; refusing headless runtime probe." }
 
-                $commonFiles = "C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\Common\Files"
+                # The legacy agent runs as LocalSystem. Never assume the interactive
+                # Administrator profile for FILE_COMMON; bind evidence to the same
+                # Windows identity that launches terminal64.exe.
+                $commonFiles = Join-Path $env:APPDATA "MetaQuotes\Terminal\Common\Files"
                 New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
+
+                # Force the runtime probe into portable mode so terminal data does not
+                # silently resolve to a different per-user roaming terminal instance.
+                $terminalHome = Split-Path -Parent $terminalPath
+                $portableScriptDir = Join-Path $terminalHome "MQL5\Scripts"
+                $portableIncludeDir = Join-Path $terminalHome "MQL5\Include\Katarina"
+                New-Item -ItemType Directory -Force -Path $portableScriptDir,$portableIncludeDir | Out-Null
+                Copy-Item -LiteralPath $scriptPath -Destination (Join-Path $portableScriptDir "KatarinaStage07WireSequenceTest.ex5") -Force
+                $sourceInclude = Join-Path $terminalDataPath "MQL5\Include\Katarina"
+                if (Test-Path -LiteralPath $sourceInclude -PathType Container) {
+                    Copy-Item -Path (Join-Path $sourceInclude "*") -Destination $portableIncludeDir -Recurse -Force
+                }
                 $marker = Join-Path $commonFiles "Katarina_Stage07_wire_sequence_phase.txt"
                 $evidence = Join-Path $commonFiles "Katarina_Stage07_wire_sequence_result.txt"
                 Remove-Item $marker,$evidence -Force -ErrorAction SilentlyContinue
@@ -612,7 +627,7 @@ Symbol=
 Period=H1
 ShutdownTerminal=1
 "@ | Set-Content $configPath -Encoding ASCII
-                    $p = Start-Process -FilePath $terminalPath -ArgumentList @("/config:`"$configPath`"") -PassThru
+                    $p = Start-Process -FilePath $terminalPath -ArgumentList @("/portable", "/config:`"$configPath`"") -PassThru
                     if (-not $p.WaitForExit(90000)) {
                         try { $p.Kill() } catch {}
                         throw "Stage-07 wire sequence phase $Phase timed out."
