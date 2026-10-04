@@ -9,6 +9,19 @@ param(
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+function Invoke-NativeChecked {
+    param(
+        [Parameter(Mandatory=$true)][string]$FilePath,
+        [Parameter(Mandatory=$true)][string[]]$Arguments,
+        [Parameter(Mandatory=$true)][string]$StdoutPath,
+        [Parameter(Mandatory=$true)][string]$StderrPath
+    )
+
+    Remove-Item -LiteralPath $StdoutPath,$StderrPath -Force -ErrorAction SilentlyContinue
+    $p = Start-Process -FilePath $FilePath -ArgumentList $Arguments -Wait -PassThru -NoNewWindow -RedirectStandardOutput $StdoutPath -RedirectStandardError $StderrPath
+    return [int]$p.ExitCode
+}
+
 $Version = "3.11.9"
 $RuntimeRoot = Join-Path $WorkspaceRoot "runtime"
 $PythonRoot = Join-Path $RuntimeRoot "python"
@@ -69,33 +82,27 @@ if (!(Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
     New-Item -ItemType Directory -Force -Path (Join-Path $PythonRoot "Lib\site-packages") | Out-Null
 }
 
-$VersionOutput = & $PythonExe --version 2>&1
-if ($LASTEXITCODE -ne 0) {
-    throw "Portable Python executable failed to start."
-}
-$VersionOutput | Set-Content -LiteralPath (Join-Path $OutputDir "python_version.txt") -Encoding UTF8
+$VersionStdout = Join-Path $OutputDir "python_version.txt"
+$VersionStderr = Join-Path $OutputDir "python_version_error.txt"
+$Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @("--version") -StdoutPath $VersionStdout -StderrPath $VersionStderr
+if($Exit -ne 0) { throw "Portable Python executable failed to start." }
 
 $GetPip = Join-Path $DownloadRoot "get-pip.py"
 if (!(Test-Path -LiteralPath $GetPip -PathType Leaf)) {
     Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile $GetPip -UseBasicParsing
 }
 
-& $PythonExe -m pip --version *> $null
-if ($LASTEXITCODE -ne 0) {
-    & $PythonExe $GetPip --disable-pip-version-check --no-warn-script-location *>&1 |
-        Set-Content -LiteralPath (Join-Path $OutputDir "get_pip.log") -Encoding UTF8
-    if ($LASTEXITCODE -ne 0) {
-        throw "get-pip failed for portable Python."
-    }
-}
+$GetPipOut = Join-Path $OutputDir "get_pip.log"
+$GetPipErr = Join-Path $OutputDir "get_pip_error.log"
+$Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @($GetPip,"--disable-pip-version-check","--no-warn-script-location") -StdoutPath $GetPipOut -StderrPath $GetPipErr
+if($Exit -ne 0) { throw "get-pip failed for portable Python." }
 
 $Requirements = Join-Path $SourceRoot "requirements-stage07.txt"
-if (Test-Path -LiteralPath $Requirements -PathType Leaf) {
-    & $PythonExe -m pip install --disable-pip-version-check --only-binary=:all: -r $Requirements *>&1 |
-        Set-Content -LiteralPath (Join-Path $OutputDir "pip_install.log") -Encoding UTF8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Stage-07 Python dependency installation failed."
-    }
+if(Test-Path -LiteralPath $Requirements -PathType Leaf) {
+    $PipOut = Join-Path $OutputDir "pip_install.log"
+    $PipErr = Join-Path $OutputDir "pip_install_error.log"
+    $Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @("-m","pip","install","--disable-pip-version-check","--only-binary=:all:","-r",$Requirements) -StdoutPath $PipOut -StderrPath $PipErr
+    if($Exit -ne 0) { throw "Stage-07 Python dependency installation failed." }
 }
 
 $ProbeScript = Join-Path $OutputDir "python_probe.py"
@@ -109,11 +116,10 @@ print("libzmq=" + zmq.zmq_version())
 print("tornado=" + tornado.version)
 '@ | Set-Content -LiteralPath $ProbeScript -Encoding ASCII
 
-& $PythonExe $ProbeScript *>&1 |
-    Set-Content -LiteralPath (Join-Path $OutputDir "python_probe.txt") -Encoding UTF8
-if ($LASTEXITCODE -ne 0) {
-    throw "Portable Python dependency probe failed."
-}
+$ProbeOut = Join-Path $OutputDir "python_probe.txt"
+$ProbeErr = Join-Path $OutputDir "python_probe_error.txt"
+$Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @($ProbeScript) -StdoutPath $ProbeOut -StderrPath $ProbeErr
+if($Exit -ne 0) { throw "Portable Python dependency probe failed." }
 
 $Evidence = [ordered]@{
     schema_version = 1
