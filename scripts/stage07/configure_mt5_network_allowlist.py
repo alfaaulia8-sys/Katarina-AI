@@ -5,11 +5,38 @@ import hashlib
 import json
 import pathlib
 import subprocess
-import sys
 import time
 from typing import Any
 
 from pywinauto import Desktop, keyboard
+
+
+def text_of(control: Any) -> str:
+    try:
+        return control.window_text().strip()
+    except Exception:
+        return ""
+
+
+def window_snapshot(backend: str = "win32") -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    try:
+        for window in Desktop(backend=backend).windows():
+            try:
+                rows.append(
+                    {
+                        "title": window.window_text(),
+                        "class_name": window.class_name(),
+                        "process_id": int(window.process_id()),
+                        "visible": bool(window.is_visible()),
+                        "enabled": bool(window.is_enabled()),
+                    }
+                )
+            except Exception as exc:
+                rows.append({"error": repr(exc)})
+    except Exception as exc:
+        rows.append({"desktop_error": repr(exc)})
+    return rows
 
 
 def control_snapshot(dialog: Any) -> list[dict[str, str]]:
@@ -40,62 +67,170 @@ def sha256(path: pathlib.Path) -> str | None:
     return digest.hexdigest()
 
 
-def wait_for_main_window(timeout: float = 30.0):
+def process_windows(pid: int, backend: str = "win32") -> list[Any]:
+    result: list[Any] = []
+    for window in Desktop(backend=backend).windows():
+        try:
+            if int(window.process_id()) == pid and window.is_visible():
+                result.append(window)
+        except Exception:
+            pass
+    return result
+
+
+def wait_for_main_window(pid: int, timeout: float = 45.0):
     deadline = time.monotonic() + timeout
-    desktop = Desktop(backend="uia")
     while time.monotonic() < deadline:
-        for window in desktop.windows():
+        candidates = process_windows(pid, "win32")
+        for window in candidates:
             try:
                 title = window.window_text()
-                if "MetaTrader 5" in title and window.is_visible():
+                if "MetaTrader 5" in title:
+                    return window
+            except Exception:
+                pass
+        # Some MT5 builds omit the product name from the account/chart title.
+        for window in candidates:
+            try:
+                cls = window.class_name()
+                if "MetaQuotes" in cls or "MetaTrader" in cls:
                     return window
             except Exception:
                 pass
         time.sleep(0.25)
-    raise RuntimeError("MetaTrader 5 main window was not found")
+    raise RuntimeError("MetaTrader 5 main window was not found for launched process")
 
 
-def wait_for_options(timeout: float = 10.0):
-    deadline = time.monotonic() + timeout
-    desktop = Desktop(backend="uia")
-    while time.monotonic() < deadline:
-        for window in desktop.windows():
+def dismiss_first_run_dialogs(pid: int) -> list[str]:
+    dismissed: list[str] = []
+    safe_titles = (
+        "Open an Account",
+        "Authorization",
+        "Login",
+        "Warning",
+        "MetaTrader 5",
+    )
+    for _ in range(4):
+        changed = False
+        for window in process_windows(pid, "win32"):
             try:
                 title = window.window_text().strip()
-                if title == "Options" and window.is_visible():
-                    return window
+                if title == "Options":
+                    continue
+                if any(token.lower() in title.lower() for token in safe_titles):
+                    # Never close the actual main frame. Only close dialog-class windows.
+                    cls = window.class_name()
+                    if cls in {"#32770", "Dialog"}:
+                        window.set_focus()
+                        keyboard.send_keys("{ESC}")
+                        dismissed.append(title)
+                        changed = True
+                        time.sleep(0.5)
             except Exception:
                 pass
+        if not changed:
+            break
+    return dismissed
+
+
+def wait_for_options(pid: int, timeout: float = 15.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        for backend in ("win32", "uia"):
+            for window in process_windows(pid, backend):
+                try:
+                    title = window.window_text().strip()
+                    if title == "Options" or title.endswith(" - Options"):
+                        return window
+                except Exception:
+                    pass
         time.sleep(0.2)
     raise RuntimeError("MetaTrader 5 Options dialog was not found")
 
 
-def text_of(control: Any) -> str:
-    try:
-        return control.window_text().strip()
-    except Exception:
-        return ""
+def open_options(main_window: Any, pid: int) -> tuple[Any, str]:
+    attempts: list[tuple[str, Any]] = []
+
+    def menu_attempt() -> None:
+        main_window.set_focus()
+        main_window.menu_select("Tools->Options")
+
+    def alt_menu_attempt() -> None:
+        main_window.set_focus()
+        keyboard.send_keys("%t")
+        time.sleep(0.4)
+        keyboard.send_keys("o")
+
+    def ctrl_attempt() -> None:
+        main_window.set_focus()
+        keyboard.send_keys("^o")
+
+    attempts.extend(
+        [
+            ("win32_menu_tools_options", menu_attempt),
+            ("alt_tools_options", alt_menu_attempt),
+            ("ctrl_o", ctrl_attempt),
+        ]
+    )
+
+    errors: list[str] = []
+    for name, action in attempts:
+        try:
+            action()
+            return wait_for_options(pid, timeout=8.0), name
+        except Exception as exc:
+            errors.append(f"{name}:{exc!r}")
+            time.sleep(0.5)
+
+    raise RuntimeError("Unable to open MT5 Options dialog; " + " | ".join(errors))
 
 
 def choose_expert_advisors(dialog: Any) -> None:
-    tabs = [
-        control
-        for control in dialog.descendants(control_type="TabItem")
-        if text_of(control) == "Expert Advisors"
-    ]
-    if not tabs:
-        raise RuntimeError("Expert Advisors tab was not found")
-    tab = tabs[0]
-    try:
-        tab.select()
-    except Exception:
-        tab.click_input()
-    time.sleep(0.5)
+    for backend in ("uia", "win32"):
+        try:
+            d = Desktop(backend=backend).window(handle=dialog.handle)
+            tabs = [
+                control
+                for control in d.descendants()
+                if text_of(control) == "Expert Advisors"
+            ]
+            if tabs:
+                tab = tabs[0]
+                try:
+                    tab.select()
+                except Exception:
+                    tab.click_input()
+                time.sleep(0.5)
+                return
+        except Exception:
+            pass
+
+    # Keyboard fallback: Options defaults to the first tab. Ctrl+Tab cycles tabs;
+    # after each cycle inspect UIA until Expert Advisors becomes visible.
+    dialog.set_focus()
+    for _ in range(12):
+        keyboard.send_keys("^{TAB}")
+        time.sleep(0.25)
+        try:
+            uia = Desktop(backend="uia").window(handle=dialog.handle)
+            if any(text_of(c) == "Expert Advisors" for c in uia.descendants()):
+                for c in uia.descendants():
+                    if text_of(c) == "Expert Advisors":
+                        try:
+                            c.select()
+                        except Exception:
+                            c.click_input()
+                        time.sleep(0.4)
+                        return
+        except Exception:
+            pass
+    raise RuntimeError("Expert Advisors tab was not found")
 
 
 def enable_webrequest_checkbox(dialog: Any) -> str:
+    uia = Desktop(backend="uia").window(handle=dialog.handle)
     candidates = []
-    for control in dialog.descendants():
+    for control in uia.descendants():
         name = text_of(control)
         if "Allow WebRequest for listed URL" in name:
             candidates.append(control)
@@ -126,7 +261,8 @@ def enable_webrequest_checkbox(dialog: Any) -> str:
 
 
 def find_add_row(dialog: Any):
-    for control in dialog.descendants():
+    uia = Desktop(backend="uia").window(handle=dialog.handle)
+    for control in uia.descendants():
         name = text_of(control).lower()
         if "add new url" in name:
             return control
@@ -147,11 +283,10 @@ def add_url(dialog: Any, value: str) -> None:
         time.sleep(0.5)
         return
 
-    # Some builds expose the insertion row as an Edit after the WebRequest
-    # checkbox is enabled. Prefer an empty visible edit in the lower half.
-    rect = dialog.rectangle()
+    uia = Desktop(backend="uia").window(handle=dialog.handle)
+    rect = uia.rectangle()
     edits = []
-    for control in dialog.descendants(control_type="Edit"):
+    for control in uia.descendants(control_type="Edit"):
         try:
             if control.is_visible() and control.is_enabled():
                 crect = control.rectangle()
@@ -170,8 +305,9 @@ def add_url(dialog: Any, value: str) -> None:
 
 
 def visible_url_texts(dialog: Any) -> list[str]:
+    uia = Desktop(backend="uia").window(handle=dialog.handle)
     values: list[str] = []
-    for control in dialog.descendants():
+    for control in uia.descendants():
         value = text_of(control)
         if value and (
             "127.0.0.1" in value
@@ -183,14 +319,18 @@ def visible_url_texts(dialog: Any) -> list[str]:
 
 
 def press_ok(dialog: Any) -> None:
+    uia = Desktop(backend="uia").window(handle=dialog.handle)
     buttons = [
         control
-        for control in dialog.descendants(control_type="Button")
+        for control in uia.descendants(control_type="Button")
         if text_of(control) == "OK"
     ]
-    if not buttons:
-        raise RuntimeError("Options OK button was not found")
-    buttons[0].click_input()
+    if buttons:
+        buttons[0].click_input()
+        time.sleep(1.0)
+        return
+    dialog.set_focus()
+    keyboard.send_keys("{ENTER}")
     time.sleep(1.0)
 
 
@@ -203,10 +343,14 @@ def main() -> int:
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     evidence: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "proof_type": "KATARINA_MT5_NETWORK_ALLOWLIST_UI_AUTOMATION",
         "terminal": str(args.terminal),
         "requested_entries": ["127.0.0.1", "http://127.0.0.1"],
+        "windows_before": [],
+        "windows_on_failure": [],
+        "dismissed_first_run_dialogs": [],
+        "open_method": None,
         "controls_before": [],
         "controls_after": [],
         "visible_urls": [],
@@ -225,13 +369,20 @@ def main() -> int:
             stderr=subprocess.DEVNULL,
             text=True,
         )
-        main_window = wait_for_main_window()
-        main_window.set_focus()
-        keyboard.send_keys("^o")
-        dialog = wait_for_options()
+        evidence["terminal_pid"] = process.pid
+        main_window = wait_for_main_window(process.pid)
+        evidence["main_window_title"] = main_window.window_text()
+        evidence["main_window_class"] = main_window.class_name()
+        evidence["windows_before"] = window_snapshot()
+        evidence["dismissed_first_run_dialogs"] = dismiss_first_run_dialogs(process.pid)
+
+        main_window = wait_for_main_window(process.pid, timeout=10.0)
+        dialog, method = open_options(main_window, process.pid)
+        evidence["open_method"] = method
         choose_expert_advisors(dialog)
 
-        evidence["controls_before"] = control_snapshot(dialog)
+        uia_dialog = Desktop(backend="uia").window(handle=dialog.handle)
+        evidence["controls_before"] = control_snapshot(uia_dialog)
         evidence["checkbox"] = enable_webrequest_checkbox(dialog)
 
         for entry in evidence["requested_entries"]:
@@ -241,7 +392,9 @@ def main() -> int:
             add_url(dialog, entry)
 
         evidence["visible_urls"] = visible_url_texts(dialog)
-        evidence["controls_after"] = control_snapshot(dialog)
+        evidence["controls_after"] = control_snapshot(
+            Desktop(backend="uia").window(handle=dialog.handle)
+        )
 
         if not any("127.0.0.1" in item for item in evidence["visible_urls"]):
             raise RuntimeError(
@@ -251,11 +404,10 @@ def main() -> int:
         press_ok(dialog)
         time.sleep(1.0)
 
-        # Persist the security setting by closing the terminal normally.
-        main_window = wait_for_main_window(timeout=10.0)
+        main_window = wait_for_main_window(process.pid, timeout=10.0)
         main_window.set_focus()
         keyboard.send_keys("%{F4}")
-        deadline = time.monotonic() + 10.0
+        deadline = time.monotonic() + 12.0
         while process.poll() is None and time.monotonic() < deadline:
             time.sleep(0.2)
         if process.poll() is None:
@@ -271,6 +423,7 @@ def main() -> int:
         return 0
     except Exception as exc:
         evidence["error"] = repr(exc)
+        evidence["windows_on_failure"] = window_snapshot()
         output.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
         print(json.dumps(evidence, indent=2))
         return 1
