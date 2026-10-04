@@ -111,6 +111,75 @@ switch($mode) {
         break
     }
 
+    "WORKSPACE_CONTROL_DEDUP_LEGACY_AGENTS" {
+        $installRoot="C:\KatarinaVPSAgent"
+        $primaryConfig=Join-Path $installRoot "agent.json"
+        $matches=@()
+        try {
+            $matches=@(
+                Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.CommandLine -and
+                    $_.CommandLine.IndexOf("KatarinaVpsAgent.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                    $_.CommandLine.IndexOf($primaryConfig,[StringComparison]::OrdinalIgnoreCase) -ge 0
+                } |
+                Sort-Object CreationDate -Descending
+            )
+        } catch {}
+
+        $before=@($matches | ForEach-Object {
+            [ordered]@{
+                process_id=[int]$_.ProcessId
+                creation_date=[string]$_.CreationDate
+                command_line=[regex]::Replace([string]$_.CommandLine,'(?i)(token|secret|password)=\S+','$1=[REDACTED]')
+            }
+        })
+
+        $keptPid=$null
+        $terminated=@()
+        if($matches.Count -gt 0) {
+            $keptPid=[int]$matches[0].ProcessId
+            foreach($proc in @($matches | Select-Object -Skip 1)) {
+                $terminated += [int]$proc.ProcessId
+                try { [void]$proc.Terminate() } catch {}
+            }
+        }
+
+        Start-Sleep -Seconds 2
+
+        $after=@()
+        try {
+            $after=@(
+                Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.CommandLine -and
+                    $_.CommandLine.IndexOf("KatarinaVpsAgent.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                    $_.CommandLine.IndexOf($primaryConfig,[StringComparison]::OrdinalIgnoreCase) -ge 0
+                } |
+                ForEach-Object {
+                    [ordered]@{
+                        process_id=[int]$_.ProcessId
+                        creation_date=[string]$_.CreationDate
+                    }
+                }
+            )
+        } catch {}
+
+        $ok=($after.Count -le 1)
+        Write-Json (Join-Path $OutputDir "control_agent_dedup.json") ([ordered]@{
+            schema_version=1
+            proof_type="KATARINA_CONTROL_AGENT_DEDUP"
+            before=$before
+            kept_process_id=$keptPid
+            terminated_process_ids=$terminated
+            after=$after
+            generated_utc=[DateTime]::UtcNow.ToString("o")
+            result=$(if($ok){"PASS"}else{"FAIL"})
+        })
+        if(!$ok){throw "Legacy agent deduplication left more than one primary agent process."}
+        break
+    }
+
     "WORKSPACE_CONTROL_PLANE_V2_INSTALL" {
         $installRoot="C:\KatarinaVPSAgent"
         $tokenPath=Join-Path $installRoot "token.bin"
