@@ -820,6 +820,17 @@ ShutdownTerminal=1
         })
     }
 
+    "WORKSPACE_INSTALL_PYTHON" {
+        $installer=Join-Path $RepoRoot "scripts\vps\Install-KatarinaPortablePython.ps1"
+        if(!(Test-Path -LiteralPath $installer -PathType Leaf)){throw "Portable Python installer missing."}
+        $runtimeEvidence=Join-Path $OutputDir "python_runtime.json"
+        $raw=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installer
+        if($LASTEXITCODE -ne 0){throw "Portable Python installation failed."}
+        ($raw -join [Environment]::NewLine) | Set-Content -LiteralPath $runtimeEvidence -Encoding UTF8
+        $probe=Get-Content -LiteralPath $runtimeEvidence -Raw | ConvertFrom-Json
+        if([string]$probe.result -ne "PASS"){throw "Portable Python smoke test did not pass."}
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
