@@ -273,7 +273,73 @@ def find_add_row(dialog: Any):
     return None
 
 
-def add_url(dialog: Any, value: str) -> None:
+def trusted_list_state(dialog: Any) -> dict[str, Any]:
+    state: dict[str, Any] = {
+        "found": False,
+        "item_count": 0,
+        "items": [],
+    }
+    for backend in ("win32", "uia"):
+        try:
+            d = Desktop(backend=backend).window(handle=dialog.handle)
+            for control in d.descendants():
+                try:
+                    info = control.element_info
+                    control_type = str(getattr(info, "control_type", ""))
+                    class_name = str(getattr(info, "class_name", ""))
+                    automation_id = str(getattr(info, "automation_id", ""))
+                    if not (
+                        control_type == "List"
+                        or class_name == "SysListView32"
+                        or automation_id == "10191"
+                    ):
+                        continue
+
+                    state["found"] = True
+                    items = []
+                    try:
+                        items = control.descendants(control_type="ListItem")
+                    except Exception:
+                        pass
+                    if not items:
+                        try:
+                            items = control.children()
+                        except Exception:
+                            items = []
+
+                    texts: list[str] = []
+                    for item in items:
+                        value = text_of(item)
+                        if not value:
+                            try:
+                                values = item.texts()
+                                value = " | ".join(
+                                    str(v).strip() for v in values if str(v).strip()
+                                )
+                            except Exception:
+                                pass
+                        texts.append(value)
+
+                    if len(items) >= int(state["item_count"]):
+                        state["backend"] = backend
+                        state["item_count"] = len(items)
+                        state["items"] = texts
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    return state
+
+
+def add_url(dialog: Any, value: str) -> dict[str, Any]:
+    before = trusted_list_state(dialog)
+    record: dict[str, Any] = {
+        "value": value,
+        "before": before,
+        "method": None,
+        "inline_edit_found": False,
+    }
+
     row = find_add_row(dialog)
     if row is not None:
         try:
@@ -284,13 +350,16 @@ def add_url(dialog: Any, value: str) -> None:
         keyboard.send_keys("^a")
         keyboard.write(value, with_spaces=True)
         keyboard.send_keys("{ENTER}")
-        time.sleep(0.5)
-        return
+        time.sleep(0.6)
+        record["method"] = "named_add_row"
+        record["after"] = trusted_list_state(dialog)
+        return record
 
     # Current MT5 builds expose the URL editor as a SysListView32 containing
     # an empty insertion ListItem. Double-clicking that row creates the inline
-    # edit control. This is more reliable than searching for an Edit before
-    # edit mode is active.
+    # edit control. UI Automation may keep ListItem text blank even after a
+    # successful insertion, so structural change is recorded separately and
+    # the following SocketConnect proof is the authoritative permission check.
     for backend in ("uia", "win32"):
         try:
             d = Desktop(backend=backend).window(handle=dialog.handle)
@@ -330,7 +399,6 @@ def add_url(dialog: Any, value: str) -> None:
                     keyboard.send_keys("{F2}")
                 time.sleep(0.35)
 
-                # Inline edit exists only after the ListView item enters edit mode.
                 inline = None
                 try:
                     uia = Desktop(backend="uia").window(handle=dialog.handle)
@@ -344,6 +412,7 @@ def add_url(dialog: Any, value: str) -> None:
                     pass
 
                 if inline is not None:
+                    record["inline_edit_found"] = True
                     try:
                         inline.set_edit_text(value)
                     except Exception:
@@ -355,12 +424,15 @@ def add_url(dialog: Any, value: str) -> None:
                     keyboard.write(value, with_spaces=True)
 
                 keyboard.send_keys("{ENTER}")
-                time.sleep(0.6)
-                return
+                time.sleep(0.7)
+                record["method"] = f"{backend}_listview"
+                record["after"] = trusted_list_state(dialog)
+                return record
         except Exception:
             pass
 
     raise RuntimeError("MetaTrader URL insertion ListView could not enter edit mode")
+
 
 def visible_url_texts(dialog: Any) -> list[str]:
     uia = Desktop(backend="uia").window(handle=dialog.handle)
@@ -412,6 +484,9 @@ def main() -> int:
         "controls_before": [],
         "controls_after": [],
         "visible_urls": [],
+        "url_insertions": [],
+        "trusted_list_before": {},
+        "trusted_list_after": {},
         "experts_ini_sha256": None,
         "result": "FAIL",
     }
@@ -442,21 +517,37 @@ def main() -> int:
         uia_dialog = Desktop(backend="uia").window(handle=dialog.handle)
         evidence["controls_before"] = control_snapshot(uia_dialog)
         evidence["checkbox"] = enable_webrequest_checkbox(dialog)
+        evidence["trusted_list_before"] = trusted_list_state(dialog)
 
-        for entry in evidence["requested_entries"]:
+        # Add URL-form localhost first, then raw loopback. The MT5 trusted list
+        # is used by WebRequest and native sockets; the next workflow step
+        # proves the actual SocketConnect permission rather than trusting UI text.
+        for entry in ("http://127.0.0.1", "127.0.0.1"):
             current = visible_url_texts(dialog)
             if any(entry in value for value in current):
                 continue
-            add_url(dialog, entry)
+            evidence["url_insertions"].append(add_url(dialog, entry))
 
         evidence["visible_urls"] = visible_url_texts(dialog)
+        evidence["trusted_list_after"] = trusted_list_state(dialog)
         evidence["controls_after"] = control_snapshot(
             Desktop(backend="uia").window(handle=dialog.handle)
         )
 
-        if not any("127.0.0.1" in item for item in evidence["visible_urls"]):
+        before_count = int(evidence["trusted_list_before"].get("item_count", 0))
+        after_count = int(evidence["trusted_list_after"].get("item_count", 0))
+        evidence["list_structure_changed"] = after_count > before_count
+        evidence["verification_policy"] = "UI_STRUCTURE_PLUS_AUTHORITATIVE_SOCKETCONNECT_RUNTIME"
+
+        if not evidence["trusted_list_after"].get("found"):
+            raise RuntimeError("MT5 trusted URL ListView disappeared after insertion")
+        if not evidence["url_insertions"]:
+            raise RuntimeError("No localhost allow-list insertion was attempted")
+        if not evidence["list_structure_changed"] and not any(
+            "127.0.0.1" in item for item in evidence["visible_urls"]
+        ):
             raise RuntimeError(
-                "127.0.0.1 was not visible in the trusted URL list after UI entry"
+                "MT5 trusted URL list showed neither visible localhost text nor structural growth"
             )
 
         press_ok(dialog)
