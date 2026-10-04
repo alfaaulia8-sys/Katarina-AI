@@ -372,27 +372,39 @@ Period=H1
 ShutdownTerminal=1
 "@ | Set-Content -LiteralPath $config -Encoding ASCII
 
-            $psi=New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName=$terminalResolved
-            $psi.Arguments='/config:"'+$config+'"'
-            $psi.UseShellExecute=$false
-            $psi.CreateNoWindow=$false
-            $psi.WorkingDirectory=Split-Path -Parent $terminalResolved
-            $psi.EnvironmentVariables["USERPROFILE"]=$profileRoot
-            $psi.EnvironmentVariables["APPDATA"]=$appDataRoaming
-            $psi.EnvironmentVariables["LOCALAPPDATA"]=$localAppData
-            $psi.EnvironmentVariables["HOMEDRIVE"]=$homeDrive
-            $psi.EnvironmentVariables["HOMEPATH"]=$homePath
-
-            $proc=New-Object System.Diagnostics.Process
-            $proc.StartInfo=$psi
-            [void]$proc.Start()
-            if(!$proc.WaitForExit($TimeoutSeconds*1000)) {
-                try { $proc.Kill() } catch {}
-                throw "MT5 runtime script timed out: $ScriptName"
+            $launcher=Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaInteractiveMt5.ps1"
+            if(!(Test-Path -LiteralPath $launcher -PathType Leaf)) {
+                throw "Safe interactive MT5 launcher is missing."
             }
+
+            $expectedUser=Split-Path -Leaf $profileRoot
+            $launchEvidence=Join-Path $OutputDir ("interactive_"+$ConfigTag+".json")
+            $launchStdout=Join-Path $OutputDir ("interactive_"+$ConfigTag+"_stdout.txt")
+            $launchStderr=Join-Path $OutputDir ("interactive_"+$ConfigTag+"_stderr.txt")
+            $launcherArgs=@(
+                "-NoProfile",
+                "-ExecutionPolicy","Bypass",
+                "-File",$launcher,
+                "-TerminalPath",$terminalResolved,
+                "-ConfigPath",$config,
+                "-ExpectedUser",$expectedUser,
+                "-TimeoutSeconds",$TimeoutSeconds,
+                "-OutputPath",$launchEvidence
+            )
+
+            & powershell.exe $launcherArgs 1> $launchStdout 2> $launchStderr
+            $launcherExit=$LASTEXITCODE
+            if($launcherExit -ne 0 -or !(Test-Path -LiteralPath $launchEvidence -PathType Leaf)) {
+                $detail=""
+                if(Test-Path -LiteralPath $launchStderr) {
+                    $detail=Get-Content -LiteralPath $launchStderr -Raw
+                }
+                throw "Interactive MT5 launch failed for $ScriptName. $detail"
+            }
+
+            $launchResult=Get-Content -LiteralPath $launchEvidence -Raw | ConvertFrom-Json
             Start-Sleep -Milliseconds 700
-            return [int]$proc.ExitCode
+            return [int]$launchResult.terminal_exit_code
         }
 
         $records=@()
