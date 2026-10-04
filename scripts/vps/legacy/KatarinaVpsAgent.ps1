@@ -256,7 +256,33 @@ function Download-RepoSnapshot {
     }
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [IO.Compression.ZipFile]::ExtractToDirectory($zip, $extract)
+    $extracted = $false
+    for($extractAttempt=1; $extractAttempt -le 5 -and -not $extracted; $extractAttempt++) {
+        try {
+            if(Test-Path -LiteralPath $extract -PathType Container) {
+                Remove-Item -LiteralPath $extract -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            New-Item -ItemType Directory -Force -Path $extract | Out-Null
+            [IO.Compression.ZipFile]::ExtractToDirectory($zip, $extract)
+            $extracted = $true
+        } catch {
+            $message = [string]$_.Exception.Message
+            $resourcePressure = (
+                $message -match '(?i)not enough storage' -or
+                $message -match '(?i)outofmemory' -or
+                $message -match '(?i)paging file' -or
+                $message -match '(?i)insufficient.*memory'
+            )
+            if(-not $resourcePressure -or $extractAttempt -ge 5) { throw }
+
+            Write-LocalHeartbeat -Phase ("SNAPSHOT_EXTRACT_PRESSURE_" + $extractAttempt)
+            try { [GC]::Collect() } catch {}
+            try { [GC]::WaitForPendingFinalizers() } catch {}
+            Start-Sleep -Seconds ([int](4 * $extractAttempt))
+        }
+    }
+    if(-not $extracted) { throw "Repository snapshot extraction did not complete." }
+    Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
 
     $root = Get-ChildItem -Path $extract -Directory | Select-Object -First 1
     if ($null -eq $root) {
