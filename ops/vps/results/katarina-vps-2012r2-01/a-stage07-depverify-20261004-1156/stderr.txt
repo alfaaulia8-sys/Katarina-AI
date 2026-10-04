@@ -1,0 +1,10 @@
+ConvertTo-Json : Cannot convert value to type System.String.
+At C:\KatarinaVPSAgent\work\a-stage07-depverify-20261004-1156\src\alfaaulia-katarina-Katarina-AI-ce306f1cd0893208b65ec5
+9ebd77dd3988fcdf8b\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:19 char:14
++     $Value | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $Path -Encoding ...
++              ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [ConvertTo-Json], PSInvalidCastException
+    + FullyQualifiedErrorId : InvalidCastFromAnyTypeToString,Microsoft.PowerShell.Commands.ConvertToJsonCommand
+ 
+
+Workspace child task produced no status evidence.
