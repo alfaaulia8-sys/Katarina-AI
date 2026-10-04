@@ -184,6 +184,8 @@ foreach($lane in @(Get-Lanes)) {
         if ($phase -eq "TASK_RUNNING" -or
             $phase -eq "WAITING_MUTATION_LOCK" -or
             $phase -eq "WAITING_HEAVY_LOCK" -or
+            $phase -eq "WAITING_SNAPSHOT_LOCK" -or
+            $phase -eq "SNAPSHOT_EXTRACT" -or
             $phase -eq "REQUEST_START" -or
             $phase -like "GITHUB_RETRY_*") {
             $limit = $busyLimit
