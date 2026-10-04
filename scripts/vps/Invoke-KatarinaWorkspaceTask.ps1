@@ -772,6 +772,53 @@ ShutdownTerminal=1
         })
     }
 
+    "WORKSPACE_PYTHON_BOOTSTRAP" {
+        foreach($dir in @($WorkspaceRoot,$Runtime)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+        $pythonRoot=Join-Path $Runtime "python"
+        $zip=Join-Path $Runtime "python-3.8.10-embed-amd64.zip"
+        $url="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
+
+        if(!(Test-Path -LiteralPath $zip -PathType Leaf)) {
+            Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+        }
+        $zipHash=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+        if((Get-Item -LiteralPath $zip).Length -ne 8211403) {
+            throw "Unexpected Python 3.8.10 embedded package size."
+        }
+
+        if(Test-Path -LiteralPath $pythonRoot) { Remove-Item -LiteralPath $pythonRoot -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $pythonRoot | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [IO.Compression.ZipFile]::ExtractToDirectory($zip,$pythonRoot)
+
+        $pth=Join-Path $pythonRoot "python38._pth"
+        if(Test-Path -LiteralPath $pth) {
+            $lines=@(Get-Content -LiteralPath $pth)
+            $lines=@($lines | ForEach-Object {
+                if($_ -eq "#import site") { "import site" } else { $_ }
+            })
+            if($lines -notcontains "..\..\workspace") { $lines += "..\..\workspace" }
+            $lines | Set-Content -LiteralPath $pth -Encoding ASCII
+        }
+
+        $python=Join-Path $pythonRoot "python.exe"
+        if(!(Test-Path -LiteralPath $python -PathType Leaf)) { throw "Embedded Python executable missing." }
+        $version=& $python -c "import sys,ssl; print(sys.version); print(sys.executable); print(ssl.OPENSSL_VERSION)" 2>&1 | Out-String
+        if($LASTEXITCODE -ne 0) { throw "Embedded Python smoke test failed: $version" }
+
+        Write-Json (Join-Path $Metadata "python_runtime.json") ([ordered]@{
+            schema_version=1
+            version="3.8.10"
+            architecture="amd64"
+            source_url=$url
+            package_size=8211403
+            sha256=$zipHash
+            executable=$python
+            smoke_test=$version.Trim()
+            verified_utc=[DateTime]::UtcNow.ToString("o")
+        })
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
