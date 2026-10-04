@@ -728,6 +728,26 @@ try {
                 if ($recoveryEnabled) { $activeLanes += "recovery" }
                 if ($worker01Enabled) { $activeLanes += "worker01" }
 
+                # The balanced profile is opportunistic on this 2 GB host.
+                # If the recovery lane cannot remain healthy, atomically fall
+                # back to the proven primary-only profile instead of leaving
+                # agent.json mislabeled BALANCED and poisoning health checks.
+                $requestedProfile = "LEGACY_LOW_MEMORY_BALANCED"
+                $effectiveProfile = $(if($recoveryEnabled){"LEGACY_LOW_MEMORY_BALANCED"}else{"LEGACY_LOW_MEMORY_SEQUENTIAL"})
+                $fallbackReason = $(if($recoveryEnabled){""}else{"RECOVERY_HEARTBEAT_UNAVAILABLE"})
+
+                if(-not $recoveryEnabled) {
+                    $primary.resource_profile = $effectiveProfile
+                    Write-JsonFile $primaryConfig $primary
+
+                    foreach($taskName in @("KatarinaControlRecovery","KatarinaControlWorker01","KatarinaControlWorker02","KatarinaControlSupervisor","KatarinaControlSupervisorGuard")) {
+                        try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
+                        try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
+                    }
+                    $activeLanes = @("primary")
+                    $worker01Enabled = $false
+                }
+
                 $watchdogLanes = @(
                     [ordered]@{
                         lane="primary"; task="KatarinaVPSAgent"; config=$primaryConfig;
@@ -752,7 +772,9 @@ try {
                 }
                 Write-JsonFile $watchdogConfigPath ([ordered]@{
                     schema_version=1
-                    resource_profile="LEGACY_LOW_MEMORY_BALANCED"
+                    resource_profile=$effectiveProfile
+                    requested_profile=$requestedProfile
+                    fallback_reason=$fallbackReason
                     lanes=$watchdogLanes
                     generated_utc=[DateTime]::UtcNow.ToString("o")
                 })
@@ -760,11 +782,15 @@ try {
                 try { & schtasks.exe /Run /TN "KatarinaVPSAgentWatchdog" | Out-Null } catch {}
                 $memoryFinal = Get-ControlMemory
 
-                $overall = $(if($recoveryEnabled){"PASS"}else{"FAIL"})
+                $overall = "PASS"
                 $proof = [ordered]@{
-                    schema_version=2
+                    schema_version=3
                     proof_type="KATARINA_CONTROL_BALANCED_DIRECT"
-                    resource_profile="LEGACY_LOW_MEMORY_BALANCED"
+                    requested_profile=$requestedProfile
+                    effective_profile=$effectiveProfile
+                    resource_profile=$effectiveProfile
+                    fallback_applied=(-not $recoveryEnabled)
+                    fallback_reason=$fallbackReason
                     memory=[ordered]@{
                         before=$memoryBefore
                         after_recovery=$memoryAfterRecovery
@@ -790,14 +816,13 @@ try {
                 }
                 Write-JsonFile (Join-Path $OutputDir "control_balanced_direct.json") $proof
 
-                if (-not $recoveryEnabled) {
-                    throw "Balanced control could not keep the mandatory recovery lane healthy; see control_balanced_direct.json."
-                }
-
-                "KATARINA BALANCED LOW MEMORY CONTROL INSTALL PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "KATARINA ADAPTIVE LOW MEMORY CONTROL PASS" | Set-Content $stdoutPath -Encoding UTF8
                 "" | Set-Content $stderrPath -Encoding UTF8
                 $details["mode"] = $mode
-                $details["resource_profile"] = "LEGACY_LOW_MEMORY_BALANCED"
+                $details["requested_profile"] = $requestedProfile
+                $details["resource_profile"] = $effectiveProfile
+                $details["fallback_applied"] = (-not $recoveryEnabled)
+                $details["fallback_reason"] = $fallbackReason
                 $details["active_lanes"] = $activeLanes.Count
                 $details["recovery_lane_enabled"] = $recoveryEnabled
                 $details["worker01_enabled"] = $worker01Enabled
