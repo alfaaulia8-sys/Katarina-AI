@@ -1,0 +1,7 @@
+schema_version=1.0
+stage=07
+proof_type=MQL5_KAT1_GOLDEN_CONFORMANCE
+terminal_build=6230
+vectors=13
+failures=0
+result=PASS
