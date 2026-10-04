@@ -1763,6 +1763,116 @@ ShutdownTerminal=1
             }
 
             if ($mode -eq "WORKSPACE_STAGE07_CLOSEOUT_DIRECT") {
+                $bootstrapVpsFirst=$false
+                try {
+                    if($null -ne $request.args.PSObject.Properties["bootstrap_vps_first"]) {
+                        $bootstrapVpsFirst=[bool]$request.args.bootstrap_vps_first
+                    }
+                } catch {}
+
+                if($bootstrapVpsFirst) {
+                    $installRoot="C:\\KatarinaVPSAgent"
+                    $agentSource=Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgent.ps1"
+                    $agentPath=Join-Path $installRoot "KatarinaVpsAgent.ps1"
+                    $workspaceRoot="C:\\KatarinaDev"
+                    $workspace=Join-Path $workspaceRoot "workspace"
+                    $snapshots=Join-Path $workspaceRoot "snapshots"
+                    $metadata=Join-Path $workspaceRoot "metadata"
+                    $python="C:\\KatarinaDev\\runtime\\python\\python.exe"
+
+                    foreach($required in @($agentSource,$python)) {
+                        if(!(Test-Path -LiteralPath $required -PathType Leaf)) {
+                            throw "VPS-first bootstrap prerequisite missing: $required"
+                        }
+                    }
+
+                    $agentText=Get-Content -LiteralPath $agentSource -Raw
+                    if($agentText -notmatch '\$AgentVersion\s*=\s*"1\.4\.8"') {
+                        throw "Repository agent source is not VPS-first agent 1.4.8."
+                    }
+
+                    New-Item -ItemType Directory -Force -Path $installRoot,$workspaceRoot,$snapshots,$metadata | Out-Null
+                    Copy-Item -LiteralPath $agentSource -Destination $agentPath -Force
+
+                    if(Test-Path -LiteralPath $workspace -PathType Container) {
+                        $backup=Join-Path $snapshots ("pre_vps_first_"+[DateTime]::UtcNow.ToString("yyyyMMdd_HHmmss"))
+                        Move-Item -LiteralPath $workspace -Destination $backup -Force
+                    }
+                    New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+                    foreach($item in Get-ChildItem -LiteralPath $RepoRoot -Force) {
+                        if(@(".git","ops") -contains $item.Name){continue}
+                        Copy-Item -LiteralPath $item.FullName -Destination (Join-Path $workspace $item.Name) -Recurse -Force
+                    }
+
+                    $fileCount=@(Get-ChildItem -LiteralPath $workspace -File -Recurse -ErrorAction Stop).Count
+                    $pythonVersion=(& $python --version 2>&1 | Out-String).Trim()
+                    if($LASTEXITCODE -ne 0){throw "Portable Python probe failed."}
+
+                    $stage08Out=Join-Path $OutputDir "bootstrap_stage08_tests.txt"
+                    $stage08Err=Join-Path $OutputDir "bootstrap_stage08_tests_err.txt"
+                    $stage08Code=Invoke-Captured -FilePath $python -ArgumentList @(
+                        "-m","unittest","discover","-s","tests/unit/validation","-p","test_*.py","-v"
+                    ) -StdoutPath $stage08Out -StderrPath $stage08Err -WorkingDirectory $workspace
+                    if($stage08Code -ne 0){throw "Stage-08 VPS regression failed during VPS-first bootstrap."}
+
+                    $stage09Out=Join-Path $OutputDir "bootstrap_stage09_tests.txt"
+                    $stage09Err=Join-Path $OutputDir "bootstrap_stage09_tests_err.txt"
+                    $stage09Code=Invoke-Captured -FilePath $python -ArgumentList @(
+                        "-m","unittest","discover","-s","tests/unit/health","-p","test_*.py","-v"
+                    ) -StdoutPath $stage09Out -StderrPath $stage09Err -WorkingDirectory $workspace
+                    if($stage09Code -ne 0){throw "Stage-09 VPS regression failed during VPS-first bootstrap."}
+
+                    Write-JsonFile (Join-Path $metadata "vps_first.json") ([ordered]@{
+                        schema_version=1
+                        development_mode="VPS_FIRST"
+                        canonical_ref=[string]$request.ref
+                        workspace=$workspace
+                        github_role="COMMAND_BUS_LOG_AND_FINAL_RELEASE_ONLY"
+                        intermediate_source_commits=$false
+                        initialized_utc=[DateTime]::UtcNow.ToString("o")
+                    })
+
+                    try { & schtasks.exe /Change /TN "KatarinaVPSAgent" /ENABLE | Out-Null } catch {}
+                    $restartScript=Join-Path $installRoot "KatarinaVpsFirstDeferredRestart.ps1"
+                    @'
+$ErrorActionPreference="Continue"
+try { & schtasks.exe /End /TN "KatarinaVPSAgent" | Out-Null } catch {}
+Start-Sleep -Seconds 2
+try { & schtasks.exe /Run /TN "KatarinaVPSAgent" | Out-Null } catch {}
+Start-Sleep -Seconds 2
+try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null } catch {}
+'@ | Set-Content -LiteralPath $restartScript -Encoding ASCII
+                    $runAt=(Get-Date).AddMinutes(1).ToString("HH:mm")
+                    $restartCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$restartScript+'"'
+                    & schtasks.exe /Create /F /SC ONCE /ST $runAt /RU SYSTEM /RL HIGHEST /TN "KatarinaVpsFirstDeferredRestart" /TR $restartCmd | Out-Null
+                    if($LASTEXITCODE -ne 0){throw "Failed to schedule VPS-first agent reload."}
+
+                    Write-JsonFile (Join-Path $OutputDir "vps_first_bootstrap.json") ([ordered]@{
+                        schema_version=1
+                        proof_type="KATARINA_VPS_FIRST_BOOTSTRAP"
+                        installed_agent_version="1.4.8"
+                        workspace=$workspace
+                        workspace_file_count=$fileCount
+                        python=$python
+                        python_version=$pythonVersion
+                        stage08_regression="PASS"
+                        stage09_regression="PASS"
+                        intermediate_source_commits=$false
+                        github_role="COMMAND_BUS_LOG_AND_FINAL_RELEASE_ONLY"
+                        deferred_restart_time_local=$runAt
+                        ready_for_stage10=$true
+                        result="PASS_VPS_FIRST_READY_FOR_STAGE10"
+                    })
+                    "KATARINA VPS-FIRST BOOTSTRAP PASS" | Set-Content $stdoutPath -Encoding UTF8
+                    "" | Set-Content $stderrPath -Encoding UTF8
+                    $details["mode"]=$mode
+                    $details["bootstrap_vps_first"]=$true
+                    $details["installed_agent_version"]="1.4.8"
+                    $details["ready_for_stage10"]=$true
+                    $details["result"]="PASS_VPS_FIRST_READY_FOR_STAGE10"
+                    break
+                }
+
                 $python="C:\KatarinaDev\runtime\python\python.exe"
                 $profileScript=Join-Path $RepoRoot "scripts\stage07\profile_stage07_transport.py"
                 $auditScript=Join-Path $RepoRoot "scripts\stage07\audit_stage07_final.py"
