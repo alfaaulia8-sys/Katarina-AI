@@ -846,7 +846,29 @@ print(json.dumps(payload, sort_keys=True))
             $targets += [pscustomobject]@{ name=$test.BaseName; source=$dest; kind="SCRIPT" }
         }
 
-        if($targets.Count -lt 2) { throw "Stage-07 compile target discovery is incomplete." }
+        $requestedTargetNames=@()
+        if($null -ne $request.args.PSObject.Properties["target_names"] -and
+           $null -ne $request.args.target_names) {
+            foreach($name in @($request.args.target_names)) {
+                if(![string]::IsNullOrWhiteSpace([string]$name)) {
+                    $requestedTargetNames += [string]$name
+                }
+            }
+        }
+
+        if($requestedTargetNames.Count -gt 0) {
+            $allTargets=@($targets)
+            $targets=@($allTargets | Where-Object { $requestedTargetNames -contains [string]$_.name })
+            if($targets.Count -ne $requestedTargetNames.Count) {
+                $resolved=@($targets | ForEach-Object { [string]$_.name })
+                $missing=@($requestedTargetNames | Where-Object { $resolved -notcontains $_ })
+                throw ("Unknown Stage-07 compile target(s): " + ($missing -join ","))
+            }
+        } elseif($targets.Count -lt 2) {
+            throw "Stage-07 compile target discovery is incomplete."
+        }
+
+        if($targets.Count -lt 1) { throw "No Stage-07 compile targets selected." }
 
         $records=@()
         $failed=$false
@@ -890,6 +912,7 @@ print(json.dumps(payload, sort_keys=True))
             mql5_zmq_commit=$zmqCommit
             mql5_zmq_root=$zmqRuntime
             target_count=$records.Count
+            requested_target_names=$requestedTargetNames
             targets=$records
             generated_utc=[DateTime]::UtcNow.ToString("o")
             result=$(if($failed){"FAIL"}else{"PASS_0_ERRORS_0_WARNINGS"})
