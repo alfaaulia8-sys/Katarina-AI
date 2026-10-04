@@ -319,6 +319,65 @@ class Kat1RecoveryGateTests(unittest.TestCase):
         self.assertTrue(gate.communication_ready)
         self.assertFalse(gate.live_risk_ready)
 
+    def test_snapshot_records_are_exposed_only_after_atomic_commit(self) -> None:
+        gate = self._gate()
+        begin, chunk, commit = self._snapshot_frames()
+        gate.observe_raw(begin)
+        gate.observe_raw(chunk)
+        self.assertEqual(gate.snapshot_records, ())
+        gate.observe_raw(commit)
+        self.assertEqual(len(gate.snapshot_records), 1)
+        self.assertEqual(gate.snapshot_records[0].record_type, 3)
+        self.assertEqual(gate.snapshot_records[0].schema_version, 1)
+        self.assertEqual(gate.snapshot_records[0].body, b"abc")
+
+    def test_unknown_snapshot_record_type_faults(self) -> None:
+        gate = self._gate()
+        body = b"abc"
+        variable = struct.pack("<HHI", 99, 1, len(body)) + body
+        begin = self.codec.encode(
+            message_type=11,
+            schema_version=1,
+            sequence=3,
+            source_time_ns=2_000,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "snapshot_id": self.snapshot_id,
+                "base_sequence": 3,
+                "account_revision": 10,
+                "expected_chunk_count": 1,
+                "expected_record_count": 1,
+                "expected_total_payload_bytes": len(variable),
+                "record_mask": 0x7F,
+                "spec_revision_watermark": 1,
+            },
+        )
+        chunk = self.codec.encode(
+            message_type=12,
+            schema_version=1,
+            sequence=4,
+            source_time_ns=2_100,
+            stream_id=self.stream_id,
+            boot_id=self.boot_id,
+            values={
+                "snapshot_id": self.snapshot_id,
+                "chunk_index": 0,
+                "record_count": 1,
+                "chunk_payload_bytes": len(variable),
+                "payload_crc32c": crc32c(variable),
+                "records": [{
+                    "record_type": 99,
+                    "schema_version": 1,
+                    "body": body,
+                }],
+            },
+        )
+        gate.observe_raw(begin)
+        with self.assertRaises(RecoveryFault):
+            gate.observe_raw(chunk)
+        self.assertEqual(gate.state, RecoveryState.FAULTED)
+
     def test_snapshot_chunk_crc_mismatch_faults(self) -> None:
         gate = self._gate()
         begin, chunk, _ = self._snapshot_frames(bad_chunk_crc=True)
