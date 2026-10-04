@@ -410,6 +410,43 @@ try {
         }
 
         "STAGE07_PYTHON_TESTS" {
+            $mode = ([string](Get-ArgValue $request.args "mode" "PYTHON_TESTS")).ToUpperInvariant()
+
+            if ($mode -eq "MT5_COMPILE") {
+                $terminalDataPath = Get-ArgValue $request.args "terminal_data_path" ""
+                $metaEditorPath = Get-ArgValue $request.args "metaeditor_path" ""
+                if (-not $terminalDataPath) { throw "terminal_data_path is required for Stage-07 MT5 compile." }
+                if (-not $metaEditorPath) { throw "metaeditor_path is required for Stage-07 MT5 compile." }
+
+                $includeSource = Join-Path $RepoRoot "mt5\Include\Katarina"
+                $includeDest = Join-Path $terminalDataPath "MQL5\Include\Katarina"
+                $testSource = Join-Path $RepoRoot "mt5\Tests\KatarinaStage07WireSequenceTest.mq5"
+                $testDest = Join-Path $terminalDataPath "MQL5\Scripts\KatarinaStage07WireSequenceTest.mq5"
+                $testEx5 = [IO.Path]::ChangeExtension($testDest,".ex5")
+                $compileLog = Join-Path $OutputDir "stage07_wire_sequence_compile.log"
+
+                if (!(Test-Path $includeSource)) { throw "Katarina include source missing." }
+                if (!(Test-Path $testSource)) { throw "Stage-07 wire sequence test source missing." }
+                New-Item -ItemType Directory -Force -Path $includeDest | Out-Null
+                New-Item -ItemType Directory -Force -Path (Split-Path -Parent $testDest) | Out-Null
+                Copy-Item (Join-Path $includeSource "*") $includeDest -Recurse -Force
+                Copy-Item $testSource $testDest -Force
+                if (Test-Path $testEx5) { Remove-Item $testEx5 -Force }
+
+                $resultCode = Invoke-Captured -FilePath $metaEditorPath -ArgumentList @("/compile:$testDest","/log:$compileLog") -StdoutPath $stdoutPath -StderrPath $stderrPath -WorkingDirectory $RepoRoot
+                $logText = ""
+                if (Test-Path $compileLog) { $logText = Get-Content $compileLog -Raw }
+                if ($resultCode -ne 0 -or !(Test-Path $testEx5) -or $logText -notmatch "0 errors, 0 warnings") {
+                    throw "Stage-07 MT5 wire sequence compile failed."
+                }
+
+                $details["mode"] = "MT5_COMPILE"
+                $details["ex5_exists"] = $true
+                $details["ex5_sha256"] = (Get-FileHash $testEx5 -Algorithm SHA256).Hash
+                $details["compile_result"] = "PASS_0_ERRORS_0_WARNINGS"
+                break
+            }
+
             $python = Resolve-Executable @("python.exe","python")
             if (-not $python) { throw "Python executable not found." }
 
