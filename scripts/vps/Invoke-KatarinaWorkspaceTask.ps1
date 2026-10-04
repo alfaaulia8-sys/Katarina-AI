@@ -95,6 +95,17 @@ switch($mode) {
         if(!(Test-Path -LiteralPath $bootstrap -PathType Leaf)) { throw "Portable Python bootstrap script missing." }
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $bootstrap -WorkspaceRoot $WorkspaceRoot -OutputDir $OutputDir
         if($LASTEXITCODE -ne 0) { throw "Portable Python bootstrap failed." }
+
+        $bootstrapEvidence=Join-Path $OutputDir "python_bootstrap.json"
+        $probeEvidence=Join-Path $OutputDir "python_probe.txt"
+        if(!(Test-Path -LiteralPath $bootstrapEvidence -PathType Leaf)) { throw "Portable Python bootstrap evidence is missing." }
+        if(!(Test-Path -LiteralPath $probeEvidence -PathType Leaf)) { throw "Portable Python dependency probe evidence is missing." }
+        $bootstrapState=Get-Content -LiteralPath $bootstrapEvidence -Raw | ConvertFrom-Json
+        if([string]$bootstrapState.result -ne "PASS") { throw "Portable Python bootstrap evidence did not report PASS." }
+        $probeText=Get-Content -LiteralPath $probeEvidence -Raw
+        foreach($requiredMarker in @("pyzmq=","libzmq=","tornado=")) {
+            if($probeText -notmatch [regex]::Escape($requiredMarker)) { throw "Portable Python dependency probe is incomplete: $requiredMarker" }
+        }
     }
 
     "WORKSPACE_RUNTIME_BOOTSTRAP" {
