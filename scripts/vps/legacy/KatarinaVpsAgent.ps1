@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.5"
+$AgentVersion = "1.4.6"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -658,7 +658,8 @@ while ($true) {
                 $readOnlyModes = @(
                     "WORKSPACE_DEPENDENCY_VERIFY",
                     "WORKSPACE_TEST",
-                    "WORKSPACE_CONTROL_STATUS"
+                    "WORKSPACE_CONTROL_STATUS",
+                    "WORKSPACE_STAGE07_BATCH"
                 )
                 $recoveryModes = @(
                     "WORKSPACE_CONTROL_RESTART_PRIMARY",
@@ -699,7 +700,8 @@ while ($true) {
                     "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT",
                     "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT",
                     "WORKSPACE_CONTROL_GUARDIAN_DIAG_DIRECT",
-                    "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT"
+                    "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT",
+                    "WORKSPACE_STAGE07_BATCH"
                 )
                 $useFastControl = (
                     [string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
