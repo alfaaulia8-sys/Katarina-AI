@@ -119,7 +119,7 @@ jobs:
 
           [StartUp]
           Script=KatarinaStage07WireSequenceTest
-          Symbol=EURUSD
+          Symbol=
           Period=H1
           ShutdownTerminal=1
           "@ | Set-Content -Path $config -Encoding ASCII
@@ -149,7 +149,7 @@ jobs:
 
           [StartUp]
           Script=KatarinaStage07WireSequenceTest
-          Symbol=EURUSD
+          Symbol=
           Period=H1
           ShutdownTerminal=1
           "@ | Set-Content -Path $config -Encoding ASCII
