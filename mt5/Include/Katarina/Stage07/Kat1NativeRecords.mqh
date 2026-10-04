@@ -3,6 +3,7 @@
 
 #include <Katarina/NativeFacts.mqh>
 #include <Katarina/NativeSnapshot.mqh>
+#include <Katarina/SessionState.mqh>
 #include <Katarina/Stage07/Kat1RecoveryMessages.mqh>
 #include <Katarina/Stage07/IdentityV1.mqh>
 
