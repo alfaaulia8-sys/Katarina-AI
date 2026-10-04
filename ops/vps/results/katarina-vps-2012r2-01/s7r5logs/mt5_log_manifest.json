@@ -1,0 +1,20 @@
+[
+    {
+        "output_file":  "mt5_log_01_20261004.txt",
+        "source_name":  "20261004.log",
+        "last_write_utc":  "2026-10-04T03:18:03.2361578Z",
+        "source_size_bytes":  1756
+    },
+    {
+        "output_file":  "mt5_log_02_20261004.txt",
+        "source_name":  "20261004.log",
+        "last_write_utc":  "2026-10-04T03:18:02.7830368Z",
+        "source_size_bytes":  108
+    },
+    {
+        "output_file":  "mt5_log_03_metaeditor.txt",
+        "source_name":  "metaeditor.log",
+        "last_write_utc":  "2026-10-04T03:18:02.3299022Z",
+        "source_size_bytes":  252
+    }
+]
