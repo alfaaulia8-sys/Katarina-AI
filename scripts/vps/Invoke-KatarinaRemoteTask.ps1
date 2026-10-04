@@ -418,8 +418,19 @@ try {
                 $args = @("-NoProfile","-ExecutionPolicy","Bypass","-File",$workspaceRunner,"-RequestFile",$RequestFile,"-OutputDir",$OutputDir,"-RepoRoot",$RepoRoot)
                 $resultCode = Invoke-Captured -FilePath "powershell.exe" -ArgumentList $args -StdoutPath $stdoutPath -StderrPath $stderrPath -WorkingDirectory $RepoRoot
                 if ($resultCode -ne 0) { throw "Katarina workspace task failed." }
+
+                $workspaceStatusPath = Join-Path $OutputDir "workspace_status.json"
+                if (!(Test-Path -LiteralPath $workspaceStatusPath -PathType Leaf)) {
+                    throw "Workspace child task produced no status evidence."
+                }
+                $workspaceStatus = Get-Content -LiteralPath $workspaceStatusPath -Raw | ConvertFrom-Json
+                if ([string]$workspaceStatus.result -ne "PASS") {
+                    throw "Workspace child task did not report PASS."
+                }
+
                 $details["mode"] = $mode
                 $details["workspace_root"] = "C:\KatarinaDev"
+                $details["workspace_files"] = [int]$workspaceStatus.file_count
                 break
             }
             if ($mode -eq "WORKSPACE_TEST") {
