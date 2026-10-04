@@ -96,6 +96,95 @@ switch($mode) {
         if($LASTEXITCODE -ne 0) { throw "Portable Python bootstrap failed." }
     }
 
+    "WORKSPACE_RUNTIME_BOOTSTRAP" {
+        foreach($dir in @($WorkspaceRoot,$Runtime,$Metadata,$Logs)) {
+            New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        }
+
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+        $pythonDir=Join-Path $Runtime "python"
+        $packagesDir=Join-Path $Runtime "packages"
+        $downloadDir=Join-Path $Runtime "downloads"
+        New-Item -ItemType Directory -Force -Path $downloadDir,$packagesDir | Out-Null
+
+        $pythonUrl="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
+        $pythonMd5="3acb1d7d9bde5a79f840167b166bb633"
+        $pythonZip=Join-Path $downloadDir "python-3.8.10-embed-amd64.zip"
+        Invoke-WebRequest -Uri $pythonUrl -OutFile $pythonZip -UseBasicParsing
+        $actualMd5=(Get-FileHash -LiteralPath $pythonZip -Algorithm MD5).Hash.ToLowerInvariant()
+        if($actualMd5 -ne $pythonMd5) { throw "Python embeddable checksum mismatch." }
+
+        if(Test-Path -LiteralPath $pythonDir) { Remove-Item -LiteralPath $pythonDir -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $pythonDir | Out-Null
+        [IO.Compression.ZipFile]::ExtractToDirectory($pythonZip,$pythonDir)
+
+        $pth=Join-Path $pythonDir "python38._pth"
+        if(!(Test-Path -LiteralPath $pth -PathType Leaf)) { throw "Python embedded _pth file missing." }
+        @(
+            "python38.zip",
+            ".",
+            $packagesDir,
+            $Workspace,
+            (Join-Path $Workspace "src"),
+            "import site"
+        ) | Set-Content -LiteralPath $pth -Encoding ASCII
+
+        $pypi=Invoke-RestMethod -Method Get -Uri "https://pypi.org/pypi/pyzmq/25.0.0/json"
+        $wheelName="pyzmq-25.0.0-cp38-cp38-win_amd64.whl"
+        $expectedWheelSha256="b90bb8dfbbd138558f1f284fecfe328f7653616ff9a972433a00711d9475d1a9"
+        $wheelRecord=@($pypi.urls | Where-Object { $_.filename -eq $wheelName }) | Select-Object -First 1
+        if($null -eq $wheelRecord) { throw "Pinned pyzmq wheel is missing from PyPI metadata." }
+        if(([string]$wheelRecord.digests.sha256).ToLowerInvariant() -ne $expectedWheelSha256) {
+            throw "Pinned pyzmq metadata SHA-256 mismatch."
+        }
+        $wheelUri=[Uri]([string]$wheelRecord.url)
+        if($wheelUri.Scheme -ne "https" -or $wheelUri.Host -ne "files.pythonhosted.org") {
+            throw "Pinned pyzmq download host is not allowlisted."
+        }
+
+        $wheel=Join-Path $downloadDir $wheelName
+        Invoke-WebRequest -Uri $wheelUri.AbsoluteUri -OutFile $wheel -UseBasicParsing
+        $actualWheelSha256=(Get-FileHash -LiteralPath $wheel -Algorithm SHA256).Hash.ToLowerInvariant()
+        if($actualWheelSha256 -ne $expectedWheelSha256) { throw "Downloaded pyzmq wheel SHA-256 mismatch." }
+
+        if(Test-Path -LiteralPath $packagesDir) { Remove-Item -LiteralPath $packagesDir -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $packagesDir | Out-Null
+        [IO.Compression.ZipFile]::ExtractToDirectory($wheel,$packagesDir)
+
+        $pythonExe=Join-Path $pythonDir "python.exe"
+        if(!(Test-Path -LiteralPath $pythonExe -PathType Leaf)) { throw "Portable Python executable missing." }
+
+        $probeOut=Join-Path $OutputDir "python_runtime_probe.txt"
+        $psi=New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName=$pythonExe
+        $psi.Arguments='-c "import sys,zmq; print(sys.version); print(zmq.__version__); print(sys.executable)"'
+        $psi.WorkingDirectory=$Workspace
+        $psi.UseShellExecute=$false
+        $psi.RedirectStandardOutput=$true
+        $psi.RedirectStandardError=$true
+        $proc=New-Object System.Diagnostics.Process
+        $proc.StartInfo=$psi
+        [void]$proc.Start()
+        $probeStdout=$proc.StandardOutput.ReadToEnd()
+        $probeStderr=$proc.StandardError.ReadToEnd()
+        $proc.WaitForExit()
+        ($probeStdout+[Environment]::NewLine+$probeStderr) | Set-Content -LiteralPath $probeOut -Encoding UTF8
+        if($proc.ExitCode -ne 0) { throw "Portable Python/pyzmq probe failed." }
+
+        Write-Json (Join-Path $Metadata "runtime.json") ([ordered]@{
+            schema_version=1
+            python_version="3.8.10"
+            python_source=$pythonUrl
+            python_md5=$actualMd5
+            pyzmq_version="25.0.0"
+            pyzmq_sha256=$actualWheelSha256
+            installed_utc=[DateTime]::UtcNow.ToString("o")
+            result="PASS"
+        })
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
