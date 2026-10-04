@@ -2,54 +2,83 @@
 
 **Stage:** 08/40  
 **Status:** IMPLEMENTATION ACTIVE  
+**Version:** 0.2.0  
 **Frozen inputs:** KAT1 v1.0.0, Stage-06 Bridge v1.0.0, Stage-07 Communication v1.0.0
 
-## Purpose
+## Authority boundary
 
-Stage 08 validates decoded data before analytical consumers rely on it.
+Stage 08 validates decoded data before it can be promoted into authoritative analytical state.
 
-It answers:
+It may classify data as:
 
-> Is this data structurally and semantically safe enough to enter Katarina analysis?
+- `ACCEPT`
+- `QUARANTINE`
+- `REJECT`
 
-It does not decide BUY/SELL, calculate lots, arm execution, submit orders, or replace the Risk Governor.
+It may set only the Core `DATA_FRESH` readiness signal through its readiness tracker. It cannot set `HEALTH`, `RISK`, `EXECUTION_ARMED`, create trade candidates, size positions, or submit broker orders.
 
-## Initial dispositions
+## Canonical input
 
-- **ACCEPT** — active rules found no error/critical issue.
-- **QUARANTINE** — data is incomplete/questionable and must not become authoritative analytical state.
-- **REJECT** — a critical invariant failed; the event cannot create new live risk.
+Market validation is now aligned to the frozen KAT1 field names:
 
-## Initial baseline
+- `symbol.spec` → SYMBOL_SPEC facts;
+- `market.tick` → `instrument_id`, `spec_revision`, `bid_units`, `ask_units`, etc.;
+- `market.bar` → KAT1 BAR_EVENT fields including timeframe, sequence, open time and OHLC units.
 
-- external timestamp presence;
-- stale-data rejection;
-- future-clock-skew rejection;
-- recursive NaN/Infinity rejection;
-- tick symbol/bid/ask validation;
-- crossed/non-positive market rejection;
-- OHLC structural validation;
-- pluggable topic rules;
-- validator exceptions fail closed.
+Stage 08 does not invent an alternate symbol/price schema.
 
-## Boundary
+## SymbolSpec binding
 
-Stage 08 does not own:
+An accepted SymbolSpec becomes the active validation contract for its `instrument_id`.
 
-- KAT1 framing, CRC or transport sequence — Stage 04/07;
-- transport/system health policy — Stage 09;
-- persistence — Stage 10;
-- market interpretation — Stage 11+;
-- capital-risk authority — Stage 16;
-- broker execution — Stage 18.
+Market data fails closed when:
+
+- no accepted spec exists;
+- its `spec_revision` differs from the active revision;
+- a SymbolSpec revision rolls backward;
+- required economic scaling values are invalid;
+- prices are off the broker tick grid.
+
+## Freshness
+
+Freshness is policy-driven per data class.
+
+Initial budgets:
+
+- tick: 2 seconds;
+- bar event delivery: 10 seconds;
+- account/position/order state: 5 seconds;
+- SymbolSpec: 1 hour.
+
+These are data-ingest freshness budgets, not trading strategy timeframes.
+
+## History completeness
+
+A history requirement binds:
+
+- instrument;
+- SymbolSpec revision;
+- timeframe;
+- minimum bar count.
+
+History is incomplete/fail-closed when bar count is short, topic/instrument/spec/timeframe differs, bar sequence has gaps, or open times do not strictly increase.
+
+Weekend/session time gaps are not rejected solely by wall-clock spacing; authoritative `bar_sequence` continuity is used instead.
+
+## Promotion gate
+
+`ValidatedIngestGate` returns a promoted event only for `ACCEPT`. QUARANTINE/REJECT data cannot silently enter downstream state/cache paths.
+
+## Readiness integration
+
+`ValidationReadinessTracker` can set only `ReadinessSignal.DATA_FRESH`.
+
+Even when DATA_FRESH is true, Core live execution remains false until later governed HEALTH, RISK and EXECUTION_ARMED gates are independently satisfied.
 
 ## Next gates
 
-1. freeze validation issue taxonomy;
-2. bind validation before state-cache promotion;
-3. add SymbolSpec-aware constraints;
-4. add history completeness rules;
-5. add data-class-specific freshness budgets;
-6. expose validation state to readiness without arming execution;
-7. add property/fuzz tests;
-8. build evidence-bound Stage-08 final audit.
+1. property/randomized invariant tests;
+2. account/position/order semantic validation;
+3. static authority audit;
+4. evidence-bound Stage-08 final clearance;
+5. freeze v1.0.0 only after all gates pass.

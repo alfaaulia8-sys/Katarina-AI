@@ -9,7 +9,7 @@
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
 | 06 | MT5 Bridge EA | ✅ FINALIZED / FROZEN v1.0.0 — Bridge design v0.5.0 |
 | 07 | MT5-Python Communication | ✅ FINALIZED / FROZEN v1.0.0 |
-| 08 | Data Validation Engine | ⬜ |
+| 08 | Data Validation Engine | 🟡 IMPLEMENTATION ACTIVE — KAT1 semantic validation gates |
 | 09 | Health & Safety Engine | ⬜ |
 | 10 | Database & Memory V1 | ⬜ |
 | 11 | Market Intelligence Engine | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 07 is FINALIZED / FROZEN v1.0.0 with `PASS_STAGE07_FINAL_CLEARANCE`. Stage 08 — Data Validation Engine is now unblocked and ready to start.**
+**Stage 08 — Data Validation Engine is IMPLEMENTATION ACTIVE. Canonical KAT1 validation, SymbolSpec binding, history completeness, per-class freshness and DATA_FRESH readiness gates are under test.**
 
 ## Frozen Stage 04 Scope
 
@@ -211,4 +211,4 @@ Stage 07 is frozen. Any change to its transport topology, KAT1 framing, recovery
 
 ## Next Stage
 
-**Stage 08 — Data Validation Engine is unblocked and ready to start.**
+**Stage 08 — Data Validation Engine is active. Baseline CI passed; semantic validation expansion is in progress.**

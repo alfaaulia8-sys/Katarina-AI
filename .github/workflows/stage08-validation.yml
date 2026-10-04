@@ -7,15 +7,17 @@ on:
       - ".github/workflows/stage08-validation.yml"
       - "src/katarina/validation/**"
       - "tests/unit/validation/**"
+      - "scripts/stage08/**"
       - "config/data_validation_engine_draft.json"
       - "docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md"
+      - "docs/reviews/STAGE_08_*"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  baseline:
+  validation:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,8 +27,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Run Stage 08 baseline tests
+      - name: Run Stage 08 validation tests
         shell: bash
         run: |
           export PYTHONPATH=src
-          python -m unittest tests.unit.validation.test_stage08_validation -v
+          python -m unittest discover -s tests/unit/validation -p 'test_*.py' -v

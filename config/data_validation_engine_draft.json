@@ -1,6 +1,6 @@
 {
   "stage": "08",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "STAGE_08_IMPLEMENTATION_ACTIVE",
   "frozen_inputs": {
     "protocol": "KAT1 v1.0.0",
@@ -10,25 +10,40 @@
   "authority": {
     "may_trade": false,
     "may_arm_execution": false,
+    "may_set_health_ready": false,
+    "may_set_risk_ready": false,
     "may_size_positions": false,
     "may_submit_orders": false,
+    "may_set_data_fresh": true,
     "dispositions": [
       "ACCEPT",
       "QUARANTINE",
       "REJECT"
     ]
   },
-  "baseline_policy": {
-    "max_event_age_ns": 5000000000,
-    "max_future_skew_ns": 1000000000,
-    "require_external_source_time": true,
-    "reject_non_finite_numbers": true
+  "freshness_ns": {
+    "default": 5000000000,
+    "market_tick": 2000000000,
+    "market_bar": 10000000000,
+    "symbol_spec": 3600000000000,
+    "account_state": 5000000000,
+    "position_state": 5000000000,
+    "order_state": 5000000000,
+    "max_future_skew": 1000000000
   },
   "fail_closed": {
     "validator_exception": "REJECT",
     "stale_data": "REJECT",
     "future_clock_skew": "REJECT",
     "non_finite_number": "REJECT",
+    "unknown_symbol_spec": "REJECT",
+    "stale_symbol_spec": "REJECT",
+    "symbol_spec_revision_rollback": "REJECT",
+    "price_off_tick_grid": "REJECT",
+    "crossed_market": "REJECT",
+    "invalid_ohlc": "REJECT",
+    "history_sequence_gap": "REJECT",
+    "history_shortage": "QUARANTINE",
     "missing_required_field": "QUARANTINE"
   },
   "implementation": {
@@ -39,11 +54,13 @@
   "progress": {
     "baseline_engine": true,
     "baseline_tests": true,
-    "ingest_binding": false,
-    "symbol_spec_rules": false,
-    "history_completeness": false,
-    "readiness_integration": false,
+    "ingest_binding": true,
+    "symbol_spec_rules": true,
+    "history_completeness": true,
+    "per_class_freshness": true,
+    "readiness_integration": true,
     "property_tests": false,
+    "account_position_order_rules": false,
     "final_audit": false
   }
 }

@@ -11,7 +11,7 @@
 - Stage 04 — KAT1 Data Protocol / Schemas: FROZEN v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
-- Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: UNBLOCKED / READY TO START
+- Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: IMPLEMENTATION ACTIVE; baseline CI PASS; KAT1 semantic validation expansion active
 
 ## VPS bridge status
 
@@ -128,12 +128,12 @@ Governance:
 
 Proceed with Stage 08 — Data Validation Engine:
 
-1. freeze validation taxonomy and dispositions;
-2. bind validation before analytical state promotion;
-3. add SymbolSpec-aware market-data checks;
-4. add history completeness and per-class freshness;
-5. connect validation state to readiness without enabling execution;
-6. add property/regression tests and final audit.
+1. baseline engine/tests: PASS;
+2. ingest promotion gate: implemented;
+3. SymbolSpec-aware KAT1 market validation: implemented;
+4. history completeness + per-class freshness: implemented;
+5. DATA_FRESH readiness integration without execution authority: implemented;
+6. next: account/position/order semantics, property/regression tests and final audit.
 
 Stage-07 transport is frozen. Behavioral changes require governed review.
 
