@@ -1,0 +1,11 @@
+get-pip failed for portable Python.
+At C:\KatarinaVPSAgent\work\wspy-20261004-1025\src\alfaaulia-katarina-Katarina-
+AI-71526494a23c74e3ca4e03cb704fb4b7e089488b\scripts\vps\Bootstrap-KatarinaPorta
+blePython.ps1:98 char:19
++ if($Exit -ne 0) { throw "get-pip failed for portable Python." }
++                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (get-pip failed for portable P 
+   ython.:String) [], RuntimeException
+    + FullyQualifiedErrorId : get-pip failed for portable Python.
+ 
+
