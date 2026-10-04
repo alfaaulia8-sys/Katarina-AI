@@ -490,6 +490,25 @@ try {
 
             $registryHints = Get-RelevantRegistryHints
 
+            $workspaceRoot = "C:\KatarinaDev"
+            $workspaceMetadataPath = Join-Path $workspaceRoot "state\workspace.json"
+            $workspaceInfo = [ordered]@{
+                root = $workspaceRoot
+                exists = (Test-Path -LiteralPath $workspaceRoot -PathType Container)
+                source_exists = (Test-Path -LiteralPath (Join-Path $workspaceRoot "workspace\source") -PathType Container)
+                runtime_exists = (Test-Path -LiteralPath (Join-Path $workspaceRoot "runtime") -PathType Container)
+                tools_exists = (Test-Path -LiteralPath (Join-Path $workspaceRoot "tools") -PathType Container)
+                snapshots_exists = (Test-Path -LiteralPath (Join-Path $workspaceRoot "snapshots") -PathType Container)
+                metadata_exists = (Test-Path -LiteralPath $workspaceMetadataPath -PathType Leaf)
+            }
+            if ($workspaceInfo.metadata_exists) {
+                try {
+                    $workspaceInfo["metadata"] = (Get-Content -LiteralPath $workspaceMetadataPath -Raw | ConvertFrom-Json)
+                } catch {
+                    $workspaceInfo["metadata_error"] = "metadata_unreadable"
+                }
+            }
+
             $inventory = [ordered]@{
                 schema_version = 2
                 discovery_mode = "DEEP_TARGETED"
@@ -515,6 +534,7 @@ try {
                 mt5_instances = $mt5Instances
                 terminal_common_data_paths = $commonDataPaths
                 registry_hints = $registryHints
+                katarina_workspace = $workspaceInfo
                 generated_utc = [DateTime]::UtcNow.ToString("o")
             }
 
