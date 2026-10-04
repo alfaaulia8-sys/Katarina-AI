@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.7"
+$AgentVersion = "1.4.8"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -701,7 +701,8 @@ while ($true) {
                     "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT",
                     "WORKSPACE_CONTROL_GUARDIAN_DIAG_DIRECT",
                     "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT",
-                    "WORKSPACE_STAGE07_BATCH"
+                    "WORKSPACE_STAGE07_BATCH",
+                    "WORKSPACE_APPLY"
                 )
                 $useFastControl = (
                     [string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
@@ -717,6 +718,7 @@ while ($true) {
                     $controlFiles = @(
                         "scripts/vps/Invoke-KatarinaRemoteTask.ps1",
                         "scripts/vps/Invoke-KatarinaWorkspaceTask.ps1",
+                        "scripts/vps/Apply-KatarinaWorkspaceChangeset.ps1",
                         "scripts/vps/legacy/KatarinaVpsAgent.ps1",
                         "scripts/vps/legacy/KatarinaVpsAgentWatchdog.ps1",
                         "scripts/vps/legacy/KatarinaControlGuardian.ps1"
@@ -797,7 +799,8 @@ while ($true) {
                         "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT",
                         "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT",
                         "WORKSPACE_CONTROL_GUARDIAN_DIAG_DIRECT",
-                        "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT"
+                        "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT",
+                        "WORKSPACE_APPLY"
                     )
                     $requiresHeavyLock = $true
                     if ([string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
@@ -826,7 +829,8 @@ while ($true) {
                     # the process exit sentinel -65536 before any evidence was written.
                     $sameProcessModes = @(
                         "WORKSPACE_MT5_TCP_FALLBACK_PROOF_DIRECT",
-                        "WORKSPACE_STAGE07_CLOSEOUT_DIRECT"
+                        "WORKSPACE_STAGE07_CLOSEOUT_DIRECT",
+                        "WORKSPACE_APPLY"
                     )
                     $useSameProcess = (
                         [string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and

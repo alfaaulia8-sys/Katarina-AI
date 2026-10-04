@@ -1815,6 +1815,156 @@ ShutdownTerminal=1
                 break
             }
 
+            if ($mode -eq "WORKSPACE_APPLY") {
+                $workspaceRoot = "C:\KatarinaDev\workspace"
+                $evidenceRoot = "C:\KatarinaDev\evidence"
+                if (!(Test-Path -LiteralPath $workspaceRoot -PathType Container)) {
+                    throw "Katarina workspace is not initialized."
+                }
+                if ($null -eq $request.args.PSObject.Properties["changeset"]) {
+                    throw "changeset is required."
+                }
+
+                $changesetJson = $request.args.changeset | ConvertTo-Json -Depth 16
+                if ([Text.Encoding]::UTF8.GetByteCount($changesetJson) -gt 524288) {
+                    throw "Changeset exceeds 512 KiB command-bus limit."
+                }
+                $changesetFile = Join-Path $OutputDir "workspace_changeset.json"
+                $changesetJson | Set-Content -LiteralPath $changesetFile -Encoding UTF8
+
+                $apply = Join-Path $RepoRoot "scripts\vps\Apply-KatarinaWorkspaceChangeset.ps1"
+                if (!(Test-Path -LiteralPath $apply -PathType Leaf)) {
+                    throw "Workspace changeset engine missing."
+                }
+
+                & $apply -ChangesetPath $changesetFile -WorkspaceRoot $workspaceRoot -EvidenceRoot $evidenceRoot
+
+                $changesetId = [string]$request.args.changeset.changeset_id
+                $receipt = Join-Path $evidenceRoot ("changesets\" + $changesetId + "\receipt.json")
+                if (!(Test-Path -LiteralPath $receipt -PathType Leaf)) {
+                    throw "Workspace changeset receipt missing."
+                }
+                Copy-Item -LiteralPath $receipt -Destination (Join-Path $OutputDir "workspace_apply_receipt.json") -Force
+
+                $checkRecords = @()
+                if ($null -ne $request.args.PSObject.Properties["checks"] -and $request.args.checks) {
+                    $checks = @($request.args.checks)
+                    if ($checks.Count -gt 8) {
+                        throw "WORKSPACE_APPLY allows at most 8 checks."
+                    }
+
+                    $python = Resolve-Executable @(
+                        "C:\KatarinaDev\runtime\python\python.exe",
+                        "python.exe",
+                        "python"
+                    )
+                    if (-not $python) { throw "Workspace Python runtime is unavailable." }
+
+                    for($i=0; $i -lt $checks.Count; $i++) {
+                        $check = $checks[$i]
+                        $type = ([string]$check.type).ToUpperInvariant()
+                        $stdoutCheck = Join-Path $OutputDir ("check_{0:D2}_stdout.txt" -f ($i+1))
+                        $stderrCheck = Join-Path $OutputDir ("check_{0:D2}_stderr.txt" -f ($i+1))
+                        $argv = @()
+
+                        switch($type) {
+                            "PYTHON_UNIT_DISCOVER" {
+                                $start = "tests/unit"
+                                if ($null -ne $check.PSObject.Properties["start"] -and $check.start) {
+                                    $start = ([string]$check.start).Replace("\","/")
+                                }
+                                if ($start.StartsWith("/") -or $start.Contains("..") -or -not $start.StartsWith("tests/")) {
+                                    throw "Unsafe unittest discovery start path."
+                                }
+                                $pattern = "test_*.py"
+                                if ($null -ne $check.PSObject.Properties["pattern"] -and $check.pattern) {
+                                    $pattern = [string]$check.pattern
+                                }
+                                if ($pattern -notmatch '^[A-Za-z0-9_*.-]+$') {
+                                    throw "Unsafe unittest discovery pattern."
+                                }
+                                $argv = @("-m","unittest","discover","-s",$start,"-p",$pattern,"-v")
+                            }
+                            "PYTHON_COMPILEALL" {
+                                $target = "src"
+                                if ($null -ne $check.PSObject.Properties["target"] -and $check.target) {
+                                    $target = ([string]$check.target).Replace("\","/")
+                                }
+                                if ($target.StartsWith("/") -or $target.Contains("..") -or
+                                    -not ($target.StartsWith("src") -or $target.StartsWith("scripts") -or $target.StartsWith("tests"))) {
+                                    throw "Unsafe compileall target."
+                                }
+                                $argv = @("-m","compileall","-q",$target)
+                            }
+                            "PYTHON_SCRIPT" {
+                                if ($null -eq $check.PSObject.Properties["path"] -or !$check.path) {
+                                    throw "PYTHON_SCRIPT requires path."
+                                }
+                                $relative = ([string]$check.path).Replace("\","/")
+                                if ($relative.StartsWith("/") -or $relative.Contains("..") -or -not $relative.StartsWith("scripts/")) {
+                                    throw "Unsafe Python script path."
+                                }
+                                $script = Join-Path $workspaceRoot ($relative.Replace("/","\"))
+                                if (!(Test-Path -LiteralPath $script -PathType Leaf)) {
+                                    throw "Python script missing: $relative"
+                                }
+                                $argv = @($script)
+                                if ($null -ne $check.PSObject.Properties["args"] -and $check.args) {
+                                    foreach($item in @($check.args)) {
+                                        $value=[string]$item
+                                        if($value.Length -gt 512){throw "Python script argument too long."}
+                                        $argv += $value
+                                    }
+                                }
+                            }
+                            default { throw "Unsupported WORKSPACE_APPLY check type: $type" }
+                        }
+
+                        $started=[DateTime]::UtcNow
+                        $checkCode=Invoke-Captured -FilePath $python -ArgumentList $argv -StdoutPath $stdoutCheck -StderrPath $stderrCheck -WorkingDirectory $workspaceRoot
+                        $checkRecords += [ordered]@{
+                            index=$i+1
+                            type=$type
+                            exit_code=[int]$checkCode
+                            duration_ms=[int](([DateTime]::UtcNow-$started).TotalMilliseconds)
+                        }
+                        if($checkCode -ne 0){
+                            Write-JsonFile (Join-Path $OutputDir "vps_first_dev_result.json") ([ordered]@{
+                                schema_version=1
+                                development_mode="VPS_FIRST"
+                                changeset_id=$changesetId
+                                checks=$checkRecords
+                                source_committed_to_github=$false
+                                result="FAIL"
+                            })
+                            throw "VPS-first check failed: $type"
+                        }
+                    }
+                }
+
+                Write-JsonFile (Join-Path $OutputDir "vps_first_dev_result.json") ([ordered]@{
+                    schema_version=1
+                    development_mode="VPS_FIRST"
+                    workspace_root=$workspaceRoot
+                    changeset_id=$changesetId
+                    operation_count=@($request.args.changeset.operations).Count
+                    checks=$checkRecords
+                    source_committed_to_github=$false
+                    github_role="COMMAND_BUS_LOG_AND_FINAL_RELEASE_ONLY"
+                    result="PASS"
+                })
+
+                "KATARINA VPS-FIRST WORKSPACE APPLY PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = $mode
+                $details["changeset_id"] = $changesetId
+                $details["operation_count"] = @($request.args.changeset.operations).Count
+                $details["check_count"] = $checkRecords.Count
+                $details["source_committed_to_github"] = $false
+                $details["result"] = "PASS"
+                break
+            }
+
             if ($mode.StartsWith("WORKSPACE_")) {
                 $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
                 if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) { throw "Katarina workspace runner is missing." }
