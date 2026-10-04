@@ -106,6 +106,85 @@ switch($mode) {
         foreach($requiredMarker in @("pyzmq=","libzmq=","tornado=")) {
             if($probeText -notmatch [regex]::Escape($requiredMarker)) { throw "Portable Python dependency probe is incomplete: $requiredMarker" }
         }
+        # Canonical bootstrap is complete. Stop this switch so legacy duplicate
+        # WORKSPACE_BOOTSTRAP_PYTHON cases further below cannot overwrite it.
+        break
+    }
+
+    "WORKSPACE_DEPENDENCY_VERIFY" {
+        if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
+
+        $python=Join-Path $Runtime "python\python.exe"
+        if(!(Test-Path -LiteralPath $python -PathType Leaf)) { throw "Canonical Katarina Python runtime is missing." }
+
+        $verifyScript=Join-Path $OutputDir "dependency_verify.py"
+        @'
+import json
+import pathlib
+import sys
+import zmq
+import tornado
+
+payload = {
+    "python_executable": str(pathlib.Path(sys.executable).resolve()),
+    "python_version": sys.version.split()[0],
+    "pyzmq_version": zmq.__version__,
+    "libzmq_version": zmq.zmq_version(),
+    "zmq_module": str(pathlib.Path(zmq.__file__).resolve()),
+    "tornado_version": tornado.version,
+    "tornado_module": str(pathlib.Path(tornado.__file__).resolve()),
+    "sys_path": list(sys.path),
+}
+print(json.dumps(payload, sort_keys=True))
+'@ | Set-Content -LiteralPath $verifyScript -Encoding ASCII
+
+        $verifyOut=Join-Path $OutputDir "dependency_verify_stdout.txt"
+        $verifyErr=Join-Path $OutputDir "dependency_verify_stderr.txt"
+        $proc=Start-Process -FilePath $python -ArgumentList @($verifyScript) -Wait -PassThru -NoNewWindow -RedirectStandardOutput $verifyOut -RedirectStandardError $verifyErr
+        if($proc.ExitCode -ne 0) { throw "Katarina dependency verification process failed." }
+
+        $raw=(Get-Content -LiteralPath $verifyOut -Raw).Trim()
+        if([string]::IsNullOrWhiteSpace($raw)) { throw "Katarina dependency verification produced no output." }
+        $probe=$raw | ConvertFrom-Json
+
+        $expectedPython=(Resolve-Path -LiteralPath $python).Path
+        if(![string]::Equals([string]$probe.python_executable,$expectedPython,[StringComparison]::OrdinalIgnoreCase)) {
+            throw "Dependency verification used the wrong Python interpreter."
+        }
+
+        $runtimePrefix=((Resolve-Path -LiteralPath (Join-Path $Runtime "python")).Path.TrimEnd("\") + "\")
+        foreach($modulePath in @([string]$probe.zmq_module,[string]$probe.tornado_module)) {
+            if([string]::IsNullOrWhiteSpace($modulePath) -or !$modulePath.StartsWith($runtimePrefix,[StringComparison]::OrdinalIgnoreCase)) {
+                throw "Dependency resolved outside Katarina runtime: $modulePath"
+            }
+        }
+        if([string]$probe.pyzmq_version -ne "27.2.0") { throw "Unexpected pyzmq version: $($probe.pyzmq_version)" }
+        if([string]$probe.libzmq_version -ne "4.3.5") { throw "Unexpected libzmq version: $($probe.libzmq_version)" }
+
+        $pth=Join-Path (Join-Path $Runtime "python") "python312._pth"
+        $pthLines=$(if(Test-Path -LiteralPath $pth -PathType Leaf){@(Get-Content -LiteralPath $pth)}else{@()})
+        foreach($requiredPath in @("Lib\site-packages","..\..\workspace","..\..\workspace\src","import site")) {
+            if(@($pthLines | Where-Object { ([string]$_).Trim() -ieq $requiredPath }).Count -eq 0) {
+                throw "python312._pth missing required entry: $requiredPath"
+            }
+        }
+
+        Write-Json (Join-Path $OutputDir "dependency_verification.json") ([ordered]@{
+            schema_version=1
+            stage="07"
+            proof_type="VPS_PYTHON_DEPENDENCY_VERIFICATION"
+            python_executable=[string]$probe.python_executable
+            python_version=[string]$probe.python_version
+            pyzmq=[string]$probe.pyzmq_version
+            libzmq=[string]$probe.libzmq_version
+            zmq_module=[string]$probe.zmq_module
+            tornado=[string]$probe.tornado_version
+            tornado_module=[string]$probe.tornado_module
+            python_pth=$pthLines
+            verified_utc=[DateTime]::UtcNow.ToString("o")
+            result="PASS"
+        })
+        break
     }
 
     "WORKSPACE_RUNTIME_BOOTSTRAP" {
