@@ -422,6 +422,39 @@ try {
                 $details["workspace_root"] = "C:\KatarinaDev"
                 break
             }
+            if ($mode -eq "WORKSPACE_TEST") {
+                $workspaceRoot = "C:\KatarinaDev\workspace"
+                if (!(Test-Path $workspaceRoot)) { throw "Katarina workspace is not initialized." }
+
+                $python = Resolve-Executable @(
+                    "C:\KatarinaDev\runtime\python\python.exe",
+                    "python.exe",
+                    "python"
+                )
+                if (-not $python) {
+                    $details["mode"] = "WORKSPACE_TEST"
+                    $details["python_available"] = $false
+                    throw "Workspace Python runtime is not available yet."
+                }
+
+                $testOut = Join-Path $OutputDir "workspace_test_stdout.txt"
+                $testErr = Join-Path $OutputDir "workspace_test_stderr.txt"
+                $resultCode = Invoke-Captured -FilePath $python -ArgumentList @(
+                    "-m","unittest",
+                    "tests.unit.transport.test_stage07_communication",
+                    "tests.unit.transport.test_stage07_stage06_contract",
+                    "-v"
+                ) -StdoutPath $testOut -StderrPath $testErr -WorkingDirectory $workspaceRoot
+                if ($resultCode -ne 0) { throw "Workspace tests failed." }
+
+                $details["mode"] = "WORKSPACE_TEST"
+                $details["python_available"] = $true
+                $details["result"] = "PASS"
+                "KATARINA WORKSPACE TEST PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                break
+            }
+
             if ($mode -eq "WORKSPACE_APPLY") {
                 $workspaceRoot = "C:\KatarinaDev\workspace"
                 $evidenceRoot = "C:\KatarinaDev\evidence"
