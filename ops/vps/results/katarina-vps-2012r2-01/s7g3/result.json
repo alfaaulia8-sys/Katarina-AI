@@ -1,0 +1,17 @@
+{
+    "schema_version":  1,
+    "request_id":  "s7g3",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "task":  "STAGE07_PYTHON_TESTS",
+    "started_utc":  "2026-10-04T01:11:04.8298208Z",
+    "completed_utc":  "2026-10-04T01:11:07.0172943Z",
+    "duration_ms":  2187,
+    "status":  "PASS",
+    "exit_code":  0,
+    "details":  {
+                    "mode":  "MT5_COMPILE",
+                    "ex5_exists":  true,
+                    "ex5_sha256":  "9A8A39ED2B4705D68E00F68BF932B321ABD45D72BDF94491D45B4079FDD28B80",
+                    "compile_result":  "PASS_0_ERRORS_0_WARNINGS"
+                }
+}
