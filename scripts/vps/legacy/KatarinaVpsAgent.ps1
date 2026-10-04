@@ -381,7 +381,7 @@ if (!(Test-Path $handledPath)) {
 
 # Enforce exactly one agent process per lane on this host.
 $mutexLaneName = ($lane -replace '[^A-Za-z0-9_.-]','_')
-$instanceMutex = New-Object Threading.Mutex($false,("Global\KatarinaVpsAgent_" + $mutexLaneName))
+$instanceMutex = New-Object System.Threading.Mutex($false,("Global\KatarinaVpsAgent_" + $mutexLaneName))
 $instanceAcquired = $false
 try { $instanceAcquired = $instanceMutex.WaitOne(0,$false) } catch { $instanceAcquired = $false }
 if(-not $instanceAcquired) {
@@ -538,7 +538,7 @@ while ($true) {
                 $mutationAcquired = $false
                 try {
                     if($executionClass -eq "MUTATING") {
-                        $mutationMutex = New-Object Threading.Mutex($false,"Global\KatarinaWorkspaceMutation")
+                        $mutationMutex = New-Object System.Threading.Mutex($false,"Global\KatarinaWorkspaceMutation")
                         $lockWaitMs = 0
                         while(-not $mutationAcquired -and $lockWaitMs -lt 180000) {
                             try { $mutationAcquired = $mutationMutex.WaitOne(1000,$false) } catch { $mutationAcquired = $false }
