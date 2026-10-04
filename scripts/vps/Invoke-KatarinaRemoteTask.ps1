@@ -1556,6 +1556,209 @@ try { & schtasks.exe /Delete /F /TN "KatarinaPrimaryDeferredRestart" | Out-Null 
                 break
             }
 
+            if ($mode -eq "WORKSPACE_MT5_TCP_FALLBACK_PROOF_DIRECT") {
+                $terminalPath=[string]$request.args.terminal_path
+                $terminalDataPath=[string]$request.args.terminal_data_path
+                $metaEditorPath=[string]$request.args.metaeditor_path
+                if([string]::IsNullOrWhiteSpace($terminalPath) -or !(Test-Path -LiteralPath $terminalPath -PathType Leaf)) {
+                    throw "terminal_path is required for native TCP proof."
+                }
+                if([string]::IsNullOrWhiteSpace($terminalDataPath) -or !(Test-Path -LiteralPath $terminalDataPath -PathType Container)) {
+                    throw "terminal_data_path is required for native TCP proof."
+                }
+                if([string]::IsNullOrWhiteSpace($metaEditorPath) -or !(Test-Path -LiteralPath $metaEditorPath -PathType Leaf)) {
+                    throw "metaeditor_path is required for native TCP proof."
+                }
+
+                $includeSource=Join-Path $RepoRoot "mt5\Include\Katarina"
+                $testSource=Join-Path $RepoRoot "mt5\Tests\KatarinaStage07TcpFallbackIntegration.mq5"
+                $launcher=Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaInteractiveMt5.ps1"
+                foreach($required in @($includeSource,$testSource,$launcher)) {
+                    if(!(Test-Path -LiteralPath $required)) { throw "Native TCP proof prerequisite missing: $required" }
+                }
+
+                $mqlRoot=Join-Path $terminalDataPath "MQL5"
+                $includeDest=Join-Path $mqlRoot "Include\Katarina"
+                $scriptsDest=Join-Path $mqlRoot "Scripts"
+                New-Item -ItemType Directory -Force -Path $includeDest,$scriptsDest | Out-Null
+                Copy-Item -Path (Join-Path $includeSource "*") -Destination $includeDest -Recurse -Force
+
+                $scriptDest=Join-Path $scriptsDest "KatarinaStage07TcpFallbackIntegration.mq5"
+                $ex5=[IO.Path]::ChangeExtension($scriptDest,".ex5")
+                Copy-Item -LiteralPath $testSource -Destination $scriptDest -Force
+                Remove-Item -LiteralPath $ex5 -Force -ErrorAction SilentlyContinue
+
+                $compileLog=Join-Path $OutputDir "KatarinaStage07TcpFallbackIntegration.compile.log"
+                Remove-Item -LiteralPath $compileLog -Force -ErrorAction SilentlyContinue
+                $compileArgs=@(
+                    ('/compile:"' + $scriptDest + '"'),
+                    ('/inc:"' + $mqlRoot + '"'),
+                    ('/log:"' + $compileLog + '"')
+                )
+                $compile=Start-Process -FilePath $metaEditorPath -ArgumentList $compileArgs -Wait -PassThru
+                if(!(Test-Path -LiteralPath $compileLog -PathType Leaf)) { throw "Native TCP MetaEditor compile log missing." }
+                $compileText=Get-Content -LiteralPath $compileLog -Raw
+                if($compileText -notmatch "0 errors, 0 warnings") {
+                    throw "Native TCP fallback test did not compile with 0 errors / 0 warnings."
+                }
+                if(!(Test-Path -LiteralPath $ex5 -PathType Leaf)) { throw "Native TCP fallback EX5 missing." }
+
+                $python="C:\KatarinaDev\runtime\python\python.exe"
+                $workspace="C:\KatarinaDev\workspace"
+                if(!(Test-Path -LiteralPath $python -PathType Leaf)) { throw "Katarina portable Python missing." }
+                if(!(Test-Path -LiteralPath $workspace -PathType Container)) { throw "Katarina workspace missing." }
+
+                $ready=Join-Path $OutputDir "tcp_server_ready.txt"
+                $serverResult=Join-Path $OutputDir "tcp_server_result.json"
+                $serverScript=Join-Path $OutputDir "stage07_tcp_server.py"
+                Remove-Item -LiteralPath $ready,$serverResult -Force -ErrorAction SilentlyContinue
+
+                @'
+import asyncio
+import json
+import pathlib
+
+from katarina.adapters.transport.kat1_codec import Kat1Codec, SchemaCatalog
+from katarina.adapters.transport.tcp import Kat1TcpServerTransport
+
+ROOT = pathlib.Path(r"C:\KatarinaDev\workspace")
+READY = pathlib.Path(r"__READY__")
+RESULT = pathlib.Path(r"__RESULT__")
+
+async def main():
+    codec = Kat1Codec(
+        SchemaCatalog.from_path(ROOT / "protocol" / "kat1_message_schemas_v1.json")
+    )
+    transport = Kat1TcpServerTransport(host="127.0.0.1", port=5572, receive_capacity=8)
+    await transport.start()
+    READY.write_text("READY", encoding="utf-8")
+    try:
+        received = await asyncio.wait_for(transport.receive_frame(), timeout=30.0)
+        decoded = codec.decode(received.frame)
+        await transport.send_frame(received.frame, peer=received.peer)
+        RESULT.write_text(json.dumps({
+            "schema_version": 1,
+            "proof_type": "KATARINA_STAGE07_NATIVE_TCP_PYTHON_PEER",
+            "message_type": decoded.header.message_type,
+            "sequence": decoded.header.sequence,
+            "stream_id": decoded.header.stream_id,
+            "boot_id": decoded.header.boot_id,
+            "frame_length": len(received.frame),
+            "byte_echo": True,
+            "result": "PASS",
+        }, indent=2), encoding="utf-8")
+    finally:
+        await transport.stop()
+
+asyncio.run(main())
+'@.Replace("__READY__",$ready.Replace("\","\\")).Replace("__RESULT__",$serverResult.Replace("\","\\")) |
+                    Set-Content -LiteralPath $serverScript -Encoding UTF8
+
+                $server=Start-Process -FilePath $python -ArgumentList @($serverScript) -PassThru -NoNewWindow
+                try {
+                    $deadline=[DateTime]::UtcNow.AddSeconds(15)
+                    while([DateTime]::UtcNow -lt $deadline -and !(Test-Path -LiteralPath $ready -PathType Leaf)) {
+                        if($server.HasExited) { throw "Python native TCP peer exited before ready." }
+                        Start-Sleep -Milliseconds 100
+                    }
+                    if(!(Test-Path -LiteralPath $ready -PathType Leaf)) { throw "Python native TCP peer did not become ready." }
+
+                    $markerPath="\AppData\Roaming\MetaQuotes\Terminal\"
+                    $markerIndex=$terminalDataPath.IndexOf($markerPath,[StringComparison]::OrdinalIgnoreCase)
+                    if($markerIndex -le 0) { throw "Unable to derive MT5 user profile for native TCP proof." }
+                    $profileRoot=$terminalDataPath.Substring(0,$markerIndex)
+                    $expectedUser=Split-Path -Leaf $profileRoot
+                    $commonFiles=Join-Path (Join-Path $profileRoot "AppData\Roaming") "MetaQuotes\Terminal\Common\Files"
+                    New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
+                    $mt5Evidence=Join-Path $commonFiles "Katarina_Stage07_tcp_fallback_result.txt"
+                    Remove-Item -LiteralPath $mt5Evidence -Force -ErrorAction SilentlyContinue
+
+                    $config=Join-Path $OutputDir "stage07_tcp_fallback.ini"
+                    @"
+[Experts]
+AllowLiveTrading=0
+AllowDllImport=0
+Enabled=1
+Account=0
+Profile=0
+
+[StartUp]
+Script=KatarinaStage07TcpFallbackIntegration
+Symbol=
+Period=H1
+ShutdownTerminal=1
+"@ | Set-Content -LiteralPath $config -Encoding ASCII
+
+                    $launchEvidence=Join-Path $OutputDir "interactive_tcp_fallback.json"
+                    $launchStdout=Join-Path $OutputDir "interactive_tcp_stdout.txt"
+                    $launchStderr=Join-Path $OutputDir "interactive_tcp_stderr.txt"
+                    $launchArgs=@(
+                        "-NoProfile","-ExecutionPolicy","Bypass",
+                        "-File",$launcher,
+                        "-TerminalPath",$terminalPath,
+                        "-ConfigPath",$config,
+                        "-ExpectedUser",$expectedUser,
+                        "-TimeoutSeconds",40,
+                        "-OutputPath",$launchEvidence
+                    )
+                    & powershell.exe $launchArgs 1> $launchStdout 2> $launchStderr
+                    if($LASTEXITCODE -ne 0) { throw "Interactive MT5 native TCP launch failed." }
+
+                    [void]$server.WaitForExit(15000)
+                    if(!$server.HasExited) { throw "Python native TCP peer did not finish after MT5 test." }
+                    if($server.ExitCode -ne 0) { throw "Python native TCP peer failed with exit code $($server.ExitCode)." }
+
+                    if(!(Test-Path -LiteralPath $mt5Evidence -PathType Leaf)) { throw "MT5 native TCP evidence missing." }
+                    $mt5Text=Get-Content -LiteralPath $mt5Evidence -Raw
+                    Copy-Item -LiteralPath $mt5Evidence -Destination (Join-Path $OutputDir "Katarina_Stage07_tcp_fallback_result.txt") -Force
+                    if($mt5Text -notmatch "result=PASS") {
+                        throw ("MT5 native TCP fallback failed. Evidence: " + $mt5Text)
+                    }
+
+                    if(!(Test-Path -LiteralPath $serverResult -PathType Leaf)) { throw "Python native TCP evidence missing." }
+                    $py=Get-Content -LiteralPath $serverResult -Raw | ConvertFrom-Json
+                    if([string]$py.result -ne "PASS" -or [bool]$py.byte_echo -ne $true) {
+                        throw "Python native TCP peer did not report PASS byte echo."
+                    }
+                    if([int]$py.message_type -ne 1 -or [int]$py.frame_length -ne 108) {
+                        throw "Native TCP proof received unexpected KAT1 golden frame."
+                    }
+
+                    Write-JsonFile (Join-Path $OutputDir "stage07_native_tcp_fallback_evidence.json") ([ordered]@{
+                        schema_version=1
+                        stage="07"
+                        proof_type="KATARINA_STAGE07_NATIVE_TCP_FALLBACK"
+                        host="Windows Server 2012 R2"
+                        endpoint="tcp://127.0.0.1:5572"
+                        mql_transport="SocketCreate/SocketConnect/SocketSend/SocketRead"
+                        python_transport="Kat1TcpServerTransport"
+                        framing="KAT1_FRAME_LENGTH_ONLY"
+                        secondary_envelope=$false
+                        golden_message="HELLO"
+                        frame_length=108
+                        cross_language_byte_equality="PASS"
+                        compile="PASS_0_ERRORS_0_WARNINGS"
+                        ex5_sha256=(Get-FileHash -LiteralPath $ex5 -Algorithm SHA256).Hash.ToLowerInvariant()
+                        live_trading_allowed=$false
+                        dll_import_allowed=$false
+                        result="PASS_STAGE07_NATIVE_TCP_FALLBACK"
+                        generated_utc=[DateTime]::UtcNow.ToString("o")
+                    })
+                }
+                finally {
+                    if($null -ne $server -and !$server.HasExited) {
+                        Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+                    }
+                }
+
+                "KATARINA STAGE07 NATIVE TCP FALLBACK PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["transport"]="NATIVE_TCP"
+                $details["result"]="PASS_STAGE07_NATIVE_TCP_FALLBACK"
+                break
+            }
+
             if ($mode.StartsWith("WORKSPACE_")) {
                 $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
                 if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) { throw "Katarina workspace runner is missing." }
