@@ -212,17 +212,29 @@ jobs:
             $terminal = Start-Process -FilePath "$env:MT5_HOME\terminal64.exe" -ArgumentList @("/portable", "/config:`"$config`"") -Wait -PassThru
             Write-Host "Terminal exit code: $($terminal.ExitCode)"
 
-            [void]$peer.WaitForExit(10000)
-            if (-not $peer.HasExited) { throw "Python TCP peer did not finish." }
-            if ($peer.ExitCode -ne 0) { throw "Python TCP peer failed: $($peer.ExitCode)" }
-            if (!(Test-Path $pythonResult)) { throw "Python TCP result missing." }
-            if (!(Test-Path $mt5Evidence)) { throw "MT5 TCP evidence missing." }
+            # Read the MQL result first. If SocketConnect was blocked, the
+            # script exits quickly while the Python peer is still waiting.
+            if (!(Test-Path $mt5Evidence)) {
+              Write-Host "MT5 evidence path missing: $mt5Evidence"
+              $terminalLogs = Get-ChildItem -Path "$env:MT5_HOME\logs" -Filter "*.log" -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 2
+              foreach ($log in $terminalLogs) {
+                Write-Host "--- terminal log $($log.FullName) ---"
+                Get-Content $log.FullName -Tail 120 -ErrorAction SilentlyContinue | Write-Host
+              }
+              throw "MT5 TCP evidence missing."
+            }
 
             $mt5Text = Get-Content $mt5Evidence -Raw
+            Write-Host "--- MT5 native TCP evidence ---"
             Write-Host $mt5Text
             if ($mt5Text -notmatch "result=PASS") {
               throw "Native TCP proof failed: $mt5Text"
             }
+
+            [void]$peer.WaitForExit(10000)
+            if (-not $peer.HasExited) { throw "Python TCP peer did not finish after MQL reported PASS." }
+            if ($peer.ExitCode -ne 0) { throw "Python TCP peer failed: $($peer.ExitCode)" }
+            if (!(Test-Path $pythonResult)) { throw "Python TCP result missing." }
 
             $py = Get-Content $pythonResult -Raw | ConvertFrom-Json
             if ($py.result -ne "PASS" -or $py.byte_echo -ne $true -or $py.message_type -ne 1 -or $py.frame_length -ne 108) {
@@ -293,6 +305,7 @@ jobs:
           }
 
       - name: Upload Stage 07 final evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: stage07-final-clearance-evidence
@@ -304,3 +317,4 @@ jobs:
             build/stage07/stage07_transport_profile.json
             build/stage07/stage07_final_clearance.json
           retention-days: 90
+          if-no-files-found: warn
