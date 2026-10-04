@@ -205,6 +205,43 @@ switch($mode) {
         $scriptsDest=Join-Path $terminalDataPath "MQL5\Scripts"
         $mqlRoot=Join-Path $terminalDataPath "MQL5"
 
+        # Stage the exact ZeroMQ MQL5 dependency pinned by Stage-07 CI.
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zmqCommit="f332ee903fb8f27cbf28a8169824b8130e2aaab2"
+        $zmqRuntime=Join-Path $Runtime ("mql5-zmq\"+$zmqCommit)
+        $zmqMarker=Join-Path $zmqRuntime "Include\Zmq\Zmq.mqh"
+        if(!(Test-Path -LiteralPath $zmqMarker -PathType Leaf)) {
+            $downloadDir=Join-Path $Runtime "downloads"
+            New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
+            $archive=Join-Path $downloadDir ("mql5-zmq-"+$zmqCommit+".zip")
+            $archiveUrl="https://github.com/coke5151/mql5-zmq/archive/"+$zmqCommit+".zip"
+            Invoke-WebRequest -Uri $archiveUrl -OutFile $archive -UseBasicParsing
+            if(!(Test-Path -LiteralPath $archive -PathType Leaf)) { throw "Pinned MQL5 ZeroMQ archive download failed." }
+
+            $extract=Join-Path $Runtime ("mql5-zmq-extract-"+$zmqCommit)
+            if(Test-Path -LiteralPath $extract) { Remove-Item -LiteralPath $extract -Recurse -Force }
+            New-Item -ItemType Directory -Force -Path $extract | Out-Null
+            [IO.Compression.ZipFile]::ExtractToDirectory($archive,$extract)
+            $root=Get-ChildItem -LiteralPath $extract -Directory | Select-Object -First 1
+            if($null -eq $root) { throw "Pinned MQL5 ZeroMQ archive extraction failed." }
+
+            if(Test-Path -LiteralPath $zmqRuntime) { Remove-Item -LiteralPath $zmqRuntime -Recurse -Force }
+            New-Item -ItemType Directory -Force -Path $zmqRuntime | Out-Null
+            Copy-Item -Path (Join-Path $root.FullName "*") -Destination $zmqRuntime -Recurse -Force
+            Remove-Item -LiteralPath $extract -Recurse -Force
+        }
+
+        $zmqInclude=Join-Path $mqlRoot "Include\Zmq"
+        $mqlLangInclude=Join-Path $mqlRoot "Include\Mql\Lang"
+        $librariesDest=Join-Path $mqlRoot "Libraries"
+        New-Item -ItemType Directory -Force -Path $zmqInclude,$mqlLangInclude,$librariesDest | Out-Null
+        Copy-Item -Path (Join-Path $zmqRuntime "Include\Zmq\*.mqh") -Destination $zmqInclude -Force
+        Copy-Item -Path (Join-Path $zmqRuntime "Include\Mql\Lang\*.mqh") -Destination $mqlLangInclude -Force
+        Copy-Item -LiteralPath (Join-Path $zmqRuntime "Library\libzmq.dll") -Destination $librariesDest -Force
+        Copy-Item -LiteralPath (Join-Path $zmqRuntime "Library\libsodium.dll") -Destination $librariesDest -Force
+
+        if(!(Test-Path -LiteralPath (Join-Path $zmqInclude "Zmq.mqh") -PathType Leaf)) { throw "Pinned MQL5 ZeroMQ include staging failed." }
         if(!(Test-Path -LiteralPath $includeSource -PathType Container)) { throw "Workspace Katarina include tree missing." }
         New-Item -ItemType Directory -Force -Path $includeDest,$expertsDest,$scriptsDest | Out-Null
         Copy-Item -Path (Join-Path $includeSource "*") -Destination $includeDest -Recurse -Force
@@ -263,6 +300,8 @@ switch($mode) {
             workspace_root=$Workspace
             terminal_data_path=$terminalDataPath
             metaeditor_path=$metaEditorPath
+            mql5_zmq_commit=$zmqCommit
+            mql5_zmq_root=$zmqRuntime
             target_count=$records.Count
             targets=$records
             generated_utc=[DateTime]::UtcNow.ToString("o")
