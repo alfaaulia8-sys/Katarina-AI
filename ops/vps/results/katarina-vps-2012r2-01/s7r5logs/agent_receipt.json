@@ -1,0 +1,10 @@
+{
+    "schema_version":  1,
+    "agent_version":  "1.2.2",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "request_id":  "s7r5logs",
+    "task":  "COLLECT_MT5_LOGS",
+    "ref":  "main",
+    "exit_code":  0,
+    "completed_utc":  "2026-10-04T03:19:24.7485252Z"
+}
