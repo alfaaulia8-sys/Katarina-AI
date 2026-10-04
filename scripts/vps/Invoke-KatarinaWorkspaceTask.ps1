@@ -16,7 +16,10 @@ $Logs = Join-Path $WorkspaceRoot "logs"
 $Runtime = Join-Path $WorkspaceRoot "runtime"
 
 function Write-Json([string]$Path,$Value) {
-    $Value | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $Path -Encoding UTF8
+    # PowerShell 4 can enumerate OrderedDictionary values when they are sent
+    # through the pipeline. -InputObject preserves the evidence object as one
+    # JSON document instead of attempting invalid item-by-item conversion.
+    ConvertTo-Json -InputObject $Value -Depth 16 | Set-Content -LiteralPath $Path -Encoding UTF8
 }
 
 function Resolve-Exe([string[]]$Candidates) {
