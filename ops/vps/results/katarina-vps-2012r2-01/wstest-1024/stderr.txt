@@ -1,6 +1,6 @@
 Workspace tests failed.
-At C:\KatarinaVPSAgent\work\wstest-1024\src\alfaaulia-katarina-Katarina-AI-0e51
-75ecd78fc2c57decca2188168ba50a128c32\scripts\vps\Invoke-KatarinaWorkspaceTask.p
+At C:\KatarinaVPSAgent\work\wstest-1024\src\alfaaulia-katarina-Katarina-AI-e032
+82f0e1249827dab89a156168c89fd5ec3d8e\scripts\vps\Invoke-KatarinaWorkspaceTask.p
 s1:988 char:33
 +         if($p.ExitCode -ne 0) { throw "Workspace tests failed." }
 +                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
