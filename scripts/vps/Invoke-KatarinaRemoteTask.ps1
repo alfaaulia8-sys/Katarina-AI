@@ -500,6 +500,66 @@ try {
                 Copy-Item -LiteralPath $agentSource -Destination $agentPath -Force
                 Copy-Item -LiteralPath $watchdogSource -Destination $watchdogPath -Force
 
+                function Get-ControlMemory {
+                    $m = [ordered]@{ total_visible_mb = 0; free_physical_mb = 0 }
+                    try {
+                        $os = Get-WmiObject Win32_OperatingSystem
+                        $m.total_visible_mb = [int]([double]$os.TotalVisibleMemorySize / 1024)
+                        $m.free_physical_mb = [int]([double]$os.FreePhysicalMemory / 1024)
+                    } catch {}
+                    return $m
+                }
+
+                function Wait-LaneHeartbeat([string]$LaneName,[string]$TaskName,[string]$HeartbeatPath,[int]$WaitSeconds=30) {
+                    $record = [ordered]@{
+                        lane = $LaneName
+                        task = $TaskName
+                        start_exit_code = $null
+                        heartbeat_fresh = $false
+                        phase = ""
+                        agent_version = ""
+                        process_id = $null
+                        error = ""
+                    }
+                    try { Remove-Item -LiteralPath $HeartbeatPath -Force -ErrorAction SilentlyContinue } catch {}
+                    try { & schtasks.exe /End /TN $TaskName | Out-Null } catch {}
+                    Start-Sleep -Milliseconds 750
+                    & schtasks.exe /Run /TN $TaskName | Out-Null
+                    $record.start_exit_code = [int]$LASTEXITCODE
+                    if ($LASTEXITCODE -ne 0) {
+                        $record.error = "TASK_START_FAILED"
+                        return $record
+                    }
+
+                    $deadline = [DateTime]::UtcNow.AddSeconds($WaitSeconds)
+                    while ([DateTime]::UtcNow -lt $deadline) {
+                        if (Test-Path -LiteralPath $HeartbeatPath -PathType Leaf) {
+                            try {
+                                $hb = Get-Content -LiteralPath $HeartbeatPath -Raw | ConvertFrom-Json
+                                $updated = [DateTime]::Parse(
+                                    [string]$hb.updated_utc,
+                                    [Globalization.CultureInfo]::InvariantCulture,
+                                    [Globalization.DateTimeStyles]::AssumeUniversal
+                                ).ToUniversalTime()
+                                if (([DateTime]::UtcNow - $updated).TotalSeconds -lt 15) {
+                                    $record.heartbeat_fresh = $true
+                                    $record.phase = [string]$hb.phase
+                                    $record.agent_version = [string]$hb.agent_version
+                                    try { $record.process_id = [int]$hb.process_id } catch {}
+                                    break
+                                }
+                            } catch {
+                                $record.error = "HEARTBEAT_PARSE_ERROR"
+                            }
+                        }
+                        Start-Sleep -Seconds 1
+                    }
+                    if (-not $record.heartbeat_fresh -and [string]::IsNullOrWhiteSpace([string]$record.error)) {
+                        $record.error = "HEARTBEAT_TIMEOUT"
+                    }
+                    return $record
+                }
+
                 $cfg = Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
                 $repoName = [string]$cfg.repository
                 $branchName = [string]$cfg.branch
@@ -508,20 +568,9 @@ try {
                 if ([string]::IsNullOrWhiteSpace($branchName)) { $branchName = "main" }
                 if ([string]::IsNullOrWhiteSpace($primaryAgentId)) { $primaryAgentId = "katarina-vps-2012r2-01" }
 
-                $freeMb = 0
-                $totalMb = 0
-                try {
-                    $os = Get-WmiObject Win32_OperatingSystem
-                    $freeMb = [int]([double]$os.FreePhysicalMemory / 1024)
-                    $totalMb = [int]([double]$os.TotalVisibleMemorySize / 1024)
-                } catch {}
-
-                # Adaptive policy for the 2 GB Windows Server 2012 R2 VPS.
-                # Recovery is prioritized over throughput. Worker01 is only
-                # enabled when there is enough free memory to avoid repeating
-                # the nested-PowerShell OOM seen in the sequential rescue.
-                $enableRecovery = ($freeMb -ge 256)
-                $enableWorker01 = ($freeMb -ge 512)
+                $memoryBefore = Get-ControlMemory
+                $recoveryMinMb = 320
+                $workerMinAfterRecoveryMb = 640
 
                 $common = [ordered]@{
                     schema_version = 2
@@ -563,32 +612,26 @@ try {
                 $worker01.lane = "worker01"
                 $worker01.state_root = Join-Path $installRoot "lanes\\worker01"
                 $worker01.capabilities = @("READONLY")
-                $worker01.poll_seconds = 9
+                $worker01.poll_seconds = 10
                 $worker01.requests_dir = "ops/vps/requests/worker01"
                 Write-JsonFile $worker01Config $worker01
 
-                $taskDefs = @(
-                    [pscustomobject]@{ lane="recovery"; task="KatarinaControlRecovery"; config=$recoveryConfig; enabled=$enableRecovery },
-                    [pscustomobject]@{ lane="worker01"; task="KatarinaControlWorker01"; config=$worker01Config; enabled=$enableWorker01 }
+                $laneDefs = @(
+                    [pscustomobject]@{ lane="recovery"; task="KatarinaControlRecovery"; config=$recoveryConfig },
+                    [pscustomobject]@{ lane="worker01"; task="KatarinaControlWorker01"; config=$worker01Config }
                 )
-
-                foreach ($td in $taskDefs) {
+                foreach ($td in $laneDefs) {
                     $cmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $agentPath + '" -ConfigPath "' + $td.config + '"'
                     & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN $td.task /TR $cmd | Out-Null
                     if ($LASTEXITCODE -ne 0) { throw "Failed to register balanced lane task: $($td.task)" }
-                    if ($td.enabled) {
-                        try { & schtasks.exe /Change /TN $td.task /ENABLE | Out-Null } catch {}
-                    } else {
-                        try { & schtasks.exe /End /TN $td.task | Out-Null } catch {}
-                        try { & schtasks.exe /Change /TN $td.task /DISABLE | Out-Null } catch {}
-                    }
+                    try { & schtasks.exe /Change /TN $td.task /DISABLE | Out-Null } catch {}
+                    try { & schtasks.exe /End /TN $td.task | Out-Null } catch {}
                 }
 
                 foreach ($taskName in @("KatarinaControlSupervisorGuard","KatarinaControlSupervisor","KatarinaControlWorker02")) {
                     try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
                     try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
                 }
-
                 foreach ($taskName in @("KatarinaVPSAgent","KatarinaVPSAgentWatchdog")) {
                     try { & schtasks.exe /Change /TN $taskName /ENABLE | Out-Null } catch {}
                 }
@@ -597,231 +640,129 @@ try {
                 & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaVPSAgentWatchdog" /TR $watchdogCmd | Out-Null
                 if ($LASTEXITCODE -ne 0) { throw "Failed to register balanced watchdog task." }
 
-                $watchdogLanes = @(
-                    [ordered]@{
-                        lane = "primary"
-                        task = "KatarinaVPSAgent"
-                        config = $primaryConfig
-                        heartbeat = (Join-Path $installRoot "lanes\\primary\\heartbeat.json")
-                        fallback = (Join-Path $installRoot "heartbeat.json")
-                        stale_seconds = 90
-                        busy_stale_seconds = 300
-                    }
-                )
-                if ($enableRecovery) {
-                    $watchdogLanes += [ordered]@{
-                        lane = "recovery"
-                        task = "KatarinaControlRecovery"
-                        config = $recoveryConfig
-                        heartbeat = (Join-Path $installRoot "lanes\\recovery\\heartbeat.json")
-                        fallback = ""
-                        stale_seconds = 90
-                        busy_stale_seconds = 300
-                    }
-                }
-                if ($enableWorker01) {
-                    $watchdogLanes += [ordered]@{
-                        lane = "worker01"
-                        task = "KatarinaControlWorker01"
-                        config = $worker01Config
-                        heartbeat = (Join-Path $installRoot "lanes\\worker01\\heartbeat.json")
-                        fallback = ""
-                        stale_seconds = 120
-                        busy_stale_seconds = 300
-                    }
-                }
-                Write-JsonFile $watchdogConfigPath ([ordered]@{
-                    schema_version = 1
-                    resource_profile = "LEGACY_LOW_MEMORY_BALANCED"
-                    lanes = $watchdogLanes
-                    generated_utc = [DateTime]::UtcNow.ToString("o")
-                })
-
                 $laneChecks = @()
-                foreach ($td in @($taskDefs | Where-Object { $_.enabled })) {
-                    $heartbeatPath = Join-Path $installRoot ("lanes\\" + $td.lane + "\\heartbeat.json")
-                    try { Remove-Item -LiteralPath $heartbeatPath -Force -ErrorAction SilentlyContinue } catch {}
-                    try { & schtasks.exe /End /TN $td.task | Out-Null } catch {}
-                    Start-Sleep -Milliseconds 500
-                    & schtasks.exe /Run /TN $td.task | Out-Null
-                    if ($LASTEXITCODE -ne 0) { throw "Failed to start balanced lane: $($td.task)" }
+                $recoveryEnabled = $false
+                $worker01Enabled = $false
 
-                    $fresh = $false
-                    $phase = ""
-                    $agentVersion = ""
-                    $deadline = [DateTime]::UtcNow.AddSeconds(20)
-                    while ([DateTime]::UtcNow -lt $deadline) {
-                        if (Test-Path -LiteralPath $heartbeatPath -PathType Leaf) {
-                            try {
-                                $hb = Get-Content -LiteralPath $heartbeatPath -Raw | ConvertFrom-Json
-                                $updated = [DateTime]::Parse(
-                                    [string]$hb.updated_utc,
-                                    [Globalization.CultureInfo]::InvariantCulture,
-                                    [Globalization.DateTimeStyles]::AssumeUniversal
-                                ).ToUniversalTime()
-                                if (([DateTime]::UtcNow - $updated).TotalSeconds -lt 15) {
-                                    $fresh = $true
-                                    $phase = [string]$hb.phase
-                                    $agentVersion = [string]$hb.agent_version
-                                    break
-                                }
-                            } catch {}
-                        }
-                        Start-Sleep -Seconds 1
+                # Recovery is the first and mandatory secondary lane. Start it alone
+                # so a low-memory host never pays the startup cost of two agents at once.
+                if ([int]$memoryBefore.free_physical_mb -ge $recoveryMinMb) {
+                    try { & schtasks.exe /Change /TN "KatarinaControlRecovery" /ENABLE | Out-Null } catch {}
+                    $recoveryCheck = Wait-LaneHeartbeat "recovery" "KatarinaControlRecovery" (Join-Path $installRoot "lanes\\recovery\\heartbeat.json") 35
+                    $laneChecks += $recoveryCheck
+                    $recoveryEnabled = [bool]$recoveryCheck.heartbeat_fresh
+                    if (-not $recoveryEnabled) {
+                        try { & schtasks.exe /End /TN "KatarinaControlRecovery" | Out-Null } catch {}
+                        try { & schtasks.exe /Change /TN "KatarinaControlRecovery" /DISABLE | Out-Null } catch {}
                     }
+                } else {
                     $laneChecks += [ordered]@{
-                        lane = [string]$td.lane
-                        task = [string]$td.task
-                        heartbeat_fresh = $fresh
-                        phase = $phase
-                        agent_version = $agentVersion
+                        lane="recovery"; task="KatarinaControlRecovery"; start_exit_code=$null;
+                        heartbeat_fresh=$false; phase=""; agent_version=""; process_id=$null;
+                        error=("SKIPPED_LOW_MEMORY_" + [string]$memoryBefore.free_physical_mb + "MB")
                     }
                 }
 
-                try { & schtasks.exe /Run /TN "KatarinaVPSAgentWatchdog" | Out-Null } catch {}
+                Start-Sleep -Seconds 2
+                $memoryAfterRecovery = Get-ControlMemory
 
-                $failedEnabled = @($laneChecks | Where-Object { -not $_.heartbeat_fresh }).Count
-                if ($failedEnabled -gt 0) {
-                    throw "One or more balanced secondary lanes failed to publish a fresh heartbeat."
+                # Worker01 is optional throughput. It only starts after recovery is
+                # healthy and enough RAM still remains. Worker02 stays cold reserve.
+                if ($recoveryEnabled -and [int]$memoryAfterRecovery.free_physical_mb -ge $workerMinAfterRecoveryMb) {
+                    try { & schtasks.exe /Change /TN "KatarinaControlWorker01" /ENABLE | Out-Null } catch {}
+                    $workerCheck = Wait-LaneHeartbeat "worker01" "KatarinaControlWorker01" (Join-Path $installRoot "lanes\\worker01\\heartbeat.json") 30
+                    $laneChecks += $workerCheck
+                    $worker01Enabled = [bool]$workerCheck.heartbeat_fresh
+                    if (-not $worker01Enabled) {
+                        try { & schtasks.exe /End /TN "KatarinaControlWorker01" | Out-Null } catch {}
+                        try { & schtasks.exe /Change /TN "KatarinaControlWorker01" /DISABLE | Out-Null } catch {}
+                    }
+                } else {
+                    $skipReason = $(if(-not $recoveryEnabled){"SKIPPED_RECOVERY_NOT_READY"}else{"SKIPPED_LOW_MEMORY_"+[string]$memoryAfterRecovery.free_physical_mb+"MB"})
+                    $laneChecks += [ordered]@{
+                        lane="worker01"; task="KatarinaControlWorker01"; start_exit_code=$null;
+                        heartbeat_fresh=$false; phase=""; agent_version=""; process_id=$null;
+                        error=$skipReason
+                    }
                 }
 
                 $activeLanes = @("primary")
-                if ($enableRecovery) { $activeLanes += "recovery" }
-                if ($enableWorker01) { $activeLanes += "worker01" }
+                if ($recoveryEnabled) { $activeLanes += "recovery" }
+                if ($worker01Enabled) { $activeLanes += "worker01" }
 
-                $proof = [ordered]@{
-                    schema_version = 1
-                    proof_type = "KATARINA_CONTROL_BALANCED_DIRECT"
-                    resource_profile = "LEGACY_LOW_MEMORY_BALANCED"
-                    memory = [ordered]@{
-                        total_visible_mb = $totalMb
-                        free_physical_mb_at_install = $freeMb
-                        recovery_min_free_mb = 256
-                        worker01_min_free_mb = 512
+                $watchdogLanes = @(
+                    [ordered]@{
+                        lane="primary"; task="KatarinaVPSAgent"; config=$primaryConfig;
+                        heartbeat=(Join-Path $installRoot "lanes\\primary\\heartbeat.json");
+                        fallback=(Join-Path $installRoot "heartbeat.json");
+                        stale_seconds=90; busy_stale_seconds=420
                     }
-                    persistent_lanes = $activeLanes
-                    reserve_lane = "worker02"
-                    supervisor_persistent = $false
-                    watchdog_mode = "MULTI_LANE_INDEPENDENT"
-                    watchdog_interval_minutes = 1
-                    parallel_request_capacity = $activeLanes.Count
-                    mutation_concurrency = 1
-                    queue_isolation = $true
-                    recovery_lane_enabled = $enableRecovery
-                    worker01_enabled = $enableWorker01
-                    lane_checks = $laneChecks
-                    primary_restart_deferred = $true
-                    installed_utc = [DateTime]::UtcNow.ToString("o")
-                    result = "PASS"
+                )
+                if ($recoveryEnabled) {
+                    $watchdogLanes += [ordered]@{
+                        lane="recovery"; task="KatarinaControlRecovery"; config=$recoveryConfig;
+                        heartbeat=(Join-Path $installRoot "lanes\\recovery\\heartbeat.json");
+                        fallback=""; stale_seconds=90; busy_stale_seconds=420
+                    }
+                }
+                if ($worker01Enabled) {
+                    $watchdogLanes += [ordered]@{
+                        lane="worker01"; task="KatarinaControlWorker01"; config=$worker01Config;
+                        heartbeat=(Join-Path $installRoot "lanes\\worker01\\heartbeat.json");
+                        fallback=""; stale_seconds=120; busy_stale_seconds=420
+                    }
+                }
+                Write-JsonFile $watchdogConfigPath ([ordered]@{
+                    schema_version=1
+                    resource_profile="LEGACY_LOW_MEMORY_BALANCED"
+                    lanes=$watchdogLanes
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                })
+
+                try { & schtasks.exe /Run /TN "KatarinaVPSAgentWatchdog" | Out-Null } catch {}
+                $memoryFinal = Get-ControlMemory
+
+                $overall = $(if($recoveryEnabled){"PASS"}else{"FAIL"})
+                $proof = [ordered]@{
+                    schema_version=2
+                    proof_type="KATARINA_CONTROL_BALANCED_DIRECT"
+                    resource_profile="LEGACY_LOW_MEMORY_BALANCED"
+                    memory=[ordered]@{
+                        before=$memoryBefore
+                        after_recovery=$memoryAfterRecovery
+                        final=$memoryFinal
+                        recovery_min_free_mb=$recoveryMinMb
+                        worker01_min_free_mb_after_recovery=$workerMinAfterRecoveryMb
+                    }
+                    persistent_lanes=$activeLanes
+                    reserve_lane="worker02"
+                    supervisor_persistent=$false
+                    watchdog_mode="MULTI_LANE_INDEPENDENT"
+                    watchdog_interval_minutes=1
+                    parallel_request_capacity=$activeLanes.Count
+                    mutation_concurrency=1
+                    heavy_execution_concurrency=1
+                    queue_isolation=$true
+                    recovery_lane_enabled=$recoveryEnabled
+                    worker01_enabled=$worker01Enabled
+                    lane_checks=$laneChecks
+                    primary_restart_deferred=$true
+                    installed_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$overall
                 }
                 Write-JsonFile (Join-Path $OutputDir "control_balanced_direct.json") $proof
+
+                if (-not $recoveryEnabled) {
+                    throw "Balanced control could not keep the mandatory recovery lane healthy; see control_balanced_direct.json."
+                }
+
                 "KATARINA BALANCED LOW MEMORY CONTROL INSTALL PASS" | Set-Content $stdoutPath -Encoding UTF8
                 "" | Set-Content $stderrPath -Encoding UTF8
                 $details["mode"] = $mode
                 $details["resource_profile"] = "LEGACY_LOW_MEMORY_BALANCED"
                 $details["active_lanes"] = $activeLanes.Count
-                $details["recovery_lane_enabled"] = $enableRecovery
-                $details["worker01_enabled"] = $enableWorker01
-                $details["result"] = "PASS"
-                break
-            }
-
-            if ($mode -eq "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT") {
-                $installRoot = "C:\\KatarinaVPSAgent"
-                $primaryConfig = Join-Path $installRoot "agent.json"
-                $agentSource = Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgent.ps1"
-                $watchdogSource = Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgentWatchdog.ps1"
-                $agentPath = Join-Path $installRoot "KatarinaVpsAgent.ps1"
-                $watchdogPath = Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1"
-                $tokenPath = Join-Path $installRoot "token.bin"
-
-                foreach($required in @($primaryConfig,$agentSource,$watchdogSource,$tokenPath)) {
-                    if(!(Test-Path -LiteralPath $required -PathType Leaf)) {
-                        throw "Stable control update prerequisite missing: $required"
-                    }
-                }
-
-                # Install the newest agent/watchdog source without spawning a
-                # nested PowerShell host.
-                Copy-Item -LiteralPath $agentSource -Destination $agentPath -Force
-                Copy-Item -LiteralPath $watchdogSource -Destination $watchdogPath -Force
-
-                $cfg = Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
-                $stable = [ordered]@{
-                    schema_version = 2
-                    agent_id = [string]$cfg.agent_id
-                    repository = [string]$cfg.repository
-                    branch = [string]$cfg.branch
-                    poll_seconds = 5
-                    lane = "primary"
-                    state_root = (Join-Path $installRoot "lanes\\primary")
-                    token_path = $tokenPath
-                    requests_dir = "ops/vps/requests/primary"
-                    results_dir = "ops/vps/results"
-                    compact_results = $true
-                    capabilities = @("MUTATING","READONLY","RECOVERY")
-                    resource_profile = "LEGACY_LOW_MEMORY_SEQUENTIAL"
-                    installed_utc = [DateTime]::UtcNow.ToString("o")
-                }
-                Write-JsonFile $primaryConfig $stable
-
-                foreach($taskName in @(
-                    "KatarinaControlSupervisorGuard",
-                    "KatarinaControlSupervisor",
-                    "KatarinaControlRecovery",
-                    "KatarinaControlWorker01",
-                    "KatarinaControlWorker02"
-                )) {
-                    try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
-                    try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
-                }
-
-                foreach($taskName in @("KatarinaVPSAgent","KatarinaVPSAgentWatchdog")) {
-                    try { & schtasks.exe /Change /TN $taskName /ENABLE | Out-Null } catch {}
-                }
-
-                $watchdogCmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $watchdogPath + '" -InstallRoot "' + $installRoot + '"'
-                & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaVPSAgentWatchdog" /TR $watchdogCmd | Out-Null
-                if($LASTEXITCODE -ne 0) { throw "Failed to register stable watchdog task." }
-
-                # Restart the primary only after this request has had time to
-                # upload its receipt. The one-shot task loads the newly copied
-                # agent source without killing the current parent mid-upload.
-                $restartTask = "KatarinaPrimaryDeferredRestart"
-                $restartScript = Join-Path $installRoot "KatarinaPrimaryDeferredRestart.ps1"
-                @'
-$ErrorActionPreference="Continue"
-try { & schtasks.exe /End /TN "KatarinaVPSAgent" | Out-Null } catch {}
-Start-Sleep -Seconds 2
-try { & schtasks.exe /Run /TN "KatarinaVPSAgent" | Out-Null } catch {}
-Start-Sleep -Seconds 2
-try { & schtasks.exe /Delete /F /TN "KatarinaPrimaryDeferredRestart" | Out-Null } catch {}
-'@ | Set-Content -LiteralPath $restartScript -Encoding ASCII
-
-                $runAt = (Get-Date).AddMinutes(1).ToString("HH:mm")
-                $restartCmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $restartScript + '"'
-                & schtasks.exe /Create /F /SC ONCE /ST $runAt /RU SYSTEM /RL HIGHEST /TN $restartTask /TR $restartCmd | Out-Null
-                if($LASTEXITCODE -ne 0) { throw "Failed to schedule deferred primary restart." }
-
-                $proof = [ordered]@{
-                    schema_version = 1
-                    proof_type = "KATARINA_STABLE_CONTROL_UPDATE_DIRECT"
-                    resource_profile = "LEGACY_LOW_MEMORY_SEQUENTIAL"
-                    installed_agent_sha256 = (Get-FileHash -LiteralPath $agentPath -Algorithm SHA256).Hash.ToLowerInvariant()
-                    installed_watchdog_sha256 = (Get-FileHash -LiteralPath $watchdogPath -Algorithm SHA256).Hash.ToLowerInvariant()
-                    secondary_lanes_disabled = $true
-                    heavy_execution_serialized = $true
-                    deferred_restart_task = $restartTask
-                    deferred_restart_time_local = $runAt
-                    updated_utc = [DateTime]::UtcNow.ToString("o")
-                    result = "PASS"
-                }
-                Write-JsonFile (Join-Path $OutputDir "stable_control_update.json") $proof
-                "KATARINA STABLE CONTROL UPDATE PASS" | Set-Content $stdoutPath -Encoding UTF8
-                "" | Set-Content $stderrPath -Encoding UTF8
-                $details["mode"] = $mode
-                $details["resource_profile"] = "LEGACY_LOW_MEMORY_SEQUENTIAL"
-                $details["deferred_restart"] = $true
+                $details["recovery_lane_enabled"] = $recoveryEnabled
+                $details["worker01_enabled"] = $worker01Enabled
                 $details["result"] = "PASS"
                 break
             }
