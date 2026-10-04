@@ -132,14 +132,37 @@ function Publish-AgentHealth {
     )
 
     try {
+        $now=[DateTime]::UtcNow
+        $shouldPublish=$true
+        if($healthStatePath -and (Test-Path -LiteralPath $healthStatePath -PathType Leaf)) {
+            try {
+                $previous=Get-Content -LiteralPath $healthStatePath -Raw | ConvertFrom-Json
+                $last=[DateTime]::Parse(
+                    [string]$previous.last_published_utc,
+                    [Globalization.CultureInfo]::InvariantCulture,
+                    [Globalization.DateTimeStyles]::AssumeUniversal
+                ).ToUniversalTime()
+                if(
+                    [string]$previous.state -eq $State -and
+                    [int]$previous.process_id -eq $PID -and
+                    (($now-$last).TotalSeconds -lt 60)
+                ) {
+                    $shouldPublish=$false
+                }
+            } catch {}
+        }
+        if(-not $shouldPublish){ return }
+
         $payload = [ordered]@{
             schema_version = 1
             agent_version = $AgentVersion
             agent_id = $agentId
+            lane = $lane
+            process_id = $PID
             computer_name = $env:COMPUTERNAME
             state = $State
             error = (Redact-ResultText $ErrorText)
-            updated_utc = [DateTime]::UtcNow.ToString("o")
+            updated_utc = $now.ToString("o")
         } | ConvertTo-Json -Depth 8
 
         Put-GitHubTextFile `
@@ -149,11 +172,18 @@ function Publish-AgentHealth {
             -Message "vps-agent-health: $agentId $State" `
             -Text $payload `
             -Headers $headers
+
+        if($healthStatePath) {
+            Write-JsonFile $healthStatePath ([ordered]@{
+                state=$State
+                process_id=$PID
+                last_published_utc=$now.ToString("o")
+            })
+        }
     } catch {
         # Telemetry must never stop the polling loop.
     }
 }
-
 function Download-RepoSnapshot {
     param(
         [string]$Repo,
@@ -204,7 +234,7 @@ function Redact-ResultText {
 function Get-ShortWorkKey {
     param([string]$RequestId)
 
-    $sha = [Security.Cryptography.SHA256]::Create()
+    $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
         $bytes = [Text.Encoding]::UTF8.GetBytes($RequestId)
         $hash = $sha.ComputeHash($bytes)
@@ -364,6 +394,7 @@ $handledPath = Join-Path $stateRoot "handled.txt"
 $workRoot = Join-Path $stateRoot "work"
 $startupStatePath = Join-Path $stateRoot "startup_state.json"
 $heartbeatPath = Join-Path $stateRoot "heartbeat.json"
+$healthStatePath = Join-Path $stateRoot "health_publish_state.json"
 
 $capabilities = @("MUTATING","READONLY","RECOVERY")
 if($null -ne $config.PSObject.Properties["capabilities"] -and $config.capabilities) {
@@ -611,7 +642,7 @@ while ($true) {
 
                         $fileText=Redact-ResultText (Get-Content -Path $file.FullName -Raw)
                         $bytes=[Text.Encoding]::UTF8.GetBytes($fileText)
-                        $sha=[Security.Cryptography.SHA256]::Create()
+                        $sha=[System.Security.Cryptography.SHA256]::Create()
                         try {
                             $hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace("-","").ToLowerInvariant()
                         } finally { $sha.Dispose() }
@@ -660,7 +691,13 @@ while ($true) {
                     time_utc = [DateTime]::UtcNow.ToString("o")
                     error = (Redact-ResultText $_.Exception.Message)
                 }
-                Write-JsonFile (Join-Path $installRoot "last_error.json") $errorRecord
+                Write-JsonFile (Join-Path $stateRoot "last_error.json") $errorRecord
+
+                $permanentRequestError = ([string]$errorRecord.error) -match '(?i)(expired|missing required|unsafe request|unsupported request|task is not allowlisted|execution_class|does not allow|rejected unsafe|rejected unsupported)'
+                if($permanentRequestError -and -not (Test-HandledRequest -Path $handledPath -RequestId $requestId)) {
+                    Add-Content -Path $handledPath -Value $requestId
+                }
+
                 Publish-AgentHealth -State "ERROR" -ErrorText ([string]$errorRecord.error)
                 continue
             }
@@ -677,7 +714,7 @@ while ($true) {
             queue_path = $requestsDir
             request_uri = $listUri
         }
-        Write-JsonFile (Join-Path $installRoot "last_error.json") $errorRecord
+        Write-JsonFile (Join-Path $stateRoot "last_error.json") $errorRecord
         Publish-AgentHealth -State "ERROR" -ErrorText ([string]$errorRecord.error)
     }
 
