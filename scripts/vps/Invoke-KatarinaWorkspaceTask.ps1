@@ -209,10 +209,9 @@ switch($mode) {
             schema_version=2
             repository=$repoName
             branch=$branchName
-            poll_seconds=5
-            requests_dir="ops/vps/requests/legacy"
             results_dir="ops/vps/results"
             token_path=$tokenPath
+            compact_results=$true
             installed_utc=[DateTime]::UtcNow.ToString("o")
         }
 
@@ -222,6 +221,8 @@ switch($mode) {
         $primary.lane="primary"
         $primary.state_root=Join-Path $installRoot "lanes\primary"
         $primary.capabilities=@("MUTATING","READONLY","RECOVERY")
+        $primary.poll_seconds=5
+        $primary.requests_dir="ops/vps/requests/primary"
         Write-Json $primaryConfigPath $primary
 
         $recovery=[ordered]@{}
@@ -230,6 +231,8 @@ switch($mode) {
         $recovery.lane="recovery"
         $recovery.state_root=Join-Path $installRoot "lanes\recovery"
         $recovery.capabilities=@("RECOVERY","READONLY")
+        $recovery.poll_seconds=5
+        $recovery.requests_dir="ops/vps/requests/recovery"
         $recoveryConfigPath=Join-Path $installRoot "agent-recovery.json"
         Write-Json $recoveryConfigPath $recovery
 
@@ -239,6 +242,8 @@ switch($mode) {
         $worker01.lane="worker01"
         $worker01.state_root=Join-Path $installRoot "lanes\worker01"
         $worker01.capabilities=@("READONLY")
+        $worker01.poll_seconds=10
+        $worker01.requests_dir="ops/vps/requests/worker01"
         $worker01ConfigPath=Join-Path $installRoot "agent-worker01.json"
         Write-Json $worker01ConfigPath $worker01
 
@@ -248,6 +253,8 @@ switch($mode) {
         $worker02.lane="worker02"
         $worker02.state_root=Join-Path $installRoot "lanes\worker02"
         $worker02.capabilities=@("READONLY")
+        $worker02.poll_seconds=10
+        $worker02.requests_dir="ops/vps/requests/worker02"
         $worker02ConfigPath=Join-Path $installRoot "agent-worker02.json"
         Write-Json $worker02ConfigPath $worker02
 
@@ -305,7 +312,9 @@ switch($mode) {
             proof_type="KATARINA_CONTROL_PLANE_V2_INSTALL"
             primary_agent_id=$primaryAgentId
             lanes=@("primary","recovery","worker01","worker02")
-            polling_seconds=5
+            polling_seconds=[ordered]@{primary=5;recovery=5;worker01=10;worker02=10}
+            queue_isolation=$true
+            compact_results=$true
             supervisor_check_seconds=5
             supervisor_stale_seconds=35
             fallback_watchdog_minutes=1
@@ -350,12 +359,12 @@ switch($mode) {
             if(Test-Path -LiteralPath $hbPath -PathType Leaf) {
                 try{
                     $candidate=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
-                    if([string]$candidate.agent_version -eq "1.3.0"){$hb=$candidate;break}
+                    if([string]$candidate.agent_version -match '^1\.3\.'){$hb=$candidate;break}
                 }catch{}
             }
             Start-Sleep -Seconds 2
         }
-        if($null -eq $hb){throw "Primary lane did not return with agent v1.3.0 within 25 seconds."}
+        if($null -eq $hb){throw "Primary lane did not return with Control Plane v2 agent within 25 seconds."}
 
         Write-Json (Join-Path $OutputDir "control_primary_restart.json") ([ordered]@{
             schema_version=1
