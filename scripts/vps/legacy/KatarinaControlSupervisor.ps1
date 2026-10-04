@@ -7,7 +7,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-$SupervisorMutex = New-Object Threading.Mutex($false,"Global\KatarinaControlSupervisor")
+$SupervisorMutex = New-Object System.Threading.Mutex($false,"Global\KatarinaControlSupervisor")
 $SupervisorAcquired = $false
 try { $SupervisorAcquired = $SupervisorMutex.WaitOne(0,$false) } catch { $SupervisorAcquired = $false }
 if(-not $SupervisorAcquired) { exit 0 }
