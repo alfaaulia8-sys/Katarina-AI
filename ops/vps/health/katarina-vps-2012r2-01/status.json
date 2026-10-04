@@ -1,11 +1,11 @@
 {
     "schema_version":  1,
-    "agent_version":  "1.4.1",
+    "agent_version":  "1.4.2",
     "agent_id":  "katarina-vps-2012r2-01",
     "lane":  "primary",
-    "process_id":  3336,
+    "process_id":  2724,
     "computer_name":  "WIN-4TTT19K3CL8",
     "state":  "ONLINE",
     "error":  "",
-    "updated_utc":  "2026-10-04T11:47:22.1557578Z"
+    "updated_utc":  "2026-10-04T11:53:08.6557479Z"
 }
