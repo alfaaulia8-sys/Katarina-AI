@@ -1,0 +1,12 @@
+Workspace tests failed.
+At C:\KatarinaVPSAgent\work\wstest1\src\alfaaulia-katarina-Katarina-AI-d97ebc59
+793b5e0578c60bc579aa1530f66da08b\scripts\vps\Invoke-KatarinaWorkspaceTask.ps1:2
+16 char:33
++         if($p.ExitCode -ne 0) { throw "Workspace tests failed." }
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Workspace tests failed.:Strin 
+   g) [], RuntimeException
+    + FullyQualifiedErrorId : Workspace tests failed.
+ 
+
+Workspace child task produced no status evidence.
