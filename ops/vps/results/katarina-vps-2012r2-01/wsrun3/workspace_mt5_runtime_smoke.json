@@ -1,0 +1,51 @@
+{
+    "schema_version":  1,
+    "stage":  "07",
+    "proof_type":  "VPS_WORKSPACE_MT5_RUNTIME_SMOKE",
+    "host":  "Microsoft Windows Server 2012 R2 Standard",
+    "terminal_path":  "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+    "terminal_data_path":  "C:\\Users\\Administrator\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075",
+    "profile_root":  "C:\\Users\\Administrator",
+    "symbol_policy":  "TERMINAL_NATIVE_EMPTY_STARTUP_SYMBOL",
+    "allow_live_trading":  false,
+    "allow_dll_import":  false,
+    "tests":  [
+                  {
+                      "test":  "KAT1_CODEC",
+                      "script":  "KatarinaStage07Kat1CodecTest",
+                      "process_exit_code":  557057,
+                      "evidence":  "Katarina_Stage07_kat1_codec_result.txt",
+                      "evidence_sha256":  "17fbc18715db8113a18668a10ac6f04730f037e3932478fd47424379de121d32",
+                      "result":  "PASS"
+                  },
+                  {
+                      "test":  "NATIVE_ACCOUNT",
+                      "script":  "KatarinaStage07NativeAccountRecordTest",
+                      "process_exit_code":  558081,
+                      "evidence":  "Katarina_Stage07_native_account_record_result.txt",
+                      "evidence_sha256":  "3070480d760e64fee278d8ebdea842c2b5b0a6ddb69d1da62561f19acded1c67",
+                      "result":  "PASS"
+                  },
+                  {
+                      "test":  "NATIVE_STATE",
+                      "script":  "KatarinaStage07NativeStateRecordsTest",
+                      "process_exit_code":  558081,
+                      "evidence":  "Katarina_Stage07_native_state_records_result.txt",
+                      "evidence_sha256":  "59c0ed92f9db1bd5fcdd468c0168c7ee13ef886c3954cea1d91cc2376e52f591",
+                      "result":  "PASS"
+                  },
+                  {
+                      "test":  "WIRE_SEQUENCE_RESTART",
+                      "script":  "KatarinaStage07WireSequenceTest",
+                      "phase1_exit_code":  0,
+                      "phase2_exit_code":  0,
+                      "evidence":  "Katarina_Stage07_wire_sequence_result.txt",
+                      "evidence_sha256":  "fcaecf0c70ecdd8d082592b78e6bcd0c52eacf25a3eee4a027ccb95db2f32626",
+                      "observed_last":  2,
+                      "allocated_next":  3,
+                      "result":  "PASS"
+                  }
+              ],
+    "generated_utc":  "2026-10-04T02:58:31.8558935Z",
+    "result":  "PASS"
+}
