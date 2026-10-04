@@ -8,7 +8,7 @@
 #include <Katarina/Stage07/WireSequence.mqh>
 
 input string InpEndpoint="tcp://127.0.0.1:5571";
-input int InpTimeoutMs=10000;
+input int InpTimeoutMs=30000;
 
 #define KAT_RECONNECT_MARKER "Katarina_Stage07_reconnect_phase.txt"
 #define KAT_RECONNECT_RESULT "Katarina_Stage07_reconnect_result.txt"
@@ -144,7 +144,8 @@ bool RunCycle(CKatZmqDealerByteTransport &transport,
                           error) ||
       !SendWithDeadline(transport,heartbeat,InpTimeoutMs))
      {
-      error="initial heartbeat send failed";
+      error="initial heartbeat send failed; zmq="+Zmq::errorMessage()+
+            "; send_failures="+IntegerToString((long)transport.SendFailures());
       return(false);
      }
    last_mt5_sequence=seq;
