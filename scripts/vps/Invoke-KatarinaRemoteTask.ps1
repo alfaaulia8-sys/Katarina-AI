@@ -422,6 +422,40 @@ try {
                 $details["workspace_root"] = "C:\KatarinaDev"
                 break
             }
+            if ($mode -eq "WORKSPACE_APPLY") {
+                $workspaceRoot = "C:\KatarinaDev\workspace"
+                $evidenceRoot = "C:\KatarinaDev\evidence"
+                if (!(Test-Path $workspaceRoot)) { throw "Katarina workspace is not initialized." }
+                if ($null -eq $request.args.PSObject.Properties["changeset"]) { throw "changeset is required." }
+
+                $changesetJson = $request.args.changeset | ConvertTo-Json -Depth 16
+                if ([Text.Encoding]::UTF8.GetByteCount($changesetJson) -gt 262144) {
+                    throw "Changeset exceeds 256 KiB command-bus limit."
+                }
+                $changesetFile = Join-Path $OutputDir "workspace_changeset.json"
+                $changesetJson | Set-Content $changesetFile -Encoding UTF8
+
+                $apply = Join-Path $RepoRoot "scripts\vps\Apply-KatarinaWorkspaceChangeset.ps1"
+                if (!(Test-Path $apply)) { throw "Workspace changeset engine missing." }
+
+                $applyOut = Join-Path $OutputDir "workspace_apply_stdout.txt"
+                $applyErr = Join-Path $OutputDir "workspace_apply_stderr.txt"
+                $resultCode = Invoke-Captured -FilePath "powershell.exe" -ArgumentList @(
+                    "-NoProfile","-ExecutionPolicy","Bypass","-File",$apply,
+                    "-ChangesetPath",$changesetFile,
+                    "-WorkspaceRoot",$workspaceRoot,
+                    "-EvidenceRoot",$evidenceRoot
+                ) -StdoutPath $applyOut -StderrPath $applyErr -WorkingDirectory $RepoRoot
+                if ($resultCode -ne 0) { throw "Workspace changeset application failed." }
+
+                $details["mode"] = "WORKSPACE_APPLY"
+                $details["changeset_id"] = [string]$request.args.changeset.changeset_id
+                $details["operation_count"] = @($request.args.changeset.operations).Count
+                "KATARINA WORKSPACE APPLY PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                break
+            }
+
             if ($mode -eq "WORKSPACE_INIT" -or $mode -eq "WORKSPACE_STATUS") {
                 $workspaceRoot = "C:\KatarinaDev"
                 $workspace = Join-Path $workspaceRoot "workspace"
