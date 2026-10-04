@@ -1,0 +1,51 @@
+{
+    "schema_version":  1,
+    "proof_type":  "KATARINA_CONTROL_PLANE_V2_INSTALL",
+    "primary_agent_id":  "katarina-vps-2012r2-01",
+    "lanes":  [
+                  "primary",
+                  "recovery",
+                  "worker01",
+                  "worker02"
+              ],
+    "polling_seconds":  {
+                            "primary":  5,
+                            "recovery":  5,
+                            "worker01":  10,
+                            "worker02":  10
+                        },
+    "queue_isolation":  true,
+    "compact_results":  true,
+    "supervisor_check_seconds":  5,
+    "supervisor_stale_seconds":  35,
+    "fallback_watchdog_minutes":  1,
+    "primary_restart_pending":  true,
+    "lane_checks":  [
+                        {
+                            "lane":  "recovery",
+                            "heartbeat_path":  "C:\\KatarinaVPSAgent\\lanes\\recovery\\heartbeat.json",
+                            "heartbeat_present":  false,
+                            "phase":  null,
+                            "agent_version":  null,
+                            "updated_utc":  null
+                        },
+                        {
+                            "lane":  "worker01",
+                            "heartbeat_path":  "C:\\KatarinaVPSAgent\\lanes\\worker01\\heartbeat.json",
+                            "heartbeat_present":  true,
+                            "phase":  "SLEEP",
+                            "agent_version":  "1.3.1",
+                            "updated_utc":  "2026-10-04T07:24:47.7651247Z"
+                        },
+                        {
+                            "lane":  "worker02",
+                            "heartbeat_path":  "C:\\KatarinaVPSAgent\\lanes\\worker02\\heartbeat.json",
+                            "heartbeat_present":  true,
+                            "phase":  "SLEEP",
+                            "agent_version":  "1.3.1",
+                            "updated_utc":  "2026-10-04T07:24:47.7651247Z"
+                        }
+                    ],
+    "installed_utc":  "2026-10-04T07:24:48.5932496Z",
+    "result":  "FAIL"
+}
