@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.2.3"
+$AgentVersion = "1.2.4"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -420,8 +420,23 @@ while ($true) {
 
                 $exitCode = 0
                 try {
-                    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runner -RequestFile $localRequest -OutputDir $outputDir -AgentId $agentId -RepoRoot $repoRoot
-                    $exitCode = $LASTEXITCODE
+                    # Never let one child task freeze the persistent command bus.
+                    $runnerArgs = @(
+                        "-NoProfile",
+                        "-ExecutionPolicy","Bypass",
+                        "-File",$runner,
+                        "-RequestFile",$localRequest,
+                        "-OutputDir",$outputDir,
+                        "-AgentId",$agentId,
+                        "-RepoRoot",$repoRoot
+                    )
+                    $child = Start-Process -FilePath "powershell.exe" -ArgumentList $runnerArgs -PassThru -WindowStyle Hidden
+                    $timeoutMs = 180000
+                    if (-not $child.WaitForExit($timeoutMs)) {
+                        try { $child.Kill() } catch {}
+                        throw "Remote task runner exceeded 180-second hard timeout and was terminated."
+                    }
+                    $exitCode = [int]$child.ExitCode
                 } catch {
                     $exitCode = 1
                     (Redact-ResultText $_.Exception.Message) | Set-Content -Path (Join-Path $outputDir "agent_error.txt") -Encoding UTF8
