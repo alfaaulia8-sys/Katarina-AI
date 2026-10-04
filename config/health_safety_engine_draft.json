@@ -1,7 +1,7 @@
 {
   "stage": "09",
-  "version": "0.1.0",
-  "status": "STAGE_09_IMPLEMENTATION_ACTIVE",
+  "version": "1.0.0",
+  "status": "STAGE_09_FINALIZED_FROZEN",
   "frozen_inputs": {
     "protocol": "KAT1 v1.0.0",
     "core": "Stage 05 Core v1.0.0",
@@ -73,5 +73,18 @@
     "readiness_integration": true,
     "property_tests": true,
     "final_audit": true
+  },
+  "freeze": {
+    "version": "1.0.0",
+    "date": "2026-10-04",
+    "final_clearance_run_id": 37211508723,
+    "final_clearance_head_sha": "5fed0dec3caaf689e149e0b34e25fa749e773caa",
+    "artifact": "stage09-final-clearance-evidence",
+    "artifact_id": 11306568221,
+    "artifact_digest": "sha256:b008f10ae53fedb2fc018e384437ef7eea7fac6c85ebe27ad7ee20dfa0fbd690",
+    "tests_passed": 20,
+    "ready_for_stage10": true,
+    "live_risk_ready": false,
+    "result": "PASS_STAGE09_FINAL_CLEARANCE"
   }
 }

@@ -10,8 +10,8 @@
 | 06 | MT5 Bridge EA | ✅ FINALIZED / FROZEN v1.0.0 — Bridge design v0.5.0 |
 | 07 | MT5-Python Communication | ✅ FINALIZED / FROZEN v1.0.0 |
 | 08 | Data Validation Engine | ✅ FINALIZED / FROZEN v1.0.0 — `PASS_STAGE08_FINAL_CLEARANCE` |
-| 09 | Health & Safety Engine | 🟡 IMPLEMENTATION ACTIVE — fail-closed health baseline |
-| 10 | Database & Memory V1 | ⬜ |
+| 09 | Health & Safety Engine | ✅ FINALIZED / FROZEN v1.0.0 — `PASS_STAGE09_FINAL_CLEARANCE` |
+| 10 | Database & Memory V1 | 🟡 IMPLEMENTATION ACTIVE — persistence baseline |
 | 11 | Market Intelligence Engine | ⬜ |
 | 12 | Multi-Timeframe Engine | ⬜ |
 | 13 | Market Regime Engine | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 08 is FINALIZED / FROZEN v1.0.0 with `PASS_STAGE08_FINAL_CLEARANCE`. Stage 09 — Health & Safety Engine is now active.**
+**Stage 09 is FINALIZED / FROZEN v1.0.0 with `PASS_STAGE09_FINAL_CLEARANCE`. Stage 10 — Database & Memory V1 is now active.**
 
 ## Frozen Stage 04 Scope
 
@@ -244,3 +244,36 @@ Freeze-qualified proof:
 - `live_risk_ready=false`
 
 Any change to Stage-08 validation authority or frozen semantics requires governed review.
+
+
+## Frozen Stage 09 Scope
+
+Stage 09 Health & Safety Engine is **FINALIZED / FROZEN v1.0.0**.
+
+Frozen guarantees:
+
+- health states are UNKNOWN / OK / DEGRADED / BLOCKED;
+- dimensions are data, transport, execution, reconciliation, journal, clock and snapshot;
+- authoritative KAT1 HEALTH_EVENT drives dimension state;
+- HEARTBEAT, SESSION_STATE and TRANSPORT_METRICS may only worsen safety state;
+- stale heartbeat/health events fail closed;
+- frozen critical queue capacity 2048 blocks health readiness;
+- broker-observation freshness, session tick freshness, permission state, ping, RTT and clock skew are governed;
+- decode-error increases temporarily degrade transport health;
+- two consecutive all-OK health events are required before recovery readiness;
+- Stage 09 may set only HEALTH readiness;
+- Stage 09 cannot set RISK/EXECUTION_ARMED, approve risk, size positions, create strategy decisions or submit broker orders.
+
+Freeze-qualified proof:
+
+- GitHub Actions run: `37211508723`
+- evidence head SHA: `5fed0dec3caaf689e149e0b34e25fa749e773caa`
+- 20/20 Stage-09 tests PASS
+- final audit: `PASS_STAGE09_FINAL_CLEARANCE`
+- artifact: `stage09-final-clearance-evidence`
+- artifact ID: `11306568221`
+- artifact digest: `sha256:b008f10ae53fedb2fc018e384437ef7eea7fac6c85ebe27ad7ee20dfa0fbd690`
+- `ready_for_stage10=true`
+- `live_risk_ready=false`
+
+Any change to Stage-09 health authority or frozen fail-closed semantics requires governed review.

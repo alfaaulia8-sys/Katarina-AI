@@ -12,7 +12,8 @@
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
 - Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: FINALIZED / FROZEN v1.0.0; `PASS_STAGE08_FINAL_CLEARANCE`
-- Stage 09 — Health & Safety Engine: IMPLEMENTATION ACTIVE; fail-closed baseline starting
+- Stage 09 — Health & Safety Engine: FINALIZED / FROZEN v1.0.0; `PASS_STAGE09_FINAL_CLEARANCE`
+- Stage 10 — Database & Memory V1: IMPLEMENTATION ACTIVE; persistence baseline starting
 
 ## VPS bridge status
 
@@ -142,16 +143,33 @@ Governed evidence:
 - `live_risk_ready=false`
 - permanent record: `docs/reviews/STAGE_08_FREEZE_RECORD.md`
 
+## Stage 09 final status
+
+Status: **FINALIZED / FROZEN v1.0.0**
+
+Governed evidence:
+
+- GitHub Actions run: `37211508723`
+- evidence head SHA: `5fed0dec3caaf689e149e0b34e25fa749e773caa`
+- 20/20 health/safety tests PASS
+- final audit: `PASS_STAGE09_FINAL_CLEARANCE`
+- artifact: `stage09-final-clearance-evidence`
+- artifact ID: `11306568221`
+- artifact digest: `sha256:b008f10ae53fedb2fc018e384437ef7eea7fac6c85ebe27ad7ee20dfa0fbd690`
+- `ready_for_stage10=true`
+- `live_risk_ready=false`
+- permanent record: `docs/reviews/STAGE_09_FREEZE_RECORD.md`
+
 ## Next recommended action
 
-Proceed with Stage 09 — Health & Safety Engine:
+Proceed with Stage 10 — Database & Memory V1:
 
-1. define health taxonomy and fail-closed state aggregation;
-2. consume KAT1 HEALTH_EVENT / HEARTBEAT / SESSION_STATE / TRANSPORT_METRICS;
-3. implement stale-heartbeat, queue-pressure, clock-health and reconciliation-health gates;
-4. bind only the Core HEALTH readiness signal;
-5. prove health recovery cannot arm execution or bypass Risk Governor;
-6. add randomized/stress regressions and final audit.
+1. define durable event/memory boundaries;
+2. implement append-only durable records with deterministic IDs;
+3. separate operational state from learned/trade experience memory;
+4. add idempotent writes and restart recovery;
+5. add schema/version migrations and integrity checks;
+6. build final evidence-bound audit.
 
 ## Project invariant reminders
 
