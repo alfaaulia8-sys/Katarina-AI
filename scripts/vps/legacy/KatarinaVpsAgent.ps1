@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.3.0"
+$AgentVersion = "1.3.1"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -417,6 +417,10 @@ try {
     if($null -ne $config.PSObject.Properties["results_dir"] -and $config.results_dir) {
         $resultsDir = [string]$config.results_dir
     }
+    $compactResults = $false
+    if($null -ne $config.PSObject.Properties["compact_results"]) {
+        $compactResults = [bool]$config.compact_results
+    }
 
     Write-Host "Katarina VPS Agent $AgentVersion"
     Write-Host "Agent: $agentId"
@@ -585,32 +589,65 @@ while ($true) {
                 }
 
                 $allowedExtensions = @(".json",".txt",".log",".csv",".md")
-                foreach ($file in Get-ChildItem -Path $outputDir -File -ErrorAction SilentlyContinue) {
-                    if ($allowedExtensions -notcontains $file.Extension.ToLowerInvariant()) {
-                        continue
-                    }
-                    if ($file.Length -gt 1048576) {
-                        continue
-                    }
-
-                    $text = Get-Content -Path $file.FullName -Raw
-                    $text = Redact-ResultText $text
-                    $remotePath = "$resultsDir/$agentId/$requestId/$($file.Name)"
-                    Put-GitHubTextFile -Repo $repo -Path $remotePath -Branch $branch -Message "vps-agent: $agentId $requestId $($file.Name)" -Text $text -Headers $headers
-                }
-
                 $receipt = [ordered]@{
                     schema_version = 1
                     agent_version = $AgentVersion
                     agent_id = $agentId
+                    lane = $lane
                     request_id = $requestId
                     task = [string]$validated.task
+                    execution_class = $executionClass
                     ref = $ref
                     exit_code = $exitCode
                     completed_utc = [DateTime]::UtcNow.ToString("o")
                 }
-                $receiptText = $receipt | ConvertTo-Json -Depth 6
-                Put-GitHubTextFile -Repo $repo -Path "$resultsDir/$agentId/$requestId/agent_receipt.json" -Branch $branch -Message "vps-agent: complete $requestId" -Text $receiptText -Headers $headers
+
+                if($compactResults) {
+                    $bundleFiles=@()
+                    $bundleBytes=0
+                    foreach ($file in @(Get-ChildItem -Path $outputDir -File -ErrorAction SilentlyContinue | Sort-Object Name)) {
+                        if ($allowedExtensions -notcontains $file.Extension.ToLowerInvariant()) { continue }
+                        if ($file.Length -gt 1048576) { continue }
+
+                        $fileText=Redact-ResultText (Get-Content -Path $file.FullName -Raw)
+                        $bytes=[Text.Encoding]::UTF8.GetBytes($fileText)
+                        $sha=[Security.Cryptography.SHA256]::Create()
+                        try {
+                            $hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace("-","").ToLowerInvariant()
+                        } finally { $sha.Dispose() }
+
+                        $includeContent=(($bundleBytes + $bytes.Length) -le 850000)
+                        if($includeContent){$bundleBytes += $bytes.Length}
+                        $bundleFiles += [ordered]@{
+                            name=$file.Name
+                            size_bytes=[int64]$bytes.Length
+                            sha256=$hash
+                            content_included=$includeContent
+                            content=$(if($includeContent){$fileText}else{$null})
+                        }
+                    }
+
+                    $bundle=[ordered]@{
+                        schema_version=1
+                        receipt=$receipt
+                        files=$bundleFiles
+                        bundle_content_bytes=$bundleBytes
+                    } | ConvertTo-Json -Depth 12
+                    Put-GitHubTextFile -Repo $repo -Path "$resultsDir/$agentId/$requestId/bundle.json" -Branch $branch -Message "vps-agent: bundle $agentId $requestId" -Text $bundle -Headers $headers
+                } else {
+                    foreach ($file in Get-ChildItem -Path $outputDir -File -ErrorAction SilentlyContinue) {
+                        if ($allowedExtensions -notcontains $file.Extension.ToLowerInvariant()) { continue }
+                        if ($file.Length -gt 1048576) { continue }
+
+                        $text = Get-Content -Path $file.FullName -Raw
+                        $text = Redact-ResultText $text
+                        $remotePath = "$resultsDir/$agentId/$requestId/$($file.Name)"
+                        Put-GitHubTextFile -Repo $repo -Path $remotePath -Branch $branch -Message "vps-agent: $agentId $requestId $($file.Name)" -Text $text -Headers $headers
+                    }
+
+                    $receiptText = $receipt | ConvertTo-Json -Depth 6
+                    Put-GitHubTextFile -Repo $repo -Path "$resultsDir/$agentId/$requestId/agent_receipt.json" -Branch $branch -Message "vps-agent: complete $requestId" -Text $receiptText -Headers $headers
+                }
 
                 Add-Content -Path $handledPath -Value $requestId
                 Write-LocalHeartbeat -Phase "REQUEST_COMPLETE" -RequestId $requestId
