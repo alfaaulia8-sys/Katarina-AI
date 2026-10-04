@@ -81,24 +81,40 @@ def process_windows(pid: int, backend: str = "win32") -> list[Any]:
 def wait_for_main_window(pid: int, timeout: float = 45.0):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
+        # MetaTrader may relaunch itself after bootstrap/update, so the visible
+        # terminal can legitimately have a different PID from subprocess.Popen.
         candidates = process_windows(pid, "win32")
-        for window in candidates:
+        try:
+            global_windows = [
+                window
+                for window in Desktop(backend="win32").windows()
+                if window.is_visible()
+            ]
+        except Exception:
+            global_windows = []
+
+        seen: set[int] = set()
+        ordered = []
+        for window in candidates + global_windows:
+            try:
+                handle = int(window.handle)
+            except Exception:
+                handle = id(window)
+            if handle in seen:
+                continue
+            seen.add(handle)
+            ordered.append(window)
+
+        for window in ordered:
             try:
                 title = window.window_text()
-                if "MetaTrader 5" in title:
-                    return window
-            except Exception:
-                pass
-        # Some MT5 builds omit the product name from the account/chart title.
-        for window in candidates:
-            try:
                 cls = window.class_name()
-                if "MetaQuotes" in cls or "MetaTrader" in cls:
+                if "MetaTrader 5" in title or "MetaTrader" in cls or "MetaQuotes" in cls:
                     return window
             except Exception:
                 pass
         time.sleep(0.25)
-    raise RuntimeError("MetaTrader 5 main window was not found for launched process")
+    raise RuntimeError("MetaTrader 5 main window was not found after launcher handoff")
 
 
 def dismiss_first_run_dialogs(pid: int) -> list[str]:
@@ -504,13 +520,19 @@ def main() -> int:
         )
         evidence["terminal_pid"] = process.pid
         main_window = wait_for_main_window(process.pid)
+        terminal_pid = int(main_window.process_id())
+        evidence["launcher_pid"] = process.pid
+        evidence["terminal_pid"] = terminal_pid
+        evidence["pid_handoff"] = terminal_pid != process.pid
         evidence["main_window_title"] = main_window.window_text()
         evidence["main_window_class"] = main_window.class_name()
         evidence["windows_before"] = window_snapshot()
-        evidence["dismissed_first_run_dialogs"] = dismiss_first_run_dialogs(process.pid)
+        evidence["dismissed_first_run_dialogs"] = dismiss_first_run_dialogs(terminal_pid)
 
-        main_window = wait_for_main_window(process.pid, timeout=10.0)
-        dialog, method = open_options(main_window, process.pid)
+        main_window = wait_for_main_window(terminal_pid, timeout=10.0)
+        terminal_pid = int(main_window.process_id())
+        evidence["terminal_pid_after_dialog_dismiss"] = terminal_pid
+        dialog, method = open_options(main_window, terminal_pid)
         evidence["open_method"] = method
         evidence["expert_page_method"] = choose_expert_advisors(dialog)
 
@@ -553,15 +575,14 @@ def main() -> int:
         press_ok(dialog)
         time.sleep(1.0)
 
-        main_window = wait_for_main_window(process.pid, timeout=10.0)
+        main_window = wait_for_main_window(terminal_pid, timeout=10.0)
         main_window.set_focus()
         keyboard.send_keys("%{F4}")
         deadline = time.monotonic() + 12.0
-        while process.poll() is None and time.monotonic() < deadline:
+        while time.monotonic() < deadline:
+            if not process_windows(terminal_pid, "win32"):
+                break
             time.sleep(0.2)
-        if process.poll() is None:
-            process.terminate()
-            process.wait(timeout=5)
 
         experts_ini = args.terminal.parent / "config" / "experts.ini"
         evidence["experts_ini_exists"] = experts_ini.is_file()
