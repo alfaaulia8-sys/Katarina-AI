@@ -109,9 +109,9 @@ switch($mode) {
         $downloadDir=Join-Path $Runtime "downloads"
         New-Item -ItemType Directory -Force -Path $downloadDir,$packagesDir | Out-Null
 
-        $pythonUrl="https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip"
-        $pythonMd5="3acb1d7d9bde5a79f840167b166bb633"
-        $pythonZip=Join-Path $downloadDir "python-3.8.10-embed-amd64.zip"
+        $pythonUrl="https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
+        $pythonMd5="fe8ef205f2e9c3ba44d0cf9954e1abd3"
+        $pythonZip=Join-Path $downloadDir "python-3.12.10-embed-amd64.zip"
         Invoke-WebRequest -Uri $pythonUrl -OutFile $pythonZip -UseBasicParsing
         $actualMd5=(Get-FileHash -LiteralPath $pythonZip -Algorithm MD5).Hash.ToLowerInvariant()
         if($actualMd5 -ne $pythonMd5) { throw "Python embeddable checksum mismatch." }
@@ -120,7 +120,7 @@ switch($mode) {
         New-Item -ItemType Directory -Force -Path $pythonDir | Out-Null
         [IO.Compression.ZipFile]::ExtractToDirectory($pythonZip,$pythonDir)
 
-        $pth=Join-Path $pythonDir "python38._pth"
+        $pth=Join-Path $pythonDir "python312._pth"
         if(!(Test-Path -LiteralPath $pth -PathType Leaf)) { throw "Python embedded _pth file missing." }
         @(
             "python38.zip",
@@ -131,9 +131,9 @@ switch($mode) {
             "import site"
         ) | Set-Content -LiteralPath $pth -Encoding ASCII
 
-        $pypi=Invoke-RestMethod -Method Get -Uri "https://pypi.org/pypi/pyzmq/25.0.0/json"
-        $wheelName="pyzmq-25.0.0-cp38-cp38-win_amd64.whl"
-        $expectedWheelSha256="b90bb8dfbbd138558f1f284fecfe328f7653616ff9a972433a00711d9475d1a9"
+        $pypi=Invoke-RestMethod -Method Get -Uri "https://pypi.org/pypi/pyzmq/25.1.1/json"
+        $wheelName="pyzmq-25.1.1-cp312-cp312-win_amd64.whl"
+        $expectedWheelSha256="eadbefd5e92ef8a345f0525b5cfd01cf4e4cc651a2cffb8f23c0dd184975d787"
         $wheelRecord=@($pypi.urls | Where-Object { $_.filename -eq $wheelName }) | Select-Object -First 1
         if($null -eq $wheelRecord) { throw "Pinned pyzmq wheel is missing from PyPI metadata." }
         if(([string]$wheelRecord.digests.sha256).ToLowerInvariant() -ne $expectedWheelSha256) {
@@ -175,10 +175,10 @@ switch($mode) {
 
         Write-Json (Join-Path $Metadata "runtime.json") ([ordered]@{
             schema_version=1
-            python_version="3.8.10"
+            python_version="3.12.10"
             python_source=$pythonUrl
             python_md5=$actualMd5
-            pyzmq_version="25.0.0"
+            pyzmq_version="25.1.1"
             pyzmq_sha256=$actualWheelSha256
             installed_utc=[DateTime]::UtcNow.ToString("o")
             result="PASS"
