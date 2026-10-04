@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "request_id": "wsrun1",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "created_utc": "2026-10-04T02:50:13.521Z",
+  "expires_utc": "2026-10-04T03:20:13.521Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_MT5_RUNTIME_SMOKE",
+    "terminal_path": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+    "terminal_data_path": "C:\\Users\\Administrator\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075"
+  }
+}
