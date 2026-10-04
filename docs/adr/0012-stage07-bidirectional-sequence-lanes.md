@@ -1,6 +1,6 @@
 # ADR-0012 — Stage-07 Bidirectional KAT1 Sequence Lanes
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Stage:** 07  
 **Wire change:** none
 
@@ -94,11 +94,28 @@ fresh HEARTBEAT
 Sequence continuity is transport/protocol integrity only. It never grants live-risk
 readiness.
 
-## Gate
+## Acceptance evidence
 
-Promote this ADR after:
+Accepted after all three sequence-lane gates passed:
 
-1. Python lane validation tests pass;
-2. MT5 persistent sequence allocator compiles and survives simulated reboot;
-3. cross-language reconnect test proves both lane counters continue without
-   duplicates or gaps.
+- Python duplicate/decreasing/gap/floor validation: PASS;
+- MT5 persistent directional allocator survives a fresh terminal process: PASS;
+- cross-process MT5 ↔ Python reconnect and full recovery: PASS.
+
+Cross-process evidence:
+
+- workflow run: `37166695631`;
+- head SHA: `ced99e3d13924e368b05a171d24dffe490ef1fa0`;
+- artifact: `stage07-cross-process-reconnect-evidence`;
+- artifact digest: `sha256:a6a340a756d802200f63d33231be6d8d94511e4d637641a87bca24705461f286`;
+- stable stream_id across reconnect: PASS;
+- boot_id changed: PASS;
+- MT5 lane: `1..7 → 8..14`;
+- Python lane: `1..4 → 5..8`;
+- duplicate/gap: none;
+- stale gate + re-handshake + repeated snapshot/reconciliation: PASS;
+- final communication state: READY;
+- live-risk readiness: false.
+
+This acceptance resolves directional sequence ownership only; it does not by itself
+freeze Stage 07.
