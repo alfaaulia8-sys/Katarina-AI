@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "request_id": "011-vpsfirst-bootstrap",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "execution_class": "MUTATING",
+  "created_utc": "2026-10-04T15:17:00Z",
+  "expires_utc": "2026-10-04T19:17:00Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_STAGE07_CLOSEOUT_DIRECT",
+    "bootstrap_vps_first": true
+  }
+}
