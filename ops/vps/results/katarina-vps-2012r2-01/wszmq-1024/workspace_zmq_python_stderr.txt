@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\KatarinaVPSAgent\work\wszmq-1024\output\workspace_zmq_router.py", line 4, in <module>
+    import zmq
+ModuleNotFoundError: No module named 'zmq'
