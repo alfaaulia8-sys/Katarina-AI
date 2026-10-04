@@ -1,0 +1,23 @@
+{
+    "schema_version":  1,
+    "proof_type":  "KATARINA_CONTROL_AGENT_DEDUP",
+    "before":  [
+                   {
+                       "process_id":  2212,
+                       "creation_date":  "20261004123414.119113+420",
+                       "command_line":  "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\\KatarinaVPSAgent\\KatarinaVpsAgent.ps1 -ConfigPath C:\\KatarinaVPSAgent\\agent.json"
+                   }
+               ],
+    "kept_process_id":  2212,
+    "terminated_process_ids":  [
+
+                               ],
+    "after":  [
+                  {
+                      "process_id":  2212,
+                      "creation_date":  "20261004123414.119113+420"
+                  }
+              ],
+    "generated_utc":  "2026-10-04T07:24:02.3432490Z",
+    "result":  "PASS"
+}
