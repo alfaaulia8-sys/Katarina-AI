@@ -185,6 +185,93 @@ switch($mode) {
         })
     }
 
+    "WORKSPACE_MT5_COMPILE" {
+        if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
+
+        $terminalDataPath=[string]$request.args.terminal_data_path
+        $metaEditorPath=[string]$request.args.metaeditor_path
+        if([string]::IsNullOrWhiteSpace($terminalDataPath) -or !(Test-Path -LiteralPath $terminalDataPath -PathType Container)) {
+            throw "terminal_data_path is required for WORKSPACE_MT5_COMPILE."
+        }
+        if([string]::IsNullOrWhiteSpace($metaEditorPath) -or !(Test-Path -LiteralPath $metaEditorPath -PathType Leaf)) {
+            throw "metaeditor_path is required for WORKSPACE_MT5_COMPILE."
+        }
+
+        $includeSource=Join-Path $Workspace "mt5\Include\Katarina"
+        $includeDest=Join-Path $terminalDataPath "MQL5\Include\Katarina"
+        $expertsSource=Join-Path $Workspace "mt5\Experts"
+        $testsSource=Join-Path $Workspace "mt5\Tests"
+        $expertsDest=Join-Path $terminalDataPath "MQL5\Experts"
+        $scriptsDest=Join-Path $terminalDataPath "MQL5\Scripts"
+        $mqlRoot=Join-Path $terminalDataPath "MQL5"
+
+        if(!(Test-Path -LiteralPath $includeSource -PathType Container)) { throw "Workspace Katarina include tree missing." }
+        New-Item -ItemType Directory -Force -Path $includeDest,$expertsDest,$scriptsDest | Out-Null
+        Copy-Item -Path (Join-Path $includeSource "*") -Destination $includeDest -Recurse -Force
+
+        $targets=@()
+        $stage07Ea=Join-Path $expertsSource "KatarinaBridgeStage07EA.mq5"
+        if(!(Test-Path -LiteralPath $stage07Ea -PathType Leaf)) { throw "Stage-07 bridge EA source missing." }
+        $eaDest=Join-Path $expertsDest "KatarinaBridgeStage07EA.mq5"
+        Copy-Item -LiteralPath $stage07Ea -Destination $eaDest -Force
+        $targets += [pscustomobject]@{ name="KatarinaBridgeStage07EA"; source=$eaDest; kind="EXPERT" }
+
+        foreach($test in @(Get-ChildItem -LiteralPath $testsSource -Filter "KatarinaStage07*.mq5" -File | Sort-Object Name)) {
+            $dest=Join-Path $scriptsDest $test.Name
+            Copy-Item -LiteralPath $test.FullName -Destination $dest -Force
+            $targets += [pscustomobject]@{ name=$test.BaseName; source=$dest; kind="SCRIPT" }
+        }
+
+        if($targets.Count -lt 2) { throw "Stage-07 compile target discovery is incomplete." }
+
+        $records=@()
+        $failed=$false
+        foreach($target in $targets) {
+            $ex5=[IO.Path]::ChangeExtension([string]$target.source,".ex5")
+            if(Test-Path -LiteralPath $ex5) { Remove-Item -LiteralPath $ex5 -Force }
+            $log=Join-Path $OutputDir ([string]$target.name + ".compile.log")
+            if(Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log -Force }
+
+            $compileArgs=@(
+                "/compile:`"$([string]$target.source)`"",
+                "/inc:`"$mqlRoot`"",
+                "/log:`"$log`""
+            )
+            $proc=Start-Process -FilePath $metaEditorPath -ArgumentList $compileArgs -Wait -PassThru
+            $logText=""
+            if(Test-Path -LiteralPath $log) { $logText=Get-Content -LiteralPath $log -Raw }
+            $pass=(Test-Path -LiteralPath $log -PathType Leaf) -and
+                  (Test-Path -LiteralPath $ex5 -PathType Leaf) -and
+                  ($logText -match "0 errors, 0 warnings")
+            if(!$pass) { $failed=$true }
+
+            $records += [ordered]@{
+                target=[string]$target.name
+                kind=[string]$target.kind
+                process_exit_code=[int]$proc.ExitCode
+                compile_result=$(if($pass){"PASS_0_ERRORS_0_WARNINGS"}else{"FAIL"})
+                ex5_exists=(Test-Path -LiteralPath $ex5 -PathType Leaf)
+                ex5_sha256=$(if(Test-Path -LiteralPath $ex5 -PathType Leaf){(Get-FileHash -LiteralPath $ex5 -Algorithm SHA256).Hash.ToLowerInvariant()}else{$null})
+                log_file=[IO.Path]::GetFileName($log)
+            }
+        }
+
+        $compileEvidence=[ordered]@{
+            schema_version=1
+            stage="07"
+            proof_type="VPS_WORKSPACE_MT5_COMPILE"
+            workspace_root=$Workspace
+            terminal_data_path=$terminalDataPath
+            metaeditor_path=$metaEditorPath
+            target_count=$records.Count
+            targets=$records
+            generated_utc=[DateTime]::UtcNow.ToString("o")
+            result=$(if($failed){"FAIL"}else{"PASS_0_ERRORS_0_WARNINGS"})
+        }
+        Write-Json (Join-Path $OutputDir "workspace_mt5_compile.json") $compileEvidence
+        if($failed) { throw "One or more Stage-07 workspace MT5 targets failed strict compilation." }
+    }
+
     "WORKSPACE_TEST" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
         $python=Resolve-Exe @((Join-Path $Runtime "python\python.exe"),"python.exe","python")
