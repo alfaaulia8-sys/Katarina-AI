@@ -11,7 +11,8 @@
 - Stage 04 — KAT1 Data Protocol / Schemas: FROZEN v1.0.0
 - Stage 05 — Katarina Core / Orchestrator: FROZEN
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
-- Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: IMPLEMENTATION ACTIVE; baseline CI PASS; KAT1 semantic validation expansion active
+- Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: FINALIZED / FROZEN v1.0.0; `PASS_STAGE08_FINAL_CLEARANCE`
+- Stage 09 — Health & Safety Engine: IMPLEMENTATION ACTIVE; fail-closed baseline starting
 
 ## VPS bridge status
 
@@ -124,18 +125,33 @@ Governance:
 - Stage-07 changes now require governed review.
 - Windows Server 2012 R2 remains useful for compatibility/operations, but Windows Server 2022 evidence is the freeze-qualified basis.
 
+## Stage 08 final status
+
+Status: **FINALIZED / FROZEN v1.0.0**
+
+Governed evidence:
+
+- GitHub Actions run: `37211163352`
+- evidence head SHA: `66fb7958416c13ca5bc16b7c38510cd71bdf86b3`
+- 37/37 validation tests PASS
+- final audit: `PASS_STAGE08_FINAL_CLEARANCE`
+- artifact: `stage08-final-clearance-evidence`
+- artifact ID: `11306556690`
+- artifact digest: `sha256:adf3e17aadf7d6ad674e722d0a41781e511aeb5407541e7c7339c9500db25f3d`
+- `ready_for_stage09=true`
+- `live_risk_ready=false`
+- permanent record: `docs/reviews/STAGE_08_FREEZE_RECORD.md`
+
 ## Next recommended action
 
-Proceed with Stage 08 — Data Validation Engine:
+Proceed with Stage 09 — Health & Safety Engine:
 
-1. baseline engine/tests: PASS;
-2. ingest promotion gate: implemented;
-3. SymbolSpec-aware KAT1 market validation: implemented;
-4. history completeness + per-class freshness: implemented;
-5. DATA_FRESH readiness integration without execution authority: implemented;
-6. next: account/position/order semantics, property/regression tests and final audit.
-
-Stage-07 transport is frozen. Behavioral changes require governed review.
+1. define health taxonomy and fail-closed state aggregation;
+2. consume KAT1 HEALTH_EVENT / HEARTBEAT / SESSION_STATE / TRANSPORT_METRICS;
+3. implement stale-heartbeat, queue-pressure, clock-health and reconciliation-health gates;
+4. bind only the Core HEALTH readiness signal;
+5. prove health recovery cannot arm execution or bypass Risk Governor;
+6. add randomized/stress regressions and final audit.
 
 ## Project invariant reminders
 

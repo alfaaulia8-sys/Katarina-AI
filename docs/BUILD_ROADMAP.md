@@ -9,8 +9,8 @@
 | 05 | Katarina Core / Orchestrator | ✅ FINALIZED / FROZEN — Core v1.0.0 |
 | 06 | MT5 Bridge EA | ✅ FINALIZED / FROZEN v1.0.0 — Bridge design v0.5.0 |
 | 07 | MT5-Python Communication | ✅ FINALIZED / FROZEN v1.0.0 |
-| 08 | Data Validation Engine | 🟡 IMPLEMENTATION ACTIVE — KAT1 semantic validation gates |
-| 09 | Health & Safety Engine | ⬜ |
+| 08 | Data Validation Engine | ✅ FINALIZED / FROZEN v1.0.0 — `PASS_STAGE08_FINAL_CLEARANCE` |
+| 09 | Health & Safety Engine | 🟡 IMPLEMENTATION ACTIVE — fail-closed health baseline |
 | 10 | Database & Memory V1 | ⬜ |
 | 11 | Market Intelligence Engine | ⬜ |
 | 12 | Multi-Timeframe Engine | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 08 — Data Validation Engine is IMPLEMENTATION ACTIVE. Canonical KAT1 validation, SymbolSpec binding, history completeness, per-class freshness and DATA_FRESH readiness gates are under test.**
+**Stage 08 is FINALIZED / FROZEN v1.0.0 with `PASS_STAGE08_FINAL_CLEARANCE`. Stage 09 — Health & Safety Engine is now active.**
 
 ## Frozen Stage 04 Scope
 
@@ -211,4 +211,36 @@ Stage 07 is frozen. Any change to its transport topology, KAT1 framing, recovery
 
 ## Next Stage
 
-**Stage 08 — Data Validation Engine is active. Baseline CI passed; semantic validation expansion is in progress.**
+**Stage 08 — Data Validation Engine is FINALIZED / FROZEN v1.0.0. Stage 09 — Health & Safety Engine is active.**
+
+
+## Frozen Stage 08 Scope
+
+Stage 08 Data Validation Engine is **FINALIZED / FROZEN v1.0.0**.
+
+Frozen guarantees:
+
+- decoded data must pass semantic validation before authoritative promotion;
+- dispositions are ACCEPT / QUARANTINE / REJECT;
+- SymbolSpec revision binding is mandatory for market/position/order state;
+- stale or future-clock data fails closed;
+- NaN/Infinity fails closed;
+- bid/ask, tick-grid and OHLC consistency are enforced;
+- history completeness uses count, identity, timeframe, sequence and monotonic open-time checks;
+- account/position/order critical enum and identity semantics are enforced;
+- Stage 08 may set only DATA_FRESH readiness;
+- Stage 08 cannot arm execution, set RISK/HEALTH readiness, size positions, create trade decisions, or submit broker orders.
+
+Freeze-qualified proof:
+
+- GitHub Actions run: `37211163352`
+- evidence head SHA: `66fb7958416c13ca5bc16b7c38510cd71bdf86b3`
+- 37/37 Stage-08 tests PASS
+- final audit: `PASS_STAGE08_FINAL_CLEARANCE`
+- artifact: `stage08-final-clearance-evidence`
+- artifact ID: `11306556690`
+- artifact digest: `sha256:adf3e17aadf7d6ad674e722d0a41781e511aeb5407541e7c7339c9500db25f3d`
+- `ready_for_stage09=true`
+- `live_risk_ready=false`
+
+Any change to Stage-08 validation authority or frozen semantics requires governed review.

@@ -11,7 +11,8 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 05 — Katarina Core / Orchestrator: ✅ FROZEN — v1.0.0
 - Stage 06 — MT5 Bridge EA: ✅ FROZEN v1.0.0 — Bridge design v0.5.0
 - Stage 07 — MT5 ↔ Python Communication: ✅ FROZEN v1.0.0 — `PASS_STAGE07_FINAL_CLEARANCE`
-- Stage 08 — Data Validation Engine: 🟡 IMPLEMENTATION ACTIVE
+- Stage 08 — Data Validation Engine: ✅ FROZEN v1.0.0 — `PASS_STAGE08_FINAL_CLEARANCE`
+- Stage 09 — Health & Safety Engine: 🟡 IMPLEMENTATION ACTIVE
 
 ## KAT1 v1.0.0
 
@@ -219,18 +220,19 @@ Frozen outcomes include ZeroMQ primary transport, native TCP fallback, exact KAT
 
 See `docs/reviews/STAGE_07_FREEZE_RECORD.md`.
 
-## Stage 08 — Data Validation Engine
+## Stage 08 — Data Validation Engine (Frozen v1.0.0)
 
-Stage 08 is active. Its baseline validates decoded ingest and classifies data as `ACCEPT`, `QUARANTINE`, or `REJECT`.
+Stage 08 is finalized under `PASS_STAGE08_FINAL_CLEARANCE`.
 
-It is deliberately non-trading and cannot arm execution, size positions, create trade candidates, or submit broker orders.
+Frozen outcomes include canonical KAT1 semantic validation, SymbolSpec binding, history completeness, per-class freshness, account/position/order validation, ACCEPT/QUARANTINE/REJECT promotion control, and DATA_FRESH-only readiness authority.
 
-Initial files:
+Evidence run: `37211163352` — 37/37 tests PASS. Live risk remained disabled.
 
-- `src/katarina/validation/engine.py`
-- `config/data_validation_engine_draft.json`
-- `docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md`
-- `tests/unit/validation/test_stage08_validation.py`
+See `docs/reviews/STAGE_08_FREEZE_RECORD.md`.
+
+## Stage 09 — Health & Safety Engine
+
+Stage 09 is active. It will aggregate transport, data, execution, reconciliation, journal, clock and snapshot health into fail-closed system health. It may set the Core HEALTH readiness signal but cannot arm execution or replace the Risk Governor.
 
 ## VPS Remote Lab Bridge
 
