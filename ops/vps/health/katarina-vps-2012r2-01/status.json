@@ -3,7 +3,7 @@
     "agent_version":  "1.2.2",
     "agent_id":  "katarina-vps-2012r2-01",
     "computer_name":  "WIN-4TTT19K3CL8",
-    "state":  "ERROR",
-    "error":  "The remote server returned an error: (409) Conflict.",
-    "updated_utc":  "2026-10-04T03:24:48.1908970Z"
+    "state":  "ONLINE",
+    "error":  "",
+    "updated_utc":  "2026-10-04T05:33:00.2398864Z"
 }
