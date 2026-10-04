@@ -111,6 +111,49 @@ switch($mode) {
         break
     }
 
+    "WORKSPACE_AGENT_SELF_HEAL_INSTALL" {
+        $installRoot="C:\KatarinaVPSAgent"
+        $agentTask="KatarinaVPSAgent"
+        $watchdogTask="KatarinaVPSAgentWatchdog"
+        $agentSource=Join-Path $RepoRoot "scripts\vps\legacy\KatarinaVpsAgent.ps1"
+        $watchdogSource=Join-Path $RepoRoot "scripts\vps\legacy\KatarinaVpsAgentWatchdog.ps1"
+        $configPath=Join-Path $installRoot "agent.json"
+        $tokenPath=Join-Path $installRoot "token.bin"
+
+        if(!(Test-Path -LiteralPath $agentSource -PathType Leaf)) { throw "Updated VPS agent source is missing." }
+        if(!(Test-Path -LiteralPath $watchdogSource -PathType Leaf)) { throw "VPS watchdog source is missing." }
+        if(!(Test-Path -LiteralPath $configPath -PathType Leaf)) { throw "Existing VPS agent config is missing." }
+        if(!(Test-Path -LiteralPath $tokenPath -PathType Leaf)) { throw "Existing encrypted VPS token is missing." }
+
+        New-Item -ItemType Directory -Force -Path $installRoot | Out-Null
+        Copy-Item -LiteralPath $agentSource -Destination (Join-Path $installRoot "KatarinaVpsAgent.ps1") -Force
+        Copy-Item -LiteralPath $watchdogSource -Destination (Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1") -Force
+
+        $watchdogCommand='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1") + '" -InstallRoot "' + $installRoot + '"'
+        & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN $watchdogTask /TR $watchdogCommand | Out-Null
+        if($LASTEXITCODE -ne 0) { throw "Failed to register Katarina VPS watchdog scheduled task." }
+
+        & schtasks.exe /Run /TN $watchdogTask | Out-Null
+        if($LASTEXITCODE -ne 0) { throw "Katarina VPS watchdog task was registered but could not start." }
+
+        Write-Json (Join-Path $OutputDir "agent_self_heal_install.json") ([ordered]@{
+            schema_version=1
+            stage="07"
+            proof_type="VPS_AGENT_SELF_HEAL_INSTALL"
+            install_root=$installRoot
+            agent_task=$agentTask
+            watchdog_task=$watchdogTask
+            watchdog_interval_minutes=1
+            heartbeat_stale_seconds=75
+            child_task_hard_timeout_seconds=180
+            restart_cooldown_seconds=120
+            token_reused=$true
+            installed_utc=[DateTime]::UtcNow.ToString("o")
+            result="PASS"
+        })
+        break
+    }
+
     "WORKSPACE_DEPENDENCY_VERIFY" {
         if(!(Test-Path -LiteralPath $Workspace -PathType Container)) { throw "Workspace is not initialized." }
 
