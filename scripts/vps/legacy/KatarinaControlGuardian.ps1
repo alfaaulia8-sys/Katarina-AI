@@ -90,6 +90,7 @@ function Save-Restart([string]$Reason,[bool]$Started) {
 function Test-BusyPhase([string]$Phase) {
     if([string]::IsNullOrWhiteSpace($Phase)){ return $false }
     if($Phase -eq "REQUEST_START" -or
+       $Phase -eq "CONTROL_SPARSE_FETCH" -or
        $Phase -eq "SNAPSHOT_EXTRACT" -or
        $Phase -eq "WAITING_SNAPSHOT_LOCK" -or
        $Phase -eq "WAITING_MUTATION_LOCK" -or
