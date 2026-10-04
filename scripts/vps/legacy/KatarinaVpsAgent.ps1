@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.0"
+$AgentVersion = "1.4.1"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -618,6 +618,8 @@ while ($true) {
                 $exitCode = 0
                 $mutationMutex = $null
                 $mutationAcquired = $false
+                $heavyMutex = $null
+                $heavyAcquired = $false
                 try {
                     if($executionClass -eq "MUTATING") {
                         $mutationMutex = New-Object System.Threading.Mutex($false,"Global\KatarinaWorkspaceMutation")
@@ -631,6 +633,36 @@ while ($true) {
                         }
                         if(-not $mutationAcquired) {
                             throw "Timed out waiting for the global Katarina workspace mutation lock."
+                        }
+                    }
+
+                    # Keep the control plane parallel while serializing memory-heavy child
+                    # execution on the 2 GB legacy VPS. Status/recovery control calls
+                    # remain parallel; compile/runtime/test work shares one global slot.
+                    $lightControlModes = @(
+                        "WORKSPACE_CONTROL_STATUS",
+                        "WORKSPACE_CONTROL_RESTART_PRIMARY",
+                        "WORKSPACE_CONTROL_LITE_INSTALL_DIRECT",
+                        "WORKSPACE_CONTROL_BALANCED_INSTALL_DIRECT"
+                    )
+                    $requiresHeavyLock = $true
+                    if ([string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
+                        $lightControlModes -contains $mode) {
+                        $requiresHeavyLock = $false
+                    }
+
+                    if ($requiresHeavyLock) {
+                        $heavyMutex = New-Object System.Threading.Mutex($false,"Global\KatarinaHeavyExecution")
+                        $heavyWaitMs = 0
+                        while (-not $heavyAcquired -and $heavyWaitMs -lt 300000) {
+                            try { $heavyAcquired = $heavyMutex.WaitOne(1000,$false) } catch { $heavyAcquired = $false }
+                            if (-not $heavyAcquired) {
+                                Write-LocalHeartbeat -Phase "WAITING_HEAVY_LOCK" -RequestId $requestId
+                                $heavyWaitMs += 1000
+                            }
+                        }
+                        if (-not $heavyAcquired) {
+                            throw "Timed out waiting for the global Katarina heavy-execution lock."
                         }
                     }
 
@@ -662,6 +694,12 @@ while ($true) {
                     $exitCode = 1
                     (Redact-ResultText $_.Exception.Message) | Set-Content -Path (Join-Path $outputDir "agent_error.txt") -Encoding UTF8
                 } finally {
+                    if($heavyAcquired -and $null -ne $heavyMutex) {
+                        try { $heavyMutex.ReleaseMutex() } catch {}
+                    }
+                    if($null -ne $heavyMutex) {
+                        try { $heavyMutex.Dispose() } catch {}
+                    }
                     if($mutationAcquired -and $null -ne $mutationMutex) {
                         try { $mutationMutex.ReleaseMutex() } catch {}
                     }
