@@ -151,6 +151,7 @@ jobs:
         run: |
           @'
           import asyncio
+          import hashlib
           import json
           import os
           import pathlib
@@ -212,6 +213,22 @@ jobs:
                   raise RuntimeError("binding stream/boot mismatch")
               if binding.broker_login != 123456 or binding.broker_server != "Katarina-CI":
                   raise RuntimeError("binding account identity mismatch")
+
+              server = b"Katarina-CI"
+              login_ascii = b"123456"
+              material = (
+                  b"KAT1/account-id/v1"
+                  + b"\x00"
+                  + len(server).to_bytes(4, "little")
+                  + server
+                  + b"\x00"
+                  + login_ascii
+              )
+              expected_account_id = hashlib.sha256(material).digest()[:16].hex()
+              if binding.account_id != expected_account_id:
+                  raise RuntimeError(
+                      f"account_id mismatch: expected={expected_account_id} actual={binding.account_id}"
+                  )
 
               python_heartbeat = codec.encode(
                   message_type=HEARTBEAT,
