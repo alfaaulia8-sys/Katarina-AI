@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "request_id": "012-vpsfirst-status",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "execution_class": "READONLY",
+  "created_utc": "2026-10-04T15:22:00Z",
+  "expires_utc": "2026-10-04T18:22:00Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_CONTROL_STATUS"
+  }
+}
