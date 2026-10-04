@@ -703,7 +703,21 @@ while ($true) {
                         "-RepoRoot",$repoRoot
                     )
                     $child = Start-Process -FilePath "powershell.exe" -ArgumentList $runnerArgs -PassThru -WindowStyle Hidden
+
+                    # Legacy 2 GB host: keep a strict default timeout, but allow
+                    # bounded extra time for known heavy Stage-07 jobs that spend
+                    # most of their time in MetaEditor/MT5 startup. Heartbeats are
+                    # still emitted every five seconds so the watchdog can tell a
+                    # slow healthy job from a frozen agent.
                     $timeoutMs = 180000
+                    if([string]$validated.task -eq "STAGE07_PYTHON_TESTS") {
+                        switch($mode) {
+                            "WORKSPACE_MT5_COMPILE"       { $timeoutMs = 360000 }
+                            "WORKSPACE_MT5_RUNTIME_SMOKE" { $timeoutMs = 360000 }
+                            "WORKSPACE_TEST"              { $timeoutMs = 240000 }
+                            "WORKSPACE_DEPENDENCY_VERIFY" { $timeoutMs = 240000 }
+                        }
+                    }
                     $elapsedMs = 0
                     while (-not $child.HasExited -and $elapsedMs -lt $timeoutMs) {
                         Write-LocalHeartbeat -Phase "TASK_RUNNING" -RequestId $requestId
@@ -712,7 +726,7 @@ while ($true) {
                     }
                     if (-not $child.HasExited) {
                         try { $child.Kill() } catch {}
-                        throw "Remote task runner exceeded 180-second hard timeout and was terminated."
+                        throw ("Remote task runner exceeded {0}-second hard timeout and was terminated." -f [int]($timeoutMs/1000))
                     }
                     $exitCode = [int]$child.ExitCode
                     Write-LocalHeartbeat -Phase "TASK_FINISHED" -RequestId $requestId
