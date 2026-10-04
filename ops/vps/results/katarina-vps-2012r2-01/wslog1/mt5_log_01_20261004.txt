@@ -1,0 +1,9 @@
+ML	0	09:50:18.910	Startup	successfully initialized from start config "C:\KatarinaVPSAgent\work\wsrun1\output\mt5_runtime_KAT1_CODEC.ini"
+JN	0	09:50:20.689	Terminal	MetaTrader 5 x64 build 6230 started for MetaQuotes Ltd.
+LD	0	09:50:20.689	Terminal	Windows Server 2012 R2 build 9600 on KVM, 2 x Intel Xeon E-2236  @ 3.40GHz, AVX2, 0 / 1 Gb memory, 16 / 39 Gb disk, UAC, admin, GMT+7
+CN	0	09:50:20.689	Terminal	C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075
+KG	0	09:50:20.689	Terminal	launched with C:\KatarinaVPSAgent\work\wsrun1\output\mt5_runtime_KAT1_CODEC.ini
+QF	0	09:50:21.205	Terminal	exit with code 0
+EL	0	09:50:21.350	Terminal	stopped with 10053
+HH	0	09:50:21.457	Terminal	shutdown with 10053
+
