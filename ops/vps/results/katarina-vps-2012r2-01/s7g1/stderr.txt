@@ -1,0 +1,2 @@
+
+Stage-07 MT5 wire sequence compile failed.
