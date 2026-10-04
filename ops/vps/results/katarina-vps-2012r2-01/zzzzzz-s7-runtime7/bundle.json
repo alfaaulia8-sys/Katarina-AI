@@ -1,0 +1,53 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.0",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "zzzzzz-s7-runtime7",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "READONLY",
+                    "ref":  "main",
+                    "exit_code":  1,
+                    "completed_utc":  "2026-10-04T11:38:42.2807520Z"
+                },
+    "files":  [
+                  {
+                      "name":  "interactive_KAT1_CODEC_stderr.txt",
+                      "size_bytes":  0,
+                      "sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "content_included":  true,
+                      "content":  ""
+                  },
+                  {
+                      "name":  "interactive_KAT1_CODEC_stdout.txt",
+                      "size_bytes":  0,
+                      "sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "content_included":  true,
+                      "content":  ""
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  380,
+                      "sha256":  "b90c3ef16f16eb9564fcf7bfe863c72673e993cbc4028c31cc2c3c38c71ff3c0",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"zzzzzz-s7-runtime7\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T11:36:28.7338759Z\",\r\n    \"completed_utc\":  \"2026-10-04T11:38:41.7964403Z\",\r\n    \"duration_ms\":  133063,\r\n    \"status\":  \"FAIL\",\r\n    \"exit_code\":  1,\r\n    \"details\":  {\r\n\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  679,
+                      "sha256":  "e18f2c65a7bfadcf3c21ea21fc1923887c177c5b9d12f4dcb500496a45573007",
+                      "content_included":  true,
+                      "content":  "powershell.exe : C:\\KatarinaVPSAgent\\lanes\\primary\\work\\r_14c040381897cabe\\src\\\r\nalfaaulia-katarin\r\nAt C:\\KatarinaVPSAgent\\lanes\\primary\\work\\r_14c040381897cabe\\src\\alfaaulia-kata\r\nrina-Katarina-AI-9b3ad40db1bdac19c2bf88c3ce5a915360cfcf0a\\scripts\\vps\\Invoke-Ka\r\ntarinaWorkspaceTask.ps1:982 char:13\r\n+             \u0026 powershell.exe $launcherArgs 1\u003e $launchStdout 2\u003e $launchStderr\r\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (C:\\KatarinaVPSA...faaulia-katarin \r\n   :String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n\r\nWorkspace child task produced no status evidence.\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  1061
+}
