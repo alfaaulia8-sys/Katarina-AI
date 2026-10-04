@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $WorkspaceRoot = "C:\KatarinaDev"
 $Workspace = Join-Path $WorkspaceRoot "workspace"
 $Metadata = Join-Path $WorkspaceRoot "metadata"
