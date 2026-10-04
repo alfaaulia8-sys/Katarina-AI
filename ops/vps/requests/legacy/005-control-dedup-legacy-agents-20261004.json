@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "request_id": "005-control-dedup-legacy-agents-20261004",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "execution_class": "RECOVERY",
+  "created_utc": "2026-10-04T05:54:00Z",
+  "expires_utc": "2026-10-04T12:54:00Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_CONTROL_DEDUP_LEGACY_AGENTS"
+  }
+}
