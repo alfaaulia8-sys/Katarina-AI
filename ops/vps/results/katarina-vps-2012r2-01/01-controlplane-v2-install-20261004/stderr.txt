@@ -1,0 +1,15 @@
+One or more secondary Control Plane v2 lanes failed to publish heartbeat.
+At C:\KatarinaVPSAgent\work\r_0c2aeeaa3cf83d83\src\alfaaulia-katarina-Katarina-
+AI-ffc175a5699649e5fc985556353584c868b67069\scripts\vps\Invoke-KatarinaWorkspac
+eTask.ps1:326 char:24
++         if(!$allReady){throw "One or more secondary Control Plane v2 lanes fa
+ile ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo          : OperationStopped: (One or more sec...lish heartb 
+   eat.:String) [], RuntimeException
+    + FullyQualifiedErrorId : One or more secondary Control Plane v2 lanes fai 
+   led to publish heartbeat.
+ 
+
+Workspace child task produced no status evidence.
