@@ -133,9 +133,9 @@ switch($mode) {
         & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN $watchdogTask /TR $watchdogCommand | Out-Null
         if($LASTEXITCODE -ne 0) { throw "Failed to register Katarina VPS watchdog scheduled task." }
 
-        & schtasks.exe /Run /TN $watchdogTask | Out-Null
-        if($LASTEXITCODE -ne 0) { throw "Katarina VPS watchdog task was registered but could not start." }
-
+        # Do not run the watchdog immediately from the legacy agent. The old
+        # parent process is still uploading this task's evidence. The MINUTE
+        # schedule activates it on the next tick, after this request completes.
         Write-Json (Join-Path $OutputDir "agent_self_heal_install.json") ([ordered]@{
             schema_version=1
             stage="07"
@@ -144,6 +144,7 @@ switch($mode) {
             agent_task=$agentTask
             watchdog_task=$watchdogTask
             watchdog_interval_minutes=1
+            watchdog_activation="NEXT_SCHEDULE_TICK"
             heartbeat_stale_seconds=75
             child_task_hard_timeout_seconds=180
             restart_cooldown_seconds=120
