@@ -1759,6 +1759,54 @@ ShutdownTerminal=1
                 break
             }
 
+            if ($mode -eq "WORKSPACE_STAGE07_CLOSEOUT_DIRECT") {
+                $python="C:\KatarinaDev\runtime\python\python.exe"
+                $profileScript=Join-Path $RepoRoot "scripts\stage07\profile_stage07_transport.py"
+                $auditScript=Join-Path $RepoRoot "scripts\stage07\audit_stage07_final.py"
+                $tcpBundle=Join-Path $RepoRoot "ops\vps\results\katarina-vps-2012r2-01\008-tcp-proof1\bundle.json"
+                $batchBundle=Join-Path $RepoRoot "ops\vps\results\katarina-vps-2012r2-01\s7-batch-opt1\bundle.json"
+                foreach($required in @($python,$profileScript,$auditScript,$tcpBundle,$batchBundle)) {
+                    if(!(Test-Path -LiteralPath $required -PathType Leaf)) {
+                        throw "Stage-07 closeout prerequisite missing: $required"
+                    }
+                }
+
+                $profileOut=Join-Path $OutputDir "stage07_transport_profile.json"
+                $profileStdout=Join-Path $OutputDir "stage07_profile_stdout.txt"
+                $profileStderr=Join-Path $OutputDir "stage07_profile_stderr.txt"
+                & $python $profileScript --repo-root $RepoRoot --output $profileOut 1> $profileStdout 2> $profileStderr
+                if($LASTEXITCODE -ne 0) {
+                    throw "Stage-07 transport profile failed."
+                }
+                $profile=Get-Content -LiteralPath $profileOut -Raw | ConvertFrom-Json
+                if([string]$profile.result -ne "PASS_STAGE07_BACKPRESSURE_LATENCY_PROFILE") {
+                    throw "Stage-07 transport profile did not pass."
+                }
+
+                $auditOut=Join-Path $OutputDir "stage07_final_clearance.json"
+                $auditStdout=Join-Path $OutputDir "stage07_audit_stdout.txt"
+                $auditStderr=Join-Path $OutputDir "stage07_audit_stderr.txt"
+                & $python $auditScript --repo-root $RepoRoot --profile-evidence $profileOut --tcp-bundle $tcpBundle --batch-bundle $batchBundle --output $auditOut 1> $auditStdout 2> $auditStderr
+                if($LASTEXITCODE -ne 0) {
+                    throw "Stage-07 final audit failed."
+                }
+
+                $audit=Get-Content -LiteralPath $auditOut -Raw | ConvertFrom-Json
+                if([string]$audit.result -ne "PASS_STAGE07_FINAL_CLEARANCE" -or
+                   [bool]$audit.ready_for_stage08 -ne $true) {
+                    throw "Stage-07 final audit did not grant Stage-08 readiness."
+                }
+
+                "KATARINA STAGE07 FINAL CLEARANCE PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["profile_result"]=[string]$profile.result
+                $details["audit_result"]=[string]$audit.result
+                $details["ready_for_stage08"]=$true
+                $details["result"]="PASS_STAGE07_FINAL_CLEARANCE"
+                break
+            }
+
             if ($mode.StartsWith("WORKSPACE_")) {
                 $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
                 if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) { throw "Katarina workspace runner is missing." }
