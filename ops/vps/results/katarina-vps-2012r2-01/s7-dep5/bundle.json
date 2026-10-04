@@ -1,0 +1,39 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.0",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "s7-dep5",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "READONLY",
+                    "ref":  "main",
+                    "exit_code":  -65536,
+                    "completed_utc":  "2026-10-04T10:55:01.2651609Z"
+                },
+    "files":  [
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  372,
+                      "sha256":  "769ca77e48b10d9b29c9c337386b81eccaffde38288179f60986568b7cd4c56a",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"s7-dep5\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T10:54:57.8432504Z\",\r\n    \"completed_utc\":  \"2026-10-04T10:55:00.2963757Z\",\r\n    \"duration_ms\":  2453,\r\n    \"status\":  \"FAIL\",\r\n    \"exit_code\":  -65536,\r\n    \"details\":  {\r\n\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  367,
+                      "sha256":  "f2db7ef4831df16acbbb934ce0960a69b9680297ccf977bed6c68d95a74035ae",
+                      "content_included":  true,
+                      "content":  "W\u0000i\u0000n\u0000d\u0000o\u0000w\u0000s\u0000 \u0000P\u0000o\u0000w\u0000e\u0000r\u0000S\u0000h\u0000e\u0000l\u0000l\u0000 \u0000t\u0000e\u0000r\u0000m\u0000i\u0000n\u0000a\u0000t\u0000e\u0000d\u0000 \u0000w\u0000i\u0000t\u0000h\u0000 \u0000t\u0000h\u0000e\u0000 \u0000f\u0000o\u0000l\u0000l\u0000o\u0000w\u0000i\u0000n\u0000g\u0000 \u0000e\u0000r\u0000r\u0000o\u0000r\u0000:\u0000 \u0000\r\u0000\n\u0000 \u0000T\u0000h\u0000e\u0000 \u0000t\u0000y\u0000p\u0000e\u0000 \u0000i\u0000n\u0000i\u0000t\u0000i\u0000a\u0000l\u0000i\u0000z\u0000e\u0000r\u0000 \u0000f\u0000o\u0000r\u0000 \u0000\u0027\u0000S\u0000y\u0000s\u0000t\u0000e\u0000m\u0000.\u0000M\u0000a\u0000n\u0000a\u0000g\u0000e\u0000m\u0000e\u0000n\u0000t\u0000.\u0000A\u0000u\u0000t\u0000o\u0000m\u0000a\u0000t\u0000i\u0000o\u0000n\u0000.\u0000R\u0000u\u0000n\u0000s\u0000p\u0000a\u0000c\u0000e\u0000s\u0000.\u0000I\u0000n\u0000i\u0000t\u0000i\u0000a\u0000l\u0000S\u0000e\u0000s\u0000s\u0000i\u0000o\u0000n\u0000S\u0000t\u0000a\u0000t\u0000e\u0000\u0027\u0000 \u0000t\u0000h\u0000r\u0000e\u0000w\u0000 \u0000a\u0000n\u0000 \u0000e\u0000x\u0000c\u0000e\u0000p\u0000t\u0000i\u0000o\u0000n\u0000.\u0000\r\u0000\n\u0000\r\nKatarina workspace task failed.\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  741
+}
