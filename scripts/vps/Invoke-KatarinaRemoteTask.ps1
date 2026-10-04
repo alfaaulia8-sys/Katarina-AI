@@ -1025,6 +1025,99 @@ try { & schtasks.exe /Delete /F /TN "KatarinaGuardedDeferredRestart" | Out-Null 
                 break
             }
 
+            if ($mode -eq "WORKSPACE_CONTROL_GUARDIAN_DIAG_DIRECT") {
+                $installRoot="C:\\KatarinaVPSAgent"
+                $guardianPath=Join-Path $installRoot "KatarinaControlGuardian.ps1"
+                $guardianHeartbeat=Join-Path $installRoot "guardian\\heartbeat.json"
+                $guardianState=Join-Path $installRoot "guardian\\state.json"
+                $guardianLog=Join-Path $installRoot "guardian\\guardian.log"
+                $primaryConfig=Join-Path $installRoot "agent.json"
+
+                $parseOk=$false
+                $parseError=""
+                if(Test-Path -LiteralPath $guardianPath -PathType Leaf) {
+                    try {
+                        $text=Get-Content -LiteralPath $guardianPath -Raw
+                        [void][scriptblock]::Create($text)
+                        $parseOk=$true
+                    } catch {
+                        $parseError=$_.Exception.Message
+                    }
+                } else {
+                    $parseError="GUARDIAN_SCRIPT_MISSING"
+                }
+
+                $guardianProcesses=@()
+                try {
+                    foreach($proc in @(Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
+                        if($proc.CommandLine -and $proc.CommandLine.IndexOf("KatarinaControlGuardian.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            $guardianProcesses += [ordered]@{
+                                process_id=[int]$proc.ProcessId
+                                command_line=[string]$proc.CommandLine
+                            }
+                        }
+                    }
+                } catch {}
+
+                $taskQuery=""
+                try { $taskQuery=((& schtasks.exe /Query /TN "KatarinaControlGuardian" /FO LIST /V 2>&1) | Out-String) } catch { $taskQuery=$_.Exception.Message }
+                $hb=$null
+                if(Test-Path -LiteralPath $guardianHeartbeat -PathType Leaf) {
+                    try { $hb=Get-Content -LiteralPath $guardianHeartbeat -Raw | ConvertFrom-Json } catch {}
+                }
+                $state=$null
+                if(Test-Path -LiteralPath $guardianState -PathType Leaf) {
+                    try { $state=Get-Content -LiteralPath $guardianState -Raw | ConvertFrom-Json } catch {}
+                }
+                $logTail=@()
+                if(Test-Path -LiteralPath $guardianLog -PathType Leaf) {
+                    try { $logTail=@(Get-Content -LiteralPath $guardianLog -Tail 30) } catch {}
+                }
+                $profile=""
+                if(Test-Path -LiteralPath $primaryConfig -PathType Leaf) {
+                    try {
+                        $cfg=Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
+                        $profile=[string]$cfg.resource_profile
+                    } catch {}
+                }
+                $memory=$null
+                try {
+                    $os=Get-WmiObject Win32_OperatingSystem
+                    $memory=[ordered]@{
+                        total_visible_mb=[int]([double]$os.TotalVisibleMemorySize/1024)
+                        free_physical_mb=[int]([double]$os.FreePhysicalMemory/1024)
+                    }
+                } catch {}
+
+                $proof=[ordered]@{
+                    schema_version=1
+                    proof_type="KATARINA_GUARDIAN_DIAGNOSTIC"
+                    resource_profile=$profile
+                    guardian_script_exists=(Test-Path -LiteralPath $guardianPath -PathType Leaf)
+                    guardian_script_sha256=$(if(Test-Path -LiteralPath $guardianPath -PathType Leaf){(Get-FileHash -LiteralPath $guardianPath -Algorithm SHA256).Hash.ToLowerInvariant()}else{$null})
+                    parse_ok=$parseOk
+                    parse_error=$parseError
+                    process_count=@($guardianProcesses).Count
+                    processes=$guardianProcesses
+                    task_query=$taskQuery
+                    heartbeat=$hb
+                    state=$state
+                    log_tail=$logTail
+                    memory=$memory
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($parseOk){"PASS_DIAGNOSTIC"}else{"FAIL_PARSE"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "guardian_diagnostic.json") $proof
+                "KATARINA GUARDIAN DIAGNOSTIC COMPLETE" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["parse_ok"]=$parseOk
+                $details["process_count"]=@($guardianProcesses).Count
+                $details["result"]=$proof.result
+                if(-not $parseOk){throw "Guardian script parse failed; see guardian_diagnostic.json."}
+                break
+            }
+
             if ($mode -eq "WORKSPACE_CONTROL_GUARDIAN_SELFTEST_ARM_DIRECT") {
                 $installRoot="C:\\KatarinaVPSAgent"
                 $primaryConfig=Join-Path $installRoot "agent.json"
