@@ -502,6 +502,7 @@ switch($mode) {
                 }
             } catch {}
         }
+        $guardedProfile=($resourceProfile -eq "LEGACY_LOW_MEMORY_GUARDED")
         $expectedLanes=@("primary")
         if($resourceProfile -eq "LEGACY_LOW_MEMORY_BALANCED") {
             $watchdogConfigPath=Join-Path $installRoot "watchdog_lanes.json"
@@ -514,6 +515,8 @@ switch($mode) {
                     }
                 } catch {}
             }
+        } elseif($guardedProfile) {
+            $expectedLanes=@("primary")
         } elseif($resourceProfile -ne "LEGACY_LOW_MEMORY_SEQUENTIAL") {
             $expectedLanes=@("primary","recovery","worker01","worker02")
         }
@@ -564,6 +567,49 @@ switch($mode) {
             }
         }
 
+        $guardianRecord=$null
+        if($guardedProfile) {
+            $guardianHeartbeatPath=Join-Path $installRoot "guardian\heartbeat.json"
+            $guardianHb=$null
+            $guardianAge=$null
+            if(Test-Path -LiteralPath $guardianHeartbeatPath -PathType Leaf) {
+                try {
+                    $guardianHb=Get-Content -LiteralPath $guardianHeartbeatPath -Raw | ConvertFrom-Json
+                    $guardianUpdated=[DateTime]::Parse(
+                        [string]$guardianHb.updated_utc,
+                        [Globalization.CultureInfo]::InvariantCulture,
+                        [Globalization.DateTimeStyles]::AssumeUniversal
+                    ).ToUniversalTime()
+                    $guardianAge=[math]::Round(([DateTime]::UtcNow-$guardianUpdated).TotalSeconds,1)
+                } catch {}
+            }
+
+            $guardianProcessCount=0
+            try {
+                $guardianProcessCount=@(
+                    Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+                    Where-Object {
+                        $_.CommandLine -and
+                        $_.CommandLine.IndexOf("KatarinaControlGuardian.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0
+                    }
+                ).Count
+            } catch {}
+
+            $guardianHealthy=($null -ne $guardianHb -and $null -ne $guardianAge -and $guardianAge -lt 30 -and $guardianProcessCount -eq 1)
+            if(-not $guardianHealthy){$allHealthy=$false}
+            $guardianRecord=[ordered]@{
+                expected=$true
+                process_count=$guardianProcessCount
+                guardian_version=$(if($guardianHb){[string]$guardianHb.guardian_version}else{$null})
+                phase=$(if($guardianHb){[string]$guardianHb.phase}else{$null})
+                reason=$(if($guardianHb){[string]$guardianHb.reason}else{$null})
+                heartbeat_age_seconds=$guardianAge
+                primary_process_id=$(if($guardianHb){$guardianHb.primary_process_id}else{$null})
+                primary_agent_version=$(if($guardianHb){[string]$guardianHb.primary_agent_version}else{$null})
+                healthy=$guardianHealthy
+            }
+        }
+
         Write-Json (Join-Path $OutputDir "control_plane_status.json") ([ordered]@{
             schema_version=1
             proof_type="KATARINA_CONTROL_PLANE_STATUS"
@@ -571,6 +617,7 @@ switch($mode) {
             primary_only=$primaryOnly
             expected_lanes=$expectedLanes
             lanes=$records
+            guardian=$guardianRecord
             supervisor_log_exists=(Test-Path -LiteralPath (Join-Path $installRoot "control_supervisor.log") -PathType Leaf)
             generated_utc=[DateTime]::UtcNow.ToString("o")
             result=$(if($allHealthy){"PASS"}else{"FAIL"})
