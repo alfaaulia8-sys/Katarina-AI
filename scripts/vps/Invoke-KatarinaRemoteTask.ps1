@@ -830,6 +830,197 @@ try {
                 break
             }
 
+            if ($mode -eq "WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT") {
+                $installRoot="C:\\KatarinaVPSAgent"
+                $primaryConfig=Join-Path $installRoot "agent.json"
+                $tokenPath=Join-Path $installRoot "token.bin"
+                $agentSource=Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgent.ps1"
+                $watchdogSource=Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgentWatchdog.ps1"
+                $guardianSource=Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaControlGuardian.ps1"
+                $agentPath=Join-Path $installRoot "KatarinaVpsAgent.ps1"
+                $watchdogPath=Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1"
+                $guardianPath=Join-Path $installRoot "KatarinaControlGuardian.ps1"
+                $watchdogConfigPath=Join-Path $installRoot "watchdog_lanes.json"
+
+                foreach($required in @($primaryConfig,$tokenPath,$agentSource,$watchdogSource,$guardianSource)) {
+                    if(!(Test-Path -LiteralPath $required -PathType Leaf)) {
+                        throw "Guardian control prerequisite missing: $required"
+                    }
+                }
+
+                $memoryBefore=$null
+                try {
+                    $os=Get-WmiObject Win32_OperatingSystem
+                    $memoryBefore=[ordered]@{
+                        total_visible_mb=[int]([double]$os.TotalVisibleMemorySize/1024)
+                        free_physical_mb=[int]([double]$os.FreePhysicalMemory/1024)
+                    }
+                } catch {}
+
+                Copy-Item -LiteralPath $agentSource -Destination $agentPath -Force
+                Copy-Item -LiteralPath $watchdogSource -Destination $watchdogPath -Force
+                Copy-Item -LiteralPath $guardianSource -Destination $guardianPath -Force
+
+                $cfg=Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
+                $guarded=[ordered]@{
+                    schema_version=2
+                    agent_id=[string]$cfg.agent_id
+                    repository=[string]$cfg.repository
+                    branch=[string]$cfg.branch
+                    poll_seconds=5
+                    lane="primary"
+                    state_root=(Join-Path $installRoot "lanes\\primary")
+                    token_path=$tokenPath
+                    requests_dir="ops/vps/requests/primary"
+                    results_dir="ops/vps/results"
+                    compact_results=$true
+                    capabilities=@("MUTATING","READONLY","RECOVERY")
+                    resource_profile="LEGACY_LOW_MEMORY_GUARDED"
+                    installed_utc=[DateTime]::UtcNow.ToString("o")
+                }
+                if([string]::IsNullOrWhiteSpace([string]$guarded.agent_id)){$guarded.agent_id="katarina-vps-2012r2-01"}
+                if([string]::IsNullOrWhiteSpace([string]$guarded.repository)){$guarded.repository="alfaaulia-katarina/Katarina-AI"}
+                if([string]::IsNullOrWhiteSpace([string]$guarded.branch)){$guarded.branch="main"}
+                Write-JsonFile $primaryConfig $guarded
+
+                # Full secondary command agents are too expensive for the 2 GB
+                # host. The local guardian is the independent recovery lane.
+                foreach($taskName in @(
+                    "KatarinaControlRecovery",
+                    "KatarinaControlWorker01",
+                    "KatarinaControlWorker02",
+                    "KatarinaControlSupervisor",
+                    "KatarinaControlSupervisorGuard"
+                )) {
+                    try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
+                    try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
+                }
+
+                $guardianCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$guardianPath+'" -InstallRoot "'+$installRoot+'" -CheckSeconds 10 -StaleSeconds 45 -RestartCooldownSeconds 45'
+                & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN "KatarinaControlGuardian" /TR $guardianCmd | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to register KatarinaControlGuardian."}
+                try { & schtasks.exe /Change /TN "KatarinaControlGuardian" /ENABLE | Out-Null } catch {}
+
+                $watchdogCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$watchdogPath+'" -InstallRoot "'+$installRoot+'"'
+                & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaVPSAgentWatchdog" /TR $watchdogCmd | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to register fallback watchdog."}
+                try { & schtasks.exe /Change /TN "KatarinaVPSAgentWatchdog" /ENABLE | Out-Null } catch {}
+                try { & schtasks.exe /Change /TN "KatarinaVPSAgent" /ENABLE | Out-Null } catch {}
+
+                Write-JsonFile $watchdogConfigPath ([ordered]@{
+                    schema_version=1
+                    resource_profile="LEGACY_LOW_MEMORY_GUARDED"
+                    lanes=@(
+                        [ordered]@{
+                            lane="primary"
+                            task="KatarinaVPSAgent"
+                            config=$primaryConfig
+                            heartbeat=(Join-Path $installRoot "lanes\\primary\\heartbeat.json")
+                            fallback=(Join-Path $installRoot "heartbeat.json")
+                            stale_seconds=90
+                            busy_stale_seconds=420
+                        }
+                    )
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                })
+
+                # Clear any old guardian instance, then start the lightweight lane.
+                try {
+                    foreach($proc in @(Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
+                        if($proc.CommandLine -and $proc.CommandLine.IndexOf("KatarinaControlGuardian.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            try { [void]$proc.Terminate() } catch {}
+                        }
+                    }
+                } catch {}
+                try { & schtasks.exe /End /TN "KatarinaControlGuardian" | Out-Null } catch {}
+                Start-Sleep -Seconds 1
+                & schtasks.exe /Run /TN "KatarinaControlGuardian" | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to start KatarinaControlGuardian."}
+
+                $guardianHeartbeat=Join-Path $installRoot "guardian\\heartbeat.json"
+                $guardianReady=$false
+                $guardianState=$null
+                $deadline=[DateTime]::UtcNow.AddSeconds(20)
+                while([DateTime]::UtcNow -lt $deadline) {
+                    if(Test-Path -LiteralPath $guardianHeartbeat -PathType Leaf) {
+                        try {
+                            $candidate=Get-Content -LiteralPath $guardianHeartbeat -Raw | ConvertFrom-Json
+                            $updated=[DateTime]::Parse(
+                                [string]$candidate.updated_utc,
+                                [Globalization.CultureInfo]::InvariantCulture,
+                                [Globalization.DateTimeStyles]::AssumeUniversal
+                            ).ToUniversalTime()
+                            if(([DateTime]::UtcNow-$updated).TotalSeconds -lt 15) {
+                                $guardianReady=$true
+                                $guardianState=$candidate
+                                break
+                            }
+                        } catch {}
+                    }
+                    Start-Sleep -Seconds 1
+                }
+                if(-not $guardianReady){throw "Guardian lane did not publish a fresh heartbeat."}
+
+                try { & schtasks.exe /Run /TN "KatarinaVPSAgentWatchdog" | Out-Null } catch {}
+
+                # Load the newly installed agent after this request has uploaded its
+                # receipt. Guardian + fallback watchdog both protect the transition.
+                $restartTask="KatarinaGuardedDeferredRestart"
+                $restartScript=Join-Path $installRoot "KatarinaGuardedDeferredRestart.ps1"
+                @'
+$ErrorActionPreference="Continue"
+try { & schtasks.exe /End /TN "KatarinaVPSAgent" | Out-Null } catch {}
+Start-Sleep -Seconds 2
+try { & schtasks.exe /Run /TN "KatarinaVPSAgent" | Out-Null } catch {}
+Start-Sleep -Seconds 2
+try { & schtasks.exe /Delete /F /TN "KatarinaGuardedDeferredRestart" | Out-Null } catch {}
+'@ | Set-Content -LiteralPath $restartScript -Encoding ASCII
+                $runAt=(Get-Date).AddMinutes(1).ToString("HH:mm")
+                $restartCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$restartScript+'"'
+                & schtasks.exe /Create /F /SC ONCE /ST $runAt /RU SYSTEM /RL HIGHEST /TN $restartTask /TR $restartCmd | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to schedule guarded primary reload."}
+
+                $memoryAfter=$null
+                try {
+                    $os=Get-WmiObject Win32_OperatingSystem
+                    $memoryAfter=[ordered]@{
+                        total_visible_mb=[int]([double]$os.TotalVisibleMemorySize/1024)
+                        free_physical_mb=[int]([double]$os.FreePhysicalMemory/1024)
+                    }
+                } catch {}
+
+                Write-JsonFile (Join-Path $OutputDir "control_guardian_install.json") ([ordered]@{
+                    schema_version=1
+                    proof_type="KATARINA_LOW_MEMORY_GUARDIAN_INSTALL"
+                    resource_profile="LEGACY_LOW_MEMORY_GUARDED"
+                    primary_command_lane="KatarinaVPSAgent"
+                    recovery_lane="KatarinaControlGuardian"
+                    fallback_recovery="KatarinaVPSAgentWatchdog"
+                    guardian_version=[string]$guardianState.guardian_version
+                    guardian_phase=[string]$guardianState.phase
+                    guardian_process_id=$guardianState.process_id
+                    guardian_check_seconds=10
+                    primary_stale_seconds=45
+                    fallback_watchdog_minutes=1
+                    heavy_execution_concurrency=1
+                    snapshot_extraction_concurrency=1
+                    full_secondary_agents_disabled=$true
+                    memory_before=$memoryBefore
+                    memory_after=$memoryAfter
+                    deferred_primary_reload=$restartTask
+                    deferred_primary_reload_time_local=$runAt
+                    installed_utc=[DateTime]::UtcNow.ToString("o")
+                    result="PASS"
+                })
+                "KATARINA GUARDED LOW MEMORY CONTROL PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["resource_profile"]="LEGACY_LOW_MEMORY_GUARDED"
+                $details["guardian_ready"]=$guardianReady
+                $details["result"]="PASS"
+                break
+            }
+
             # Stable rescue/update mode is intentionally independent from
             # the adaptive balanced installer above. It is the fail-safe path
             # for the 2 GB Server 2012 R2 host when secondary lanes cannot stay healthy.
