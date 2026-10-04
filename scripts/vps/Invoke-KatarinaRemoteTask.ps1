@@ -510,7 +510,7 @@ try {
                     return $m
                 }
 
-                function Wait-LaneHeartbeat([string]$LaneName,[string]$TaskName,[string]$HeartbeatPath,[int]$WaitSeconds=30) {
+                function Wait-LaneHeartbeat([string]$LaneName,[string]$TaskName,[string]$ConfigPath,[string]$HeartbeatPath,[int]$WaitSeconds=60) {
                     $record = [ordered]@{
                         lane = $LaneName
                         task = $TaskName
@@ -519,11 +519,32 @@ try {
                         phase = ""
                         agent_version = ""
                         process_id = $null
+                        startup_phase = ""
+                        startup_error = ""
+                        last_error = ""
                         error = ""
                     }
+
+                    # Explicitly terminate a stale/ghost lane host. Task Scheduler
+                    # /End alone did not prove sufficient on Server 2012 R2.
+                    try {
+                        foreach($proc in @(Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
+                            if($proc.CommandLine -and
+                               $proc.CommandLine.IndexOf("KatarinaVpsAgent.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                               $proc.CommandLine.IndexOf($ConfigPath,[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                                try { [void]$proc.Terminate() } catch {}
+                            }
+                        }
+                    } catch {}
+
+                    $laneRoot = Split-Path -Parent $HeartbeatPath
+                    $startupPath = Join-Path $laneRoot "startup_state.json"
+                    $lastErrorPath = Join-Path $laneRoot "last_error.json"
                     try { Remove-Item -LiteralPath $HeartbeatPath -Force -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-Item -LiteralPath $startupPath -Force -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-Item -LiteralPath $lastErrorPath -Force -ErrorAction SilentlyContinue } catch {}
                     try { & schtasks.exe /End /TN $TaskName | Out-Null } catch {}
-                    Start-Sleep -Milliseconds 750
+                    Start-Sleep -Seconds 2
                     & schtasks.exe /Run /TN $TaskName | Out-Null
                     $record.start_exit_code = [int]$LASTEXITCODE
                     if ($LASTEXITCODE -ne 0) {
@@ -554,8 +575,25 @@ try {
                         }
                         Start-Sleep -Seconds 1
                     }
-                    if (-not $record.heartbeat_fresh -and [string]::IsNullOrWhiteSpace([string]$record.error)) {
-                        $record.error = "HEARTBEAT_TIMEOUT"
+                    if (-not $record.heartbeat_fresh) {
+                        if (Test-Path -LiteralPath $startupPath -PathType Leaf) {
+                            try {
+                                $startup = Get-Content -LiteralPath $startupPath -Raw | ConvertFrom-Json
+                                $record.startup_phase = [string]$startup.phase
+                                if($null -ne $startup.PSObject.Properties["error"]) {
+                                    $record.startup_error = [string]$startup.error
+                                }
+                            } catch {}
+                        }
+                        if (Test-Path -LiteralPath $lastErrorPath -PathType Leaf) {
+                            try {
+                                $lastErr = Get-Content -LiteralPath $lastErrorPath -Raw | ConvertFrom-Json
+                                $record.last_error = [string]$lastErr.error
+                            } catch {}
+                        }
+                        if ([string]::IsNullOrWhiteSpace([string]$record.error)) {
+                            $record.error = "HEARTBEAT_TIMEOUT"
+                        }
                     }
                     return ([pscustomobject]$record)
                 }
@@ -648,7 +686,7 @@ try {
                 # so a low-memory host never pays the startup cost of two agents at once.
                 if ([int]$memoryBefore.free_physical_mb -ge $recoveryMinMb) {
                     try { & schtasks.exe /Change /TN "KatarinaControlRecovery" /ENABLE | Out-Null } catch {}
-                    $recoveryCheck = Wait-LaneHeartbeat "recovery" "KatarinaControlRecovery" (Join-Path $installRoot "lanes\\recovery\\heartbeat.json") 35
+                    $recoveryCheck = Wait-LaneHeartbeat "recovery" "KatarinaControlRecovery" $recoveryConfig (Join-Path $installRoot "lanes\\recovery\\heartbeat.json") 60
                     $laneChecks += $recoveryCheck
                     $recoveryEnabled = [bool]$recoveryCheck.heartbeat_fresh
                     if (-not $recoveryEnabled) {
@@ -670,7 +708,7 @@ try {
                 # healthy and enough RAM still remains. Worker02 stays cold reserve.
                 if ($recoveryEnabled -and [int]$memoryAfterRecovery.free_physical_mb -ge $workerMinAfterRecoveryMb) {
                     try { & schtasks.exe /Change /TN "KatarinaControlWorker01" /ENABLE | Out-Null } catch {}
-                    $workerCheck = Wait-LaneHeartbeat "worker01" "KatarinaControlWorker01" (Join-Path $installRoot "lanes\\worker01\\heartbeat.json") 30
+                    $workerCheck = Wait-LaneHeartbeat "worker01" "KatarinaControlWorker01" $worker01Config (Join-Path $installRoot "lanes\\worker01\\heartbeat.json") 45
                     $laneChecks += $workerCheck
                     $worker01Enabled = [bool]$workerCheck.heartbeat_fresh
                     if (-not $worker01Enabled) {
