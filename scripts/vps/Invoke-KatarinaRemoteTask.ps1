@@ -481,6 +481,251 @@ try {
                 break
             }
 
+            if ($mode -eq "WORKSPACE_CONTROL_BALANCED_INSTALL_DIRECT") {
+                $installRoot = "C:\\KatarinaVPSAgent"
+                $primaryConfig = Join-Path $installRoot "agent.json"
+                $tokenPath = Join-Path $installRoot "token.bin"
+                $agentSource = Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgent.ps1"
+                $watchdogSource = Join-Path $RepoRoot "scripts\\vps\\legacy\\KatarinaVpsAgentWatchdog.ps1"
+                $agentPath = Join-Path $installRoot "KatarinaVpsAgent.ps1"
+                $watchdogPath = Join-Path $installRoot "KatarinaVpsAgentWatchdog.ps1"
+                $watchdogConfigPath = Join-Path $installRoot "watchdog_lanes.json"
+
+                foreach ($requiredPath in @($primaryConfig,$tokenPath,$agentSource,$watchdogSource)) {
+                    if (!(Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+                        throw "Balanced control prerequisite missing: $requiredPath"
+                    }
+                }
+
+                Copy-Item -LiteralPath $agentSource -Destination $agentPath -Force
+                Copy-Item -LiteralPath $watchdogSource -Destination $watchdogPath -Force
+
+                $cfg = Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
+                $repoName = [string]$cfg.repository
+                $branchName = [string]$cfg.branch
+                $primaryAgentId = [string]$cfg.agent_id
+                if ([string]::IsNullOrWhiteSpace($repoName)) { $repoName = "alfaaulia-katarina/Katarina-AI" }
+                if ([string]::IsNullOrWhiteSpace($branchName)) { $branchName = "main" }
+                if ([string]::IsNullOrWhiteSpace($primaryAgentId)) { $primaryAgentId = "katarina-vps-2012r2-01" }
+
+                $freeMb = 0
+                $totalMb = 0
+                try {
+                    $os = Get-WmiObject Win32_OperatingSystem
+                    $freeMb = [int]([double]$os.FreePhysicalMemory / 1024)
+                    $totalMb = [int]([double]$os.TotalVisibleMemorySize / 1024)
+                } catch {}
+
+                # Adaptive policy for the 2 GB Windows Server 2012 R2 VPS.
+                # Recovery is prioritized over throughput. Worker01 is only
+                # enabled when there is enough free memory to avoid repeating
+                # the nested-PowerShell OOM seen in the sequential rescue.
+                $enableRecovery = ($freeMb -ge 256)
+                $enableWorker01 = ($freeMb -ge 512)
+
+                $common = [ordered]@{
+                    schema_version = 2
+                    repository = $repoName
+                    branch = $branchName
+                    results_dir = "ops/vps/results"
+                    token_path = $tokenPath
+                    compact_results = $true
+                    resource_profile = "LEGACY_LOW_MEMORY_BALANCED"
+                    installed_utc = [DateTime]::UtcNow.ToString("o")
+                }
+
+                $primary = [ordered]@{}
+                foreach ($k in $common.Keys) { $primary[$k] = $common[$k] }
+                $primary.agent_id = $primaryAgentId
+                $primary.lane = "primary"
+                $primary.state_root = Join-Path $installRoot "lanes\\primary"
+                $primary.capabilities = @("MUTATING","READONLY","RECOVERY")
+                $primary.poll_seconds = 5
+                $primary.requests_dir = "ops/vps/requests/primary"
+                Write-JsonFile $primaryConfig $primary
+
+                $recoveryConfig = Join-Path $installRoot "agent-recovery.json"
+                $worker01Config = Join-Path $installRoot "agent-worker01.json"
+
+                $recovery = [ordered]@{}
+                foreach ($k in $common.Keys) { $recovery[$k] = $common[$k] }
+                $recovery.agent_id = $primaryAgentId + "-recovery"
+                $recovery.lane = "recovery"
+                $recovery.state_root = Join-Path $installRoot "lanes\\recovery"
+                $recovery.capabilities = @("RECOVERY","READONLY")
+                $recovery.poll_seconds = 7
+                $recovery.requests_dir = "ops/vps/requests/recovery"
+                Write-JsonFile $recoveryConfig $recovery
+
+                $worker01 = [ordered]@{}
+                foreach ($k in $common.Keys) { $worker01[$k] = $common[$k] }
+                $worker01.agent_id = $primaryAgentId + "-worker01"
+                $worker01.lane = "worker01"
+                $worker01.state_root = Join-Path $installRoot "lanes\\worker01"
+                $worker01.capabilities = @("READONLY")
+                $worker01.poll_seconds = 9
+                $worker01.requests_dir = "ops/vps/requests/worker01"
+                Write-JsonFile $worker01Config $worker01
+
+                $taskDefs = @(
+                    [pscustomobject]@{ lane="recovery"; task="KatarinaControlRecovery"; config=$recoveryConfig; enabled=$enableRecovery },
+                    [pscustomobject]@{ lane="worker01"; task="KatarinaControlWorker01"; config=$worker01Config; enabled=$enableWorker01 }
+                )
+
+                foreach ($td in $taskDefs) {
+                    $cmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $agentPath + '" -ConfigPath "' + $td.config + '"'
+                    & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN $td.task /TR $cmd | Out-Null
+                    if ($LASTEXITCODE -ne 0) { throw "Failed to register balanced lane task: $($td.task)" }
+                    if ($td.enabled) {
+                        try { & schtasks.exe /Change /TN $td.task /ENABLE | Out-Null } catch {}
+                    } else {
+                        try { & schtasks.exe /End /TN $td.task | Out-Null } catch {}
+                        try { & schtasks.exe /Change /TN $td.task /DISABLE | Out-Null } catch {}
+                    }
+                }
+
+                foreach ($taskName in @("KatarinaControlSupervisorGuard","KatarinaControlSupervisor","KatarinaControlWorker02")) {
+                    try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
+                    try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
+                }
+
+                foreach ($taskName in @("KatarinaVPSAgent","KatarinaVPSAgentWatchdog")) {
+                    try { & schtasks.exe /Change /TN $taskName /ENABLE | Out-Null } catch {}
+                }
+
+                $watchdogCmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $watchdogPath + '" -InstallRoot "' + $installRoot + '"'
+                & schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN "KatarinaVPSAgentWatchdog" /TR $watchdogCmd | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw "Failed to register balanced watchdog task." }
+
+                $watchdogLanes = @(
+                    [ordered]@{
+                        lane = "primary"
+                        task = "KatarinaVPSAgent"
+                        config = $primaryConfig
+                        heartbeat = (Join-Path $installRoot "lanes\\primary\\heartbeat.json")
+                        fallback = (Join-Path $installRoot "heartbeat.json")
+                        stale_seconds = 90
+                        busy_stale_seconds = 300
+                    }
+                )
+                if ($enableRecovery) {
+                    $watchdogLanes += [ordered]@{
+                        lane = "recovery"
+                        task = "KatarinaControlRecovery"
+                        config = $recoveryConfig
+                        heartbeat = (Join-Path $installRoot "lanes\\recovery\\heartbeat.json")
+                        fallback = ""
+                        stale_seconds = 90
+                        busy_stale_seconds = 300
+                    }
+                }
+                if ($enableWorker01) {
+                    $watchdogLanes += [ordered]@{
+                        lane = "worker01"
+                        task = "KatarinaControlWorker01"
+                        config = $worker01Config
+                        heartbeat = (Join-Path $installRoot "lanes\\worker01\\heartbeat.json")
+                        fallback = ""
+                        stale_seconds = 120
+                        busy_stale_seconds = 300
+                    }
+                }
+                Write-JsonFile $watchdogConfigPath ([ordered]@{
+                    schema_version = 1
+                    resource_profile = "LEGACY_LOW_MEMORY_BALANCED"
+                    lanes = $watchdogLanes
+                    generated_utc = [DateTime]::UtcNow.ToString("o")
+                })
+
+                $laneChecks = @()
+                foreach ($td in @($taskDefs | Where-Object { $_.enabled })) {
+                    $heartbeatPath = Join-Path $installRoot ("lanes\\" + $td.lane + "\\heartbeat.json")
+                    try { Remove-Item -LiteralPath $heartbeatPath -Force -ErrorAction SilentlyContinue } catch {}
+                    try { & schtasks.exe /End /TN $td.task | Out-Null } catch {}
+                    Start-Sleep -Milliseconds 500
+                    & schtasks.exe /Run /TN $td.task | Out-Null
+                    if ($LASTEXITCODE -ne 0) { throw "Failed to start balanced lane: $($td.task)" }
+
+                    $fresh = $false
+                    $phase = ""
+                    $agentVersion = ""
+                    $deadline = [DateTime]::UtcNow.AddSeconds(20)
+                    while ([DateTime]::UtcNow -lt $deadline) {
+                        if (Test-Path -LiteralPath $heartbeatPath -PathType Leaf) {
+                            try {
+                                $hb = Get-Content -LiteralPath $heartbeatPath -Raw | ConvertFrom-Json
+                                $updated = [DateTime]::Parse(
+                                    [string]$hb.updated_utc,
+                                    [Globalization.CultureInfo]::InvariantCulture,
+                                    [Globalization.DateTimeStyles]::AssumeUniversal
+                                ).ToUniversalTime()
+                                if (([DateTime]::UtcNow - $updated).TotalSeconds -lt 15) {
+                                    $fresh = $true
+                                    $phase = [string]$hb.phase
+                                    $agentVersion = [string]$hb.agent_version
+                                    break
+                                }
+                            } catch {}
+                        }
+                        Start-Sleep -Seconds 1
+                    }
+                    $laneChecks += [ordered]@{
+                        lane = [string]$td.lane
+                        task = [string]$td.task
+                        heartbeat_fresh = $fresh
+                        phase = $phase
+                        agent_version = $agentVersion
+                    }
+                }
+
+                try { & schtasks.exe /Run /TN "KatarinaVPSAgentWatchdog" | Out-Null } catch {}
+
+                $failedEnabled = @($laneChecks | Where-Object { -not $_.heartbeat_fresh }).Count
+                if ($failedEnabled -gt 0) {
+                    throw "One or more balanced secondary lanes failed to publish a fresh heartbeat."
+                }
+
+                $activeLanes = @("primary")
+                if ($enableRecovery) { $activeLanes += "recovery" }
+                if ($enableWorker01) { $activeLanes += "worker01" }
+
+                $proof = [ordered]@{
+                    schema_version = 1
+                    proof_type = "KATARINA_CONTROL_BALANCED_DIRECT"
+                    resource_profile = "LEGACY_LOW_MEMORY_BALANCED"
+                    memory = [ordered]@{
+                        total_visible_mb = $totalMb
+                        free_physical_mb_at_install = $freeMb
+                        recovery_min_free_mb = 256
+                        worker01_min_free_mb = 512
+                    }
+                    persistent_lanes = $activeLanes
+                    reserve_lane = "worker02"
+                    supervisor_persistent = $false
+                    watchdog_mode = "MULTI_LANE_INDEPENDENT"
+                    watchdog_interval_minutes = 1
+                    parallel_request_capacity = $activeLanes.Count
+                    mutation_concurrency = 1
+                    queue_isolation = $true
+                    recovery_lane_enabled = $enableRecovery
+                    worker01_enabled = $enableWorker01
+                    lane_checks = $laneChecks
+                    primary_restart_deferred = $true
+                    installed_utc = [DateTime]::UtcNow.ToString("o")
+                    result = "PASS"
+                }
+                Write-JsonFile (Join-Path $OutputDir "control_balanced_direct.json") $proof
+                "KATARINA BALANCED LOW MEMORY CONTROL INSTALL PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = $mode
+                $details["resource_profile"] = "LEGACY_LOW_MEMORY_BALANCED"
+                $details["active_lanes"] = $activeLanes.Count
+                $details["recovery_lane_enabled"] = $enableRecovery
+                $details["worker01_enabled"] = $enableWorker01
+                $details["result"] = "PASS"
+                break
+            }
+
             if ($mode.StartsWith("WORKSPACE_")) {
                 $workspaceRunner = Join-Path $RepoRoot "scripts\vps\Invoke-KatarinaWorkspaceTask.ps1"
                 if (!(Test-Path -LiteralPath $workspaceRunner -PathType Leaf)) { throw "Katarina workspace runner is missing." }
