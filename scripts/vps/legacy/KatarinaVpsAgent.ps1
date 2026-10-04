@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch { }
 
-$AgentVersion = "1.4.1"
+$AgentVersion = "1.4.2"
 
 function Read-JsonFile {
     param([string]$Path)
@@ -630,7 +630,32 @@ while ($true) {
                 $ref = [string]$validated.ref
                 Write-LocalHeartbeat -Phase "REQUEST_START" -RequestId $requestId
                 $requestWork = Join-Path $workRoot (Get-ShortWorkKey -RequestId $requestId)
-                $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
+
+                # Snapshot download/extraction is itself memory intensive on the
+                # 2 GB Windows Server 2012 R2 host. Serialize this phase across
+                # all lanes before the heavier execution lock is considered.
+                $snapshotMutex = New-Object System.Threading.Mutex($false,"Global\KatarinaSnapshotExtraction")
+                $snapshotAcquired = $false
+                $snapshotWaitMs = 0
+                while (-not $snapshotAcquired -and $snapshotWaitMs -lt 180000) {
+                    try { $snapshotAcquired = $snapshotMutex.WaitOne(1000,$false) } catch { $snapshotAcquired = $false }
+                    if (-not $snapshotAcquired) {
+                        Write-LocalHeartbeat -Phase "WAITING_SNAPSHOT_LOCK" -RequestId $requestId
+                        $snapshotWaitMs += 1000
+                    }
+                }
+                if (-not $snapshotAcquired) {
+                    try { $snapshotMutex.Dispose() } catch {}
+                    throw "Timed out waiting for the global Katarina snapshot-extraction lock."
+                }
+                try {
+                    Write-LocalHeartbeat -Phase "SNAPSHOT_EXTRACT" -RequestId $requestId
+                    $repoRoot = Download-RepoSnapshot -Repo $repo -Ref $ref -Destination $requestWork -Headers $headers
+                } finally {
+                    try { $snapshotMutex.ReleaseMutex() } catch {}
+                    try { $snapshotMutex.Dispose() } catch {}
+                }
+
                 $localRequest = Join-Path $requestWork "request.json"
                 $requestText | Set-Content -Path $localRequest -Encoding UTF8
                 $outputDir = Join-Path $requestWork "output"
@@ -669,7 +694,8 @@ while ($true) {
                         "WORKSPACE_CONTROL_STATUS",
                         "WORKSPACE_CONTROL_RESTART_PRIMARY",
                         "WORKSPACE_CONTROL_LITE_INSTALL_DIRECT",
-                        "WORKSPACE_CONTROL_BALANCED_INSTALL_DIRECT"
+                        "WORKSPACE_CONTROL_BALANCED_INSTALL_DIRECT",
+                        "WORKSPACE_CONTROL_STABLE_UPDATE_DIRECT"
                     )
                     $requiresHeavyLock = $true
                     if ([string]$validated.task -eq "STAGE07_PYTHON_TESTS" -and
