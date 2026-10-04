@@ -896,7 +896,7 @@ try {
                     try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
                 }
 
-                $guardianCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$guardianPath+'" -InstallRoot "'+$installRoot+'" -CheckSeconds 10 -StaleSeconds 45 -RestartCooldownSeconds 45'
+                $guardianCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$guardianPath+'" -InstallRoot "'+$installRoot+'" -CheckSeconds 10 -IdleStaleSeconds 90 -BusyStaleSeconds 420 -MissingHeartbeatGraceSeconds 60 -RestartCooldownSeconds 90'
                 & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN "KatarinaControlGuardian" /TR $guardianCmd | Out-Null
                 if($LASTEXITCODE -ne 0){throw "Failed to register KatarinaControlGuardian."}
                 try { & schtasks.exe /Change /TN "KatarinaControlGuardian" /ENABLE | Out-Null } catch {}
@@ -1000,7 +1000,9 @@ try { & schtasks.exe /Delete /F /TN "KatarinaGuardedDeferredRestart" | Out-Null 
                     guardian_phase=[string]$guardianState.phase
                     guardian_process_id=$guardianState.process_id
                     guardian_check_seconds=10
-                    primary_stale_seconds=45
+                    primary_idle_stale_seconds=90
+                    primary_busy_stale_seconds=420
+                    missing_heartbeat_grace_seconds=60
                     fallback_watchdog_minutes=1
                     heavy_execution_concurrency=1
                     snapshot_extraction_concurrency=1
