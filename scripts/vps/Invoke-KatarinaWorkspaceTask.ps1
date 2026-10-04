@@ -312,7 +312,7 @@ switch($mode) {
                             [Globalization.DateTimeStyles]::AssumeUniversal
                         ).ToUniversalTime()
                         $fresh=(([DateTime]::UtcNow-$updated).TotalSeconds -lt 20)
-                        if($fresh -and [string]$candidate.agent_version -eq "1.4.0") {
+                        if($fresh -and [string]$candidate.agent_version -match "^1\\.4\\.") {
                             $hb=$candidate
                             break
                         }
