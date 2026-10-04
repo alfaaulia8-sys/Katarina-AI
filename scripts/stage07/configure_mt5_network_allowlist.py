@@ -185,77 +185,81 @@ def open_options(main_window: Any, pid: int) -> tuple[Any, str]:
     raise RuntimeError("Unable to open MT5 Options dialog; " + " | ".join(errors))
 
 
-def choose_expert_advisors(dialog: Any) -> None:
-    for backend in ("uia", "win32"):
+def find_webrequest_control(dialog: Any):
+    for backend in ("win32", "uia"):
         try:
             d = Desktop(backend=backend).window(handle=dialog.handle)
-            tabs = [
-                control
-                for control in d.descendants()
-                if text_of(control) == "Expert Advisors"
-            ]
-            if tabs:
-                tab = tabs[0]
-                try:
-                    tab.select()
-                except Exception:
-                    tab.click_input()
-                time.sleep(0.5)
-                return
+            for control in d.descendants():
+                if "Allow WebRequest for listed URL" in text_of(control):
+                    return control
         except Exception:
             pass
-
-    # Keyboard fallback: Options defaults to the first tab. Ctrl+Tab cycles tabs;
-    # after each cycle inspect UIA until Expert Advisors becomes visible.
-    dialog.set_focus()
-    for _ in range(12):
-        keyboard.send_keys("^{TAB}")
-        time.sleep(0.25)
-        try:
-            uia = Desktop(backend="uia").window(handle=dialog.handle)
-            if any(text_of(c) == "Expert Advisors" for c in uia.descendants()):
-                for c in uia.descendants():
-                    if text_of(c) == "Expert Advisors":
-                        try:
-                            c.select()
-                        except Exception:
-                            c.click_input()
-                        time.sleep(0.4)
-                        return
-        except Exception:
-            pass
-    raise RuntimeError("Expert Advisors tab was not found")
+    return None
 
 
-def enable_webrequest_checkbox(dialog: Any) -> str:
-    uia = Desktop(backend="uia").window(handle=dialog.handle)
-    candidates = []
-    for control in uia.descendants():
-        name = text_of(control)
-        if "Allow WebRequest for listed URL" in name:
-            candidates.append(control)
-    if not candidates:
-        raise RuntimeError("Allow WebRequest checkbox was not found")
-
-    control = candidates[0]
-    state = None
+def choose_expert_advisors(dialog: Any) -> str:
+    # Prefer the native Win32 tab control. MT5's Options window does not always
+    # expose TabItem children through UI Automation on hosted Windows runners.
     try:
-        state = int(control.get_toggle_state())
+        win = Desktop(backend="win32").window(handle=dialog.handle)
+        for tab in win.descendants(class_name="SysTabControl32"):
+            try:
+                count = int(tab.tab_count())
+                names = [str(tab.get_tab_text(i)).strip() for i in range(count)]
+                for index, name in enumerate(names):
+                    if name == "Expert Advisors":
+                        tab.select(index)
+                        time.sleep(0.5)
+                        if find_webrequest_control(dialog) is not None:
+                            return "win32_tabcontrol"
+            except Exception:
+                pass
     except Exception:
         pass
+
+    # Fallback: cycle the tab control and identify the Expert Advisors page by
+    # its unique WebRequest checkbox, so localization/accessibility quirks in
+    # the tab label do not matter.
+    dialog.set_focus()
+    for index in range(16):
+        if find_webrequest_control(dialog) is not None:
+            return f"keyboard_cycle_{index}"
+        keyboard.send_keys("^{TAB}")
+        time.sleep(0.35)
+
+    raise RuntimeError("Expert Advisors page/WebRequest control was not found")
+
+def enable_webrequest_checkbox(dialog: Any) -> str:
+    control = find_webrequest_control(dialog)
+    if control is None:
+        raise RuntimeError("Allow WebRequest checkbox was not found")
+
+    state = None
+    for method in ("get_toggle_state", "get_check_state"):
+        try:
+            state = int(getattr(control, method)())
+            break
+        except Exception:
+            pass
 
     if state != 1:
         try:
             control.toggle()
         except Exception:
-            control.click_input()
-        time.sleep(0.3)
+            try:
+                control.check_by_click()
+            except Exception:
+                control.click_input()
+        time.sleep(0.4)
 
-    try:
-        state = int(control.get_toggle_state())
-    except Exception:
-        state = None
-    if state not in (1, None):
+    verified = None
+    for method in ("get_toggle_state", "get_check_state"):
+        try:
+            verified = int(getattr(control, method)())
+            break
+        except Exception:
+            pass
+    if verified not in (1, None):
         raise RuntimeError("Allow WebRequest checkbox did not become enabled")
     return text_of(control)
 
@@ -379,7 +383,7 @@ def main() -> int:
         main_window = wait_for_main_window(process.pid, timeout=10.0)
         dialog, method = open_options(main_window, process.pid)
         evidence["open_method"] = method
-        choose_expert_advisors(dialog)
+        evidence["expert_page_method"] = choose_expert_advisors(dialog)
 
         uia_dialog = Desktop(backend="uia").window(handle=dialog.handle)
         evidence["controls_before"] = control_snapshot(uia_dialog)
