@@ -111,7 +111,11 @@
     "python_zmq_router": "src/katarina/adapters/transport/zmq.py",
     "mql5_zmq_dealer": "mt5/Include/Katarina/Stage07/ZmqDealerTransport.mqh",
     "mql5_system_messages": "mt5/Include/Katarina/Stage07/Kat1SystemMessages.mqh",
-    "python_recovery_gate": "src/katarina/adapters/transport/recovery.py"
+    "python_recovery_gate": "src/katarina/adapters/transport/recovery.py",
+    "stage07_bridge_ea": "mt5/Experts/KatarinaBridgeStage07EA.mq5",
+    "stage07_bridge_transport": "mt5/Include/Katarina/Stage07/BridgeTransport.mqh",
+    "mql5_recovery_codec": "mt5/Include/Katarina/Stage07/Kat1RecoveryMessages.mqh",
+    "mql5_wire_sequence": "mt5/Include/Katarina/Stage07/WireSequence.mqh"
   },
   "progress": {
     "research": true,
@@ -131,8 +135,10 @@
     "recovery_gate_python": true,
     "reconciliation_len32_codec": true,
     "sequence_lane_python": true,
-    "cross_language_recovery": false,
-    "mql5_persistent_sequence": false
+    "cross_language_recovery": true,
+    "mql5_persistent_sequence": true,
+    "concrete_bridge_transport": true,
+    "account_id_cross_language": true
   },
   "unblocked_by_stage06_freeze": [
     "MQL5_KAT1_CODEC",
@@ -198,11 +204,38 @@
       "gap_rejection": "PASS",
       "python_remote_floor": "PASS",
       "result": "PASS"
+    },
+    "cross_language_recovery": {
+      "run_id": 37165923929,
+      "head_sha": "54f15339cfd2e54089ae56c16b49939b9162a82f",
+      "artifact": "stage07-cross-language-recovery-evidence",
+      "digest": "sha256:06b51f4eca249cda577e3a3037720cb68fde046b1f35374bf06015a995a63ca9",
+      "byte_equality": "PASS_BOTH_DIRECTIONS",
+      "atomic_snapshot": "PASS",
+      "clean_reconciliation": "PASS",
+      "final_state": "READY",
+      "live_risk_ready": false,
+      "result": "PASS"
+    },
+    "mt5_wire_sequence_restart": {
+      "run_id": 37165379917,
+      "head_sha": "25e7fc6fa83497c7b3889e9de7892ed72fb1ed1b",
+      "result": "PASS_STAGE07_MT5_WIRE_SEQUENCE_RESTART"
+    },
+    "concrete_bridge_transport": {
+      "run_id": 37165670560,
+      "head_sha": "ea766e8bbbee9b18b95af45d5fb3552284dd4c9c",
+      "final_state": "RECOVERING",
+      "live_risk_ready": false,
+      "stage06_source_modified": false,
+      "result": "PASS"
     }
   },
   "proposed_adrs": [
     "docs/adr/0009-stage07-live-communication-topology.md",
-    "docs/adr/0011-stage07-snapshot-recovery-integrity.md",
     "docs/adr/0012-stage07-bidirectional-sequence-lanes.md"
+  ],
+  "accepted_adrs": [
+    "docs/adr/0011-stage07-snapshot-recovery-integrity.md"
   ]
 }
