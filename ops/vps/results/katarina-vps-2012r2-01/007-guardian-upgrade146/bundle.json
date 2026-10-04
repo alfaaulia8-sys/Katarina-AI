@@ -1,0 +1,46 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.5",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "007-guardian-upgrade146",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-04T12:25:54.8120015Z"
+                },
+    "files":  [
+                  {
+                      "name":  "control_guardian_install.json",
+                      "size_bytes":  1246,
+                      "sha256":  "3b0a0c047bb83875aebbcce19b681b13db001bd595b80a9e6995c7957bdab401",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"KATARINA_LOW_MEMORY_GUARDIAN_INSTALL\",\r\n    \"resource_profile\":  \"LEGACY_LOW_MEMORY_GUARDED\",\r\n    \"primary_command_lane\":  \"KatarinaVPSAgent\",\r\n    \"recovery_lane\":  \"KatarinaControlGuardian\",\r\n    \"fallback_recovery\":  \"KatarinaVPSAgentWatchdog\",\r\n    \"guardian_version\":  \"1.1.0\",\r\n    \"guardian_phase\":  \"HEALTHY\",\r\n    \"guardian_process_id\":  2180,\r\n    \"guardian_check_seconds\":  10,\r\n    \"primary_idle_stale_seconds\":  90,\r\n    \"primary_busy_stale_seconds\":  420,\r\n    \"missing_heartbeat_grace_seconds\":  60,\r\n    \"fallback_watchdog_minutes\":  1,\r\n    \"heavy_execution_concurrency\":  1,\r\n    \"snapshot_extraction_concurrency\":  1,\r\n    \"full_secondary_agents_disabled\":  true,\r\n    \"memory_before\":  {\r\n                          \"total_visible_mb\":  2047,\r\n                          \"free_physical_mb\":  497\r\n                      },\r\n    \"memory_after\":  {\r\n                         \"total_visible_mb\":  2047,\r\n                         \"free_physical_mb\":  512\r\n                     },\r\n    \"deferred_primary_reload\":  \"KatarinaGuardedDeferredRestart\",\r\n    \"deferred_primary_reload_time_local\":  \"19:26\",\r\n    \"installed_utc\":  \"2026-10-04T12:25:50.2026255Z\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  612,
+                      "sha256":  "26981f2b215531b7e4d27d03509b8d1666ff1dcdf49f0b4d786d08e2d3a9610e",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"007-guardian-upgrade146\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-04T12:25:40.7182507Z\",\r\n    \"completed_utc\":  \"2026-10-04T12:25:50.2026255Z\",\r\n    \"duration_ms\":  9484,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_CONTROL_GUARDIAN_INSTALL_DIRECT\",\r\n                    \"resource_profile\":  \"LEGACY_LOW_MEMORY_GUARDED\",\r\n                    \"guardian_ready\":  true,\r\n                    \"result\":  \"PASS\"\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  42,
+                      "sha256":  "7731e6ba489cffcc4d14f49321273cd3133d753e3251b9123af81de0b0ca34dd",
+                      "content_included":  true,
+                      "content":  "KATARINA GUARDED LOW MEMORY CONTROL PASS\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  1902
+}
