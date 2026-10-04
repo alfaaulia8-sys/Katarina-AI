@@ -5,7 +5,7 @@
     "lane":  "primary",
     "process_id":  2088,
     "computer_name":  "WIN-4TTT19K3CL8",
-    "state":  "ONLINE",
-    "error":  "",
-    "updated_utc":  "2026-10-04T08:48:12.6713735Z"
+    "state":  "ERROR",
+    "error":  "Exception calling \"ExtractToDirectory\" with \"2\" argument(s): \"Not enough storage is available to process this command.\r\n\"",
+    "updated_utc":  "2026-10-04T11:36:11.1714259Z"
 }
