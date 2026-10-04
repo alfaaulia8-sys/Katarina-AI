@@ -463,36 +463,35 @@ jobs:
           asyncio.run(main())
           '@ | Set-Content -Path "$env:RUNNER_TEMP\kat_reconnect_peer.py" -Encoding UTF8
 
-      - name: Start persistent Python peer
+      - name: Run two-terminal-process reconnect proof
         shell: pwsh
         run: |
           $ready = "$env:RUNNER_TEMP\kat-reconnect-ready.txt"
           $phase1Done = "$env:RUNNER_TEMP\kat-reconnect-phase1-done.txt"
           $phase2Ready = "$env:RUNNER_TEMP\kat-reconnect-phase2-ready.txt"
-          $result = "$env:RUNNER_TEMP\kat-reconnect-python-result.json"
-          Remove-Item $ready,$phase1Done,$phase2Ready,$result -Force -ErrorAction SilentlyContinue
+          $pythonResult = "$env:RUNNER_TEMP\kat-reconnect-python-result.json"
+          Remove-Item $ready,$phase1Done,$phase2Ready,$pythonResult -Force -ErrorAction SilentlyContinue
 
-          $peer = Start-Process -FilePath "python" -ArgumentList "$env:RUNNER_TEMP\kat_reconnect_peer.py" -PassThru -NoNewWindow
-          "KAT_RECONNECT_PEER_PID=$($peer.Id)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-          $deadline = [DateTime]::UtcNow.AddSeconds(10)
-          while ([DateTime]::UtcNow -lt $deadline -and !(Test-Path $ready)) {
-            if ($peer.HasExited) { throw "Python reconnect peer exited before ready." }
-            Start-Sleep -Milliseconds 100
-          }
-          if (!(Test-Path $ready)) { throw "Python reconnect peer did not become ready." }
-
-      - name: Run MT5 phase 1
-        shell: pwsh
-        run: |
           $commonFiles = Join-Path $env:APPDATA "MetaQuotes\Terminal\Common\Files"
           New-Item -ItemType Directory -Force -Path $commonFiles | Out-Null
           $marker = Join-Path $commonFiles "Katarina_Stage07_reconnect_phase.txt"
-          $evidence = Join-Path $commonFiles "Katarina_Stage07_reconnect_result.txt"
-          Remove-Item $marker,$evidence -Force -ErrorAction SilentlyContinue
+          $mt5Evidence = Join-Path $commonFiles "Katarina_Stage07_reconnect_result.txt"
+          Remove-Item $marker,$mt5Evidence -Force -ErrorAction SilentlyContinue
 
-          $config = Join-Path $env:RUNNER_TEMP "stage07-reconnect-phase1.ini"
-          @"
+          # Keep the ROUTER process alive in THIS SAME workflow step while both
+          # independent MT5 terminal processes start/stop.
+          $peer = Start-Process -FilePath "python" -ArgumentList "$env:RUNNER_TEMP\kat_reconnect_peer.py" -PassThru -NoNewWindow
+
+          try {
+            $deadline = [DateTime]::UtcNow.AddSeconds(10)
+            while ([DateTime]::UtcNow -lt $deadline -and !(Test-Path $ready)) {
+              if ($peer.HasExited) { throw "Python reconnect peer exited before ready." }
+              Start-Sleep -Milliseconds 100
+            }
+            if (!(Test-Path $ready)) { throw "Python reconnect peer did not become ready." }
+
+            $config1 = Join-Path $env:RUNNER_TEMP "stage07-reconnect-phase1.ini"
+            @"
           [Experts]
           AllowLiveTrading=0
           AllowDllImport=1
@@ -503,40 +502,30 @@ jobs:
           Symbol=EURUSD
           Period=H1
           ShutdownTerminal=1
-          "@ | Set-Content -Path $config -Encoding ASCII
+          "@ | Set-Content -Path $config1 -Encoding ASCII
 
-          $p = Start-Process -FilePath "$env:MT5_HOME\terminal64.exe" -ArgumentList @("/portable", "/config:`"$config`"") -Wait -PassThru
-          Write-Host "Phase-1 terminal exit code: $($p.ExitCode)"
+            $p1 = Start-Process -FilePath "$env:MT5_HOME\terminal64.exe" -ArgumentList @("/portable", "/config:`"$config1`"") -Wait -PassThru
+            Write-Host "Phase-1 terminal exit code: $($p1.ExitCode)"
 
-          if (!(Test-Path $evidence)) { throw "Phase-1 reconnect evidence missing." }
-          $text = Get-Content $evidence -Raw
-          Write-Host $text
-          if ($text -notmatch "result=PHASE1_PASS") { throw "Reconnect phase 1 failed." }
-          if ($text -notmatch "last_mt5_sequence=7") { throw "Phase 1 MT5 sequence did not end at 7." }
-          if ($text -notmatch "last_python_sequence=4") { throw "Phase 1 Python sequence did not end at 4." }
+            if (!(Test-Path $mt5Evidence)) { throw "Phase-1 reconnect evidence missing." }
+            $phase1Text = Get-Content $mt5Evidence -Raw
+            Write-Host $phase1Text
+            if ($phase1Text -notmatch "result=PHASE1_PASS") { throw "Reconnect phase 1 failed." }
+            if ($phase1Text -notmatch "last_mt5_sequence=7") { throw "Phase 1 MT5 sequence did not end at 7." }
+            if ($phase1Text -notmatch "last_python_sequence=4") { throw "Phase 1 Python sequence did not end at 4." }
 
-      - name: Wait for stale gate
-        shell: pwsh
-        run: |
-          $phase2Ready = "$env:RUNNER_TEMP\kat-reconnect-phase2-ready.txt"
-          $deadline = [DateTime]::UtcNow.AddSeconds(12)
-          while ([DateTime]::UtcNow -lt $deadline -and !(Test-Path $phase2Ready)) {
-            $peer = Get-Process -Id ([int]$env:KAT_RECONNECT_PEER_PID) -ErrorAction SilentlyContinue
-            if (-not $peer) { throw "Python reconnect peer exited before phase 2." }
-            Start-Sleep -Milliseconds 100
-          }
-          if (!(Test-Path $phase2Ready)) { throw "Python peer never reached STALE/phase2-ready." }
-          Get-Content $phase2Ready | Write-Host
+            $deadline = [DateTime]::UtcNow.AddSeconds(12)
+            while ([DateTime]::UtcNow -lt $deadline -and !(Test-Path $phase2Ready)) {
+              if ($peer.HasExited) { throw "Python reconnect peer exited before phase 2." }
+              Start-Sleep -Milliseconds 100
+            }
+            if (!(Test-Path $phase2Ready)) { throw "Python peer never reached STALE/phase2-ready." }
+            Get-Content $phase2Ready | Write-Host
 
-      - name: Run MT5 phase 2 after terminal restart
-        shell: pwsh
-        run: |
-          $commonFiles = Join-Path $env:APPDATA "MetaQuotes\Terminal\Common\Files"
-          $evidence = Join-Path $commonFiles "Katarina_Stage07_reconnect_result.txt"
-          Remove-Item $evidence -Force -ErrorAction SilentlyContinue
+            Remove-Item $mt5Evidence -Force -ErrorAction SilentlyContinue
 
-          $config = Join-Path $env:RUNNER_TEMP "stage07-reconnect-phase2.ini"
-          @"
+            $config2 = Join-Path $env:RUNNER_TEMP "stage07-reconnect-phase2.ini"
+            @"
           [Experts]
           AllowLiveTrading=0
           AllowDllImport=1
@@ -547,50 +536,54 @@ jobs:
           Symbol=EURUSD
           Period=H1
           ShutdownTerminal=1
-          "@ | Set-Content -Path $config -Encoding ASCII
+          "@ | Set-Content -Path $config2 -Encoding ASCII
 
-          $p = Start-Process -FilePath "$env:MT5_HOME\terminal64.exe" -ArgumentList @("/portable", "/config:`"$config`"") -Wait -PassThru
-          Write-Host "Phase-2 terminal exit code: $($p.ExitCode)"
+            $p2 = Start-Process -FilePath "$env:MT5_HOME\terminal64.exe" -ArgumentList @("/portable", "/config:`"$config2`"") -Wait -PassThru
+            Write-Host "Phase-2 terminal exit code: $($p2.ExitCode)"
 
-          if (!(Test-Path $evidence)) { throw "Phase-2 reconnect evidence missing." }
-          $text = Get-Content $evidence -Raw
-          Write-Host $text
-          if ($text -notmatch "result=PASS") { throw "Reconnect phase 2 failed." }
-          if ($text -notmatch "boot_id=89") { throw "Phase 2 did not use new boot_id 89." }
-          if ($text -notmatch "last_mt5_sequence=14") { throw "Phase 2 MT5 sequence did not end at 14." }
-          if ($text -notmatch "last_python_sequence=8") { throw "Phase 2 Python sequence did not end at 8." }
+            if (!(Test-Path $mt5Evidence)) { throw "Phase-2 reconnect evidence missing." }
+            $phase2Text = Get-Content $mt5Evidence -Raw
+            Write-Host $phase2Text
+            if ($phase2Text -notmatch "result=PASS") { throw "Reconnect phase 2 failed." }
+            if ($phase2Text -notmatch "boot_id=89") { throw "Phase 2 did not use new boot_id 89." }
+            if ($phase2Text -notmatch "last_mt5_sequence=14") { throw "Phase 2 MT5 sequence did not end at 14." }
+            if ($phase2Text -notmatch "last_python_sequence=8") { throw "Phase 2 Python sequence did not end at 8." }
 
-          Copy-Item $evidence ".\build\stage07\Katarina_Stage07_reconnect_result.txt" -Force
+            $peer.WaitForExit(15000) | Out-Null
+            if (-not $peer.HasExited) {
+              throw "Python reconnect peer did not terminate after phase 2."
+            }
+            if ($peer.ExitCode -ne 0) {
+              throw "Python reconnect peer failed with exit code $($peer.ExitCode)."
+            }
 
-      - name: Verify persistent Python result
-        shell: pwsh
-        run: |
-          $result = "$env:RUNNER_TEMP\kat-reconnect-python-result.json"
-          $peer = Get-Process -Id ([int]$env:KAT_RECONNECT_PEER_PID) -ErrorAction SilentlyContinue
-          if ($peer) {
-            Wait-Process -Id $peer.Id -Timeout 15 -ErrorAction SilentlyContinue
+            if (!(Test-Path $pythonResult)) { throw "Python reconnect result missing." }
+            $python = Get-Content $pythonResult -Raw | ConvertFrom-Json
+            Get-Content $pythonResult | Write-Host
+
+            if ($python.result -ne "PASS") { throw "Python reconnect result did not pass." }
+            if ($python.stream_id_stable -ne $true) { throw "stream_id changed across reconnect." }
+            if ($python.phase1_mt5_final -ne 7 -or $python.phase2_mt5_first -ne 8 -or $python.phase2_mt5_final -ne 14) {
+              throw "MT5 sequence continuity failed."
+            }
+            if ($python.phase1_python_final -ne 4 -or $python.phase2_python_first -ne 5 -or $python.phase2_python_final -ne 8) {
+              throw "Python sequence continuity failed."
+            }
+            if ($python.session_state -ne "ready" -or $python.communication_ready -ne $true) {
+              throw "Second recovery did not finish READY."
+            }
+            if ($python.live_risk_ready -ne $false) { throw "Stage 07 illegally granted live-risk readiness." }
+            if ($python.duplicate_or_gap_detected -ne $false) { throw "Duplicate/gap was detected." }
+            if ($python.full_recovery_repeated -ne $true) { throw "Full recovery was not repeated." }
+
+            Copy-Item $mt5Evidence ".\build\stage07\Katarina_Stage07_reconnect_result.txt" -Force
+            Copy-Item $pythonResult ".\build\stage07\stage07_reconnect_python_result.json" -Force
           }
-
-          if (!(Test-Path $result)) { throw "Python reconnect result missing." }
-          $python = Get-Content $result -Raw | ConvertFrom-Json
-          Get-Content $result | Write-Host
-
-          if ($python.result -ne "PASS") { throw "Python reconnect result did not pass." }
-          if ($python.stream_id_stable -ne $true) { throw "stream_id changed across reconnect." }
-          if ($python.phase1_mt5_final -ne 7 -or $python.phase2_mt5_first -ne 8 -or $python.phase2_mt5_final -ne 14) {
-            throw "MT5 sequence continuity failed."
+          finally {
+            if (-not $peer.HasExited) {
+              Stop-Process -Id $peer.Id -Force -ErrorAction SilentlyContinue
+            }
           }
-          if ($python.phase1_python_final -ne 4 -or $python.phase2_python_first -ne 5 -or $python.phase2_python_final -ne 8) {
-            throw "Python sequence continuity failed."
-          }
-          if ($python.session_state -ne "ready" -or $python.communication_ready -ne $true) {
-            throw "Second recovery did not finish READY."
-          }
-          if ($python.live_risk_ready -ne $false) { throw "Stage 07 illegally granted live-risk readiness." }
-          if ($python.duplicate_or_gap_detected -ne $false) { throw "Duplicate/gap was detected." }
-          if ($python.full_recovery_repeated -ne $true) { throw "Full recovery was not repeated." }
-
-          Copy-Item $result ".\build\stage07\stage07_reconnect_python_result.json" -Force
 
       - name: Write reconnect evidence
         shell: pwsh
