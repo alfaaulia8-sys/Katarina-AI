@@ -60,12 +60,18 @@ if ($PollSeconds -lt 5) {
 New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
 
 $sourceAgent = Join-Path $PSScriptRoot "KatarinaVpsAgent.ps1"
+$sourceWatchdog = Join-Path $PSScriptRoot "KatarinaVpsAgentWatchdog.ps1"
 if (!(Test-Path $sourceAgent)) {
     throw "KatarinaVpsAgent.ps1 must be in the same folder as this installer."
 }
+if (!(Test-Path $sourceWatchdog)) {
+    throw "KatarinaVpsAgentWatchdog.ps1 must be in the same folder as this installer."
+}
 
 $targetAgent = Join-Path $InstallRoot "KatarinaVpsAgent.ps1"
+$targetWatchdog = Join-Path $InstallRoot "KatarinaVpsAgentWatchdog.ps1"
 Copy-Item -Path $sourceAgent -Destination $targetAgent -Force
+Copy-Item -Path $sourceWatchdog -Destination $targetWatchdog -Force
 
 $config = [ordered]@{
     schema_version = 1
@@ -120,6 +126,17 @@ if ($LASTEXITCODE -ne 0) {
 & schtasks.exe /Run /TN $taskName | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "Scheduled task was created but could not be started."
+}
+
+$watchdogTaskName = "KatarinaVPSAgentWatchdog"
+$watchdogCommand = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $targetWatchdog + '" -InstallRoot "' + $InstallRoot + '"'
+& schtasks.exe /Create /F /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /TN $watchdogTaskName /TR $watchdogCommand | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to register scheduled task $watchdogTaskName."
+}
+& schtasks.exe /Run /TN $watchdogTaskName | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Watchdog task was created but could not be started."
 }
 
 Write-Host ""
