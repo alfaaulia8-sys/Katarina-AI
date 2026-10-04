@@ -528,7 +528,7 @@ try {
                     $record.start_exit_code = [int]$LASTEXITCODE
                     if ($LASTEXITCODE -ne 0) {
                         $record.error = "TASK_START_FAILED"
-                        return $record
+                        return ([pscustomobject]$record)
                     }
 
                     $deadline = [DateTime]::UtcNow.AddSeconds($WaitSeconds)
@@ -557,7 +557,7 @@ try {
                     if (-not $record.heartbeat_fresh -and [string]::IsNullOrWhiteSpace([string]$record.error)) {
                         $record.error = "HEARTBEAT_TIMEOUT"
                     }
-                    return $record
+                    return ([pscustomobject]$record)
                 }
 
                 $cfg = Get-Content -LiteralPath $primaryConfig -Raw | ConvertFrom-Json
