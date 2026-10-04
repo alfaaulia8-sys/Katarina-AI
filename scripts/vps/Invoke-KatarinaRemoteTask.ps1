@@ -1061,10 +1061,17 @@ try { & schtasks.exe /Delete /F /TN "KatarinaGuardedDeferredRestart" | Out-Null 
                 }
                 Write-JsonFile $primaryConfig $stable
 
-                foreach($taskName in @("KatarinaControlSupervisorGuard","KatarinaControlSupervisor","KatarinaControlRecovery","KatarinaControlWorker01","KatarinaControlWorker02")) {
+                foreach($taskName in @("KatarinaControlGuardian","KatarinaControlSupervisorGuard","KatarinaControlSupervisor","KatarinaControlRecovery","KatarinaControlWorker01","KatarinaControlWorker02")) {
                     try { & schtasks.exe /End /TN $taskName | Out-Null } catch {}
                     try { & schtasks.exe /Change /TN $taskName /DISABLE | Out-Null } catch {}
                 }
+                try {
+                    foreach($proc in @(Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
+                        if($proc.CommandLine -and $proc.CommandLine.IndexOf("KatarinaControlGuardian.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            try { [void]$proc.Terminate() } catch {}
+                        }
+                    }
+                } catch {}
                 foreach($taskName in @("KatarinaVPSAgent","KatarinaVPSAgentWatchdog")) {
                     try { & schtasks.exe /Change /TN $taskName /ENABLE | Out-Null } catch {}
                 }
@@ -1095,6 +1102,7 @@ try { & schtasks.exe /Delete /F /TN "KatarinaPrimaryDeferredRestart" | Out-Null 
                     installed_agent_sha256=(Get-FileHash -LiteralPath $agentPath -Algorithm SHA256).Hash.ToLowerInvariant()
                     installed_watchdog_sha256=(Get-FileHash -LiteralPath $watchdogPath -Algorithm SHA256).Hash.ToLowerInvariant()
                     secondary_lanes_disabled=$true
+                    guardian_disabled=$true
                     heavy_execution_concurrency=1
                     deferred_restart_task=$restartTask
                     deferred_restart_time_local=$runAt
