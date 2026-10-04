@@ -10,6 +10,7 @@ on:
       - "scripts/stage07/profile_stage07_transport.py"
       - "scripts/stage07/audit_stage07_final.py"
       - "scripts/stage07/configure_mt5_network_allowlist.py"
+      - "scripts/stage07/configure_mt5_network_allowlist.py"
   workflow_dispatch:
 
 permissions:
