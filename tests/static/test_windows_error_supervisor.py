@@ -20,6 +20,19 @@ class WindowsErrorSupervisorStaticTests(unittest.TestCase):
     def test_one_click_launcher(self):
         self.assertIn('Start-KatarinaAll.ps1', self.launcher)
 
+    def test_starter_discovers_git_from_github_desktop(self):
+        self.assertIn('GitHubDesktop', self.starter)
+        self.assertIn('resources\\app\\git\\cmd\\git.exe', self.starter)
+        self.assertIn('Resolve-GitExecutable', self.starter)
+
+    def test_starter_can_bootstrap_git_with_winget(self):
+        self.assertIn('winget.exe', self.starter)
+        self.assertIn('Git.Git', self.starter)
+
+    def test_starter_supports_python_launcher(self):
+        self.assertIn('py.exe', self.starter)
+        self.assertIn('Prefix = @("-3")', self.starter)
+
     def test_watches_mt5_and_tester_logs(self):
         self.assertIn('MetaQuotes\\Terminal', self.watcher)
         self.assertIn('MetaQuotes\\Tester', self.watcher)
@@ -44,6 +57,9 @@ class WindowsErrorSupervisorStaticTests(unittest.TestCase):
 
     def test_startup_failure_auto_published(self):
         self.assertIn('STARTUP_VERIFY_ERROR', self.starter)
+
+    def test_launcher_does_not_claim_error_uploaded_on_bootstrap_failure(self):
+        self.assertNotIn('Error sudah diantrikan untuk GitHub', self.launcher)
 
 if __name__ == '__main__':
     unittest.main()

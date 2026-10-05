@@ -6,6 +6,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\windows\St
 set RC=%ERRORLEVEL%
 echo.
 if "%RC%"=="0" echo [KATARINA] Ready. Error Supervisor berjalan di background.
-if not "%RC%"=="0" echo [KATARINA] Launcher selesai dengan code %RC%. Error sudah diantrikan untuk GitHub.
+if not "%RC%"=="0" echo [KATARINA] Launcher berhenti dengan code %RC%. Lihat pesan di atas.
 pause
 exit /b %RC%

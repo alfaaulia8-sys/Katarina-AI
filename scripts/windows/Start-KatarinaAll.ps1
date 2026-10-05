@@ -18,9 +18,95 @@ $watcher = Join-Path $PSScriptRoot "Watch-KatarinaErrors.ps1"
 $publisher = Join-Path $PSScriptRoot "Publish-KatarinaError.ps1"
 New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
 
-function Test-Command {
-    param([string]$Name)
-    return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
+function Resolve-GitExecutable {
+    $command = Get-Command git.exe -ErrorAction SilentlyContinue
+    if ($command) { return $command.Source }
+
+    $candidates = @(
+        (Join-Path $env:ProgramFiles "Git\cmd\git.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Git\cmd\git.exe"),
+        (Join-Path $env:LOCALAPPDATA "GitHubDesktop\bin\git.exe")
+    )
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            return $candidate
+        }
+    }
+
+    $desktopRoot = Join-Path $env:LOCALAPPDATA "GitHubDesktop"
+    if (Test-Path -LiteralPath $desktopRoot -PathType Container) {
+        $desktopGit = Get-ChildItem -Path (Join-Path $desktopRoot "app-*") -Directory -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending |
+            ForEach-Object {
+                @(
+                    (Join-Path $_.FullName "resources\app\git\cmd\git.exe"),
+                    (Join-Path $_.FullName "resources\app\git\mingw64\bin\git.exe")
+                )
+            } |
+            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+            Select-Object -First 1
+        if ($desktopGit) { return [string]$desktopGit }
+    }
+
+    return $null
+}
+
+function Enable-Git {
+    $gitExe = Resolve-GitExecutable
+    if (-not $gitExe) { return $null }
+
+    $gitDir = Split-Path -Parent $gitExe
+    if (($env:PATH -split ';') -notcontains $gitDir) {
+        $env:PATH = $gitDir + ";" + $env:PATH
+    }
+    return $gitExe
+}
+
+function Try-InstallGit {
+    $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
+    if (-not $winget) { return $false }
+
+    Write-Host "[KATARINA] Git belum ditemukan. Mencoba install Git for Windows otomatis..."
+    & $winget.Source install --id Git.Git -e --source winget --silent --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -ne 0) { return $false }
+
+    $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $env:PATH = "$machinePath;$userPath"
+    return [bool](Enable-Git)
+}
+
+function Resolve-PythonCommand {
+    $python = Get-Command python.exe -ErrorAction SilentlyContinue
+    if ($python) {
+        return [pscustomobject]@{ File = $python.Source; Prefix = @() }
+    }
+
+    $py = Get-Command py.exe -ErrorAction SilentlyContinue
+    if ($py) {
+        return [pscustomobject]@{ File = $py.Source; Prefix = @("-3") }
+    }
+
+    $candidateRoots = @(
+        (Join-Path $env:LOCALAPPDATA "Programs\Python"),
+        (Join-Path $env:ProgramFiles "Python312"),
+        (Join-Path $env:ProgramFiles "Python313")
+    )
+    foreach ($root in $candidateRoots) {
+        if (-not $root) { continue }
+        if (Test-Path -LiteralPath $root -PathType Leaf) {
+            return [pscustomobject]@{ File = $root; Prefix = @() }
+        }
+        if (Test-Path -LiteralPath $root -PathType Container) {
+            $found = Get-ChildItem -LiteralPath $root -Filter python.exe -Recurse -File -ErrorAction SilentlyContinue |
+                Select-Object -First 1
+            if ($found) {
+                return [pscustomobject]@{ File = $found.FullName; Prefix = @() }
+            }
+        }
+    }
+    return $null
 }
 
 function Start-ErrorSupervisor {
@@ -73,12 +159,28 @@ Write-Host " KATARINA AI - ONE CLICK START"
 Write-Host "=================================================="
 Write-Host "Repo: $RepoRoot"
 
-if (-not (Test-Command "git")) {
-    throw "Git is required. Install Git for Windows first."
+$gitExe = Enable-Git
+if (-not $gitExe) {
+    [void](Try-InstallGit)
+    $gitExe = Enable-Git
 }
-if (-not (Test-Command "python")) {
-    throw "Python is required and must be available in PATH."
+if (-not $gitExe) {
+    Write-Host ""
+    Write-Host "[KATARINA] Git belum ditemukan." -ForegroundColor Red
+    Write-Host "Install Git for Windows atau buka ulang GitHub Desktop, lalu jalankan START_KATARINA.bat lagi."
+    Write-Host "Download resmi: https://git-scm.com/download/win"
+    exit 10
 }
+Write-Host "Git: $gitExe"
+
+$pythonCommand = Resolve-PythonCommand
+if (-not $pythonCommand) {
+    Write-Host ""
+    Write-Host "[KATARINA] Python 3 belum ditemukan." -ForegroundColor Red
+    Write-Host "Install Python 3.12+ lalu jalankan START_KATARINA.bat lagi."
+    exit 11
+}
+Write-Host "Python: $($pythonCommand.File)"
 
 $remote = (& git -C $RepoRoot remote get-url origin 2>$null | Select-Object -First 1)
 if (-not $remote) {
@@ -98,8 +200,9 @@ $commands = @(
 $failed = $false
 $failedCode = 0
 foreach ($cmd in $commands) {
-    ("RUN python " + ($cmd -join " ")) | Add-Content -LiteralPath $verifyLog -Encoding UTF8
-    $output = & python @cmd 2>&1
+    $pythonArgs = @($pythonCommand.Prefix) + $cmd
+    ("RUN " + $pythonCommand.File + " " + ($pythonArgs -join " ")) | Add-Content -LiteralPath $verifyLog -Encoding UTF8
+    $output = & $pythonCommand.File @pythonArgs 2>&1
     $rc = $LASTEXITCODE
     foreach ($line in $output) {
         Write-Host $line
