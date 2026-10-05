@@ -48,6 +48,13 @@ class Vps2012BridgeStaticTests(unittest.TestCase):
         self.assertNotIn('live_risk_ready=$true', lowered)
         self.assertNotIn('live_execution_enabled=$true', lowered)
 
+    def test_handshake_does_not_shadow_powershell_args(self):
+        handshake = (ROOT / 'scripts' / 'vps2012' / 'Test-KatarinaVpsBridge.ps1').read_text(encoding='utf-8')
+        self.assertNotIn('[string[]]$Args', handshake)
+        self.assertNotIn('@Args 2>&1', handshake)
+        self.assertIn('[string[]]$GitArgs', handshake)
+        self.assertIn('@GitArgs 2>&1', handshake)
+
     def test_initial_control_is_idle(self):
         self.assertIn('"sequence": 0', self.control)
         self.assertIn('"action": "IDLE"', self.control)
