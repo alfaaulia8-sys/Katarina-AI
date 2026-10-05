@@ -16,6 +16,28 @@ if (-not $RepoRoot) {
     $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
 }
 
+function Assert-Git2012Compatibility {
+    param([string]$GitPath)
+
+    try {
+        $os = Get-WmiObject Win32_OperatingSystem -ErrorAction Stop
+        $isServer2012 = ([string]$os.Caption -match "Windows Server 2012")
+    } catch {
+        $isServer2012 = $false
+    }
+
+    if (-not $isServer2012) { return }
+
+    $versionText = @(& $GitPath --version 2>&1) -join " "
+    if ($versionText -match '(\d+\.\d+\.\d+)') {
+        $gitVersion = [Version]$Matches[1]
+        $maxVersion = [Version]"2.46.2"
+        if ($gitVersion -gt $maxVersion) {
+            throw "Windows Server 2012 R2 requires Git for Windows 2.46.2 or older. Detected: $versionText"
+        }
+    }
+}
+
 function Resolve-Git {
     $cmd = Get-Command git.exe -ErrorAction SilentlyContinue
     if ($cmd) {
