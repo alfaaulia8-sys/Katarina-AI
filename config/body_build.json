@@ -44,5 +44,7 @@
   "stage36_paper_ledger_prepared": true,
   "stage36_windows_demo_proof": "PENDING",
   "stage38_prerequisite_gate_prepared": true,
-  "stage38_live_activation": "NOT_IMPLEMENTED"
+  "stage38_live_activation": "NOT_IMPLEMENTED",
+  "qemu_windows_postinstall_prepared": true,
+  "qemu_windows_postinstall_static_tests": "5/5 PASS"
 }
