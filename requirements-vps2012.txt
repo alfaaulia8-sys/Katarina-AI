@@ -1,0 +1,4 @@
+# Windows Server 2012 R2 / CPython 3.8 compatibility pins.
+# Do not replace main requirements-stage07.txt with this file.
+pyzmq==27.0.2
+tornado==6.4.2

@@ -63,8 +63,11 @@ class Vps2012BridgeStaticTests(unittest.TestCase):
         self.assertEqual(self.script.count('function Ensure-LocalConfig {'), 1)
         self.assertEqual(self.script.count('function Setup-Katarina {'), 1)
         self.assertEqual(self.script.count('switch($Mode){'), 1)
-        self.assertIn('python-3.12.10-amd64.exe', self.script)
-        self.assertIn('Include_pip=1', self.script)
+        self.assertIn('python-3.8.10-embed-amd64.zip', self.script)
+        self.assertIn('bootstrap.pypa.io/pip/3.8/get-pip.py', self.script)
+        self.assertIn('python38._pth', self.script)
+        self.assertIn('requirements-vps2012.txt', self.script)
+        self.assertNotIn('python-3.12.10-amd64.exe', self.script)
 
     def test_bridge_starts_before_python_bootstrap(self):
         setup = self.script.split('function Setup-Katarina {', 1)[1].split('function Stop-Bridge {', 1)[0]

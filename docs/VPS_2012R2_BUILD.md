@@ -62,3 +62,15 @@ ChatGPT to inspect VPS-local fixes without pushing the source branch.
 
 `live_risk_ready=false` and `live_execution_enabled=false` remain mandatory.
 Final source publication is intentionally not automated.
+
+
+## Windows Server 2012 R2 Python runtime
+
+The VPS harness does not require a system-wide Python installation. When Python is
+missing, it bootstraps the official CPython 3.8.10 embeddable x64 distribution into:
+
+`C:\KatarinaRuntime\python`
+
+Pip is bootstrapped with the Python-3.8-specific get-pip endpoint. Server-2012
+dependencies are pinned separately in `requirements-vps2012.txt` so the stable
+`main` requirements remain untouched during VPS validation.

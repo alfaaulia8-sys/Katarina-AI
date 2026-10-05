@@ -209,50 +209,78 @@ function Bootstrap-KatarinaPython2012 {
     Ensure-Directories
     Enable-Tls12
 
-    $version = "3.12.10"
+    $version = "3.8.10"
     $downloadsRoot = Join-Path $RuntimeRoot "downloads"
     $pythonRoot = Join-Path $RuntimeRoot "python"
     $pythonExe = Join-Path $pythonRoot "python.exe"
-    $installer = Join-Path $downloadsRoot ("python-" + $version + "-amd64.exe")
-    $url = "https://www.python.org/ftp/python/" + $version + "/python-" + $version + "-amd64.exe"
+    $archive = Join-Path $downloadsRoot ("python-" + $version + "-embed-amd64.zip")
+    $url = "https://www.python.org/ftp/python/" + $version + "/python-" + $version + "-embed-amd64.zip"
+    $getPip = Join-Path $downloadsRoot "get-pip-3.8.py"
+    $getPipUrl = "https://bootstrap.pypa.io/pip/3.8/get-pip.py"
 
     if (Test-Path -LiteralPath $pythonExe -PathType Leaf) {
         return $pythonExe
     }
 
     New-Item -ItemType Directory -Force -Path $downloadsRoot | Out-Null
-    Write-Host "[KATARINA] Python 3.12 tidak ditemukan. Mengunduh installer resmi..."
+    Write-Host "[KATARINA] Menyiapkan Python 3.8.10 portable untuk Windows Server 2012 R2..."
 
-    if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
-        Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+    if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) {
+        Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing
     }
 
-    $installArgs = @(
-        "/quiet",
-        "InstallAllUsers=0",
-        ("TargetDir=" + $pythonRoot),
-        "PrependPath=0",
-        "Include_test=0",
-        "Include_launcher=0",
-        "Include_pip=1",
-        "Include_doc=0"
-    )
+    if (Test-Path -LiteralPath $pythonRoot) {
+        Remove-Item -LiteralPath $pythonRoot -Recurse -Force
+    }
+    New-Item -ItemType Directory -Force -Path $pythonRoot | Out-Null
 
-    $proc = Start-Process -FilePath $installer -ArgumentList $installArgs -Wait -PassThru
-    if (($proc.ExitCode -ne 0) -and ($proc.ExitCode -ne 3010)) {
-        throw "Installer Python gagal dengan exit code " + $proc.ExitCode
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [IO.Compression.ZipFile]::ExtractToDirectory($archive,$pythonRoot)
+
+    $pth = Join-Path $pythonRoot "python38._pth"
+    if (-not (Test-Path -LiteralPath $pth -PathType Leaf)) {
+        throw "python38._pth tidak ditemukan setelah ekstraksi."
     }
 
-    if (-not (Test-Path -LiteralPath $pythonExe -PathType Leaf)) {
-        throw "python.exe tidak ditemukan setelah instalasi."
-    }
+    @(
+        "python38.zip",
+        ".",
+        "Lib\site-packages",
+        "import site"
+    ) | Set-Content -LiteralPath $pth -Encoding ASCII
+
+    New-Item -ItemType Directory -Force -Path (Join-Path $pythonRoot "Lib\site-packages") | Out-Null
 
     $probe = Invoke-Captured -File $pythonExe -Arguments @("--version") -WorkingDirectory $RepoRoot -TimeoutSeconds 60
     if ($probe.ExitCode -ne 0) {
-        throw "Python terpasang tetapi gagal dijalankan: " + $probe.Combined
+        throw "Python portable gagal dijalankan: " + $probe.Combined
     }
 
-    Write-Host ("[KATARINA] Python siap: " + $pythonExe)
+    if (-not (Test-Path -LiteralPath $getPip -PathType Leaf)) {
+        Invoke-WebRequest -Uri $getPipUrl -OutFile $getPip -UseBasicParsing
+    }
+
+    $pipInstall = Invoke-Captured -File $pythonExe -Arguments @($getPip,"--disable-pip-version-check","--no-warn-script-location") -WorkingDirectory $RepoRoot -TimeoutSeconds 600
+    if ($pipInstall.ExitCode -ne 0) {
+        throw "Bootstrap pip Python 3.8 gagal: " + $pipInstall.Combined
+    }
+
+    $pipProbe = Invoke-Captured -File $pythonExe -Arguments @("-m","pip","--version") -WorkingDirectory $RepoRoot -TimeoutSeconds 60
+    if ($pipProbe.ExitCode -ne 0) {
+        throw "pip tidak tersedia setelah bootstrap: " + $pipProbe.Combined
+    }
+
+    $evidence = [ordered]@{
+        schema_version = 1
+        runtime = "CPYTHON_EMBEDDABLE"
+        python_version = $version
+        python_exe = $pythonExe
+        result = "PASS"
+        completed_utc = [DateTime]::UtcNow.ToString("o")
+    }
+    Write-JsonFile $evidence (Join-Path $RuntimeRoot "python-bootstrap.json")
+
+    Write-Host ("[KATARINA] Python portable siap: " + $pythonExe)
     return $pythonExe
 }
 
@@ -512,7 +540,7 @@ function Build-Katarina {
     } else {
         $env:PYTHONPATH=Join-Path $RepoRoot "src"
         $pythonSteps=@(
-            @("PY_DEPS",@("-m","pip","install","--disable-pip-version-check","--only-binary=:all:","-r","requirements-stage07.txt")),
+            @("PY_DEPS",@("-m","pip","install","--disable-pip-version-check","--only-binary=:all:","-r","requirements-vps2012.txt")),
             @("PY_COMPILE",@("-m","compileall","-q","src")),
             @("UNIT_TESTS",@("-m","unittest","discover","-s","tests/unit","-p","test_*.py")),
             @("STATIC_TESTS",@("-m","unittest","discover","-s","tests/static","-p","test_*.py")),
