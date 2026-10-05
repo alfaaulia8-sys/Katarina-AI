@@ -18,7 +18,10 @@ if (-not $RepoRoot) {
 
 function Resolve-Git {
     $cmd = Get-Command git.exe -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Source }
+    if ($cmd) {
+        if ($cmd.PSObject.Properties["Path"] -and $cmd.Path) { return [string]$cmd.Path }
+        if ($cmd.PSObject.Properties["Definition"] -and $cmd.Definition) { return [string]$cmd.Definition }
+    }
     $candidates = @(
         (Join-Path $env:ProgramFiles "Git\cmd\git.exe"),
         (Join-Path $env:LOCALAPPDATA "Programs\Git\cmd\git.exe")
