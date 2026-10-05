@@ -40,8 +40,11 @@ def gh(endpoint,method="GET",payload=None,timeout=60):
     return json.loads(p.stdout) if p.stdout.strip() else None
 
 def comments():
-    x=gh(f"repos/{REPO}/issues/{ISSUE}/comments?per_page=100")
-    return x if isinstance(x,list) else []
+    ep=f"repos/{REPO}/issues/{ISSUE}/comments?per_page=100"
+    p=run(["gh","api","--paginate","--slurp",ep],timeout=60)
+    if p.returncode: raise RuntimeError(p.stdout[-4000:])
+    pages=json.loads(p.stdout) if p.stdout.strip() else []
+    return [c for page in pages for c in page] if isinstance(pages,list) else []
 
 def post(obj):
     body=json.dumps(obj,ensure_ascii=False,separators=(",",":"))
@@ -67,7 +70,7 @@ def qstatus():
     return p.stdout.strip() or "katarina-status unavailable"
 
 def novnc_status():
-    p=shell("pgrep -af 'novnc-gateway/server.mjs' || true",10).stdout.strip()
+    p=shell("pgrep -af '[n]ovnc-gateway/server.mjs' || true",10).stdout.strip()
     h=shell("curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:6080/vnc.html || true",10).stdout.strip()
     return {"process":p,"http":h}
 
@@ -78,7 +81,11 @@ def novnc_start():
     if not g.exists():raise FileNotFoundError(str(g))
     (VM/"logs").mkdir(parents=True,exist_ok=True); (VM/"run").mkdir(parents=True,exist_ok=True)
     shell("nohup node "+shlex.quote(str(g))+" >"+shlex.quote(str(VM/"logs"/"novnc.log"))+" 2>&1 & echo $! > "+shlex.quote(str(VM/"run"/"novnc.pid")),10)
-    time.sleep(1); return novnc_status()
+    for _ in range(10):
+        time.sleep(0.5)
+        s=novnc_status()
+        if s.get("http")=="200": return s
+    return novnc_status()
 
 def hmp(mode,value):
     s=VM/"scripts"/"winvm-hmp.py"
