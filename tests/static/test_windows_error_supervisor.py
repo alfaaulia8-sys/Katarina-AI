@@ -33,6 +33,13 @@ class WindowsErrorSupervisorStaticTests(unittest.TestCase):
         self.assertIn('py.exe', self.starter)
         self.assertIn('Prefix = @("-3")', self.starter)
 
+
+    def test_python_runner_is_powershell_51_safe(self):
+        self.assertIn('RedirectStandardOutput', self.starter)
+        self.assertIn('RedirectStandardError', self.starter)
+        self.assertIn('Start-Process -FilePath $pythonCommand.File', self.starter)
+        self.assertNotIn('& $pythonCommand.File @pythonArgs 2>&1', self.starter)
+
     def test_watches_mt5_and_tester_logs(self):
         self.assertIn('MetaQuotes\\Terminal', self.watcher)
         self.assertIn('MetaQuotes\\Tester', self.watcher)

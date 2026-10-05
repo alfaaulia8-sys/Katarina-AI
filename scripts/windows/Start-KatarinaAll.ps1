@@ -202,11 +202,30 @@ $failedCode = 0
 foreach ($cmd in $commands) {
     $pythonArgs = @($pythonCommand.Prefix) + $cmd
     ("RUN " + $pythonCommand.File + " " + ($pythonArgs -join " ")) | Add-Content -LiteralPath $verifyLog -Encoding UTF8
-    $output = & $pythonCommand.File @pythonArgs 2>&1
-    $rc = $LASTEXITCODE
-    foreach ($line in $output) {
-        Write-Host $line
-        $line | Add-Content -LiteralPath $verifyLog -Encoding UTF8
+    $stdoutPath = [IO.Path]::GetTempFileName()
+    $stderrPath = [IO.Path]::GetTempFileName()
+    try {
+        $proc = Start-Process -FilePath $pythonCommand.File `
+            -ArgumentList $pythonArgs `
+            -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $stdoutPath `
+            -RedirectStandardError $stderrPath
+        $rc = $proc.ExitCode
+
+        $output = @()
+        if (Test-Path -LiteralPath $stdoutPath) {
+            $output += Get-Content -LiteralPath $stdoutPath -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $stderrPath) {
+            $output += Get-Content -LiteralPath $stderrPath -ErrorAction SilentlyContinue
+        }
+        foreach ($line in $output) {
+            Write-Host $line
+            $line | Add-Content -LiteralPath $verifyLog -Encoding UTF8
+        }
+    } finally {
+        Remove-Item -LiteralPath $stdoutPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
     }
     ("EXIT_CODE=" + $rc) | Add-Content -LiteralPath $verifyLog -Encoding UTF8
     if ($rc -ne 0) {
