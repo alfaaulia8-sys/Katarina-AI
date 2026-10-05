@@ -42,7 +42,7 @@ function Quote-Arg {
 }
 
 function Run-Git {
-    param([string]$Git,[string[]]$Args,[string]$WorkingDirectory)
+    param([string]$Git,[string[]]$GitArgs,[string]$WorkingDirectory)
 
     $oldPreference = $ErrorActionPreference
     $output = @()
@@ -50,7 +50,7 @@ function Run-Git {
     Push-Location -LiteralPath $WorkingDirectory
     try {
         $ErrorActionPreference = "Continue"
-        $output = @(& $Git @Args 2>&1)
+        $output = @(& $Git @GitArgs 2>&1)
         $code = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $oldPreference
