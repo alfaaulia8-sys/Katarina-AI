@@ -15,5 +15,6 @@
   "github_reference_query": "python trading pytest github actions CI",
   "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/.github/workflows/ci.yml",
   "functional_body_kernel": "AutomatedTestingBody",
-  "functional_body_complete": true
+  "functional_body_complete": true,
+  "concrete_artifact": ".github/workflows/katarina-body-ci.yml"
 }

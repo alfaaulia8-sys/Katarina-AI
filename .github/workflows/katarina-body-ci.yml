@@ -1,0 +1,38 @@
+name: KATARINA Body CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  body:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile Python
+        run: PYTHONPATH=src python -m compileall -q src
+
+      - name: Unit regression
+        run: PYTHONPATH=src python -m unittest discover -s tests/unit -p 'test_*.py'
+
+      - name: Stage 10 local audit
+        run: |
+          PYTHONPATH=src python scripts/stage10/audit_stage10_final.py             --repo-root .             --output build/stage10/stage10_local_final_clearance.json
+
+      - name: Constitution Guard
+        run: |
+          PYTHONPATH=src python scripts/governance/audit_constitution_guard.py             --repo-root .             --output build/governance/constitution_guard.json
+
+      - name: Stage 11-40 framework audit
+        run: |
+          PYTHONPATH=src python scripts/body/audit_body_framework.py             --repo-root .             --output build/body/body_framework_audit.json
+
+      - name: Functional body audit
+        run: |
+          PYTHONPATH=src python scripts/body/audit_functional_body.py             --repo-root .             --output build/body/katarina_body_local_clearance.json

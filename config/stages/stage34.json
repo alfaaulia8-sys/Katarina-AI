@@ -16,5 +16,6 @@
   "github_reference_query": "policy as code invariant guard deny fail closed",
   "github_reference_url": "https://github.com/OrodruinLabs/nazgul/blob/1d388c87e845fbfab14071fac85157fa026f9534/RULES.md",
   "functional_body_kernel": "ConstitutionGuardBody",
-  "functional_body_complete": true
+  "functional_body_complete": true,
+  "concrete_artifact": "scripts/governance/audit_constitution_guard.py"
 }
