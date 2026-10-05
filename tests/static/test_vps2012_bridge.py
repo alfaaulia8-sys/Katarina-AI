@@ -55,15 +55,20 @@ class Vps2012BridgeStaticTests(unittest.TestCase):
         self.assertIn('[string[]]$GitArgs', handshake)
         self.assertIn('@GitArgs 2>&1', handshake)
 
-    def test_setup_bootstraps_portable_python(self):
-        self.assertIn('Bootstrap-KatarinaPortablePython2012', self.script)
-        self.assertIn('python-3.12.10-embed-amd64.zip', self.script)
-        self.assertIn('get-pip.py', self.script)
-        self.assertIn('C:\\KatarinaRuntime', self.script)
 
-    def test_bridge_starts_before_build(self):
+
+    def test_managed_python_bootstrap_is_clean(self):
+        self.assertEqual(self.script.count('function Bootstrap-KatarinaPython2012'), 1)
+        self.assertEqual(self.script.count('function Sanitize-Text {'), 1)
+        self.assertEqual(self.script.count('function Ensure-LocalConfig {'), 1)
+        self.assertEqual(self.script.count('function Setup-Katarina {'), 1)
+        self.assertEqual(self.script.count('switch($Mode){'), 1)
+        self.assertIn('python-3.12.10-amd64.exe', self.script)
+        self.assertIn('Include_pip=1', self.script)
+
+    def test_bridge_starts_before_python_bootstrap(self):
         setup = self.script.split('function Setup-Katarina {', 1)[1].split('function Stop-Bridge {', 1)[0]
-        self.assertLess(setup.index('Start-BridgeBackground'), setup.index('Build-Katarina $true'))
+        self.assertLess(setup.index('Start-BridgeBackground'), setup.index('Bootstrap-KatarinaPython2012'))
 
     def test_initial_control_is_idle(self):
         self.assertIn('"sequence": 0', self.control)
