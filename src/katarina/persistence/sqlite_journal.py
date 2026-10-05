@@ -7,6 +7,13 @@ from pathlib import Path
 
 from katarina.persistence.boundaries import PersistenceLane
 from katarina.persistence.records import DurableRecord
+from katarina.persistence.sqlite_common import (
+    APP_ID_EVENT_JOURNAL,
+    configure_connection,
+    ensure_application_id,
+    integrity_report as sqlite_integrity_report,
+    migrate_v1,
+)
 
 
 class JournalError(RuntimeError):
@@ -14,6 +21,10 @@ class JournalError(RuntimeError):
 
 
 class DuplicateRecordError(JournalError):
+    pass
+
+
+class IdempotencyConflictError(JournalError):
     pass
 
 
@@ -29,14 +40,10 @@ class StoredJournalRecord:
 
 
 class SQLiteAppendOnlyJournal:
-    """SQLite-backed append-only Event Journal.
+    """Authoritative append-only Event Journal.
 
-    Stage-10 Step 2 intentionally implements only the authoritative durable
-    Event Journal. Experience Memory gets a physically separate store in
-    Step 3.
-
-    The database itself enforces append-only semantics with UPDATE/DELETE
-    abort triggers, so callers cannot accidentally mutate accepted facts.
+    Facts are immutable at the database layer. Schema identity/version and
+    durability PRAGMAs are verified on every open.
     """
 
     _TABLE = "durable_event_journal"
@@ -56,27 +63,18 @@ class SQLiteAppendOnlyJournal:
         )
         self._conn.row_factory = sqlite3.Row
 
-        self._configure(busy_timeout_ms)
-        self._create_schema()
-
-    def _configure(self, busy_timeout_ms: int) -> None:
-        mode = str(
-            self._conn.execute("PRAGMA journal_mode=WAL").fetchone()[0]
-        ).lower()
-        if mode != "wal" and self.path != Path(":memory:"):
-            raise JournalError(f"failed to enable SQLite WAL mode: {mode}")
-
-        self._conn.execute("PRAGMA synchronous=FULL")
-        synchronous = int(
-            self._conn.execute("PRAGMA synchronous").fetchone()[0]
-        )
-        if synchronous != 2:
-            raise JournalError(
-                f"SQLite synchronous mode is not FULL: {synchronous}"
+        try:
+            configure_connection(
+                self._conn,
+                self.path,
+                busy_timeout_ms=busy_timeout_ms,
             )
-
-        self._conn.execute("PRAGMA foreign_keys=ON")
-        self._conn.execute(f"PRAGMA busy_timeout={int(busy_timeout_ms)}")
+            ensure_application_id(self._conn, APP_ID_EVENT_JOURNAL)
+            migrate_v1(self._conn, create_schema=self._create_schema)
+            self._create_schema()
+        except Exception:
+            self._conn.close()
+            raise
 
     def _create_schema(self) -> None:
         self._conn.executescript(
@@ -195,6 +193,35 @@ class SQLiteAppendOnlyJournal:
             record=record,
         )
 
+    def append_idempotent(
+        self,
+        record: DurableRecord,
+        *,
+        committed_at_ns: int | None = None,
+    ) -> tuple[StoredJournalRecord, bool]:
+        """Append once; an exact deterministic replay is safe.
+
+        Returns a pair of stored record and inserted flag. A record-ID
+        collision or content mismatch fails closed.
+        """
+
+        try:
+            return self.append(
+                record,
+                committed_at_ns=committed_at_ns,
+            ), True
+        except DuplicateRecordError:
+            existing = self.get(record.record_id)
+            if existing is None:
+                raise IdempotencyConflictError(
+                    "duplicate record_id exists but cannot be read"
+                )
+            if existing.record != record:
+                raise IdempotencyConflictError(
+                    f"record_id collision/content mismatch: {record.record_id}"
+                )
+            return existing, False
+
     def get(self, record_id: str) -> StoredJournalRecord | None:
         row = self._conn.execute(
             f"SELECT * FROM {self._TABLE} WHERE record_id=?",
@@ -232,6 +259,12 @@ class SQLiteAppendOnlyJournal:
             ).fetchone()[0]
         )
 
+    def tail_ordinal(self) -> int:
+        value = self._conn.execute(
+            f"SELECT COALESCE(MAX(ordinal), 0) FROM {self._TABLE}"
+        ).fetchone()[0]
+        return int(value)
+
     def settings(self) -> dict[str, int | str]:
         return {
             "journal_mode": str(
@@ -243,7 +276,19 @@ class SQLiteAppendOnlyJournal:
             "busy_timeout_ms": int(
                 self._conn.execute("PRAGMA busy_timeout").fetchone()[0]
             ),
+            "application_id": int(
+                self._conn.execute("PRAGMA application_id").fetchone()[0]
+            ),
+            "schema_version": int(
+                self._conn.execute("PRAGMA user_version").fetchone()[0]
+            ),
         }
+
+    def integrity_report(self) -> dict[str, object]:
+        return sqlite_integrity_report(
+            self._conn,
+            expected_application_id=APP_ID_EVENT_JOURNAL,
+        )
 
     def _rollback_quietly(self) -> None:
         try:
@@ -283,6 +328,7 @@ class SQLiteAppendOnlyJournal:
 
 __all__ = (
     "DuplicateRecordError",
+    "IdempotencyConflictError",
     "JournalError",
     "SQLiteAppendOnlyJournal",
     "StoredJournalRecord",
