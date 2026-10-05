@@ -1,0 +1,16 @@
+﻿{
+    "schema_version":  1,
+    "proof_type":  "KATARINA_VPS_CONNECTION",
+    "run_id":  "20261005-053817",
+    "generated_utc":  "2026-10-05T05:38:18.1502442Z",
+    "computer_name":  "WIN-4TTT19K3CL8",
+    "os":  "Microsoft Windows NT 6.3.9600.0",
+    "powershell_version":  "4.0",
+    "source_head":  "5abf22d7f5ef0b7883e753ac82f7ff100967001e",
+    "source_branch":  "vps-control",
+    "control_branch":  "vps-control",
+    "report_branch":  "vps-reports",
+    "live_risk_ready":  false,
+    "live_execution_enabled":  false,
+    "result":  "PASS_VPS_GITHUB_HANDSHAKE"
+}
