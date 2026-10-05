@@ -20,7 +20,7 @@
     40
   ],
   "functional_stage_count": 30,
-  "full_unit_regression": "151/151 PASS",
+  "full_unit_regression": "162/162 PASS",
   "policy_pending_stages": [
     14,
     15,
@@ -34,5 +34,8 @@
     38
   ],
   "production_ready": false,
-  "github_pushed": false
+  "github_pushed": false,
+  "body_runtime_integrated": true,
+  "cross_stage_fail_closed_audit": "PASS",
+  "local_clearance_record": "docs/reviews/KATARINA_BODY_LOCAL_CLEARANCE.md"
 }
