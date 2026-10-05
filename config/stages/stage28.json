@@ -14,5 +14,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "model registry promotion rollback champion aliases",
-  "github_reference_url": "https://github.com/mlflow/mlflow/blob/d42618aad0650742429443f84acccb6f132e7e0b/docs/docs/classic-ml/model-registry/index.mdx"
+  "github_reference_url": "https://github.com/mlflow/mlflow/blob/d42618aad0650742429443f84acccb6f132e7e0b/docs/docs/classic-ml/model-registry/index.mdx",
+  "functional_body_kernel": "ModelPromotionBody",
+  "functional_body_complete": true
 }

@@ -14,5 +14,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "market regime volatility trend classification architecture",
-  "github_reference_url": "https://github.com/OnePunchMonk/AgentQuant/blob/b8103bf356a51303952f23daa656cd035dcd7850/DESIGN.md"
+  "github_reference_url": "https://github.com/OnePunchMonk/AgentQuant/blob/b8103bf356a51303952f23daa656cd035dcd7850/DESIGN.md",
+  "functional_body_kernel": "MarketRegimeBody",
+  "functional_body_complete": true
 }

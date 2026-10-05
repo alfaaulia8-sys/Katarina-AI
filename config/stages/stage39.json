@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "trading monitoring prometheus latency errors metrics",
-  "github_reference_url": "https://github.com/triqbit/mt5-ai-xauusd-trader/blob/55050974d210890c6195644c51685f912e17900c/MONITORING_ALERTING.md"
+  "github_reference_url": "https://github.com/triqbit/mt5-ai-xauusd-trader/blob/55050974d210890c6195644c51685f912e17900c/MONITORING_ALERTING.md",
+  "functional_body_kernel": "PerformanceMonitoringBody",
+  "functional_body_complete": true
 }

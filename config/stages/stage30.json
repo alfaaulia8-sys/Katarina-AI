@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "portfolio optimization efficient frontier covariance weights",
-  "github_reference_url": "https://github.com/PyPortfolio/PyPortfolioOpt/blob/a6638d2e06dae6f444fd022cfd4b3c528902a85b/docs/GeneralEfficientFrontier.rst"
+  "github_reference_url": "https://github.com/PyPortfolio/PyPortfolioOpt/blob/a6638d2e06dae6f444fd022cfd4b3c528902a85b/docs/GeneralEfficientFrontier.rst",
+  "functional_body_kernel": "PortfolioBody",
+  "functional_body_complete": true
 }

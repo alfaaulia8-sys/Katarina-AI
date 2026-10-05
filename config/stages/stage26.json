@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "online learning incremental learn predict architecture",
-  "github_reference_url": "https://github.com/online-ml/river/blob/086e8028b4867ee7dbc40d4e7b9886c5fe80f4a7/river/tree/stochastic_gradient_tree.py"
+  "github_reference_url": "https://github.com/online-ml/river/blob/086e8028b4867ee7dbc40d4e7b9886c5fe80f4a7/river/tree/stochastic_gradient_tree.py",
+  "functional_body_kernel": "LearningBody",
+  "functional_body_complete": true
 }

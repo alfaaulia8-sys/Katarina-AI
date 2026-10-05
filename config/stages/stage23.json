@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "walk forward analysis out of sample trading backtest",
-  "github_reference_url": "https://github.com/Grademark/grademark/blob/dee7bb1a6fd27cf5c11e8116995ba359579d041e/README.md"
+  "github_reference_url": "https://github.com/Grademark/grademark/blob/dee7bb1a6fd27cf5c11e8116995ba359579d041e/README.md",
+  "functional_body_kernel": "WalkForwardBody",
+  "functional_body_complete": true
 }

@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "position management stoploss lifecycle callbacks",
-  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/docs/strategy-callbacks.md"
+  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/docs/strategy-callbacks.md",
+  "functional_body_kernel": "PositionManagerBody",
+  "functional_body_complete": true
 }

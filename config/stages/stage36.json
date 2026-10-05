@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "dry run paper trading simulation",
-  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/README.md"
+  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/README.md",
+  "functional_body_kernel": "PaperTradingBody",
+  "functional_body_complete": true
 }

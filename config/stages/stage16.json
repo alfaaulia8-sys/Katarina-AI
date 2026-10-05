@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "trading risk engine limits governor kill switch",
-  "github_reference_url": "https://github.com/nautechsystems/nautilus_trader/blob/009ca1f1d99fde9595059fd4471e54bde1d76bf4/crates/risk/src/engine/config.rs"
+  "github_reference_url": "https://github.com/nautechsystems/nautilus_trader/blob/009ca1f1d99fde9595059fd4471e54bde1d76bf4/crates/risk/src/engine/config.rs",
+  "functional_body_kernel": "RiskGovernorBody",
+  "functional_body_complete": true
 }

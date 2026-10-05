@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "trading strategy decision signal callback architecture",
-  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/docs/strategy-101.md"
+  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/docs/strategy-101.md",
+  "functional_body_kernel": "DecisionBody",
+  "functional_body_complete": true
 }

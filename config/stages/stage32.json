@@ -14,5 +14,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "trading dashboard realtime portfolio metrics streamlit",
-  "github_reference_url": "https://github.com/LeoRigasaki/stock-market-prediction-engine/blob/ce87a8645643683e86b80e0d8883fc58780297bf/src/streamlit_dashboard.py"
+  "github_reference_url": "https://github.com/LeoRigasaki/stock-market-prediction-engine/blob/ce87a8645643683e86b80e0d8883fc58780297bf/src/streamlit_dashboard.py",
+  "functional_body_kernel": "DashboardBody",
+  "functional_body_complete": true
 }

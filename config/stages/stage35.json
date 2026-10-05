@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "MetaTrader 5 strategy tester automation MQL5",
-  "github_reference_url": "https://github.com/terrylica/mql5-crossover/blob/0c4bf7b36e922e8a19947463af1659b63042f4a5/docs/plans/STRATEGY_TESTER_BLOCKING_ISSUE.md"
+  "github_reference_url": "https://github.com/terrylica/mql5-crossover/blob/0c4bf7b36e922e8a19947463af1659b63042f4a5/docs/plans/STRATEGY_TESTER_BLOCKING_ISSUE.md",
+  "functional_body_kernel": "MT5StrategyTesterBody",
+  "functional_body_complete": true
 }

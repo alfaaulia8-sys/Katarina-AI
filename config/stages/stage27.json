@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "trading machine learning feature training model pipeline",
-  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/docs/freqai.md"
+  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/docs/freqai.md",
+  "functional_body_kernel": "MachineLearningBody",
+  "functional_body_complete": true
 }

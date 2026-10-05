@@ -14,5 +14,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "monte carlo trading robustness drawdown simulation",
-  "github_reference_url": "https://github.com/ranaroussi/quantstats/blob/9ef4c6d0a4ffe7831f6ebba6a5824fd33a90c05a/docs/montecarlo.md"
+  "github_reference_url": "https://github.com/ranaroussi/quantstats/blob/9ef4c6d0a4ffe7831f6ebba6a5824fd33a90c05a/docs/montecarlo.md",
+  "functional_body_kernel": "MonteCarloBody",
+  "functional_body_complete": true
 }

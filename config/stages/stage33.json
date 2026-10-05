@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "python trading pytest github actions CI",
-  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/.github/workflows/ci.yml"
+  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/.github/workflows/ci.yml",
+  "functional_body_kernel": "AutomatedTestingBody",
+  "functional_body_complete": true
 }

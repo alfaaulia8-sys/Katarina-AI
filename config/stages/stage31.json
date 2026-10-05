@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "correlation covariance exposure portfolio risk",
-  "github_reference_url": "https://github.com/dcajasn/Riskfolio-Lib/blob/7b1b26ac9760974c12ecefe290a9d3bd37b66b7a/riskfolio/src/HCPortfolio.py"
+  "github_reference_url": "https://github.com/dcajasn/Riskfolio-Lib/blob/7b1b26ac9760974c12ecefe290a9d3bd37b66b7a/riskfolio/src/HCPortfolio.py",
+  "functional_body_kernel": "GlobalExposureBody",
+  "functional_body_complete": true
 }

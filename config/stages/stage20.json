@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "trade performance evaluation drawdown sharpe metrics",
-  "github_reference_url": "https://github.com/ranaroussi/quantstats/blob/9ef4c6d0a4ffe7831f6ebba6a5824fd33a90c05a/quantstats/stats.py"
+  "github_reference_url": "https://github.com/ranaroussi/quantstats/blob/9ef4c6d0a4ffe7831f6ebba6a5824fd33a90c05a/quantstats/stats.py",
+  "functional_body_kernel": "TradeEvaluationBody",
+  "functional_body_complete": true
 }

@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "XAUUSD specialist signal engine architecture",
-  "github_reference_url": "https://github.com/francomascareloai/EA_SCALPER_XAUUSD/blob/b0087e93c8af6690102c6698b8123186703a9240/DOCS/04_REPORTS/CLOUD_ARCHITECTURE_DESIGN.md"
+  "github_reference_url": "https://github.com/francomascareloai/EA_SCALPER_XAUUSD/blob/b0087e93c8af6690102c6698b8123186703a9240/DOCS/04_REPORTS/CLOUD_ARCHITECTURE_DESIGN.md",
+  "functional_body_kernel": "XAUUSDSpecialistBody",
+  "functional_body_complete": true
 }

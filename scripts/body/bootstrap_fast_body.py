@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -237,6 +239,9 @@ finalized.
     )
 
     print(f"generated {len(STAGES)} stage manifests, modules, and reference docs")
+    upgrade = ROOT / "scripts" / "body" / "upgrade_functional_body.py"
+    if upgrade.is_file():
+        subprocess.run([sys.executable, str(upgrade)], cwd=ROOT, check=True)
 
 
 if __name__ == "__main__":

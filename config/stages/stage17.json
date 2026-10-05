@@ -13,5 +13,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "position sizing sizer percent risk architecture",
-  "github_reference_url": "https://github.com/mementum/backtrader/blob/b853d7c90b6721476eb5a5ea3135224e33db1f14/backtrader/sizer.py"
+  "github_reference_url": "https://github.com/mementum/backtrader/blob/b853d7c90b6721476eb5a5ea3135224e33db1f14/backtrader/sizer.py",
+  "functional_body_kernel": "PositionSizingBody",
+  "functional_body_complete": true
 }

@@ -15,5 +15,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "trading engine stress test failure injection",
-  "github_reference_url": "https://github.com/akramahmed1/quantenergx/blob/f8ca6a927222133f509facd1fd530ebfaa1d6143/TESTING.md"
+  "github_reference_url": "https://github.com/akramahmed1/quantenergx/blob/f8ca6a927222133f509facd1fd530ebfaa1d6143/TESTING.md",
+  "functional_body_kernel": "StressTestBody",
+  "functional_body_complete": true
 }

@@ -16,5 +16,7 @@
   "live_risk_ready": false,
   "live_execution_authority": false,
   "github_reference_query": "bounded live trading canary micro risk validation",
-  "github_reference_url": "https://github.com/Dejetins/roehub.com/blob/6d7f0a31fa7225f34df816a917ca93a57fb564c3/.codex/agents/generated/rl-trading-agent-platform-v1/20-bounded-mainnet-canary.md"
+  "github_reference_url": "https://github.com/Dejetins/roehub.com/blob/6d7f0a31fa7225f34df816a917ca93a57fb564c3/.codex/agents/generated/rl-trading-agent-platform-v1/20-bounded-mainnet-canary.md",
+  "functional_body_kernel": "LiveMicroRiskBody",
+  "functional_body_complete": true
 }

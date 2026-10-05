@@ -12,5 +12,27 @@
   "live_risk_ready": false,
   "live_execution_enabled": false,
   "body_framework_target": "Stage 40",
-  "generated_stage_manifests": 30
+  "generated_stage_manifests": 30,
+  "body_status": "FUNCTIONAL_BODY_LOCAL_PASS",
+  "stage10_status": "LOCAL_FREEZE_CANDIDATE",
+  "functional_stage_range": [
+    11,
+    40
+  ],
+  "functional_stage_count": 30,
+  "full_unit_regression": "151/151 PASS",
+  "policy_pending_stages": [
+    14,
+    15,
+    16,
+    17,
+    38
+  ],
+  "windows_validation_pending_stages": [
+    35,
+    36,
+    38
+  ],
+  "production_ready": false,
+  "github_pushed": false
 }
