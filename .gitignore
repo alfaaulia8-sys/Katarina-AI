@@ -224,3 +224,6 @@ Tester/cache/
 *.pem
 secrets/
 credentials/
+
+# KATARINA local supervisor/runtime state
+.katarina/
