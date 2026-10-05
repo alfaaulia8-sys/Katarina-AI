@@ -37,5 +37,8 @@
   "github_pushed": false,
   "body_runtime_integrated": true,
   "cross_stage_fail_closed_audit": "PASS",
-  "local_clearance_record": "docs/reviews/KATARINA_BODY_LOCAL_CLEARANCE.md"
+  "local_clearance_record": "docs/reviews/KATARINA_BODY_LOCAL_CLEARANCE.md",
+  "stage35_headless_runner_prepared": true,
+  "stage35_static_tests": "6/6 PASS",
+  "stage35_windows_proof": "PENDING"
 }

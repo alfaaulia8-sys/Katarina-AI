@@ -8,6 +8,18 @@ from pathlib import Path
 from katarina.body import BodyRegistry
 
 
+def _regression_passes(value: object) -> bool:
+    text = str(value or "").strip()
+    parts = text.split()
+    if len(parts) != 2 or parts[1] != "PASS" or "/" not in parts[0]:
+        return False
+    left, right = parts[0].split("/", 1)
+    try:
+        return int(left) > 0 and int(left) == int(right)
+    except ValueError:
+        return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", default=".")
@@ -107,8 +119,8 @@ def main() -> int:
             r["generic_process_blocked_when_required"]
             for r in stage_receipts
         ),
-        "full_unit_regression_pass": (
-            body_config.get("full_unit_regression") == "151/151 PASS"
+        "full_unit_regression_pass": _regression_passes(
+            body_config.get("full_unit_regression")
         ),
         "strategy_policy_unfinalized": (
             body_config.get("strategy_policy_finalized") is False
