@@ -62,7 +62,10 @@ function Read-JsonFile {
 
 function Resolve-Git {
     $cmd = Get-Command git.exe -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Source }
+    if ($cmd) {
+        if ($cmd.PSObject.Properties["Path"] -and $cmd.Path) { return [string]$cmd.Path }
+        if ($cmd.PSObject.Properties["Definition"] -and $cmd.Definition) { return [string]$cmd.Definition }
+    }
     $candidates = @(
         (Join-Path $env:ProgramFiles "Git\cmd\git.exe"),
         (Join-Path $env:LOCALAPPDATA "Programs\Git\cmd\git.exe")
@@ -78,9 +81,19 @@ function Resolve-Git {
 
 function Resolve-Python {
     $cmd = Get-Command python.exe -ErrorAction SilentlyContinue
-    if ($cmd) { return [pscustomobject]@{ File=$cmd.Source; Prefix=@() } }
+    if ($cmd) {
+        $pythonPath = $null
+        if ($cmd.PSObject.Properties["Path"] -and $cmd.Path) { $pythonPath = [string]$cmd.Path }
+        elseif ($cmd.PSObject.Properties["Definition"] -and $cmd.Definition) { $pythonPath = [string]$cmd.Definition }
+        if ($pythonPath) { return [pscustomobject]@{ File=$pythonPath; Prefix=@() } }
+    }
     $py = Get-Command py.exe -ErrorAction SilentlyContinue
-    if ($py) { return [pscustomobject]@{ File=$py.Source; Prefix=@("-3") } }
+    if ($py) {
+        $pyPath = $null
+        if ($py.PSObject.Properties["Path"] -and $py.Path) { $pyPath = [string]$py.Path }
+        elseif ($py.PSObject.Properties["Definition"] -and $py.Definition) { $pyPath = [string]$py.Definition }
+        if ($pyPath) { return [pscustomobject]@{ File=$pyPath; Prefix=@("-3") } }
+    }
     foreach ($root in @((Join-Path $env:LOCALAPPDATA "Programs\Python"),"C:\Python312","C:\Python311","C:\Python310")) {
         if ($root -and (Test-Path -LiteralPath $root -PathType Container)) {
             $found = Get-ChildItem -LiteralPath $root -Filter python.exe -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1
