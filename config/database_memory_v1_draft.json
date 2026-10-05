@@ -5,7 +5,7 @@
   "live_risk_ready": false,
   "steps": {
     "01_define_durable_event_memory_boundaries": "PASS_LOCAL",
-    "02_append_only_records_deterministic_ids": "PENDING",
+    "02_append_only_records_deterministic_ids": "PASS_LOCAL",
     "03_separate_operational_and_experience_memory": "PENDING",
     "04_idempotent_writes_restart_recovery": "PENDING",
     "05_schema_migrations_integrity_checks": "PENDING",
@@ -14,11 +14,17 @@
   "artifacts": {
     "boundaries": "src/katarina/persistence/boundaries.py",
     "architecture": "docs/architecture/KATARINA_DATABASE_MEMORY_V1_BOUNDARIES.md",
-    "tests": "tests/unit/persistence/test_stage10_boundaries.py"
+    "tests": "tests/unit/persistence/test_stage10_boundaries.py",
+    "step02_references": "docs/research/STAGE10_STEP02_GITHUB_REFERENCES.md",
+    "durable_records": "src/katarina/persistence/records.py",
+    "sqlite_journal": "src/katarina/persistence/sqlite_journal.py",
+    "canonicalization": "src/katarina/persistence/canonical.py"
   },
   "progress": {
     "step_01_tests": "11/11 PASS",
     "unit_regression": "84/84 PASS",
-    "github_pushed": false
+    "github_pushed": false,
+    "step_02_tests": "13/13 PASS",
+    "unit_regression_after_step02": "97/97 PASS"
   }
 }

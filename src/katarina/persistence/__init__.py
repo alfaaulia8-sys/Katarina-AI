@@ -7,6 +7,23 @@ from katarina.persistence.boundaries import (
     TRANSIENT_POLICY,
     classify_persistence,
 )
+from katarina.persistence.canonical import (
+    CanonicalizationError,
+    canonical_json_bytes,
+    canonical_json_text,
+)
+from katarina.persistence.records import (
+    RECORD_SCHEMA_VERSION,
+    DurableRecord,
+    NonDurableEventError,
+)
+from katarina.persistence.sqlite_journal import (
+    DuplicateRecordError,
+    JournalError,
+    SQLiteAppendOnlyJournal,
+    StoredJournalRecord,
+    WrongJournalLaneError,
+)
 
 __all__ = (
     "BoundaryPolicy",
@@ -16,4 +33,15 @@ __all__ = (
     "OPERATIONAL_SNAPSHOT_POLICY",
     "EXPERIENCE_MEMORY_POLICY",
     "classify_persistence",
+    "CanonicalizationError",
+    "canonical_json_bytes",
+    "canonical_json_text",
+    "RECORD_SCHEMA_VERSION",
+    "DurableRecord",
+    "NonDurableEventError",
+    "DuplicateRecordError",
+    "JournalError",
+    "SQLiteAppendOnlyJournal",
+    "StoredJournalRecord",
+    "WrongJournalLaneError",
 )
