@@ -43,22 +43,23 @@ function Quote-Arg {
 
 function Run-Git {
     param([string]$Git,[string[]]$Args,[string]$WorkingDirectory)
-    $stdout = [IO.Path]::GetTempFileName()
-    $stderr = [IO.Path]::GetTempFileName()
+
+    $oldPreference = $ErrorActionPreference
+    $output = @()
+    $code = 1
+    Push-Location -LiteralPath $WorkingDirectory
     try {
-        $allArgs = @("-C",$WorkingDirectory) + $Args
-        $argLine = (($allArgs | ForEach-Object { Quote-Arg ([string]$_) }) -join " ")
-        $p = Start-Process -FilePath $Git -ArgumentList $argLine -Wait -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-        $outText = ""
-        $errText = ""
-        if (Test-Path -LiteralPath $stdout) { $outText = Get-Content -LiteralPath $stdout -Raw -ErrorAction SilentlyContinue }
-        if (Test-Path -LiteralPath $stderr) { $errText = Get-Content -LiteralPath $stderr -Raw -ErrorAction SilentlyContinue }
-        return [pscustomobject]@{
-            Code = [int]$p.ExitCode
-            Text = ([string]$outText + [Environment]::NewLine + [string]$errText).Trim()
-        }
+        $ErrorActionPreference = "Continue"
+        $output = @(& $Git @Args 2>&1)
+        $code = $LASTEXITCODE
     } finally {
-        Remove-Item -LiteralPath $stdout,$stderr -Force -ErrorAction SilentlyContinue
+        $ErrorActionPreference = $oldPreference
+        Pop-Location
+    }
+
+    return [pscustomobject]@{
+        Code = [int]$code
+        Text = (($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
     }
 }
 
