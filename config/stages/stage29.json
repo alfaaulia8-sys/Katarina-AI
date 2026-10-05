@@ -1,0 +1,18 @@
+{
+  "stage": 29,
+  "name": "Economic Intelligence Engine",
+  "dependencies": [
+    11,
+    13
+  ],
+  "authority": "analytic",
+  "policy_pending": false,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage29",
+  "reference_doc": "docs/research/stages/STAGE_29_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "economic intelligence macro FRED OpenBB provider",
+  "github_reference_url": "https://github.com/TerminalSkills/skills/blob/a021875c0f1bd906248e3784ce470faa65055201/skills/openbb/SKILL.md"
+}

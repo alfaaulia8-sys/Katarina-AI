@@ -1,0 +1,16 @@
+{
+  "mode": "FAST_BODY_BUILD",
+  "stage_range": [
+    10,
+    40
+  ],
+  "github_reference_required": true,
+  "workspace": "local_first",
+  "github_push": false,
+  "strategy_policy_finalized": false,
+  "risk_policy_finalized": false,
+  "live_risk_ready": false,
+  "live_execution_enabled": false,
+  "body_framework_target": "Stage 40",
+  "generated_stage_manifests": 30
+}

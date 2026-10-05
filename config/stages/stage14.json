@@ -1,0 +1,19 @@
+{
+  "stage": 14,
+  "name": "XAUUSD Specialist V1",
+  "dependencies": [
+    11,
+    12,
+    13
+  ],
+  "authority": "advisory",
+  "policy_pending": true,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage14",
+  "reference_doc": "docs/research/stages/STAGE_14_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "XAUUSD specialist signal engine architecture",
+  "github_reference_url": "https://github.com/francomascareloai/EA_SCALPER_XAUUSD/blob/b0087e93c8af6690102c6698b8123186703a9240/DOCS/04_REPORTS/CLOUD_ARCHITECTURE_DESIGN.md"
+}

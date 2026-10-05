@@ -1,0 +1,19 @@
+{
+  "stage": 35,
+  "name": "MT5 Strategy Tester Integration",
+  "dependencies": [
+    18,
+    22,
+    33
+  ],
+  "authority": "analytic",
+  "policy_pending": false,
+  "windows_required": true,
+  "implementation_module": "katarina.body.stage35",
+  "reference_doc": "docs/research/stages/STAGE_35_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "MetaTrader 5 strategy tester automation MQL5",
+  "github_reference_url": "https://github.com/terrylica/mql5-crossover/blob/0c4bf7b36e922e8a19947463af1659b63042f4a5/docs/plans/STRATEGY_TESTER_BLOCKING_ISSUE.md"
+}

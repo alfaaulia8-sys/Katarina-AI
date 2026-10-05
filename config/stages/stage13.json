@@ -1,0 +1,18 @@
+{
+  "stage": 13,
+  "name": "Market Regime Engine",
+  "dependencies": [
+    11,
+    12
+  ],
+  "authority": "analytic",
+  "policy_pending": false,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage13",
+  "reference_doc": "docs/research/stages/STAGE_13_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "market regime volatility trend classification architecture",
+  "github_reference_url": "https://github.com/OnePunchMonk/AgentQuant/blob/b8103bf356a51303952f23daa656cd035dcd7850/DESIGN.md"
+}

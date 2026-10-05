@@ -1,0 +1,18 @@
+{
+  "stage": 24,
+  "name": "Monte Carlo / Robustness",
+  "dependencies": [
+    22,
+    23
+  ],
+  "authority": "analytic",
+  "policy_pending": false,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage24",
+  "reference_doc": "docs/research/stages/STAGE_24_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "monte carlo trading robustness drawdown simulation",
+  "github_reference_url": "https://github.com/ranaroussi/quantstats/blob/9ef4c6d0a4ffe7831f6ebba6a5824fd33a90c05a/docs/montecarlo.md"
+}

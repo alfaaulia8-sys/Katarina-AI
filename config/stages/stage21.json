@@ -1,0 +1,17 @@
+{
+  "stage": 21,
+  "name": "Research Engine",
+  "dependencies": [
+    20
+  ],
+  "authority": "analytic",
+  "policy_pending": false,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage21",
+  "reference_doc": "docs/research/stages/STAGE_21_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "vectorized quantitative research portfolio analysis",
+  "github_reference_url": "https://github.com/polakowo/vectorbt/blob/ceffc501f2d37033a79dd86a9f883e69ec6977bd/README.md"
+}

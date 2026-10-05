@@ -1,0 +1,18 @@
+{
+  "stage": 22,
+  "name": "Backtesting Engine",
+  "dependencies": [
+    20,
+    21
+  ],
+  "authority": "analytic",
+  "policy_pending": false,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage22",
+  "reference_doc": "docs/research/stages/STAGE_22_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "backtesting engine broker strategy runner",
+  "github_reference_url": "https://github.com/mementum/backtrader/blob/b853d7c90b6721476eb5a5ea3135224e33db1f14/backtrader/cerebro.py"
+}

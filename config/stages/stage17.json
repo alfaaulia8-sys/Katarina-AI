@@ -1,0 +1,17 @@
+{
+  "stage": 17,
+  "name": "Position Sizing Engine",
+  "dependencies": [
+    16
+  ],
+  "authority": "governance",
+  "policy_pending": true,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage17",
+  "reference_doc": "docs/research/stages/STAGE_17_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "position sizing sizer percent risk architecture",
+  "github_reference_url": "https://github.com/mementum/backtrader/blob/b853d7c90b6721476eb5a5ea3135224e33db1f14/backtrader/sizer.py"
+}

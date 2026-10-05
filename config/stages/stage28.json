@@ -1,0 +1,18 @@
+{
+  "stage": 28,
+  "name": "Model Promotion & Rollback",
+  "dependencies": [
+    24,
+    27
+  ],
+  "authority": "governance",
+  "policy_pending": false,
+  "windows_required": false,
+  "implementation_module": "katarina.body.stage28",
+  "reference_doc": "docs/research/stages/STAGE_28_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "model registry promotion rollback champion aliases",
+  "github_reference_url": "https://github.com/mlflow/mlflow/blob/d42618aad0650742429443f84acccb6f132e7e0b/docs/docs/classic-ml/model-registry/index.mdx"
+}

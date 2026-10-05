@@ -1,0 +1,20 @@
+{
+  "stage": 38,
+  "name": "Live Micro-Risk Validation",
+  "dependencies": [
+    16,
+    34,
+    36,
+    37
+  ],
+  "authority": "governance",
+  "policy_pending": true,
+  "windows_required": true,
+  "implementation_module": "katarina.body.stage38",
+  "reference_doc": "docs/research/stages/STAGE_38_GITHUB_REFERENCES.md",
+  "status": "body_framework_complete",
+  "live_risk_ready": false,
+  "live_execution_authority": false,
+  "github_reference_query": "bounded live trading canary micro risk validation",
+  "github_reference_url": "https://github.com/Dejetins/roehub.com/blob/6d7f0a31fa7225f34df816a917ca93a57fb564c3/.codex/agents/generated/rl-trading-agent-platform-v1/20-bounded-mainnet-canary.md"
+}
