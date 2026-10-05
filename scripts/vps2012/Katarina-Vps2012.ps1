@@ -149,11 +149,33 @@ function Invoke-Captured {
 
 function Invoke-GitCaptured {
     param([string[]]$Arguments,[int]$TimeoutSeconds=120)
+
     $git=Resolve-Git
-    if (-not $git) {
+    if(-not $git){
         return [pscustomobject]@{ExitCode=127;Stdout="";Stderr="git.exe not found";Combined="git.exe not found";TimedOut=$false}
     }
-    return Invoke-Captured -File $git -Arguments $Arguments -WorkingDirectory $RepoRoot -TimeoutSeconds $TimeoutSeconds
+
+    $oldPreference=$ErrorActionPreference
+    $output=@()
+    $code=1
+    Push-Location -LiteralPath $RepoRoot
+    try {
+        $ErrorActionPreference="Continue"
+        $output=@(& $git @Arguments 2>&1)
+        $code=$LASTEXITCODE
+    } finally {
+        $ErrorActionPreference=$oldPreference
+        Pop-Location
+    }
+
+    $text=(($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
+    return [pscustomobject]@{
+        ExitCode=[int]$code
+        Stdout=$text
+        Stderr=""
+        Combined=$text
+        TimedOut=$false
+    }
 }
 
 function Sanitize-Text {
