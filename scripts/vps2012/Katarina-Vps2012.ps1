@@ -399,6 +399,7 @@ function Build-Katarina {
     } else {
         $env:PYTHONPATH=Join-Path $RepoRoot "src"
         $pythonSteps=@(
+            @("PY_DEPS",@("-m","pip","install","--disable-pip-version-check","--only-binary=:all:","-r","requirements-stage07.txt")),
             @("PY_COMPILE",@("-m","compileall","-q","src")),
             @("UNIT_TESTS",@("-m","unittest","discover","-s","tests/unit","-p","test_*.py")),
             @("STATIC_TESTS",@("-m","unittest","discover","-s","tests/static","-p","test_*.py")),
