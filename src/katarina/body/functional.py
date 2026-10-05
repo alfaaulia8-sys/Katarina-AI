@@ -614,22 +614,48 @@ class PaperFill:
     price_units: int
     quantity_units: int
     side: str
+    symbol: str = "XAUUSD"
+
+    def __post_init__(self) -> None:
+        if not self.order_id:
+            raise ValueError("paper order_id must be non-empty")
+        if self.price_units <= 0:
+            raise ValueError("paper price must be positive")
+        if self.quantity_units <= 0:
+            raise ValueError("paper quantity must be positive")
+        if self.side not in {"BUY", "SELL"}:
+            raise ValueError("paper side must be BUY or SELL")
+        if not self.symbol:
+            raise ValueError("paper symbol must be non-empty")
 
 
 class PaperTradingBody(PassiveStageComponent):
     def __init__(self) -> None:
         super().__init__()
         self._fills: list[PaperFill] = []
+        self._order_ids: set[str] = set()
+
+    @property
+    def broker_mutation_enabled(self) -> bool:
+        return False
 
     def simulate_fill(self, fill: PaperFill) -> None:
-        if fill.side not in {"BUY", "SELL"}:
-            raise ValueError("paper side must be BUY or SELL")
-        if fill.quantity_units <= 0:
-            raise ValueError("paper quantity must be positive")
+        if fill.order_id in self._order_ids:
+            raise ValueError("duplicate paper order_id")
+        self._order_ids.add(fill.order_id)
         self._fills.append(fill)
 
     def fills(self) -> tuple[PaperFill, ...]:
         return tuple(self._fills)
+
+    def position_units(self, symbol: str) -> int:
+        position = 0
+        for fill in self._fills:
+            if fill.symbol != symbol:
+                continue
+            sign = 1 if fill.side == "BUY" else -1
+            position += sign * fill.quantity_units
+        return position
 
 
 @dataclass(frozen=True, slots=True)
@@ -650,11 +676,49 @@ class StressTestBody(PassiveStageComponent):
         )
 
 
+@dataclass(frozen=True, slots=True)
+class MicroRiskReadiness:
+    strategy_policy_finalized: bool = False
+    risk_policy_finalized: bool = False
+    stage35_tester_passed: bool = False
+    stage36_demo_passed: bool = False
+    stage37_stress_passed: bool = False
+    health_ready: bool = False
+    reconciliation_ready: bool = False
+
+    def missing(self) -> tuple[str, ...]:
+        fields = (
+            ("strategy_policy_finalized", self.strategy_policy_finalized),
+            ("risk_policy_finalized", self.risk_policy_finalized),
+            ("stage35_tester_passed", self.stage35_tester_passed),
+            ("stage36_demo_passed", self.stage36_demo_passed),
+            ("stage37_stress_passed", self.stage37_stress_passed),
+            ("health_ready", self.health_ready),
+            ("reconciliation_ready", self.reconciliation_ready),
+        )
+        return tuple(name for name, ready in fields if not ready)
+
+
 class LiveMicroRiskBody(PassiveStageComponent):
-    def validate(self, _: Mapping[str, Any]) -> Mapping[str, Any]:
+    @staticmethod
+    def readiness(payload: Mapping[str, Any]) -> MicroRiskReadiness:
+        return MicroRiskReadiness(
+            strategy_policy_finalized=bool(payload.get("strategy_policy_finalized", False)),
+            risk_policy_finalized=bool(payload.get("risk_policy_finalized", False)),
+            stage35_tester_passed=bool(payload.get("stage35_tester_passed", False)),
+            stage36_demo_passed=bool(payload.get("stage36_demo_passed", False)),
+            stage37_stress_passed=bool(payload.get("stage37_stress_passed", False)),
+            health_ready=bool(payload.get("health_ready", False)),
+            reconciliation_ready=bool(payload.get("reconciliation_ready", False)),
+        )
+
+    def validate(self, payload: Mapping[str, Any]) -> Mapping[str, Any]:
+        readiness = self.readiness(payload)
         return {
             "approved": False,
-            "reason": "final risk policy and governed live validation pending",
+            "reason": "governed live micro-risk activation is intentionally not implemented in body build",
+            "missing_prerequisites": readiness.missing(),
+            "all_prerequisites_present": not readiness.missing(),
             "live_risk_ready": False,
             "live_execution_authority": False,
         }
@@ -749,6 +813,7 @@ __all__ = (
     "LearningBody",
     "LearningObservation",
     "LiveMicroRiskBody",
+    "MicroRiskReadiness",
     "MT5StrategyTesterBody",
     "MT5TesterJob",
     "MachineLearningBody",

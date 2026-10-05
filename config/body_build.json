@@ -20,7 +20,7 @@
     40
   ],
   "functional_stage_count": 30,
-  "full_unit_regression": "162/162 PASS",
+  "full_unit_regression": "167/167 PASS",
   "policy_pending_stages": [
     14,
     15,
@@ -40,5 +40,9 @@
   "local_clearance_record": "docs/reviews/KATARINA_BODY_LOCAL_CLEARANCE.md",
   "stage35_headless_runner_prepared": true,
   "stage35_static_tests": "6/6 PASS",
-  "stage35_windows_proof": "PENDING"
+  "stage35_windows_proof": "PENDING",
+  "stage36_paper_ledger_prepared": true,
+  "stage36_windows_demo_proof": "PENDING",
+  "stage38_prerequisite_gate_prepared": true,
+  "stage38_live_activation": "NOT_IMPLEMENTED"
 }
