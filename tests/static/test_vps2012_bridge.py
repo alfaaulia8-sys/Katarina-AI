@@ -55,6 +55,16 @@ class Vps2012BridgeStaticTests(unittest.TestCase):
         self.assertIn('[string[]]$GitArgs', handshake)
         self.assertIn('@GitArgs 2>&1', handshake)
 
+    def test_setup_bootstraps_portable_python(self):
+        self.assertIn('Bootstrap-KatarinaPortablePython2012', self.script)
+        self.assertIn('python-3.12.10-embed-amd64.zip', self.script)
+        self.assertIn('get-pip.py', self.script)
+        self.assertIn('C:\\KatarinaRuntime', self.script)
+
+    def test_bridge_starts_before_build(self):
+        setup = self.script.split('function Setup-Katarina {', 1)[1].split('function Stop-Bridge {', 1)[0]
+        self.assertLess(setup.index('Start-BridgeBackground'), setup.index('Build-Katarina $true'))
+
     def test_initial_control_is_idle(self):
         self.assertIn('"sequence": 0', self.control)
         self.assertIn('"action": "IDLE"', self.control)
