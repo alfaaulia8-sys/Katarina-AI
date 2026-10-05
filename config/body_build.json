@@ -46,5 +46,7 @@
   "stage38_prerequisite_gate_prepared": true,
   "stage38_live_activation": "NOT_IMPLEMENTED",
   "qemu_windows_postinstall_prepared": true,
-  "qemu_windows_postinstall_static_tests": "5/5 PASS"
+  "qemu_windows_postinstall_static_tests": "5/5 PASS",
+  "stage36_demo_gate_prepared": true,
+  "stage36_demo_gate_static_tests": "4/4 PASS"
 }
