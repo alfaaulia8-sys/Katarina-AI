@@ -759,13 +759,15 @@ function Setup-Katarina {
             if($checkout.ExitCode -ne 0){Write-Warning "Could not switch to vps-local; continuing on $current"}
         }
     }
+
+    Start-BridgeBackground
+    Write-Host "[KATARINA] Control bridge aktif sebelum build."
     Write-Host "Repo: $RepoRoot"
     Write-Host "Git: $git"
     Write-Host "Python: $($python.File)"
     Write-Host "Runtime: $RuntimeRoot"
     Write-Host "GitHub writes: reports only; source stays local."
     $rc=Build-Katarina $true
-    Start-BridgeBackground
     return $rc
 }
 
