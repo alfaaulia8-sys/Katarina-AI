@@ -199,7 +199,7 @@ switch($mode) {
         $repoName=[string]$existing.repository
         $branchName=[string]$existing.branch
         $primaryAgentId=[string]$existing.agent_id
-        if([string]::IsNullOrWhiteSpace($repoName)){ $repoName="alfaaulia-katarina/Katarina-AI" }
+        if([string]::IsNullOrWhiteSpace($repoName)){ $repoName="alfaaulia8-sys/Katarina-AI" }
         if([string]::IsNullOrWhiteSpace($branchName)){ $branchName="main" }
         if([string]::IsNullOrWhiteSpace($primaryAgentId)){ $primaryAgentId="katarina-vps-2012r2-01" }
 
