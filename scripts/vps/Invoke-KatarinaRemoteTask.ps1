@@ -416,6 +416,110 @@ try {
             $mode = ([string](Get-ArgValue $request.args "mode" "PYTHON_TESTS")).ToUpperInvariant()
 
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_SCAN_DIRECT") {
+                $records = @()
+                $roots = @()
+                $cacheBase = "C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                if (Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue)) {
+                        $pkg = Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf){ $roots += $d.FullName }
+                    }
+                }
+                foreach($candidate in @("C:\DesktopCommander","C:\DesktopCommanderCompat")) {
+                    $pkg = Join-Path $candidate "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                    if(Test-Path -LiteralPath $pkg -PathType Leaf){ $roots += $candidate }
+                }
+                $roots = @($roots | Sort-Object -Unique)
+
+                foreach($root in $roots) {
+                    $dcPkg = Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                    $ppPkg = Join-Path $root "node_modules\puppeteer\package.json"
+                    $sbPkg = Join-Path $root "node_modules\@supabase\supabase-js\package.json"
+                    $ftPkg = Join-Path $root "node_modules\file-type\package.json"
+                    $mdPkg = Join-Path $root "node_modules\md-to-pdf\package.json"
+                    $idx = Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                    $rec=[ordered]@{
+                        root=$root
+                        desktop_commander=$null
+                        puppeteer=$null
+                        supabase=$null
+                        file_type=$null
+                        md_to_pdf=$null
+                        index_exists=(Test-Path -LiteralPath $idx -PathType Leaf)
+                        help_exit=$null
+                        help_error=""
+                    }
+                    foreach($pair in @(
+                        @("desktop_commander",$dcPkg),
+                        @("puppeteer",$ppPkg),
+                        @("supabase",$sbPkg),
+                        @("file_type",$ftPkg),
+                        @("md_to_pdf",$mdPkg)
+                    )) {
+                        if(Test-Path -LiteralPath $pair[1] -PathType Leaf) {
+                            try { $rec[$pair[0]]=[string](Get-Content -LiteralPath $pair[1] -Raw | ConvertFrom-Json).version } catch {}
+                        }
+                    }
+                    if($rec.index_exists) {
+                        $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                        if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                        if($nodeCmd) {
+                            $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+                            $ho=Join-Path $OutputDir ("dc_help_"+([guid]::NewGuid().ToString("N").Substring(0,8))+".out")
+                            $he=Join-Path $OutputDir ("dc_help_"+([guid]::NewGuid().ToString("N").Substring(0,8))+".err")
+                            try {
+                                $p=Start-Process -FilePath $nodePath -ArgumentList @(('"' + $idx + '"'),"remote","--help") -WorkingDirectory $root -Wait -PassThru -RedirectStandardOutput $ho -RedirectStandardError $he
+                                $rec.help_exit=$p.ExitCode
+                                if($p.ExitCode -ne 0 -and (Test-Path $he)){$rec.help_error=(Redact-Text ((Get-Content -LiteralPath $he -Raw)))}
+                            } catch {
+                                $rec.help_exit=-1
+                                $rec.help_error=(Redact-Text $_.Exception.Message)
+                            }
+                            Remove-Item -LiteralPath $ho,$he -Force -ErrorAction SilentlyContinue
+                        }
+                    }
+                    $records += $rec
+                }
+
+                $sessions=@()
+                foreach($p in @(
+                    "C:\Users\Administrator\.desktop-commander-device\device.json",
+                    "C:\Windows\System32\config\systemprofile\.desktop-commander-device\device.json"
+                )) {
+                    $sessions += [ordered]@{path=$p;exists=(Test-Path -LiteralPath $p -PathType Leaf)}
+                }
+
+                $nodeProcesses=@()
+                try {
+                    foreach($p in @(Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue)) {
+                        $cl=[string]$p.CommandLine
+                        if($cl -and $cl.IndexOf("desktop-commander",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            $nodeProcesses += [ordered]@{process_id=[int]$p.ProcessId;command_line=(Redact-Text $cl)}
+                        }
+                    }
+                } catch {}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_SCAN"
+                    installations=$records
+                    sessions=$sessions
+                    running_processes=$nodeProcesses
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result="PASS"
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_scan.json") $diag
+                "DESKTOP COMMANDER SCAN PASS" | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["installation_count"]=$records.Count
+                $details["running_count"]=$nodeProcesses.Count
+                $details["result"]="PASS"
+                break
+            }
+
             # Desktop Commander compatibility/repair path for the legacy Windows Server 2012 R2 host.
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_REPAIR_DIRECT") {
                 $dcRoot = "C:\DesktopCommanderCompat"
