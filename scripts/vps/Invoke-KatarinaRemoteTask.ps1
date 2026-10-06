@@ -700,12 +700,12 @@ public static class KatInteractiveLauncher {
                 $procClass=[wmiclass]"Win32_Process"
                 $create=$procClass.Create($cmd)
                 $rv=[int]$create.ReturnValue
-                $pid=[int]$create.ProcessId
+                $dcPid=[int]$create.ProcessId
                 if($rv -ne 0){throw ("Win32_Process.Create failed return_value="+$rv)}
                 Start-Sleep -Seconds 18
 
                 $alive=$false
-                try{$alive=$null -ne (Get-Process -Id $pid -ErrorAction SilentlyContinue)}catch{}
+                try{$alive=$null -ne (Get-Process -Id $dcPid -ErrorAction SilentlyContinue)}catch{}
                 $logTail=""
                 try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 120)-join [Environment]::NewLine)}}catch{}
                 $safeLog=Redact-Text $logTail
@@ -718,7 +718,7 @@ public static class KatInteractiveLauncher {
                 $diag=[ordered]@{
                     schema_version=1
                     proof_type="DESKTOP_COMMANDER_WMI_START"
-                    process_id=$pid
+                    process_id=$dcPid
                     process_alive=$alive
                     create_return_value=$rv
                     phase=$phase
