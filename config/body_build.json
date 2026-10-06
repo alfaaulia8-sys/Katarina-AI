@@ -41,12 +41,12 @@
   "stage35_headless_runner_prepared": true,
   "stage35_static_tests": "6/6 PASS",
   "stage35_windows_proof": "PENDING",
-  "stage36_paper_ledger_prepared": true,
-  "stage36_windows_demo_proof": "PENDING",
+  "stage36_live_preflight_prepared": true,
+  "stage36_windows_live_preflight_proof": "PENDING",
   "stage38_prerequisite_gate_prepared": true,
   "stage38_live_activation": "NOT_IMPLEMENTED",
   "qemu_windows_postinstall_prepared": true,
   "qemu_windows_postinstall_static_tests": "5/5 PASS",
-  "stage36_demo_gate_prepared": true,
-  "stage36_demo_gate_static_tests": "4/4 PASS"
+  "stage36_live_preflight_static_guard_prepared": true,
+  "stage36_live_preflight_static_tests": "4/4 PASS"
 }
