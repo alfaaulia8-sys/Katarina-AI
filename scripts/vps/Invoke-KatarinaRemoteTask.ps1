@@ -415,6 +415,128 @@ try {
         "STAGE07_PYTHON_TESTS" {
             $mode = ([string](Get-ArgValue $request.args "mode" "PYTHON_TESTS")).ToUpperInvariant()
 
+
+            # Desktop Commander compatibility/repair path for the legacy Windows Server 2012 R2 host.
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_REPAIR_DIRECT") {
+                $dcRoot = "C:\DesktopCommanderCompat"
+                $dcLogRoot = Join-Path $dcRoot "logs"
+                New-Item -ItemType Directory -Force -Path $dcRoot,$dcLogRoot | Out-Null
+
+                $nodeCmd = Get-Command node.exe -ErrorAction SilentlyContinue
+                if (-not $nodeCmd) { $nodeCmd = Get-Command node -ErrorAction SilentlyContinue }
+                $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+                if (-not $npmCmd) { $npmCmd = Get-Command npm -ErrorAction SilentlyContinue }
+                if (-not $nodeCmd) { throw "Node.js executable not found." }
+                if (-not $npmCmd) { throw "npm executable not found." }
+
+                $nodeVersion = (& $nodeCmd.Source --version 2>&1 | Out-String).Trim()
+                $npmVersion = (& $npmCmd.Source --version 2>&1 | Out-String).Trim()
+
+                $cacheRoot = $null
+                $cacheBase = "C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                if (Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach ($dir in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg = Join-Path $dir.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if (Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $meta = Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if ([string]$meta.version -eq "0.2.52") { $cacheRoot = $dir.FullName; break }
+                            } catch {}
+                        }
+                    }
+                }
+
+                $installRoot = $cacheRoot
+                $installSource = "ADMIN_NPX_CACHE"
+                $installLog = Join-Path $dcLogRoot "npm-install.log"
+                if ([string]::IsNullOrWhiteSpace($installRoot)) {
+                    $installRoot = $dcRoot
+                    $installSource = "FRESH_COMPAT_ROOT"
+                    '{"private":true,"dependencies":{"@wonderwhy-er/desktop-commander":"0.2.52"}}' | Set-Content -LiteralPath (Join-Path $installRoot "package.json") -Encoding ASCII
+                }
+
+                $env:PUPPETEER_SKIP_DOWNLOAD = "true"
+                $npmArgs = @("install","--prefix",$installRoot,"@wonderwhy-er/desktop-commander@0.2.52","@supabase/supabase-js@2.78.0","puppeteer@24.34.0","--no-save","--legacy-peer-deps","--no-audit","--no-fund")
+                $installOut = & $npmCmd.Source @npmArgs 2>&1
+                $installExit = $LASTEXITCODE
+                ($installOut | Out-String) | Set-Content -LiteralPath $installLog -Encoding UTF8
+
+                $indexPath = Join-Path $installRoot "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                if ($installExit -ne 0 -or !(Test-Path -LiteralPath $indexPath -PathType Leaf)) {
+                    $tail = ""
+                    try { $tail = (@(Get-Content -LiteralPath $installLog -Tail 35) -join [Environment]::NewLine) } catch {}
+                    throw ("Desktop Commander compatibility install failed. npm_exit=" + $installExit + " tail=" + (Redact-Text $tail))
+                }
+
+                $helpOutPath = Join-Path $dcLogRoot "remote-help.out.log"
+                $helpErrPath = Join-Path $dcLogRoot "remote-help.err.log"
+                Remove-Item -LiteralPath $helpOutPath,$helpErrPath -Force -ErrorAction SilentlyContinue
+                $helpProc = Start-Process -FilePath $nodeCmd.Source -ArgumentList @(('"' + $indexPath + '"'),"remote","--help") -WorkingDirectory $installRoot -Wait -PassThru -RedirectStandardOutput $helpOutPath -RedirectStandardError $helpErrPath
+                if ($helpProc.ExitCode -ne 0) {
+                    $helpErr = ""
+                    try { $helpErr = (@(Get-Content -LiteralPath $helpErrPath -Tail 40) -join [Environment]::NewLine) } catch {}
+                    throw ("Desktop Commander CLI probe failed. exit=" + $helpProc.ExitCode + " error=" + (Redact-Text $helpErr))
+                }
+
+                try {
+                    foreach ($p in @(Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue)) {
+                        $cl = [string]$p.CommandLine
+                        if ($cl -and $cl.IndexOf("desktop-commander",[StringComparison]::OrdinalIgnoreCase) -ge 0 -and $cl.IndexOf(" remote",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            try { [void]$p.Terminate() } catch {}
+                        }
+                    }
+                } catch {}
+                Start-Sleep -Seconds 2
+
+                $remoteOut = Join-Path $dcLogRoot "remote.out.log"
+                $remoteErr = Join-Path $dcLogRoot "remote.err.log"
+                Remove-Item -LiteralPath $remoteOut,$remoteErr -Force -ErrorAction SilentlyContinue
+                $remoteProc = Start-Process -FilePath $nodeCmd.Source -ArgumentList @(('"' + $indexPath + '"'),"remote","--debug") -WorkingDirectory $installRoot -PassThru -WindowStyle Hidden -RedirectStandardOutput $remoteOut -RedirectStandardError $remoteErr
+                Start-Sleep -Seconds 18
+
+                $alive = $false
+                try { $alive = $null -ne (Get-Process -Id $remoteProc.Id -ErrorAction SilentlyContinue) } catch {}
+                $outTail = ""
+                $errTail = ""
+                try { if(Test-Path $remoteOut){$outTail=(@(Get-Content -LiteralPath $remoteOut -Tail 80) -join [Environment]::NewLine)} } catch {}
+                try { if(Test-Path $remoteErr){$errTail=(@(Get-Content -LiteralPath $remoteErr -Tail 80) -join [Environment]::NewLine)} } catch {}
+                $combined = (Redact-Text ($outTail + [Environment]::NewLine + $errTail))
+
+                $phase = "UNKNOWN"
+                if ($combined -match "(?i)Device ready") { $phase = "DEVICE_READY" }
+                elseif ($combined -match "(?i)Failed to start device authorization") { $phase = "UPSTREAM_AUTH_FAILED" }
+                elseif ($combined -match "(?i)verification|device code|Requesting device code|Authenticating") { $phase = "AUTH_REQUIRED" }
+                elseif (-not $alive) { $phase = "PROCESS_EXITED" }
+                else { $phase = "RUNNING" }
+
+                $diag = [ordered]@{
+                    schema_version = 1
+                    proof_type = "DESKTOP_COMMANDER_REPAIR"
+                    node_version = $nodeVersion
+                    npm_version = $npmVersion
+                    desktop_commander_version = "0.2.52"
+                    supabase_pin = "2.78.0"
+                    puppeteer_pin = "24.34.0"
+                    install_source = $installSource
+                    install_root = $installRoot
+                    process_id = $remoteProc.Id
+                    process_alive = $alive
+                    phase = $phase
+                    sanitized_output_tail = $combined
+                    generated_utc = [DateTime]::UtcNow.ToString("o")
+                    result = $(if($phase -in @("DEVICE_READY","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_repair.json") $diag
+                ("DESKTOP COMMANDER REPAIR " + [string]$diag.result + " / " + $phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"] = $mode
+                $details["phase"] = $phase
+                $details["process_alive"] = $alive
+                $details["result"] = [string]$diag.result
+                if([string]$diag.result -eq "FAIL"){ throw "Desktop Commander repair did not reach a usable state." }
+                break
+            }
+
             # Windows Server 2012 R2 rescue path: perform control-plane collapse
             # in this already-running task host. Do NOT spawn a second PowerShell
             # process because the 2 GB VPS can fail that nested host with OOM.
