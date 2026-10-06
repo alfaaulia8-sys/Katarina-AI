@@ -647,6 +647,85 @@ public static class KatInteractiveLauncher {
 
 
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_FOREGROUND_PROBE_DIRECT") {
+                $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                $root=$null
+                if(Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg=Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $m=Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if([string]$m.version -eq "0.2.52"){$root=$d.FullName;break}
+                            } catch {}
+                        }
+                    }
+                }
+                if([string]::IsNullOrWhiteSpace($root)){throw "Desktop Commander 0.2.52 cache installation not found."}
+                $index=Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                if(!(Test-Path -LiteralPath $index -PathType Leaf)){throw "Desktop Commander index.js missing."}
+                $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                if(-not $nodeCmd){throw "Node.js executable not found."}
+                $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+
+                $psi=New-Object System.Diagnostics.ProcessStartInfo
+                $psi.FileName=$nodePath
+                $psi.Arguments=('"'+$index+'" remote --debug')
+                $psi.WorkingDirectory=$root
+                $psi.UseShellExecute=$false
+                $psi.CreateNoWindow=$true
+                $psi.RedirectStandardOutput=$true
+                $psi.RedirectStandardError=$true
+                try{$psi.EnvironmentVariables["USERPROFILE"]="C:\Users\Administrator"}catch{}
+                try{$psi.EnvironmentVariables["HOME"]="C:\Users\Administrator"}catch{}
+
+                $p=New-Object System.Diagnostics.Process
+                $p.StartInfo=$psi
+                if(-not $p.Start()){throw "System.Diagnostics.Process failed to start Desktop Commander."}
+                $startedPid=$p.Id
+
+                $deadline=[DateTime]::UtcNow.AddSeconds(15)
+                while([DateTime]::UtcNow -lt $deadline -and -not $p.HasExited){Start-Sleep -Milliseconds 250}
+                $wasAlive=(-not $p.HasExited)
+                if($wasAlive){
+                    try{$p.Kill()}catch{}
+                    try{$p.WaitForExit(3000)}catch{}
+                }
+                $stdout=""
+                $stderr=""
+                try{$stdout=$p.StandardOutput.ReadToEnd()}catch{}
+                try{$stderr=$p.StandardError.ReadToEnd()}catch{}
+                $combined=Redact-Text ($stdout+[Environment]::NewLine+$stderr)
+
+                $phase="PROCESS_EXITED"
+                if($combined -match "(?i)Device ready"){$phase="DEVICE_READY"}
+                elseif($combined -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($combined -match "(?i)verification|device code|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
+                elseif($wasAlive){$phase="RUNNING"}
+                elseif($combined -match "(?i)ERR_|Error|failed|not supported|unsupported"){$phase="PROCESS_ERROR"}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_FOREGROUND_PROBE"
+                    process_id=$startedPid
+                    survived_15_seconds=$wasAlive
+                    phase=$phase
+                    sanitized_output=$combined
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_foreground_probe.json") $diag
+                ("DESKTOP COMMANDER FOREGROUND PROBE "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["phase"]=$phase
+                $details["survived_15_seconds"]=$wasAlive
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_CMD_START_DIRECT") {
                 $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
                 $root=$null
