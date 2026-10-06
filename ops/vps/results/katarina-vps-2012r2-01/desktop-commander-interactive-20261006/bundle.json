@@ -1,0 +1,46 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "desktop-commander-interactive-20261006",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-06T03:04:17.0583556Z"
+                },
+    "files":  [
+                  {
+                      "name":  "desktop_commander_interactive_start.json",
+                      "size_bytes":  9253,
+                      "sha256":  "dd5a03c4a21da57c7096720ceeae07f791a2b19ee47506a12769284e7f0a5a6d",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"DESKTOP_COMMANDER_INTERACTIVE_START\",\r\n    \"explorer_process_id\":  2256,\r\n    \"interactive_session_id\":  2,\r\n    \"launched_process_id\":  3684,\r\n    \"launched_process_alive\":  false,\r\n    \"phase\":  \"PROCESS_EXITED\",\r\n    \"sanitized_log_tail\":  \"âš ï¸  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715\\r\\n\\r\\n\\u001b[34mâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—\\u001b[0m\\r\\n\\u001b[34mâ–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘ â–ˆâ–ˆâ•”â•â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—\\u001b[0m\\r\\n\\u001b[34mâ–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•    â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â–ˆâ–ˆâ–ˆâ–ˆâ•”â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â–ˆâ–ˆâ–ˆâ–ˆâ•”â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â–ˆâ–ˆâ•— â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•\\u001b[0m\\r\\n\\u001b[34mâ–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•  â•šâ•â•â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•—    â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â•    â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—\\u001b[0m\\r\\n\\u001b[34mâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•‘   â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘        â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘ â•šâ•â• â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘ â•šâ•â• â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘\\u001b[0m\\r\\n\\u001b[34mâ•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•   â•šâ•â•    â•šâ•â•â•â•â•â• â•šâ•â•         â•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â• â•šâ•â•     â•šâ•â•â•šâ•â•     â•šâ•â•â•šâ•â•  â•šâ•â•â•šâ•â•  â•šâ•â•â•â•â•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•\\u001b[0m\\r\\n\\r\\n\\u001b[34mðŸŒ Remote Connection\\u001b[0m\\r\\n\\r\\n[DEBUG] Verbose mode:  true\\r\\n[DEBUG] Platform: win32\\r\\nðŸš€ Starting MCP Device...\\r\\n[DEBUG] DesktopCommanderIntegration.initialize() called\\r\\n[DEBUG] Resolving MCP config...\\r\\n[DEBUG] Checking local dev path: C:\\\\Users\\\\Administrator\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\4b4c857f6efdfb61\\\\node_modules\\\\@wonderwhy-er\\\\desktop-commander\\\\dist\\\\index.js\\r\\n - ðŸ” Found local MCP server at: C:\\\\Users\\\\Administrator\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\4b4c857f6efdfb61\\\\node_modules\\\\@wonderwhy-er\\\\desktop-commander\\\\dist\\\\index.js\\r\\n - â³ Connecting to Local Desktop Commander MCP using: C:\\\\Program Files\\\\nodejs\\\\node.exe C:\\\\Users\\\\Administrator\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\4b4c857f6efdfb61\\\\node_modules\\\\@wonderwhy-er\\\\desktop-commander\\\\dist\\\\index.js\\r\\n[DEBUG] MCP config: {\\r\\n  \\\"command\\\": \\\"C:\\\\\\\\Program Files\\\\\\\\nodejs\\\\\\\\node.exe\\\",\\r\\n  \\\"args\\\": [\\r\\n    \\\"C:\\\\\\\\Users\\\\\\\\Administrator\\\\\\\\AppData\\\\\\\\Local\\\\\\\\npm-cache\\\\\\\\_npx\\\\\\\\4b4c857f6efdfb61\\\\\\\\node_modules\\\\\\\\@wonderwhy-er\\\\\\\\desktop-commander\\\\\\\\dist\\\\\\\\index.js\\\"\\r\\n  ],\\r\\n  \\\"cwd\\\": \\\"C:\\\\\\\\Users\\\\\\\\Administrator\\\\\\\\AppData\\\\\\\\Local\\\\\\\\npm-cache\\\\\\\\_npx\\\\\\\\4b4c857f6efdfb61\\\\\\\\node_modules\\\\\\\\@wonderwhy-er\\\\\\\\desktop-commander\\\\\\\\dist\\\"\\r\\n}\\r\\n[DEBUG] Creating StdioClientTransport\\r\\n[DEBUG] Creating MCP Client\\r\\n[DEBUG] Connecting MCP client to transport\\r\\nâš ï¸  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715\\r\\n - ðŸ”Œ Connected to Desktop Commander MCP\\r\\n[DEBUG] Desktop Commander MCP connection successful\\r\\nâ³ Connecting to Remote MCP https://mcp.desktopcommander.app\\r\\n[DEBUG] Fetching Supabase config from: https://mcp.desktopcommander.app/api/mcp-info\\r\\n[DEBUG] Supabase config received, URL: https://olvbkozcufcbptfogatw.s...\\r\\n   - ðŸ”Œ Connected to Remote MCP\\r\\n - âŒ Device startup failed: Node.js detected but native WebSocket not found.\\r\\n\\r\\nSuggested solution: Ensure you are running Node.js 22+ or provide a WebSocket implementation via the transport option.\\r\\n\\r\\nðŸ›‘ Shutting down device...\\r\\n[DEBUG] Shutdown initiated for device: undefined\\r\\n  â†’ Stopping heartbeat...\\r\\n[DEBUG] Calling stopHeartbeat()\\r\\n  âœ“ Heartbeat stopped\\r\\n  â†’ Unsubscribing from channel...\\r\\n[DEBUG] Calling channel.unsubscribe()\\r\\n  â†’ Marking device offline...\\r\\n[DEBUG] Calling setOffline() with deviceId: undefined\\r\\n[DEBUG] setOffline() skipped - no deviceId or client\\r\\n[DEBUG] Draining pending config writes\\r\\n  â†’ Shutting down desktop integration...\\r\\n[DEBUG] Calling desktop.shutdown()\\r\\n[DEBUG] DesktopCommanderIntegration.shutdown() called\\r\\n  â†’ Closing MCP client...\\r\\n[DEBUG] Calling mcpClient.close() with timeout\\r\\n  âœ“ MCP client closed\\r\\n  â†’ Closing MCP transport...\\r\\n[DEBUG] Calling mcpTransport.close() with timeout\\r\\n  âœ“ MCP transport closed\\r\\n[DEBUG] Desktop Commander integration shutdown complete\\r\\n  âœ“ Desktop integration shut down\\r\\nâœ“ Device shutdown complete\\r\\n[DEBUG] Shutdown sequence completed successfully\\r\\nEXIT %ERRORLEVEL% \",\r\n    \"generated_utc\":  \"2026-10-06T03:04:13.4176887Z\",\r\n    \"result\":  \"FAIL\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  610,
+                      "sha256":  "ae013f242b93db0b66c55ffaf3fb09418b4887a4eeef7b2158056d587c388078",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"desktop-commander-interactive-20261006\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-06T03:03:57.6364352Z\",\r\n    \"completed_utc\":  \"2026-10-06T03:04:13.4489354Z\",\r\n    \"duration_ms\":  15813,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_DESKTOP_COMMANDER_INTERACTIVE_START_DIRECT\",\r\n                    \"phase\":  \"PROCESS_EXITED\",\r\n                    \"session_id\":  2,\r\n                    \"result\":  \"FAIL\"\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  53,
+                      "sha256":  "32abfc0a3ce31a0ff1c5c1ba4988517512d5b2881fffcdcf71bf29b85b74467b",
+                      "content_included":  true,
+                      "content":  "DESKTOP COMMANDER INTERACTIVE FAIL / PROCESS_EXITED\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  9918
+}
