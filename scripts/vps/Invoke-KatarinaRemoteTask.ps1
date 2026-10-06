@@ -455,7 +455,7 @@ try {
                 )
                 $cmdLines | Set-Content -LiteralPath $cmdFile -Encoding ASCII
 
-                $launchCmd='cmd.exe /D /C "'+$cmdFile+'"'
+                $launchCmd='cmd.exe /D /C '+$cmdFile
                 try {
                     $wmi=[wmiclass]"Win32_Process"
                     $created=$wmi.Create($launchCmd,$dcRoot,$null)
