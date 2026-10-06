@@ -13,7 +13,7 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 07 — MT5 ↔ Python Communication: ✅ FROZEN v1.0.0 — `PASS_STAGE07_FINAL_CLEARANCE`
 - Stage 08 — Data Validation Engine: ✅ FROZEN v1.0.0 — `PASS_STAGE08_FINAL_CLEARANCE`
 - Stage 09 — Health & Safety Engine: ✅ FROZEN v1.0.0 — `PASS_STAGE09_FINAL_CLEARANCE`
-- Stage 10 — Database & Memory V1: ✅ LOCAL FREEZE CANDIDATE — `PASS_STAGE10_LOCAL_FINAL_CLEARANCE`
+- Stage 10 - Database & Memory V1: LOCAL FREEZE CANDIDATE - PASS_STAGE10_LOCAL_FINAL_CLEARANCE
 
 ## KAT1 v1.0.0
 
@@ -265,3 +265,126 @@ Security baseline:
 - no production broker mutation.
 
 See `docs/operations/KATARINA_VPS_REMOTE_LAB.md`.
+
+## VPS-First Development Workflow
+
+The active Windows Server 2012 R2 host is a **VPS-first development worker**. GitHub is intentionally kept out of the hot development loop as much as possible.
+
+~~~text
+ChatGPT / maintainer
+        |
+        | small allowlisted JSON request
+        v
+GitHub command queue
+        |
+        | outbound HTTPS poll
+        v
+Katarina primary VPS agent
+        |
+        v
+C:\KatarinaDev\workspace
+   |        |        |
+ edit     test     build
+   \________|________/
+            |
+            | one compact evidence bundle
+            v
+GitHub results
+            |
+            v
+review / next command
+
+Only after a coherent milestone:
+VPS workspace -> reviewed source update -> canonical GitHub commit
+~~~
+
+Operating rules:
+
+- `C:\KatarinaDev\workspace` is the hot working copy for implementation, testing, and build iteration.
+- GitHub is the **sparse command/evidence bus and canonical release history**, not a per-step scratch filesystem.
+- Intermediate source changes stay on the VPS; do not commit every edit/test cycle.
+- A normal remote task uses **one request write + one compact result bundle write**.
+- Result files are bundled when `compact_results=true`; routine health stays local and GitHub health publication is transition-only.
+- The guarded Server 2012 R2 profile keeps **one persistent primary lane** and serializes memory-heavy jobs.
+- Secondary worker/recovery lanes remain disabled on the low-memory host unless a later resource profile explicitly enables them.
+- The primary queue target is `ops/vps/requests/primary/`.
+- Result evidence is returned under `ops/vps/results/<agent-id>/<request-id>/`.
+- Control/status operations use sparse source fetches instead of downloading the whole repository.
+- Full repository snapshots are reserved for tasks that genuinely need canonical source input.
+- The primary agent is self-healed by the watchdog/guardian and survives closing the interactive PowerShell window.
+- No Desktop Commander dependency is required for normal KATARINA development.
+
+### Fast guarded control profile
+
+The recommended low-memory control profile is:
+
+~~~text
+resource_profile: LEGACY_LOW_MEMORY_GUARDED
+primary poll:     3 seconds
+persistent lanes: primary only
+heavy jobs:       1 at a time
+results:          compact bundle
+GitHub health:    transitions only
+~~~
+
+This reduces command pickup latency while avoiding multiple resident PowerShell workers and unnecessary GitHub writes. The poll itself is read-only; writes are reserved for commands, compact evidence, meaningful health transitions, and reviewed milestone commits.
+
+### Low-write transport policy
+
+The **active production control path** on the current VPS is the fast guarded repository queue:
+
+~~~text
+one compact request -> VPS local workspace/build/test -> one compact result bundle
+~~~
+
+The primary lane polls every **3 seconds**, control files are eligible for short local caching, routine health is kept local/transition-only, and related edits plus checks should be batched into one request. This keeps the hot implementation loop on the VPS and limits GitHub writes to command/evidence pairs plus reviewed milestone source commits.
+
+GitHub Issue **#2** is reserved as an optional comment-based transport (`KATARINA_CMD_V1` / `KATARINA_RESULT_V1`) when the VPS GitHub token has Issue read/write permission. The agent is designed to fall back to the repository queue if that optional transport is unavailable; the repository queue remains the recovery authority.
+
+Intermediate source remains on the VPS and is synchronized to GitHub only at a reviewed milestone.
+
+### Development cycle
+
+1. Send one allowlisted request to the primary queue.
+2. The VPS applies the requested change to its local KATARINA workspace.
+3. Run focused tests locally on the VPS.
+4. Continue local edit/test iterations without source commits for every attempt.
+5. Return a compact evidence bundle to GitHub.
+6. When the milestone is stable, review the accumulated workspace change and publish a canonical source commit.
+7. Run the milestone regression/clearance suite and record the final evidence.
+
+This is the default workflow for ongoing KATARINA development on the current Server 2012 R2 VPS.
+
+## Current 40-Stage Implementation Status
+
+The VPS-first implementation baseline now covers **Stages 01-40**.
+
+- Stages 01-09 remain governed/frozen.
+- Stage 10 durable memory baseline is implemented and passes restart/idempotency/integrity tests.
+- Stages 11-40 have concrete implementation baselines with deterministic fail-closed tests.
+- Full VPS regression: **117 unit tests PASS**, **45 static tests PASS**, **3 Stage 11-40 integration tests PASS**.
+- Stage 06 legacy VPS compile: **0 errors / 0 warnings** (Windows Server 2012 R2 remains a deferred/non-freeze host).
+- Stage 07 MQL compile suite and **37/37 Python communication regressions PASS**.
+- Stage 38 remains fail-closed for live execution until explicit human approval plus demo/broker/reconciliation/stress/monitoring evidence exists. Numeric risk limits are identical across backtest, demo and real: 5% max per entry and 10% max daily drawdown.
+
+Current software state: **implementation baseline ready; live-capital validation intentionally pending**.
+
+### Scalper Entry V1
+
+The XAUUSD entry layer now uses regime routing:
+- trend -> EMA50/EMA10 pullback + RSI/ADX/ATR/MTF confirmation;
+- range -> RSI(2) + Bollinger mean reversion;
+- high volatility -> breakout + ADX/tick-velocity/order-flow/VWAP confirmation;
+- unknown/stale/news-blocked conditions -> NO_TRADE.
+
+This layer creates entry proposals only. It cannot authorize live risk or bypass the Risk Governor.
+
+
+### Shared-account manual risk
+
+Manual desktop/mobile/web trades, foreign-EA trades and unknown-origin exposure are included in KATARINA's account-wide open-risk calculation. Positions without a quantifiable Stop Loss are treated as unbounded risk and block new automated entries. Manual positions remain non-mutable by KATARINA by default.
+
+
+### Operational Hardening V1
+
+KATARINA now treats open positions, broker pending orders, and in-flight risk reservations as one account-wide risk budget. Daily drawdown is stateful and cash-flow neutral, restart-critical RR/risk/recovery state is persisted, management commands reconcile partial fills and failed SL changes, real-tick simulation uses the same RR management rules, and economic-calendar availability is fail-closed. See `docs/architecture/OPERATIONAL_HARDENING_V1.md`.

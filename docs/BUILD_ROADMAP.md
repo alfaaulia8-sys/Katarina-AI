@@ -11,41 +11,41 @@
 | 07 | MT5-Python Communication | ✅ FINALIZED / FROZEN v1.0.0 |
 | 08 | Data Validation Engine | ✅ FINALIZED / FROZEN v1.0.0 — `PASS_STAGE08_FINAL_CLEARANCE` |
 | 09 | Health & Safety Engine | ✅ FINALIZED / FROZEN v1.0.0 — `PASS_STAGE09_FINAL_CLEARANCE` |
-| 10 | Database & Memory V1 | ✅ LOCAL FREEZE CANDIDATE — persistence audit PASS |
-| 11 | Market Intelligence Engine | ⬜ |
-| 12 | Multi-Timeframe Engine | ⬜ |
-| 13 | Market Regime Engine | ⬜ |
-| 14 | XAUUSD Specialist V1 | ⬜ |
-| 15 | Decision Engine | ⬜ |
-| 16 | Risk Governor | ⬜ |
-| 17 | Position Sizing Engine | ⬜ |
-| 18 | Execution Engine | ⬜ |
-| 19 | Position Manager | ⬜ |
-| 20 | Trade Evaluation Engine | ⬜ |
-| 21 | Research Engine | ⬜ |
-| 22 | Backtesting Engine | ⬜ |
-| 23 | Out-of-Sample + Walk-Forward | ⬜ |
-| 24 | Monte Carlo / Robustness | ⬜ |
-| 25 | Tester Evaluation | ⬜ |
-| 26 | Learning Engine | ⬜ |
-| 27 | Machine Learning V1 | ⬜ |
-| 28 | Model Promotion & Rollback | ⬜ |
-| 29 | Economic Intelligence Engine | ⬜ |
-| 30 | Portfolio & Multi-Pair Engine | ⬜ |
-| 31 | Correlation & Global Exposure Engine | ⬜ |
-| 32 | Dashboard | ⬜ |
-| 33 | Automated Testing / CI | ⬜ |
-| 34 | Constitution Guard | ⬜ |
-| 35 | MT5 Strategy Tester Integration | ⬜ |
-| 36 | Live Environment Preflight | ⬜ |
-| 37 | Stress Test | ⬜ |
-| 38 | Live Micro-Risk Validation | ⬜ |
-| 39 | Performance Monitoring | ⬜ |
-| 40 | Continuous Evolution | ⬜ |
+| 10 | Database & Memory V1 | LOCAL FREEZE CANDIDATE - persistence audit PASS |
+| 11 | Market Intelligence Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 12 | Multi-Timeframe Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 13 | Market Regime Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 14 | XAUUSD Specialist V1 | 🟡 IMPLEMENTED BASELINE / PASS |
+| 15 | Decision Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 16 | Risk Governor | 🟡 IMPLEMENTED BASELINE / PASS |
+| 17 | Position Sizing Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 18 | Execution Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 19 | Position Manager | 🟡 IMPLEMENTED BASELINE / PASS |
+| 20 | Trade Evaluation Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 21 | Research Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 22 | Backtesting Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 23 | Out-of-Sample + Walk-Forward | 🟡 IMPLEMENTED BASELINE / PASS |
+| 24 | Monte Carlo / Robustness | 🟡 IMPLEMENTED BASELINE / PASS |
+| 25 | Tester Evaluation | IMPLEMENTED BASELINE / PASS |
+| 26 | Learning Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 27 | Machine Learning V1 | 🟡 IMPLEMENTED BASELINE / PASS |
+| 28 | Model Promotion & Rollback | 🟡 IMPLEMENTED BASELINE / PASS |
+| 29 | Economic Intelligence Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 30 | Portfolio & Multi-Pair Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 31 | Correlation & Global Exposure Engine | 🟡 IMPLEMENTED BASELINE / PASS |
+| 32 | Dashboard | 🟡 IMPLEMENTED BASELINE / PASS |
+| 33 | Automated Testing / CI | 🟡 IMPLEMENTED BASELINE / PASS |
+| 34 | Constitution Guard | 🟡 IMPLEMENTED BASELINE / PASS |
+| 35 | MT5 Strategy Tester Integration | 🟡 IMPLEMENTED BASELINE / PASS |
+| 36 | Live Environment Preflight | IMPLEMENTED BASELINE / read-only preflight |
+| 37 | Stress Test | 🟡 IMPLEMENTED BASELINE / PASS |
+| 38 | Live Micro-Risk Validation | GATE READY - authorization/evidence pending |
+| 39 | Performance Monitoring | 🟡 IMPLEMENTED BASELINE / PASS |
+| 40 | Continuous Evolution | 🟡 IMPLEMENTED BASELINE / PASS |
 
 ## Current Position
 
-**Stage 09 is FINALIZED / FROZEN v1.0.0. Stage 10 — Database & Memory V1 has `PASS_STAGE10_LOCAL_FINAL_CLEARANCE` and is a local freeze candidate; governed freeze evidence remains pending.**
+**Stages 01-09 remain frozen. Stage 10 is a local freeze candidate. Stages 11-40 have implementation baselines on the VPS. Live-capital validation remains intentionally blocked until Stage 36/38 external evidence is complete.**
 
 ## Frozen Stage 04 Scope
 

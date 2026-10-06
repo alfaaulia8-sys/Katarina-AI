@@ -13,7 +13,7 @@
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
 - Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: FINALIZED / FROZEN v1.0.0; `PASS_STAGE08_FINAL_CLEARANCE`
 - Stage 09 — Health & Safety Engine: FINALIZED / FROZEN v1.0.0; `PASS_STAGE09_FINAL_CLEARANCE`
-- Stage 10 — Database & Memory V1: LOCAL FREEZE CANDIDATE; `PASS_STAGE10_LOCAL_FINAL_CLEARANCE`; governed freeze pending
+- Stage 10 - Database & Memory V1: LOCAL FREEZE CANDIDATE; PASS_STAGE10_LOCAL_FINAL_CLEARANCE; governed freeze pending
 
 ## VPS bridge status
 
@@ -162,7 +162,7 @@ Governed evidence:
 
 ## Next recommended action
 
-Stage 10 local implementation is complete. Next development focus:
+Proceed with Stage 10 — Database & Memory V1:
 
 1. define durable event/memory boundaries;
 2. implement append-only durable records with deterministic IDs;
@@ -181,3 +181,20 @@ Stage 10 local implementation is complete. Next development focus:
 - live-risk readiness is separate from transport connectivity.
 - Stage 04 KAT1 is authoritative.
 - Stage 06 is frozen and remains fail-closed by contract; later stages must not weaken its safety invariants.\n- Stage 07 is frozen; later stages must preserve its localhost-only transport, KAT1 framing, recovery, binding and sequence invariants.
+
+## 2026-10-05 Stage 10-40 VPS implementation update
+
+- Stage 10 durable SQLite memory baseline: PASS.
+- Stages 11-40 implementation modules: present on VPS and covered by staged tests.
+- Full discovery: 117 unit tests PASS.
+- Static suite: 45 tests PASS.
+- Stage 11-40 integration: 3 tests PASS.
+- Stage 11-40 audit: `PASS_STAGE11_40_IMPLEMENTATION_BASELINE`.
+- Stage 06 exploratory compile on Server 2012 R2: 0 errors / 0 warnings, not freeze-qualified by policy.
+- Stage 07 MQL compile suite: PASS.
+- Stage 07 Python communication regression: 37/37 PASS.
+- Stage 36 Live Environment Preflight is implemented as a read-only gate; broker mutation is not permitted by the preflight.
+- Stage 38 Live Micro-Risk Validation remains fail-closed until explicit owner approval and required external evidence; no preflight stage may authorize broker mutation.
+- Continuous evolution cannot autonomously promote live models or alter the Constitution.
+
+Next external-validation sequence: tester evidence -> read-only live-environment preflight -> stress/broker compatibility/reconciliation proof -> explicit owner authorization for live micro-risk validation.

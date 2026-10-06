@@ -1,0 +1,23 @@
+{
+  "schema_version": 3,
+  "name": "KATARINA_UNIFIED_RISK_PROFILE",
+  "scope": "BACKTEST_DEMO_REAL",
+  "per_trade_default_fraction": 0.01,
+  "hard_per_entry_fraction": 0.05,
+  "max_open_risk_fraction": 0.08,
+  "max_daily_drawdown_fraction": 0.10,
+  "max_total_drawdown_fraction": 0.20,
+  "daily_drawdown_action": "PAUSE_NEW_RISK_UNTIL_NEXT_TRADING_DAY",
+  "environment_specific_risk_parameters": false,
+  "recovery_factor": {
+    "enabled": true,
+    "definition": "net_profit / max_drawdown",
+    "used_for_reporting": true,
+    "used_for_live_authorization": false
+  },
+  "stage38": {
+    "authorization_gate_required": true,
+    "risk_cap_fraction": 0.05,
+    "uses_same_risk_profile_as_backtest_and_demo": true
+  }
+}

@@ -1,0 +1,177 @@
+{
+  "schema_version": 3,
+  "stage_count": 40,
+  "frozen_through": 9,
+  "implementation_baseline_through": 40,
+  "live_risk_ready": false,
+  "release_state": "SOFTWARE_BASELINE_READY__LIVE_VALIDATION_PENDING",
+  "notes": [
+    "Stages 01-09 remain frozen.",
+    "Stage 10-40 have implementation baselines and automated tests on the VPS.",
+    "Stage 36 paper/demo harness is implemented but real broker demo evidence is still required.",
+    "Backtest, demo and real use one unified numeric risk profile: max 5% per entry, 10% daily drawdown, 8% aggregate open risk, 20% total drawdown.",
+    "Stage 38 remains an execution-authorization gate; it no longer applies a smaller live-only risk cap."
+  ],
+  "records": [
+    {
+      "stage": 1,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 2,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 3,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 4,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 5,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 6,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 7,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 8,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 9,
+      "status": "FROZEN_IMPLEMENTED"
+    },
+    {
+      "stage": 10,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 11,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 12,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 13,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 14,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 15,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 16,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 17,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 18,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 19,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 20,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 21,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 22,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 23,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 24,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 25,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 26,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 27,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 28,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 29,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 30,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 31,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 32,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 33,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 34,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 35,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 36,
+      "status": "IMPLEMENTED_BASELINE__REAL_DEMO_EVIDENCE_PENDING"
+    },
+    {
+      "stage": 37,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 38,
+      "status": "IMPLEMENTED_GATE__LIVE_VALIDATION_PENDING"
+    },
+    {
+      "stage": 39,
+      "status": "IMPLEMENTED_BASELINE"
+    },
+    {
+      "stage": 40,
+      "status": "IMPLEMENTED_BASELINE"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "python": "3.12.10",
+  "packages": {
+    "pyzmq": "27.2.0",
+    "MetaTrader5": "5.0.6231",
+    "numpy": "2.5.3"
+  },
+  "notes": [
+    "MetaTrader5 is required only on the Windows/VPS broker-data adapter path.",
+    "Core imports remain lazy so CI does not require MetaTrader5."
+  ]
+}

@@ -6,14 +6,36 @@ ROOT = Path(__file__).resolve().parents[2]
 EA = ROOT / "mt5" / "Experts" / "KatarinaBridgeEA.mq5"
 INCLUDE = ROOT / "mt5" / "Include" / "Katarina"
 
+# Stage-06 is frozen against this canonical include set. Later governed
+# extensions may coexist in the same include tree without retroactively
+# expanding the Stage-06 freeze surface.
+FROZEN_STAGE06_INCLUDE_NAMES = (
+    "BarSource.mqh",
+    "BridgeIdentity.mqh",
+    "BridgeState.mqh",
+    "BrokerCalc.mqh",
+    "BrokerReason.mqh",
+    "DealHistory.mqh",
+    "EventBuffer.mqh",
+    "ExecutionPreflight.mqh",
+    "HealthSample.mqh",
+    "InstanceGuard.mqh",
+    "NativeFacts.mqh",
+    "NativeSnapshot.mqh",
+    "SessionState.mqh",
+    "SymbolRegistry.mqh",
+    "TestEvidence.mqh",
+    "TransportPort.mqh",
+)
+
 
 class Stage06Mt5StaticTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.ea = EA.read_text(encoding="utf-8")
         cls.all_mt5 = cls.ea + "\n" + "\n".join(
-            path.read_text(encoding="utf-8")
-            for path in sorted(INCLUDE.glob("*.mqh"))
+            (INCLUDE / name).read_text(encoding="utf-8")
+            for name in FROZEN_STAGE06_INCLUDE_NAMES
         )
 
     def test_no_discretionary_strategy_indicators(self):
@@ -136,9 +158,9 @@ class Stage06Mt5StaticTests(unittest.TestCase):
         self_test = (
             ROOT / "mt5" / "Tests" / "KatarinaStage06SelfTest.mq5"
         ).read_text(encoding="utf-8")
-        for path in sorted(INCLUDE.glob("*.mqh")):
+        for name in FROZEN_STAGE06_INCLUDE_NAMES:
             self.assertIn(
-                f"<Katarina/{path.name}>",
+                f"<Katarina/{name}>",
                 self_test,
             )
 

@@ -1,0 +1,33 @@
+name: KATARINA Operational Hardening
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/katarina/**'
+      - 'tests/**'
+      - 'config/operational_hardening_v1.json'
+      - '.github/workflows/operational-hardening.yml'
+  pull_request:
+    paths:
+      - 'src/katarina/**'
+      - 'tests/**'
+
+jobs:
+  hardening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Python
+        run: python -m compileall -q src
+      - name: Unit tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/unit -p 'test_*.py' -v
+      - name: Integration tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/integration -p 'test_*.py' -v
