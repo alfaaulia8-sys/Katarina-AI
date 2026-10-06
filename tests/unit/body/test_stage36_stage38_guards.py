@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import unittest
 
-from katarina.body.functional import PaperFill
+from katarina.body.functional import LivePreflightCheck
 
 
 def component(stage: int):
@@ -12,31 +12,37 @@ def component(stage: int):
     ).Component()
 
 
-class Stage36PaperTradingGuardTests(unittest.TestCase):
-    def test_paper_ledger_is_deterministic_and_has_no_broker_mutation(self):
+class Stage36LivePreflightGuardTests(unittest.TestCase):
+    def test_complete_live_preflight_passes_without_broker_mutation(self):
         c = component(36)
         self.assertFalse(c.broker_mutation_enabled)
-        c.simulate_fill(PaperFill("a", 3000000, 10, "BUY", "XAUUSD"))
-        c.simulate_fill(PaperFill("b", 3000100, 4, "SELL", "XAUUSD"))
-        c.simulate_fill(PaperFill("c", 100000, 3, "BUY", "BTCUSD"))
-        self.assertEqual(c.position_units("XAUUSD"), 6)
-        self.assertEqual(c.position_units("BTCUSD"), 3)
-        self.assertEqual(len(c.fills()), 3)
+        checks = tuple(
+            LivePreflightCheck(name, True)
+            for name in c.REQUIRED_CHECKS
+        )
+        out = c.evaluate(checks)
+        self.assertTrue(out["passed"])
+        self.assertEqual(out["missing_checks"], ())
+        self.assertFalse(out["broker_mutation"])
+        self.assertFalse(out["live_execution_authority"])
 
-    def test_duplicate_paper_order_id_is_rejected(self):
+    def test_missing_live_preflight_check_fails_closed(self):
         c = component(36)
-        fill = PaperFill("same", 3000000, 1, "BUY")
-        c.simulate_fill(fill)
-        with self.assertRaises(ValueError):
-            c.simulate_fill(fill)
+        checks = tuple(
+            LivePreflightCheck(name, name != "health_ready")
+            for name in c.REQUIRED_CHECKS
+        )
+        out = c.evaluate(checks)
+        self.assertFalse(out["passed"])
+        self.assertIn("health_ready", out["missing_checks"])
 
-    def test_invalid_paper_fill_fails_closed(self):
+    def test_duplicate_live_preflight_check_is_rejected(self):
+        c = component(36)
         with self.assertRaises(ValueError):
-            PaperFill("bad", 0, 1, "BUY")
-        with self.assertRaises(ValueError):
-            PaperFill("bad", 1, 0, "BUY")
-        with self.assertRaises(ValueError):
-            PaperFill("bad", 1, 1, "HOLD")
+            c.evaluate((
+                LivePreflightCheck("terminal_connected", True),
+                LivePreflightCheck("terminal_connected", True),
+            ))
 
 
 class Stage38MicroRiskGateTests(unittest.TestCase):
@@ -50,7 +56,7 @@ class Stage38MicroRiskGateTests(unittest.TestCase):
                 "strategy_policy_finalized",
                 "risk_policy_finalized",
                 "stage35_tester_passed",
-                "stage36_demo_passed",
+                "stage36_live_preflight_passed",
                 "stage37_stress_passed",
                 "health_ready",
                 "reconciliation_ready",
