@@ -627,9 +627,9 @@ switch($mode) {
             $dcVerificationUrl=""
             $dcUserCode=""
             try {
-                $mUrl=[regex]::Match($dcLogText,'(?ms)Verify this device in your browser:\s*\r?\n\s*(https://[^\s]+)')
+                $mUrl=[regex]::Match($dcLogText,'(?ms)Verify this device in your browser:\s*\r?\n\s*(?:\[[^\]]+\]\s*)?(https://[^\s]+)')
                 if($mUrl.Success){$dcVerificationUrl=$mUrl.Groups[1].Value.Trim()}
-                $mCode=[regex]::Match($dcLogText,'(?ms)Make sure the code matches:\s*\r?\n\s*([^\r\n]+)')
+                $mCode=[regex]::Match($dcLogText,'(?ms)Make sure the code matches:\s*\r?\n\s*(?:\[[^\]]+\]\s*)?([^\r\n]+)')
                 if($mCode.Success){$dcUserCode=$mCode.Groups[1].Value.Trim()}
             } catch {}
 
