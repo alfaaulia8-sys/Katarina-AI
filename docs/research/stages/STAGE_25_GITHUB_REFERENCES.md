@@ -1,30 +1,27 @@
 # Stage 25 — GitHub Prior-Art Reference
 
 Status: SEARCHED / REVIEW INPUT  
-Stage: Shadow Katarina
+Stage: Tester Evaluation
 
 ## Search intent
 
-`dry run paper trading shadow execution`
+`strategy tester simulated execution offline evaluation trading`
 
-## Selected reference
+## Selected references
 
-https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/README.md
+- Olympus trading architecture:
+  https://github.com/maadjiba24-afk/Olympus-/blob/2723488e065029406152fcc41995deace0e9c4ff/docs/TRADING_ARCHITECTURE.md
+- Backtrader engine:
+  https://github.com/mementum/backtrader/blob/b853d7c90b6721476eb5a5ea3135224e33db1f14/backtrader/cerebro.py
 
 ## KATARINA adaptation rule
 
-- Reference is prior art only; code is not copied blindly.
-- Frozen Stage 01-09 invariants remain authoritative.
-- Python remains central intelligence.
-- Strategy/risk policy is not silently finalized.
-- Live risk and live execution authority remain disabled.
-- The generated Stage 25 component is an integration body shell.
-- Functional trading logic requires its own governed implementation and tests.
+- Stage 25 is TESTER/offline evidence capture only.
+- It does not create a third runtime mode.
+- It never mutates the broker.
+- Evidence may feed Learning/ML stages after deterministic evaluation.
+- Live execution authority remains owned by the LIVE path and its risk/readiness gates.
 
 ## Body-build result
 
 `BODY_FRAMEWORK_COMPLETE`
-
-This status means the stage has a stable integration boundary in the KATARINA
-body. It does **not** mean production trading logic or live-risk validation is
-finalized.
