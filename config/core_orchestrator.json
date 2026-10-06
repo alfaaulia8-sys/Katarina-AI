@@ -11,9 +11,7 @@
   ],
   "runtime_modes": [
     "LIVE",
-    "TESTER",
-    "SHADOW",
-    "RESEARCH"
+    "TESTER"
   ],
   "component_phases": [
     "BOOTSTRAP",
@@ -51,7 +49,6 @@
     "IDENTITY",
     "SNAPSHOT"
   ],
-  "research_bootstrap_readiness": [],
   "live_execution_readiness": [
     "DATA_FRESH",
     "HEALTH",
