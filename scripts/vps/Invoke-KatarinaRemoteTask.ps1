@@ -747,7 +747,7 @@ public static class KatInteractiveLauncher {
                     $phase=$(if($p.HasExited){"PROCESS_EXITED"}else{"RUNNING"})
                 }
 
-                $safeLog=Redact-ResultText $logText
+                $safeLog=Redact-Text $logText
                 $verificationUrl=""
                 $userCode=""
                 try {
