@@ -34,7 +34,6 @@ _BASE_LIVE = frozenset(
 
 _REQUIRED_BY_MODE: dict[RuntimeMode, frozenset[ReadinessSignal]] = {
     RuntimeMode.LIVE: _BASE_LIVE,
-    RuntimeMode.SHADOW: _BASE_LIVE,
     RuntimeMode.TESTER: frozenset(
         {
             ReadinessSignal.TRANSPORT,
@@ -43,7 +42,6 @@ _REQUIRED_BY_MODE: dict[RuntimeMode, frozenset[ReadinessSignal]] = {
             ReadinessSignal.SNAPSHOT,
         }
     ),
-    RuntimeMode.RESEARCH: frozenset(),
 }
 
 _LIVE_EXECUTION_REQUIRED = frozenset(
