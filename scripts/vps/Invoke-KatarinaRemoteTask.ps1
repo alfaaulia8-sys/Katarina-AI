@@ -646,6 +646,97 @@ public static class KatInteractiveLauncher {
             }
 
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_CMD_START_DIRECT") {
+                $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                $root=$null
+                if(Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg=Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $m=Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if([string]$m.version -eq "0.2.52"){$root=$d.FullName;break}
+                            } catch {}
+                        }
+                    }
+                }
+                if([string]::IsNullOrWhiteSpace($root)){throw "Desktop Commander 0.2.52 cache installation not found."}
+                $index=Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                if(!(Test-Path -LiteralPath $index -PathType Leaf)){throw "Desktop Commander index.js missing."}
+                $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                if(-not $nodeCmd){throw "Node.js executable not found."}
+                $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+
+                $dcRoot="C:\DesktopCommanderCompat"
+                $logRoot=Join-Path $dcRoot "logs"
+                New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
+                $cmdFile=Join-Path $dcRoot "Run-DesktopCommanderRemote.cmd"
+                $log=Join-Path $logRoot "remote-cmd.log"
+                Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+                $cmdLines=@(
+                    '@echo off',
+                    'set USERPROFILE=C:\Users\Administrator',
+                    'set HOME=C:\Users\Administrator',
+                    ('cd /d "'+$root+'"'),
+                    ('echo ==== Desktop Commander Remote start ====>>"'+$log+'"'),
+                    ('"'+$nodePath+'" "'+$index+'" remote --debug >>"'+$log+'" 2>&1'),
+                    ('echo ==== Desktop Commander Remote exit %ERRORLEVEL% ====>>"'+$log+'"')
+                )
+                $cmdLines | Set-Content -LiteralPath $cmdFile -Encoding ASCII
+
+                try {
+                    foreach($p in @(Get-WmiObject Win32_Process -ErrorAction SilentlyContinue)) {
+                        $cl=[string]$p.CommandLine
+                        if($cl -and $cl.IndexOf("Run-DesktopCommanderRemote.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            try{[void]$p.Terminate()}catch{}
+                        }
+                    }
+                } catch {}
+
+                $commandLine='cmd.exe /d /c ""'+$cmdFile+'""'
+                $procClass=[wmiclass]"Win32_Process"
+                $create=$procClass.Create($commandLine)
+                $rv=[int]$create.ReturnValue
+                $dcPid=[int]$create.ProcessId
+                if($rv -ne 0){throw ("Win32_Process.Create failed return_value="+$rv)}
+                Start-Sleep -Seconds 20
+
+                $alive=$false
+                try{$alive=$null -ne (Get-Process -Id $dcPid -ErrorAction SilentlyContinue)}catch{}
+                $logTail=""
+                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 160)-join [Environment]::NewLine)}}catch{}
+                $safeLog=Redact-Text $logTail
+                $phase="RUNNING"
+                if($safeLog -match "(?i)Device ready"){$phase="DEVICE_READY"}
+                elseif($safeLog -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($safeLog -match "(?i)verification|device code|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
+                elseif(-not $alive -and $safeLog -match "(?i)ERR_|Error|failed|not supported|unsupported"){$phase="PROCESS_ERROR"}
+                elseif(-not $alive){$phase="PROCESS_EXITED"}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_CMD_START"
+                    process_id=$dcPid
+                    process_alive=$alive
+                    create_return_value=$rv
+                    phase=$phase
+                    sanitized_log_tail=$safeLog
+                    device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_cmd_start.json") $diag
+                ("DESKTOP COMMANDER CMD START "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["phase"]=$phase
+                $details["process_alive"]=$alive
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_WMI_START_DIRECT") {
                 $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
                 $root=$null
