@@ -1,31 +1,27 @@
 # Stage 36 — GitHub Prior-Art Reference
 
 Status: SEARCHED / REVIEW INPUT  
-Stage: Paper / Demo Trading
+Stage: Live Environment Preflight
+
+## Search intent
+
+`live trading preflight broker connection health reconciliation risk gate`
 
 ## Selected references
 
-1. Freqtrade dry-run wallet implementation:
-   https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/freqtrade/util/dry_run_wallet.py
-
-2. Freqtrade trading command/config documentation at the same pinned revision.
-
-## Patterns adopted
-
-- paper/dry-run capital is logically separate from live venue state;
-- simulation has its own deterministic local ledger;
-- duplicate local paper order identifiers are refused;
-- paper fills may model positions but never mutate a broker;
-- paper/demo validation must precede any later live micro-risk gate.
+- Manual live-readiness flow with fresh readonly/reconciliation checks:
+  https://github.com/SvilarT/AUTONOMOUS-TRADING-BOT/blob/98fe2ebf31be22a8ccdf3b934ddca315fba6692f/docs/PHASE_4_MANUAL_LIVE_TRADING_READINESS.md
+- Trading reconciliation architecture with fail-closed live preflight:
+  https://github.com/haruperi/HaruQuant/blob/81aa8d1123eb0591456d9bae1574a78f49896017/docs/dev/reconciliation/trading-v1-v2-reconciliation.md
 
 ## KATARINA adaptation rule
 
-- Stage 36 is simulation-only during body build.
-- No credentials or live venue adapter are required.
-- `broker_mutation_enabled` is hard false.
-- Strategy/risk policies remain user-owned and pending.
-- Windows MT5 demo proof is still required before Stage 36 can be promoted beyond local body status.
+- Stage 36 is not demo/paper trading.
+- It verifies the LIVE environment read-only: terminal connection, account identity/mode, trade permissions, symbol facts, health and reconciliation prerequisites.
+- Passing Stage 36 never grants live execution authority by itself.
+- No broker mutation API is permitted in the Stage 36 preflight probe.
+- Strategy Tester evidence remains Stage 35.
 
 ## Body-build result
 
-`BODY_FRAMEWORK_COMPLETE / PAPER_LEDGER_READY / WINDOWS_DEMO_PENDING`
+`BODY_FRAMEWORK_COMPLETE`
