@@ -5,8 +5,8 @@
     "lane":  "primary",
     "process_id":  4008,
     "computer_name":  "WIN-4TTT19K3CL8",
-    "state":  "ONLINE",
-    "error":  "",
+    "state":  "ERROR",
+    "error":  "Request expired at 2026-10-04T05:25:00.0000000Z",
     "telemetry_mode":  "TRANSITIONS_ONLY",
-    "updated_utc":  "2026-10-06T02:35:22.3395649Z"
+    "updated_utc":  "2026-10-06T02:35:26.3864608Z"
 }
