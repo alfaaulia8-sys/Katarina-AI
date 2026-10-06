@@ -1,0 +1,32 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "desktop-commander-persistent-pair-20261006",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  1,
+                    "completed_utc":  "2026-10-06T03:25:20.9772757Z"
+                },
+    "files":  [
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  403,
+                      "sha256":  "510420e97eedeb4fba7cdd383a08c6b3ec8791c73e3167f4cdd9aa6d0cc181fd",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"desktop-commander-persistent-pair-20261006\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-06T03:25:06.7227548Z\",\r\n    \"completed_utc\":  \"2026-10-06T03:25:16.8714532Z\",\r\n    \"duration_ms\":  10149,\r\n    \"status\":  \"FAIL\",\r\n    \"exit_code\":  1,\r\n    \"details\":  {\r\n\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  223,
+                      "sha256":  "ba1eaa68346a73e7304490881cb1e1ffd3890668734719dbb548f7a9afb66033",
+                      "content_included":  true,
+                      "content":  "The term \u0027Redact-ResultText\u0027 is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  626
+}
