@@ -446,13 +446,21 @@ try {
                 New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
                 $log=Join-Path $logRoot "remote-task.log"
                 Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+                $cmdFile=Join-Path $dcRoot "Run-DesktopCommanderRemote.cmd"
+                $cmdLines=@(
+                    "@echo off",
+                    ('cd /d "'+$root+'"'),
+                    ('"'+$nodePath+'" "'+$index+'" remote --debug >> "'+$log+'" 2>&1'),
+                    ('echo EXIT %%ERRORLEVEL%% >> "'+$log+'"')
+                )
+                $cmdLines | Set-Content -LiteralPath $cmdFile -Encoding ASCII
 
-                $launchCmd='cmd.exe /S /C ""'+$nodePath+'" "'+$index+'" remote --debug >> "'+$log+'" 2>&1"'
+                $launchCmd='cmd.exe /D /C "'+$cmdFile+'"'
                 try {
                     $wmi=[wmiclass]"Win32_Process"
-                    $created=$wmi.Create($launchCmd,$root,$null)
+                    $created=$wmi.Create($launchCmd,$dcRoot,$null)
                 } catch {
-                    throw ("Failed to launch Desktop Commander through WMI cmd: "+(Redact-Text $_.Exception.Message))
+                    throw ("Failed to launch Desktop Commander through WMI cmdfile: "+(Redact-Text $_.Exception.Message))
                 }
                 if($null -eq $created -or [int]$created.ReturnValue -ne 0) {
                     $rv=$(if($null -eq $created){-1}else{[int]$created.ReturnValue})
@@ -476,7 +484,7 @@ try {
                 $diag=[ordered]@{
                     schema_version=1
                     proof_type="DESKTOP_COMMANDER_START"
-                    launch_method="WMI_CMD_NODE"
+                    launch_method="WMI_CMD_FILE"
                     launcher_process_id=$launcherPid
                     launcher_process_alive=$launcherAlive
                     node_path=$nodePath
