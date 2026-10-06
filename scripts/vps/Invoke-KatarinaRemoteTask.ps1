@@ -417,6 +417,89 @@ try {
 
 
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_START_DIRECT") {
+                $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                $root=$null
+                if(Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg=Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $m=Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if([string]$m.version -eq "0.2.52"){$root=$d.FullName;break}
+                            } catch {}
+                        }
+                    }
+                }
+                if([string]::IsNullOrWhiteSpace($root)){throw "Desktop Commander 0.2.52 cache installation not found."}
+
+                $index=Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                if(!(Test-Path -LiteralPath $index -PathType Leaf)){throw "Desktop Commander index.js missing."}
+                $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                if(-not $nodeCmd){throw "Node.js executable not found."}
+                $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+
+                $dcRoot="C:\DesktopCommanderCompat"
+                $logRoot=Join-Path $dcRoot "logs"
+                New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
+                $runner=Join-Path $dcRoot "Run-DesktopCommanderRemote.ps1"
+                $log=Join-Path $logRoot "remote-task.log"
+
+                $runnerLines=@(
+                    '$ErrorActionPreference="Continue"',
+                    '[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12',
+                    '$env:USERPROFILE="C:\Windows\System32\config\systemprofile"',
+                    '$env:HOME=$env:USERPROFILE',
+                    ('Set-Location -LiteralPath "'+$root+'"'),
+                    ('"=== Desktop Commander Remote start ===" | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8'),
+                    ('& "'+$nodePath+'" "'+$index+'" remote --debug 2>&1 | ForEach-Object { [string]$_ | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8 }'),
+                    ('"=== Desktop Commander Remote exit ===" | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8')
+                )
+                $runnerLines | Set-Content -LiteralPath $runner -Encoding ASCII
+
+                $task="DesktopCommanderRemote"
+                try{& schtasks.exe /End /TN $task | Out-Null}catch{}
+                try{& schtasks.exe /Delete /F /TN $task | Out-Null}catch{}
+                $taskCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$runner+'"'
+                & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN $task /TR $taskCmd | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to create DesktopCommanderRemote scheduled task."}
+                & schtasks.exe /Run /TN $task | Out-Null
+                if($LASTEXITCODE -ne 0){throw "Failed to start DesktopCommanderRemote scheduled task."}
+
+                Start-Sleep -Seconds 15
+
+                $taskText=(& schtasks.exe /Query /TN $task /V /FO LIST 2>&1 | Out-String)
+                $logTail=""
+                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 100)-join [Environment]::NewLine)}}catch{}
+                $safeLog=Redact-Text $logTail
+                $phase="RUNNING"
+                if($safeLog -match "(?i)Device ready"){$phase="DEVICE_READY"}
+                elseif($safeLog -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($safeLog -match "(?i)verification|device code|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_START"
+                    task_name=$task
+                    node_path=$nodePath
+                    install_root=$root
+                    phase=$phase
+                    sanitized_log_tail=$safeLog
+                    task_status=(Redact-Text $taskText)
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_start.json") $diag
+                ("DESKTOP COMMANDER START "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["phase"]=$phase
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_SCAN_DIRECT") {
                 $records = @()
                 $roots = @()
