@@ -11,7 +11,7 @@
 | 07 | MT5-Python Communication | ✅ FINALIZED / FROZEN v1.0.0 |
 | 08 | Data Validation Engine | ✅ FINALIZED / FROZEN v1.0.0 — `PASS_STAGE08_FINAL_CLEARANCE` |
 | 09 | Health & Safety Engine | ✅ FINALIZED / FROZEN v1.0.0 — `PASS_STAGE09_FINAL_CLEARANCE` |
-| 10 | Database & Memory V1 | 🟡 IMPLEMENTATION ACTIVE — persistence baseline |
+| 10 | Database & Memory V1 | ✅ LOCAL FREEZE CANDIDATE — persistence audit PASS |
 | 11 | Market Intelligence Engine | ⬜ |
 | 12 | Multi-Timeframe Engine | ⬜ |
 | 13 | Market Regime Engine | ⬜ |
@@ -26,7 +26,7 @@
 | 22 | Backtesting Engine | ⬜ |
 | 23 | Out-of-Sample + Walk-Forward | ⬜ |
 | 24 | Monte Carlo / Robustness | ⬜ |
-| 25 | Shadow Katarina | ⬜ |
+| 25 | Tester Evaluation | ⬜ |
 | 26 | Learning Engine | ⬜ |
 | 27 | Machine Learning V1 | ⬜ |
 | 28 | Model Promotion & Rollback | ⬜ |
@@ -37,7 +37,7 @@
 | 33 | Automated Testing / CI | ⬜ |
 | 34 | Constitution Guard | ⬜ |
 | 35 | MT5 Strategy Tester Integration | ⬜ |
-| 36 | Paper / Demo Trading | ⬜ |
+| 36 | Live Environment Preflight | ⬜ |
 | 37 | Stress Test | ⬜ |
 | 38 | Live Micro-Risk Validation | ⬜ |
 | 39 | Performance Monitoring | ⬜ |
@@ -45,7 +45,7 @@
 
 ## Current Position
 
-**Stage 09 is FINALIZED / FROZEN v1.0.0 with `PASS_STAGE09_FINAL_CLEARANCE`. Stage 10 — Database & Memory V1 is now active.**
+**Stage 09 is FINALIZED / FROZEN v1.0.0. Stage 10 — Database & Memory V1 has `PASS_STAGE10_LOCAL_FINAL_CLEARANCE` and is a local freeze candidate; governed freeze evidence remains pending.**
 
 ## Frozen Stage 04 Scope
 
