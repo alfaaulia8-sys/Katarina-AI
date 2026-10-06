@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from katarina.body import BodyRegistry
-from katarina.body.functional import ExecutionIntent, ShadowIntent
+from katarina.body.functional import ExecutionIntent, TesterEvaluationIntent
 
 
 def component(stage: int):
@@ -25,11 +25,11 @@ def main() -> int:
     execution = component(18).stage_intent(
         ExecutionIntent("cross-stage-audit", 1, "BUY", 1)
     )
-    shadow = component(25).record(
-        ShadowIntent("cross-stage-shadow", execution)
+    tester_evidence = component(25).record(
+        TesterEvaluationIntent("cross-stage-tester", execution)
     )
     micro = component(38).validate(
-        {"shadow": shadow}
+        {"tester_evidence": tester_evidence}
     )
 
     policy_pending = {
@@ -49,8 +49,8 @@ def main() -> int:
         "risk_not_ready": risk["live_risk_ready"] is False,
         "size_zero": sizing["quantity_units"] == 0,
         "execution_not_live": execution["accepted_for_live_execution"] is False,
-        "shadow_only": shadow["shadow_only"] is True,
-        "shadow_no_broker_mutation": shadow["broker_mutation"] is False,
+        "tester_only": tester_evidence["tester_only"] is True,
+        "tester_no_broker_mutation": tester_evidence["broker_mutation"] is False,
         "micro_risk_denied": micro["approved"] is False,
         "micro_live_risk_false": micro["live_risk_ready"] is False,
         "micro_execution_authority_false":

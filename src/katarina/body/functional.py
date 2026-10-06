@@ -396,25 +396,31 @@ class MonteCarloBody(PassiveStageComponent):
 
 
 @dataclass(frozen=True, slots=True)
-class ShadowIntent:
+class TesterEvaluationIntent:
     intent_id: str
     payload: Mapping[str, Any]
 
+    def __post_init__(self) -> None:
+        if not self.intent_id:
+            raise ValueError("tester evaluation intent_id must be non-empty")
 
-class ShadowKatarinaBody(PassiveStageComponent):
+
+class TesterEvaluationBody(PassiveStageComponent):
+    """Offline/Strategy-Tester evidence capture with no broker mutation."""
+
     def __init__(self) -> None:
         super().__init__()
-        self._intents: list[ShadowIntent] = []
+        self._intents: list[TesterEvaluationIntent] = []
 
-    def record(self, intent: ShadowIntent) -> Mapping[str, Any]:
+    def record(self, intent: TesterEvaluationIntent) -> Mapping[str, Any]:
         self._intents.append(intent)
         return {
-            "shadow_only": True,
+            "tester_only": True,
             "broker_mutation": False,
             "intent_id": intent.intent_id,
         }
 
-    def intents(self) -> tuple[ShadowIntent, ...]:
+    def intents(self) -> tuple[TesterEvaluationIntent, ...]:
         return tuple(self._intents)
 
 
@@ -609,53 +615,53 @@ class MT5StrategyTesterBody(PassiveStageComponent):
 
 
 @dataclass(frozen=True, slots=True)
-class PaperFill:
-    order_id: str
-    price_units: int
-    quantity_units: int
-    side: str
-    symbol: str = "XAUUSD"
+class LivePreflightCheck:
+    name: str
+    passed: bool
+    detail: str = ""
 
     def __post_init__(self) -> None:
-        if not self.order_id:
-            raise ValueError("paper order_id must be non-empty")
-        if self.price_units <= 0:
-            raise ValueError("paper price must be positive")
-        if self.quantity_units <= 0:
-            raise ValueError("paper quantity must be positive")
-        if self.side not in {"BUY", "SELL"}:
-            raise ValueError("paper side must be BUY or SELL")
-        if not self.symbol:
-            raise ValueError("paper symbol must be non-empty")
+        if not self.name:
+            raise ValueError("live preflight check name must be non-empty")
 
 
-class PaperTradingBody(PassiveStageComponent):
-    def __init__(self) -> None:
-        super().__init__()
-        self._fills: list[PaperFill] = []
-        self._order_ids: set[str] = set()
+class LiveEnvironmentPreflightBody(PassiveStageComponent):
+    """Read-only live environment verification; never submits broker orders."""
+
+    REQUIRED_CHECKS = (
+        "terminal_connected",
+        "account_connected",
+        "trade_permission",
+        "symbol_specs_loaded",
+        "health_ready",
+        "reconciliation_ready",
+    )
 
     @property
     def broker_mutation_enabled(self) -> bool:
         return False
 
-    def simulate_fill(self, fill: PaperFill) -> None:
-        if fill.order_id in self._order_ids:
-            raise ValueError("duplicate paper order_id")
-        self._order_ids.add(fill.order_id)
-        self._fills.append(fill)
+    def evaluate(
+        self,
+        checks: Sequence[LivePreflightCheck],
+    ) -> Mapping[str, Any]:
+        by_name: dict[str, LivePreflightCheck] = {}
+        for check in checks:
+            if check.name in by_name:
+                raise ValueError(f"duplicate live preflight check: {check.name}")
+            by_name[check.name] = check
 
-    def fills(self) -> tuple[PaperFill, ...]:
-        return tuple(self._fills)
-
-    def position_units(self, symbol: str) -> int:
-        position = 0
-        for fill in self._fills:
-            if fill.symbol != symbol:
-                continue
-            sign = 1 if fill.side == "BUY" else -1
-            position += sign * fill.quantity_units
-        return position
+        missing = tuple(
+            name
+            for name in self.REQUIRED_CHECKS
+            if name not in by_name or not by_name[name].passed
+        )
+        return {
+            "passed": not missing,
+            "missing_checks": missing,
+            "broker_mutation": False,
+            "live_execution_authority": False,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -681,7 +687,7 @@ class MicroRiskReadiness:
     strategy_policy_finalized: bool = False
     risk_policy_finalized: bool = False
     stage35_tester_passed: bool = False
-    stage36_demo_passed: bool = False
+    stage36_live_preflight_passed: bool = False
     stage37_stress_passed: bool = False
     health_ready: bool = False
     reconciliation_ready: bool = False
@@ -691,7 +697,7 @@ class MicroRiskReadiness:
             ("strategy_policy_finalized", self.strategy_policy_finalized),
             ("risk_policy_finalized", self.risk_policy_finalized),
             ("stage35_tester_passed", self.stage35_tester_passed),
-            ("stage36_demo_passed", self.stage36_demo_passed),
+            ("stage36_live_preflight_passed", self.stage36_live_preflight_passed),
             ("stage37_stress_passed", self.stage37_stress_passed),
             ("health_ready", self.health_ready),
             ("reconciliation_ready", self.reconciliation_ready),
@@ -706,7 +712,9 @@ class LiveMicroRiskBody(PassiveStageComponent):
             strategy_policy_finalized=bool(payload.get("strategy_policy_finalized", False)),
             risk_policy_finalized=bool(payload.get("risk_policy_finalized", False)),
             stage35_tester_passed=bool(payload.get("stage35_tester_passed", False)),
-            stage36_demo_passed=bool(payload.get("stage36_demo_passed", False)),
+            stage36_live_preflight_passed=bool(
+                payload.get("stage36_live_preflight_passed", False)
+            ),
             stage37_stress_passed=bool(payload.get("stage37_stress_passed", False)),
             health_ready=bool(payload.get("health_ready", False)),
             reconciliation_ready=bool(payload.get("reconciliation_ready", False)),
@@ -826,8 +834,8 @@ __all__ = (
     "MonteCarloSummary",
     "MultiTimeframeBody",
     "PPM",
-    "PaperFill",
-    "PaperTradingBody",
+    "LiveEnvironmentPreflightBody",
+    "LivePreflightCheck",
     "PerformanceMonitoringBody",
     "PortfolioAllocation",
     "PortfolioBody",
@@ -837,8 +845,8 @@ __all__ = (
     "RegimeEvidence",
     "ResearchBody",
     "RiskGovernorBody",
-    "ShadowIntent",
-    "ShadowKatarinaBody",
+    "TesterEvaluationBody",
+    "TesterEvaluationIntent",
     "StressScenario",
     "StressTestBody",
     "TestGate",

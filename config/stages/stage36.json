@@ -1,12 +1,12 @@
 {
   "stage": 36,
-  "name": "Paper / Demo Trading",
+  "name": "Live Environment Preflight",
   "dependencies": [
     25,
     34,
     35
   ],
-  "authority": "execution_path",
+  "authority": "governance",
   "policy_pending": false,
   "windows_required": true,
   "implementation_module": "katarina.body.stage36",
@@ -14,8 +14,8 @@
   "status": "body_framework_complete",
   "live_risk_ready": false,
   "live_execution_authority": false,
-  "github_reference_query": "dry run paper trading simulation",
-  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/README.md",
-  "functional_body_kernel": "PaperTradingBody",
+  "github_reference_query": "live trading preflight broker connection health reconciliation risk gate",
+  "github_reference_url": "https://github.com/SvilarT/AUTONOMOUS-TRADING-BOT/blob/98fe2ebf31be22a8ccdf3b934ddca315fba6692f/docs/PHASE_4_MANUAL_LIVE_TRADING_READINESS.md",
+  "functional_body_kernel": "LiveEnvironmentPreflightBody",
   "functional_body_complete": true
 }

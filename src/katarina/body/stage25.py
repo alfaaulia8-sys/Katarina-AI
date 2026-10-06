@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 from katarina.body.contracts import AuthorityClass, BodyStatus, StageSpec
-from katarina.body.functional import ShadowKatarinaBody
+from katarina.body.functional import TesterEvaluationBody
 
 
-class Component(ShadowKatarinaBody):
+class Component(TesterEvaluationBody):
     SPEC = StageSpec(
         stage=25,
-        name='Shadow Katarina',
+        name='Tester Evaluation',
         dependencies=(18, 19, 20),
         authority=AuthorityClass.ADVISORY,
         policy_pending=False,

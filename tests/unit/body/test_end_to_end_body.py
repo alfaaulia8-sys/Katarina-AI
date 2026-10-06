@@ -7,7 +7,7 @@ from katarina.body.functional import (
     ExecutionIntent,
     MarketFeatureSnapshot,
     RegimeEvidence,
-    ShadowIntent,
+    TesterEvaluationIntent,
     TimeframeObservation,
 )
 
@@ -84,14 +84,14 @@ class EndToEndBodyFailClosedTests(unittest.TestCase):
         )
         self.assertFalse(staged["accepted_for_live_execution"])
 
-        shadow = component(25).record(
-            ShadowIntent("shadow-audit", staged)
+        tester_evidence = component(25).record(
+            TesterEvaluationIntent("tester-audit", staged)
         )
-        self.assertTrue(shadow["shadow_only"])
-        self.assertFalse(shadow["broker_mutation"])
+        self.assertTrue(tester_evidence["tester_only"])
+        self.assertFalse(tester_evidence["broker_mutation"])
 
         micro = component(38).validate(
-            {"shadow_evidence": shadow}
+            {"tester_evidence": tester_evidence}
         )
         self.assertFalse(micro["approved"])
         self.assertFalse(micro["live_risk_ready"])
@@ -106,7 +106,7 @@ class EndToEndBodyFailClosedTests(unittest.TestCase):
                 self.assertFalse(result.live_execution_authority)
 
     def test_execution_path_process_calls_are_blocked(self):
-        for stage in (18, 19, 36):
+        for stage in (18, 19):
             with self.subTest(stage=stage):
                 result = component(stage).process({"audit": True})
                 self.assertFalse(result.accepted)

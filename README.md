@@ -13,7 +13,7 @@ Katarina AI is being rebuilt as a **central financial intelligence system** for 
 - Stage 07 — MT5 ↔ Python Communication: ✅ FROZEN v1.0.0 — `PASS_STAGE07_FINAL_CLEARANCE`
 - Stage 08 — Data Validation Engine: ✅ FROZEN v1.0.0 — `PASS_STAGE08_FINAL_CLEARANCE`
 - Stage 09 — Health & Safety Engine: ✅ FROZEN v1.0.0 — `PASS_STAGE09_FINAL_CLEARANCE`
-- Stage 10 — Database & Memory V1: 🟡 IMPLEMENTATION ACTIVE
+- Stage 10 — Database & Memory V1: ✅ LOCAL FREEZE CANDIDATE — `PASS_STAGE10_LOCAL_FINAL_CLEARANCE`
 
 ## KAT1 v1.0.0
 
@@ -108,7 +108,7 @@ Important safety properties:
 - critical ingress overflow faults fail-closed;
 - live execution arming resets on boot/fault;
 - `RUNNING` does not imply permission to open live risk;
-- shared Core design remains compatible with Live / Tester / Shadow / Research.
+- shared Core production runtime modes are Live / Tester only.
 
 Stage 05 documents:
 

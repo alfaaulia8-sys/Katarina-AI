@@ -32,8 +32,8 @@ python -m unittest -q tests.static.test_stage35_tester_runner
 echo "[9/11] QEMU Windows postinstall static audit"
 python -m unittest -q tests.static.test_qemu_windows_postinstall
 
-echo "[10/11] Stage 36 demo-account gate static audit"
-python -m unittest -q tests.static.test_stage36_demo_gate
+echo "[10/11] Stage 36 live-environment preflight static audit"
+python -m unittest -q tests.static.test_stage36_live_preflight
 
 echo "[11/11] Windows error-supervisor static audit"
 python -m unittest -q tests.static.test_windows_error_supervisor

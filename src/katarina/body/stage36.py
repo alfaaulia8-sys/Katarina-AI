@@ -2,15 +2,15 @@
 from __future__ import annotations
 
 from katarina.body.contracts import AuthorityClass, BodyStatus, StageSpec
-from katarina.body.functional import PaperTradingBody
+from katarina.body.functional import LiveEnvironmentPreflightBody
 
 
-class Component(PaperTradingBody):
+class Component(LiveEnvironmentPreflightBody):
     SPEC = StageSpec(
         stage=36,
-        name='Paper / Demo Trading',
+        name='Live Environment Preflight',
         dependencies=(25, 34, 35),
-        authority=AuthorityClass.EXECUTION_PATH,
+        authority=AuthorityClass.GOVERNANCE,
         policy_pending=False,
         windows_required=True,
         implementation_module='katarina.body.stage36',

@@ -30,14 +30,14 @@ These stages have functional integration bodies but intentionally do not carry t
 ## Windows/MT5 evidence pending
 
 - Stage 35 — MT5 Strategy Tester Integration
-- Stage 36 — Paper / Demo Trading
+- Stage 36 — Live Environment Preflight
 - Stage 38 — Live Micro-Risk Validation
 
 The body may prepare jobs, contracts, validation and fail-closed gates, but Windows/MT5 evidence is required before these stages can make stronger validation claims.
 
 ## Safety invariant
 
-Until the user explicitly finalizes strategy and risk policy, and the governed Windows/demo/live validation gates pass:
+Until the user explicitly finalizes strategy and risk policy, and the governed Windows/tester/live-preflight validation gates pass:
 
 ```text
 LIVE_RISK_READY = FALSE
