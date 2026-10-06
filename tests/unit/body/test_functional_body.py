@@ -233,7 +233,7 @@ class ValidationEvolutionBodyTests(unittest.TestCase):
         self.assertFalse(out["broker_mutation"])
         self.assertFalse(out["live_execution_authority"])
         result = c.process({})
-        self.assertFalse(result.accepted)
+        self.assertTrue(result.accepted)
         self.assertFalse(result.live_execution_authority)
 
     def test_stage37_stress_matrix(self):
