@@ -5,7 +5,7 @@ from katarina.body.contracts import AuthorityClass, BodyStatus, StageSpec
 from katarina.body.functional import LiveEnvironmentPreflightBody
 
 
-class Component(PaperTradingBody):
+class Component(LiveEnvironmentPreflightBody):
     SPEC = StageSpec(
         stage=36,
         name='Live Environment Preflight',
