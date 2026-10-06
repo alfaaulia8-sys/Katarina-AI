@@ -463,10 +463,12 @@ try {
                 try{& schtasks.exe /End /TN $task | Out-Null}catch{}
                 try{& schtasks.exe /Delete /F /TN $task | Out-Null}catch{}
                 $taskCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$runner+'"'
-                & schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN $task /TR $taskCmd | Out-Null
-                if($LASTEXITCODE -ne 0){throw "Failed to create DesktopCommanderRemote scheduled task."}
-                & schtasks.exe /Run /TN $task | Out-Null
-                if($LASTEXITCODE -ne 0){throw "Failed to start DesktopCommanderRemote scheduled task."}
+                $createText=(& schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN $task /TR $taskCmd 2>&1 | Out-String)
+                $createExit=$LASTEXITCODE
+                if($createExit -ne 0){throw ("Failed to create DesktopCommanderRemote scheduled task: "+(Redact-Text $createText))}
+                $runText=(& schtasks.exe /Run /TN $task 2>&1 | Out-String)
+                $runExit=$LASTEXITCODE
+                if($runExit -ne 0){throw ("Failed to start DesktopCommanderRemote scheduled task: "+(Redact-Text $runText))}
 
                 Start-Sleep -Seconds 15
 
