@@ -459,20 +459,23 @@ try {
                 )
                 $runnerLines | Set-Content -LiteralPath $runner -Encoding ASCII
 
-                $task="DesktopCommanderRemote"
-                try{& schtasks.exe /End /TN $task | Out-Null}catch{}
-                try{& schtasks.exe /Delete /F /TN $task | Out-Null}catch{}
-                $taskCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$runner+'"'
-                $createText=(& schtasks.exe /Create /F /SC ONSTART /RU SYSTEM /RL HIGHEST /TN $task /TR $taskCmd 2>&1 | Out-String)
-                $createExit=$LASTEXITCODE
-                if($createExit -ne 0){throw ("Failed to create DesktopCommanderRemote scheduled task: "+(Redact-Text $createText))}
-                $runText=(& schtasks.exe /Run /TN $task 2>&1 | Out-String)
-                $runExit=$LASTEXITCODE
-                if($runExit -ne 0){throw ("Failed to start DesktopCommanderRemote scheduled task: "+(Redact-Text $runText))}
+                $launchCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$runner+'"'
+                try {
+                    $wmi=[wmiclass]"Win32_Process"
+                    $created=$wmi.Create($launchCmd,$dcRoot,$null)
+                } catch {
+                    throw ("Failed to launch Desktop Commander through WMI: "+(Redact-Text $_.Exception.Message))
+                }
+                if($null -eq $created -or [int]$created.ReturnValue -ne 0) {
+                    $rv=$(if($null -eq $created){-1}else{[int]$created.ReturnValue})
+                    throw ("Failed to launch Desktop Commander through WMI. return="+$rv)
+                }
 
                 Start-Sleep -Seconds 15
 
-                $taskText=(& schtasks.exe /Query /TN $task /V /FO LIST 2>&1 | Out-String)
+                $launcherPid=[int]$created.ProcessId
+                $launcherAlive=$false
+                try{$launcherAlive=$null -ne (Get-Process -Id $launcherPid -ErrorAction SilentlyContinue)}catch{}
                 $logTail=""
                 try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 100)-join [Environment]::NewLine)}}catch{}
                 $safeLog=Redact-Text $logTail
@@ -480,11 +483,14 @@ try {
                 if($safeLog -match "(?i)Device ready"){$phase="DEVICE_READY"}
                 elseif($safeLog -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
                 elseif($safeLog -match "(?i)verification|device code|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
+                elseif(-not $launcherAlive){$phase="PROCESS_EXITED"}
 
                 $diag=[ordered]@{
                     schema_version=1
                     proof_type="DESKTOP_COMMANDER_START"
-                    task_name=$task
+                    launch_method="WMI_WIN32_PROCESS"
+                    launcher_process_id=$launcherPid
+                    launcher_process_alive=$launcherAlive
                     node_path=$nodePath
                     install_root=$root
                     phase=$phase
