@@ -13,7 +13,7 @@
 - Stage 06 — MT5 Bridge EA: FINALIZED / FROZEN v1.0.0; Bridge design v0.5.0; governed Windows Server 2022 compile + MQL self-test + final audit PASS
 - Stage 07 — MT5 ↔ Python Communication: FINALIZED / FROZEN v1.0.0; governed final clearance PASS on Windows Server 2022; ZeroMQ primary + native TCP fallback frozen\n- Stage 08 — Data Validation Engine: FINALIZED / FROZEN v1.0.0; `PASS_STAGE08_FINAL_CLEARANCE`
 - Stage 09 — Health & Safety Engine: FINALIZED / FROZEN v1.0.0; `PASS_STAGE09_FINAL_CLEARANCE`
-- Stage 10 — Database & Memory V1: IMPLEMENTATION ACTIVE; persistence baseline starting
+- Stage 10 — Database & Memory V1: LOCAL FREEZE CANDIDATE; `PASS_STAGE10_LOCAL_FINAL_CLEARANCE`; governed freeze pending
 
 ## VPS bridge status
 
@@ -162,7 +162,7 @@ Governed evidence:
 
 ## Next recommended action
 
-Proceed with Stage 10 — Database & Memory V1:
+Stage 10 local implementation is complete. Next development focus:
 
 1. define durable event/memory boundaries;
 2. implement append-only durable records with deterministic IDs;
