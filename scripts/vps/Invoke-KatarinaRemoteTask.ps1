@@ -445,13 +445,31 @@ try {
                 New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
                 $log=Join-Path $logRoot "remote-interactive.log"
                 Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+
+                # Node 18 on Server 2012 R2 has no native global WebSocket.
+                # Supabase Realtime accepts a standards-compatible implementation;
+                # preload the already-installed ws package before Desktop Commander.
+                $wsPkg=Join-Path $root "node_modules\ws\package.json"
+                if(!(Test-Path -LiteralPath $wsPkg -PathType Leaf)){
+                    throw "Node18 WebSocket shim prerequisite missing: ws package not found."
+                }
+                $shim=Join-Path $dcRoot "desktop-commander-node18-shim.mjs"
+                $shimLines=@(
+                    "import { createRequire } from 'node:module';",
+                    "const require = createRequire(import.meta.url);",
+                    ('const WS = require("'+($root -replace '\\','/')+'/node_modules/ws");'),
+                    "globalThis.WebSocket = WS.WebSocket || WS;",
+                    ('await import("file:///'+(($index -replace '\\','/') -replace ' ','%20')+'");')
+                )
+                $shimLines | Set-Content -LiteralPath $shim -Encoding ASCII
+
                 $cmdFile=Join-Path $dcRoot "Run-DesktopCommanderInteractive.cmd"
                 $cmdLines=@(
                     "@echo off",
                     "set USERPROFILE=C:\Users\Administrator",
                     "set HOME=C:\Users\Administrator",
                     ('cd /d "'+$root+'"'),
-                    ('"'+$nodePath+'" "'+$index+'" remote --debug >> "'+$log+'" 2>&1'),
+                    ('"'+$nodePath+'" "'+$shim+'" remote --debug >> "'+$log+'" 2>&1'),
                     ('echo EXIT %%ERRORLEVEL%% >> "'+$log+'"')
                 )
                 $cmdLines | Set-Content -LiteralPath $cmdFile -Encoding ASCII
@@ -601,6 +619,7 @@ public static class KatInteractiveLauncher {
                 $phase="RUNNING"
                 if($safeLog -match "(?i)Device ready"){$phase="DEVICE_READY"}
                 elseif($safeLog -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($safeLog -match "(?i)native WebSocket not found"){$phase="WEBSOCKET_SHIM_FAILED"}
                 elseif($safeLog -match "(?i)verification|device code|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
                 elseif(-not $alive){$phase="PROCESS_EXITED"}
 
