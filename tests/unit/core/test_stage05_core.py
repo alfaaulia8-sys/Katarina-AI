@@ -239,12 +239,22 @@ class ReadinessTests(unittest.TestCase):
             gate.live_execution_ready
         )
 
-    def test_research_has_no_transport_bootstrap_requirement(
+    def test_tester_requires_tester_bootstrap_readiness(
         self,
     ):
         gate = ReadinessGate(
-            RuntimeMode.RESEARCH
+            RuntimeMode.TESTER
         )
+        self.assertFalse(
+            gate.core_ready
+        )
+        for signal in (
+            ReadinessSignal.TRANSPORT,
+            ReadinessSignal.PROTOCOL,
+            ReadinessSignal.IDENTITY,
+            ReadinessSignal.SNAPSHOT,
+        ):
+            gate.set(signal, True)
         self.assertTrue(
             gate.core_ready
         )
@@ -408,7 +418,7 @@ class OrchestratorTests(
         bus = EventBus()
         core = KatarinaOrchestrator(
             OrchestratorConfig(
-                RuntimeMode.RESEARCH,
+                RuntimeMode.TESTER,
                 ingress_capacity=16,
             ),
             bus=bus,
@@ -448,6 +458,13 @@ class OrchestratorTests(
         )
 
         await core.bootstrap()
+        for signal in (
+            ReadinessSignal.TRANSPORT,
+            ReadinessSignal.PROTOCOL,
+            ReadinessSignal.IDENTITY,
+            ReadinessSignal.SNAPSHOT,
+        ):
+            core.set_readiness(signal, True)
         await core.activate()
         await core.submit(
             EventEnvelope(
@@ -472,7 +489,7 @@ class OrchestratorTests(
         log = []
         core = KatarinaOrchestrator(
             OrchestratorConfig(
-                RuntimeMode.RESEARCH,
+                RuntimeMode.TESTER,
                 ingress_capacity=16,
             )
         )
@@ -495,6 +512,13 @@ class OrchestratorTests(
         )
 
         await core.bootstrap()
+        for signal in (
+            ReadinessSignal.TRANSPORT,
+            ReadinessSignal.PROTOCOL,
+            ReadinessSignal.IDENTITY,
+            ReadinessSignal.SNAPSHOT,
+        ):
+            core.set_readiness(signal, True)
 
         with self.assertRaises(
             OrchestratorFault
@@ -575,12 +599,19 @@ class OrchestratorTests(
     ):
         core = KatarinaOrchestrator(
             OrchestratorConfig(
-                RuntimeMode.RESEARCH,
+                RuntimeMode.TESTER,
                 ingress_capacity=1,
             )
         )
 
         await core.bootstrap()
+        for signal in (
+            ReadinessSignal.TRANSPORT,
+            ReadinessSignal.PROTOCOL,
+            ReadinessSignal.IDENTITY,
+            ReadinessSignal.SNAPSHOT,
+        ):
+            core.set_readiness(signal, True)
         await core.activate()
 
         await core.submit(
