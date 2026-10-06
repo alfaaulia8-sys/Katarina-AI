@@ -4,15 +4,16 @@ $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
 
-$InstallerVersion = "1.2.5"
+$InstallerVersion = "1.2.6"
 $AgentId = "katarina-vps-2012r2-01"
-$Repository = "alfaaulia-katarina/Katarina-AI"
+$Repository = "alfaaulia8-sys/Katarina-AI"
 $Branch = "main"
 $InstallRoot = "C:\KatarinaVPSAgent"
 $PreflightScript = Join-Path $PSScriptRoot "Test-KatarinaVpsPrerequisites.ps1"
 $AgentSource = Join-Path $PSScriptRoot "KatarinaVpsAgent.ps1"
 $WatchdogSource = Join-Path $PSScriptRoot "KatarinaVpsAgentWatchdog.ps1"
-$SessionId = "bootstrap-" + [DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + ([Guid]::NewGuid().ToString("N").Substring(0,8))
+$SessionStartedUtc = [DateTime]::UtcNow
+$SessionId = "bootstrap-" + $SessionStartedUtc.ToString("yyyyMMdd-HHmmss") + "-" + ([Guid]::NewGuid().ToString("N").Substring(0,8))
 $LocalLog = Join-Path $env:TEMP ("katarina-" + $SessionId + ".log")
 $script:Headers = $null
 
@@ -213,7 +214,12 @@ try {
 
     New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
 
-    foreach ($stale in @("startup_state.json","last_error.json")) {
+    foreach ($stale in @(
+        "startup_state.json",
+        "last_error.json",
+        "lanes\primary\health_publish_state.json",
+        "lanes\primary\heartbeat.json"
+    )) {
         $stalePath = Join-Path $InstallRoot $stale
         if (Test-Path $stalePath) {
             Remove-Item -Path $stalePath -Force -ErrorAction SilentlyContinue
@@ -272,12 +278,28 @@ try {
 
         $health = Get-RemoteAgentHealth
         if ($null -ne $health) {
-            Log-Line ("Agent health state: " + [string]$health.state)
-            if ([string]$health.state -eq "ONLINE") {
+            $healthState = [string]$health.state
+            $healthUpdated = $null
+            try {
+                $healthUpdated = [DateTime]::Parse(
+                    [string]$health.updated_utc,
+                    [Globalization.CultureInfo]::InvariantCulture,
+                    [Globalization.DateTimeStyles]::AssumeUniversal
+                ).ToUniversalTime()
+            } catch {}
+
+            $freshHealth = (
+                $null -ne $healthUpdated -and
+                $healthUpdated -ge $SessionStartedUtc.AddSeconds(-5)
+            )
+
+            Log-Line ("Agent health state: " + $healthState + " | fresh=" + $freshHealth)
+
+            if ($healthState -eq "ONLINE" -and $freshHealth) {
                 $online = $true
                 break
             }
-            if ([string]$health.state -eq "ERROR") {
+            if ($healthState -eq "ERROR" -and $freshHealth) {
                 Upload-AgentDiagnostics
                 throw ("Persistent agent reported ERROR: " + [string]$health.error)
             }

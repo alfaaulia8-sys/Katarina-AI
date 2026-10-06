@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-REPO="alfaaulia-katarina/Katarina-AI"
+REPO="alfaaulia8-sys/Katarina-AI"
 ROOT="$HOME/.katarina-ai"
 PROJECT="$ROOT/project/katarina-ai"
 PREFIX_BIN="${PREFIX:-/data/data/com.termux/files/usr}/bin"

@@ -14,7 +14,7 @@ Target: **Windows Server 2012 R2 x64**
 
 Required PAT scope:
 
-- Repository: `alfaaulia-katarina/Katarina-AI`
+- Repository: `alfaaulia8-sys/Katarina-AI`
 - Repository permission: **Contents = Read and write**
 
 Do not paste the PAT into ChatGPT.
