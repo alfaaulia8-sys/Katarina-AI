@@ -3,7 +3,7 @@ param(
     [string]$AgentId,
 
     [Parameter(Mandatory=$false)]
-    [string]$Repository = "alfaaulia-katarina/Katarina-AI",
+    [string]$Repository = "alfaaulia8-sys/Katarina-AI",
 
     [Parameter(Mandatory=$false)]
     [string]$Branch = "main",
