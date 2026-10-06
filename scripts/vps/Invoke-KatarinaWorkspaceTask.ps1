@@ -650,6 +650,13 @@ switch($mode) {
             elseif($dcLogText -match "(?i)Waiting for authorization|Please complete authentication|Device code received"){$dcPhase="AUTH_REQUIRED"}
             elseif($dcProcesses.Count -gt 0){$dcPhase="RUNNING"}
 
+            $dcExcerpt=""
+            try {
+                $dcExcerpt=(@($dcLogText -split "\r?\n" | Select-Object -Last 80) -join [Environment]::NewLine)
+                $dcExcerpt=[regex]::Replace($dcExcerpt,'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}','[EMAIL]')
+                $dcExcerpt=[regex]::Replace($dcExcerpt,'(?i)(access_token|refresh_token|token|secret)\s*[:=]\s*\S+','$1=[REDACTED]')
+            } catch {}
+
             $dcStatus=[ordered]@{
                 process_count=$dcProcesses.Count
                 processes=$dcProcesses
@@ -658,6 +665,7 @@ switch($mode) {
                 user_code=$dcUserCode
                 device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
                 log_exists=(Test-Path -LiteralPath $dcLogPath -PathType Leaf)
+                log_excerpt=$dcExcerpt
             }
         } catch {
             $dcStatus=[ordered]@{
