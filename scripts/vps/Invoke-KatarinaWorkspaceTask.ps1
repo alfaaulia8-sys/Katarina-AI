@@ -616,6 +616,60 @@ switch($mode) {
             }
         }
 
+
+        $dcStatus=$null
+        try {
+            $dcLogPath="C:\DesktopCommanderCompat\logs\remote-persistent.log"
+            $dcLogText=""
+            if(Test-Path -LiteralPath $dcLogPath -PathType Leaf) {
+                $dcLogText=Get-Content -LiteralPath $dcLogPath -Raw
+            }
+            $dcVerificationUrl=""
+            $dcUserCode=""
+            try {
+                $mUrl=[regex]::Match($dcLogText,'(?ms)Verify this device in your browser:\s*\r?\n\s*(https://[^\s]+)')
+                if($mUrl.Success){$dcVerificationUrl=$mUrl.Groups[1].Value.Trim()}
+                $mCode=[regex]::Match($dcLogText,'(?ms)Make sure the code matches:\s*\r?\n\s*([^\r\n]+)')
+                if($mCode.Success){$dcUserCode=$mCode.Groups[1].Value.Trim()}
+            } catch {}
+
+            $dcProcesses=@()
+            try {
+                foreach($p0 in @(Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue)) {
+                    $cl=[string]$p0.CommandLine
+                    if($cl -and $cl.IndexOf("katarina-desktop-commander-persistent-wrapper.mjs",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                        $dcProcesses += [ordered]@{process_id=[int]$p0.ProcessId}
+                    }
+                }
+            } catch {}
+
+            $dcPhase="OFFLINE"
+            if($dcLogText -match "(?i)Desktop Commander Remote is connected|Device ready"){$dcPhase="DEVICE_READY"}
+            elseif($dcLogText -match "(?i)Device verified"){$dcPhase="VERIFIED"}
+            elseif($dcLogText -match "(?i)Failed to start device authorization"){$dcPhase="UPSTREAM_AUTH_FAILED"}
+            elseif($dcLogText -match "(?i)Waiting for authorization|Please complete authentication|Device code received"){$dcPhase="AUTH_REQUIRED"}
+            elseif($dcProcesses.Count -gt 0){$dcPhase="RUNNING"}
+
+            $dcStatus=[ordered]@{
+                process_count=$dcProcesses.Count
+                processes=$dcProcesses
+                phase=$dcPhase
+                verification_url=$dcVerificationUrl
+                user_code=$dcUserCode
+                device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
+                log_exists=(Test-Path -LiteralPath $dcLogPath -PathType Leaf)
+            }
+        } catch {
+            $dcStatus=[ordered]@{
+                process_count=0
+                phase="STATUS_ERROR"
+                verification_url=""
+                user_code=""
+                device_session_exists=$false
+                log_exists=$false
+            }
+        }
+
         Write-Json (Join-Path $OutputDir "control_plane_status.json") ([ordered]@{
             schema_version=1
             proof_type="KATARINA_CONTROL_PLANE_STATUS"
@@ -625,6 +679,7 @@ switch($mode) {
             lanes=$records
             guardian=$guardianRecord
             guardian_selftest=$guardianSelfTest
+            desktop_commander=$dcStatus
             supervisor_log_exists=(Test-Path -LiteralPath (Join-Path $installRoot "control_supervisor.log") -PathType Leaf)
             generated_utc=[DateTime]::UtcNow.ToString("o")
             result=$(if($allHealthy){"PASS"}else{"FAIL"})
