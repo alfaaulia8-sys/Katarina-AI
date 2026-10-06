@@ -1,0 +1,46 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "desktop-commander-wmi-start2-20261006",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-06T03:13:54.6923970Z"
+                },
+    "files":  [
+                  {
+                      "name":  "desktop_commander_wmi_start.json",
+                      "size_bytes":  314,
+                      "sha256":  "4a0f77a54756bf69637ae64b05ef33c308a6a66756f7e7b22b64223ce654e0f9",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"DESKTOP_COMMANDER_WMI_START\",\r\n    \"process_id\":  968,\r\n    \"process_alive\":  false,\r\n    \"create_return_value\":  0,\r\n    \"phase\":  \"PROCESS_EXITED\",\r\n    \"sanitized_log_tail\":  \"\",\r\n    \"generated_utc\":  \"2026-10-06T03:13:53.7573966Z\",\r\n    \"result\":  \"FAIL\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  608,
+                      "sha256":  "a7f1d3b8f348937493eb67dfa21e0f94abbd791dc93557fc185dfc4f3b484200",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"desktop-commander-wmi-start2-20261006\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-06T03:13:35.4974028Z\",\r\n    \"completed_utc\":  \"2026-10-06T03:13:53.7753946Z\",\r\n    \"duration_ms\":  18278,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_DESKTOP_COMMANDER_WMI_START_DIRECT\",\r\n                    \"phase\":  \"PROCESS_EXITED\",\r\n                    \"process_alive\":  false,\r\n                    \"result\":  \"FAIL\"\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  51,
+                      "sha256":  "d9c30bdac25c94916380cdec07d30a6d9d93c35b42bec5d42aab4ddd71c23478",
+                      "content_included":  true,
+                      "content":  "DESKTOP COMMANDER WMI START FAIL / PROCESS_EXITED\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  975
+}
