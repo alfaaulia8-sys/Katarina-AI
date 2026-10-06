@@ -458,15 +458,18 @@ try {
                 }
 
                 $env:PUPPETEER_SKIP_DOWNLOAD = "true"
-                $npmArgs = @("install","--prefix",$installRoot,"@wonderwhy-er/desktop-commander@0.2.52","@supabase/supabase-js@2.78.0","puppeteer@24.34.0","--no-save","--legacy-peer-deps","--no-audit","--no-fund")
-                $installOut = & $npmPath @npmArgs 2>&1
-                $installExit = $LASTEXITCODE
-                ($installOut | Out-String) | Set-Content -LiteralPath $installLog -Encoding UTF8
+                $npmArgs = @("install","--prefix",$installRoot,"@wonderwhy-er/desktop-commander@0.2.52","@supabase/supabase-js@2.78.0","puppeteer@24.34.0","file-type@20.3.0","--no-save","--legacy-peer-deps","--no-audit","--no-fund")
+                $installErrLog = Join-Path $dcLogRoot "npm-install.err.log"
+                Remove-Item -LiteralPath $installLog,$installErrLog -Force -ErrorAction SilentlyContinue
+                $installProc = Start-Process -FilePath $npmPath -ArgumentList $npmArgs -WorkingDirectory $installRoot -Wait -PassThru -RedirectStandardOutput $installLog -RedirectStandardError $installErrLog
+                $installExit = $installProc.ExitCode
 
                 $indexPath = Join-Path $installRoot "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
                 if ($installExit -ne 0 -or !(Test-Path -LiteralPath $indexPath -PathType Leaf)) {
                     $tail = ""
-                    try { $tail = (@(Get-Content -LiteralPath $installLog -Tail 35) -join [Environment]::NewLine) } catch {}
+                    try {
+                        $tail = (@(Get-Content -LiteralPath $installLog -Tail 20) + @(Get-Content -LiteralPath $installErrLog -Tail 35)) -join [Environment]::NewLine
+                    } catch {}
                     throw ("Desktop Commander compatibility install failed. npm_exit=" + $installExit + " tail=" + (Redact-Text $tail))
                 }
 
@@ -519,6 +522,7 @@ try {
                     desktop_commander_version = "0.2.52"
                     supabase_pin = "2.78.0"
                     puppeteer_pin = "24.34.0"
+                    file_type_pin = "20.3.0"
                     install_source = $installSource
                     install_root = $installRoot
                     process_id = $remoteProc.Id
