@@ -1,0 +1,53 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "dc-status-light2-20261006",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "READONLY",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-06T03:29:53.6456624Z"
+                },
+    "files":  [
+                  {
+                      "name":  "control_plane_status.json",
+                      "size_bytes":  3285,
+                      "sha256":  "a2d809f1291fd4f00f1456a62c2c45211578646aded8e9259dafa0ff53aa9302",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"KATARINA_CONTROL_PLANE_STATUS\",\r\n    \"resource_profile\":  \"LEGACY_LOW_MEMORY_SEQUENTIAL\",\r\n    \"primary_only\":  true,\r\n    \"expected_lanes\":  [\r\n                           \"primary\"\r\n                       ],\r\n    \"lanes\":  [\r\n                  {\r\n                      \"lane\":  \"primary\",\r\n                      \"task\":  \"KatarinaVPSAgent\",\r\n                      \"config\":  \"C:\\\\KatarinaVPSAgent\\\\agent.json\",\r\n                      \"expected\":  true,\r\n                      \"process_count\":  1,\r\n                      \"agent_version\":  \"1.4.8\",\r\n                      \"phase\":  \"TASK_RUNNING\",\r\n                      \"heartbeat_age_seconds\":  1.1,\r\n                      \"healthy\":  true,\r\n                      \"state_ok\":  true\r\n                  },\r\n                  {\r\n                      \"lane\":  \"recovery\",\r\n                      \"task\":  \"KatarinaControlRecovery\",\r\n                      \"config\":  \"C:\\\\KatarinaVPSAgent\\\\agent-recovery.json\",\r\n                      \"expected\":  false,\r\n                      \"process_count\":  0,\r\n                      \"agent_version\":  null,\r\n                      \"phase\":  null,\r\n                      \"heartbeat_age_seconds\":  null,\r\n                      \"healthy\":  false,\r\n                      \"state_ok\":  true\r\n                  },\r\n                  {\r\n                      \"lane\":  \"worker01\",\r\n                      \"task\":  \"KatarinaControlWorker01\",\r\n                      \"config\":  \"C:\\\\KatarinaVPSAgent\\\\agent-worker01.json\",\r\n                      \"expected\":  false,\r\n                      \"process_count\":  0,\r\n                      \"agent_version\":  \"1.4.0\",\r\n                      \"phase\":  \"SLEEP\",\r\n                      \"heartbeat_age_seconds\":  144436.8,\r\n                      \"healthy\":  false,\r\n                      \"state_ok\":  true\r\n                  },\r\n                  {\r\n                      \"lane\":  \"worker02\",\r\n                      \"task\":  \"KatarinaControlWorker02\",\r\n                      \"config\":  \"C:\\\\KatarinaVPSAgent\\\\agent-worker02.json\",\r\n                      \"expected\":  false,\r\n                      \"process_count\":  0,\r\n                      \"agent_version\":  \"1.4.0\",\r\n                      \"phase\":  \"SLEEP\",\r\n                      \"heartbeat_age_seconds\":  144432.2,\r\n                      \"healthy\":  false,\r\n                      \"state_ok\":  true\r\n                  }\r\n              ],\r\n    \"guardian\":  null,\r\n    \"guardian_selftest\":  null,\r\n    \"desktop_commander\":  {\r\n                              \"process_count\":  1,\r\n                              \"processes\":  [\r\n                                                {\r\n                                                    \"process_id\":  3996\r\n                                                }\r\n                                            ],\r\n                              \"phase\":  \"AUTH_REQUIRED\",\r\n                              \"verification_url\":  \"\",\r\n                              \"user_code\":  \"\",\r\n                              \"device_session_exists\":  false,\r\n                              \"log_exists\":  true\r\n                          },\r\n    \"supervisor_log_exists\":  true,\r\n    \"generated_utc\":  \"2026-10-06T03:29:49.8666860Z\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  545,
+                      "sha256":  "a1a88e85beef2ac4cd4481fcc461cd2987f425eccc98450474a81963f4ea6c14",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"dc-status-light2-20261006\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-06T03:29:49.2246562Z\",\r\n    \"completed_utc\":  \"2026-10-06T03:29:50.7086630Z\",\r\n    \"duration_ms\":  1484,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_CONTROL_STATUS\",\r\n                    \"workspace_root\":  \"C:\\\\KatarinaDev\",\r\n                    \"workspace_files\":  493\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "workspace_status.json",
+                      "size_bytes":  277,
+                      "sha256":  "2ecfe7b3b7177b120e554ea512162631ad6c5c2837c999069399c4ab90273b52",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"mode\":  \"WORKSPACE_CONTROL_STATUS\",\r\n    \"root\":  \"C:\\\\KatarinaDev\",\r\n    \"workspace\":  \"C:\\\\KatarinaDev\\\\workspace\",\r\n    \"file_count\":  493,\r\n    \"python_runtime\":  \"C:\\\\KatarinaDev\\\\runtime\\\\python\\\\python.exe\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  4111
+}
