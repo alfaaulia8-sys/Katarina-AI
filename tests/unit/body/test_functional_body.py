@@ -11,11 +11,11 @@ from katarina.body.functional import (
     LearningObservation,
     MarketFeatureSnapshot,
     ModelArtifact,
-    PaperFill,
+    LivePreflightCheck,
     PortfolioAllocation,
     PositionObservation,
     RegimeEvidence,
-    ShadowIntent,
+    TesterEvaluationIntent,
     StressScenario,
     TestGate,
     TimeframeObservation,
@@ -141,10 +141,10 @@ class ResearchLearningBodyTests(unittest.TestCase):
         b = c.bootstrap((10, -5, 3), trials=50, seed=7)
         self.assertEqual(a, b)
 
-    def test_stage25_shadow_never_mutates_broker(self):
+    def test_stage25_tester_evaluation_never_mutates_broker(self):
         c = component(25)
-        out = c.record(ShadowIntent("s1", {"side": "BUY"}))
-        self.assertTrue(out["shadow_only"])
+        out = c.record(TesterEvaluationIntent("s1", {"side": "BUY"}))
+        self.assertTrue(out["tester_only"])
         self.assertFalse(out["broker_mutation"])
 
     def test_stage26_learning_is_idempotent_by_observation_id(self):
@@ -222,10 +222,16 @@ class ValidationEvolutionBodyTests(unittest.TestCase):
             )
         )
 
-    def test_stage36_paper_fill_is_simulation_only(self):
+    def test_stage36_live_preflight_is_read_only(self):
         c = component(36)
-        c.simulate_fill(PaperFill("o1", 1000, 10, "BUY"))
-        self.assertEqual(len(c.fills()), 1)
+        checks = tuple(
+            LivePreflightCheck(name, True)
+            for name in c.REQUIRED_CHECKS
+        )
+        out = c.evaluate(checks)
+        self.assertTrue(out["passed"])
+        self.assertFalse(out["broker_mutation"])
+        self.assertFalse(out["live_execution_authority"])
         result = c.process({})
         self.assertFalse(result.accepted)
         self.assertFalse(result.live_execution_authority)
