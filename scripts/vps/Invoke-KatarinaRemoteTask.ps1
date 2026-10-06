@@ -444,31 +444,19 @@ try {
                 $dcRoot="C:\DesktopCommanderCompat"
                 $logRoot=Join-Path $dcRoot "logs"
                 New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
-                $runner=Join-Path $dcRoot "Run-DesktopCommanderRemote.ps1"
                 $log=Join-Path $logRoot "remote-task.log"
+                Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
 
-                $runnerLines=@(
-                    '$ErrorActionPreference="Continue"',
-                    '[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12',
-                    '$env:USERPROFILE="C:\Windows\System32\config\systemprofile"',
-                    '$env:HOME=$env:USERPROFILE',
-                    ('Set-Location -LiteralPath "'+$root+'"'),
-                    ('"=== Desktop Commander Remote start ===" | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8'),
-                    ('& "'+$nodePath+'" "'+$index+'" remote --debug 2>&1 | ForEach-Object { [string]$_ | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8 }'),
-                    ('"=== Desktop Commander Remote exit ===" | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8')
-                )
-                $runnerLines | Set-Content -LiteralPath $runner -Encoding ASCII
-
-                $launchCmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$runner+'"'
+                $launchCmd='cmd.exe /S /C ""'+$nodePath+'" "'+$index+'" remote --debug >> "'+$log+'" 2>&1"'
                 try {
                     $wmi=[wmiclass]"Win32_Process"
-                    $created=$wmi.Create($launchCmd,$dcRoot,$null)
+                    $created=$wmi.Create($launchCmd,$root,$null)
                 } catch {
-                    throw ("Failed to launch Desktop Commander through WMI: "+(Redact-Text $_.Exception.Message))
+                    throw ("Failed to launch Desktop Commander through WMI cmd: "+(Redact-Text $_.Exception.Message))
                 }
                 if($null -eq $created -or [int]$created.ReturnValue -ne 0) {
                     $rv=$(if($null -eq $created){-1}else{[int]$created.ReturnValue})
-                    throw ("Failed to launch Desktop Commander through WMI. return="+$rv)
+                    throw ("Failed to launch Desktop Commander through WMI cmd. return="+$rv)
                 }
 
                 Start-Sleep -Seconds 15
@@ -488,7 +476,7 @@ try {
                 $diag=[ordered]@{
                     schema_version=1
                     proof_type="DESKTOP_COMMANDER_START"
-                    launch_method="WMI_WIN32_PROCESS"
+                    launch_method="WMI_CMD_NODE"
                     launcher_process_id=$launcherPid
                     launcher_process_alive=$launcherAlive
                     node_path=$nodePath
