@@ -9,8 +9,6 @@ from typing import Any, TypeAlias
 class RuntimeMode(str, Enum):
     LIVE = "live"
     TESTER = "tester"
-    SHADOW = "shadow"
-    RESEARCH = "research"
 
 
 class MessagePriority(IntEnum):
