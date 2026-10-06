@@ -428,9 +428,11 @@ try {
                 if (-not $npmCmd) { $npmCmd = Get-Command npm -ErrorAction SilentlyContinue }
                 if (-not $nodeCmd) { throw "Node.js executable not found." }
                 if (-not $npmCmd) { throw "npm executable not found." }
+                $nodePath = [string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+                $npmPath = [string]$(if($npmCmd.Path){$npmCmd.Path}elseif($npmCmd.Definition){$npmCmd.Definition}else{$npmCmd.Name})
 
-                $nodeVersion = (& $nodeCmd.Source --version 2>&1 | Out-String).Trim()
-                $npmVersion = (& $npmCmd.Source --version 2>&1 | Out-String).Trim()
+                $nodeVersion = (& $nodePath --version 2>&1 | Out-String).Trim()
+                $npmVersion = (& $npmPath --version 2>&1 | Out-String).Trim()
 
                 $cacheRoot = $null
                 $cacheBase = "C:\Users\Administrator\AppData\Local\npm-cache\_npx"
@@ -457,7 +459,7 @@ try {
 
                 $env:PUPPETEER_SKIP_DOWNLOAD = "true"
                 $npmArgs = @("install","--prefix",$installRoot,"@wonderwhy-er/desktop-commander@0.2.52","@supabase/supabase-js@2.78.0","puppeteer@24.34.0","--no-save","--legacy-peer-deps","--no-audit","--no-fund")
-                $installOut = & $npmCmd.Source @npmArgs 2>&1
+                $installOut = & $npmPath @npmArgs 2>&1
                 $installExit = $LASTEXITCODE
                 ($installOut | Out-String) | Set-Content -LiteralPath $installLog -Encoding UTF8
 
@@ -471,7 +473,7 @@ try {
                 $helpOutPath = Join-Path $dcLogRoot "remote-help.out.log"
                 $helpErrPath = Join-Path $dcLogRoot "remote-help.err.log"
                 Remove-Item -LiteralPath $helpOutPath,$helpErrPath -Force -ErrorAction SilentlyContinue
-                $helpProc = Start-Process -FilePath $nodeCmd.Source -ArgumentList @(('"' + $indexPath + '"'),"remote","--help") -WorkingDirectory $installRoot -Wait -PassThru -RedirectStandardOutput $helpOutPath -RedirectStandardError $helpErrPath
+                $helpProc = Start-Process -FilePath $nodePath -ArgumentList @(('"' + $indexPath + '"'),"remote","--help") -WorkingDirectory $installRoot -Wait -PassThru -RedirectStandardOutput $helpOutPath -RedirectStandardError $helpErrPath
                 if ($helpProc.ExitCode -ne 0) {
                     $helpErr = ""
                     try { $helpErr = (@(Get-Content -LiteralPath $helpErrPath -Tail 40) -join [Environment]::NewLine) } catch {}
@@ -491,7 +493,7 @@ try {
                 $remoteOut = Join-Path $dcLogRoot "remote.out.log"
                 $remoteErr = Join-Path $dcLogRoot "remote.err.log"
                 Remove-Item -LiteralPath $remoteOut,$remoteErr -Force -ErrorAction SilentlyContinue
-                $remoteProc = Start-Process -FilePath $nodeCmd.Source -ArgumentList @(('"' + $indexPath + '"'),"remote","--debug") -WorkingDirectory $installRoot -PassThru -WindowStyle Hidden -RedirectStandardOutput $remoteOut -RedirectStandardError $remoteErr
+                $remoteProc = Start-Process -FilePath $nodePath -ArgumentList @(('"' + $indexPath + '"'),"remote","--debug") -WorkingDirectory $installRoot -PassThru -WindowStyle Hidden -RedirectStandardOutput $remoteOut -RedirectStandardError $remoteErr
                 Start-Sleep -Seconds 18
 
                 $alive = $false
