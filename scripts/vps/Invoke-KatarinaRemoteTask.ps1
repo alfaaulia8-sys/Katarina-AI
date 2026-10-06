@@ -470,12 +470,16 @@ try {
                             $ho=Join-Path $OutputDir ("dc_help_"+([guid]::NewGuid().ToString("N").Substring(0,8))+".out")
                             $he=Join-Path $OutputDir ("dc_help_"+([guid]::NewGuid().ToString("N").Substring(0,8))+".err")
                             try {
-                                $p=Start-Process -FilePath $nodePath -ArgumentList @(('"' + $idx + '"'),"remote","--help") -WorkingDirectory $root -Wait -PassThru -RedirectStandardOutput $ho -RedirectStandardError $he
-                                $rec.help_exit=$p.ExitCode
-                                if($p.ExitCode -ne 0 -and (Test-Path $he)){$rec.help_error=(Redact-Text ((Get-Content -LiteralPath $he -Raw)))}
+                                $oldEap=$ErrorActionPreference
+                                $ErrorActionPreference="Continue"
+                                $helpLines=& $nodePath $idx remote --help 2>&1
+                                $rec.help_exit=$LASTEXITCODE
+                                $ErrorActionPreference=$oldEap
+                                if($rec.help_exit -ne 0){$rec.help_error=(Redact-Text (($helpLines | Out-String)))}
                             } catch {
                                 $rec.help_exit=-1
                                 $rec.help_error=(Redact-Text $_.Exception.Message)
+                                $ErrorActionPreference="Stop"
                             }
                             Remove-Item -LiteralPath $ho,$he -Force -ErrorAction SilentlyContinue
                         }
