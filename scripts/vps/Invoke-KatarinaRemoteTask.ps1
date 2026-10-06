@@ -649,6 +649,138 @@ public static class KatInteractiveLauncher {
 
 
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_PERSISTENT_PAIR_DIRECT") {
+                $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                $root=$null
+                if(Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg=Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $m=Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if([string]$m.version -eq "0.2.52"){$root=$d.FullName;break}
+                            } catch {}
+                        }
+                    }
+                }
+                if([string]::IsNullOrWhiteSpace($root)){throw "Desktop Commander 0.2.52 cache installation not found."}
+
+                $index=Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                $wsPkg=Join-Path $root "node_modules\ws\package.json"
+                if(!(Test-Path -LiteralPath $index -PathType Leaf)){throw "Desktop Commander index.js missing."}
+                if(!(Test-Path -LiteralPath $wsPkg -PathType Leaf)){throw "Node ws package is not available."}
+
+                $dcRoot="C:\DesktopCommanderCompat"
+                $logRoot=Join-Path $dcRoot "logs"
+                New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
+                $remoteLog=Join-Path $logRoot "remote-persistent.log"
+                $wrapper=Join-Path $root "katarina-desktop-commander-persistent-wrapper.mjs"
+
+                $wrapperLines=@(
+                    "import fs from 'fs';",
+                    "import util from 'util';",
+                    "import WebSocket from 'ws';",
+                    ("const logPath = "+([char]96)+$remoteLog.Replace("\","\\")+([char]96)+";"),
+                    "const clean = (v) => typeof v === 'string' ? v : util.inspect(v, {depth:2, colors:false});",
+                    "for (const level of ['log','error','warn','info']) {",
+                    "  const orig = console[level].bind(console);",
+                    "  console[level] = (...args) => {",
+                    "    try { fs.appendFileSync(logPath, '['+new Date().toISOString()+'] '+args.map(clean).join(' ')+'\\n'); } catch {}",
+                    "    try { orig(...args); } catch {}",
+                    "  };",
+                    "}",
+                    "globalThis.WebSocket = WebSocket;",
+                    "await import('./node_modules/@wonderwhy-er/desktop-commander/dist/index.js');"
+                )
+                $wrapperLines | Set-Content -LiteralPath $wrapper -Encoding UTF8
+
+                $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                if(-not $nodeCmd){throw "Node.js executable not found."}
+                $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+
+                # Kill only a prior Katarina-managed persistent wrapper instance.
+                try {
+                    foreach($p0 in @(Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue)) {
+                        $cl=[string]$p0.CommandLine
+                        if($cl -and $cl.IndexOf("katarina-desktop-commander-persistent-wrapper.mjs",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            try{[void]$p0.Terminate()}catch{}
+                        }
+                    }
+                } catch {}
+                Start-Sleep -Seconds 2
+                Remove-Item -LiteralPath $remoteLog -Force -ErrorAction SilentlyContinue
+
+                $psi=New-Object System.Diagnostics.ProcessStartInfo
+                $psi.FileName=$nodePath
+                $psi.Arguments=('"'+$wrapper+'" remote')
+                $psi.WorkingDirectory=$root
+                $psi.UseShellExecute=$false
+                $psi.CreateNoWindow=$true
+                $psi.RedirectStandardOutput=$false
+                $psi.RedirectStandardError=$false
+                try{$psi.EnvironmentVariables["USERPROFILE"]="C:\Users\Administrator"}catch{}
+                try{$psi.EnvironmentVariables["HOME"]="C:\Users\Administrator"}catch{}
+
+                $p=New-Object System.Diagnostics.Process
+                $p.StartInfo=$psi
+                if(-not $p.Start()){throw "Failed to start persistent Desktop Commander process."}
+                $dcPid=[int]$p.Id
+
+                $deadline=[DateTime]::UtcNow.AddSeconds(35)
+                $phase="STARTING"
+                $logText=""
+                while([DateTime]::UtcNow -lt $deadline) {
+                    Start-Sleep -Seconds 1
+                    try {
+                        if(Test-Path -LiteralPath $remoteLog -PathType Leaf) {
+                            $logText=Get-Content -LiteralPath $remoteLog -Raw
+                            if($logText -match "(?i)Desktop Commander Remote is connected|Device ready"){$phase="DEVICE_READY";break}
+                            if($logText -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED";break}
+                            if($logText -match "(?i)Waiting for authorization|Please complete authentication|Device code received"){$phase="AUTH_REQUIRED";break}
+                        }
+                    } catch {}
+                    if($p.HasExited){$phase="PROCESS_EXITED";break}
+                }
+                if($phase -eq "STARTING"){
+                    $phase=$(if($p.HasExited){"PROCESS_EXITED"}else{"RUNNING"})
+                }
+
+                $safeLog=Redact-ResultText $logText
+                $verificationUrl=""
+                $userCode=""
+                try {
+                    $mUrl=[regex]::Match($logText,'https://[^\s]+')
+                    if($mUrl.Success){$verificationUrl=$mUrl.Value.Trim()}
+                    $mCode=[regex]::Match($logText,'(?ms)Make sure the code matches:\s*\r?\n\s*([^\r\n]+)')
+                    if($mCode.Success){$userCode=$mCode.Groups[1].Value.Trim()}
+                } catch {}
+
+                $alive=$false
+                try{$alive=$null -ne (Get-Process -Id $dcPid -ErrorAction SilentlyContinue)}catch{}
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_PERSISTENT_PAIR"
+                    process_id=$dcPid
+                    process_alive=$alive
+                    phase=$phase
+                    verification_url=$verificationUrl
+                    user_code=$userCode
+                    device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_persistent_pair.json") $diag
+                ("DESKTOP COMMANDER PERSISTENT "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["phase"]=$phase
+                $details["process_alive"]=$alive
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_WS_POLYFILL_PROBE_DIRECT") {
                 $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
                 $root=$null
