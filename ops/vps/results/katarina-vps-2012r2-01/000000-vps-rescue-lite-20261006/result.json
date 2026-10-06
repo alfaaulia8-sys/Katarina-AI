@@ -1,0 +1,17 @@
+{
+    "schema_version":  1,
+    "request_id":  "000000-vps-rescue-lite-20261006",
+    "agent_id":  "katarina-vps-2012r2-01",
+    "task":  "STAGE07_PYTHON_TESTS",
+    "started_utc":  "2026-10-06T02:37:15.4645565Z",
+    "completed_utc":  "2026-10-06T02:37:15.6208203Z",
+    "duration_ms":  156,
+    "status":  "PASS",
+    "exit_code":  0,
+    "details":  {
+                    "mode":  "WORKSPACE_CONTROL_LITE_INSTALL_DIRECT",
+                    "resource_profile":  "LEGACY_LOW_MEMORY_SEQUENTIAL",
+                    "disabled_task_count":  5,
+                    "result":  "PASS"
+                }
+}
