@@ -1,0 +1,46 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "desktop-commander-persistent-pair2-20261006",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-06T03:26:13.3559030Z"
+                },
+    "files":  [
+                  {
+                      "name":  "desktop_commander_persistent_pair.json",
+                      "size_bytes":  425,
+                      "sha256":  "61b4c6689fa4dbb39aee23c9953a02d295e5baeb753f82840d6bf9e7a5f2beab",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"DESKTOP_COMMANDER_PERSISTENT_PAIR\",\r\n    \"process_id\":  3996,\r\n    \"process_alive\":  true,\r\n    \"phase\":  \"AUTH_REQUIRED\",\r\n    \"verification_url\":  \"https://github.com/orgs/supabase/discussions/45715\\\\n[2026-10-06T03:26:07.935Z]\",\r\n    \"user_code\":  \"\",\r\n    \"device_session_exists\":  false,\r\n    \"generated_utc\":  \"2026-10-06T03:26:11.5249016Z\",\r\n    \"result\":  \"PASS\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  617,
+                      "sha256":  "96f3f26b265deeb80f4725453f46603bd43fdfe555a25e0d4a0ef5a0c7abce5d",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"desktop-commander-persistent-pair2-20261006\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-06T03:26:03.9159027Z\",\r\n    \"completed_utc\":  \"2026-10-06T03:26:11.6429025Z\",\r\n    \"duration_ms\":  7727,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_DESKTOP_COMMANDER_PERSISTENT_PAIR_DIRECT\",\r\n                    \"phase\":  \"AUTH_REQUIRED\",\r\n                    \"process_alive\":  true,\r\n                    \"result\":  \"PASS\"\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  51,
+                      "sha256":  "2049e88a76d9bbf4facd257001a802597aa4259d4760f857f6ea504f9b53b14c",
+                      "content_included":  true,
+                      "content":  "DESKTOP COMMANDER PERSISTENT PASS / AUTH_REQUIRED\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  1095
+}
