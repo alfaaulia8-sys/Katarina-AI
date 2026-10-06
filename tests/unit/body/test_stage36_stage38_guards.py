@@ -68,7 +68,7 @@ class Stage38MicroRiskGateTests(unittest.TestCase):
             "strategy_policy_finalized": True,
             "risk_policy_finalized": True,
             "stage35_tester_passed": True,
-            "stage36_demo_passed": True,
+            "stage36_live_preflight_passed": True,
             "stage37_stress_passed": True,
             "health_ready": True,
             "reconciliation_ready": True,
