@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "request_id": "desktop-commander-repair2-20261006",
+  "target_agent": "katarina-vps-2012r2-01",
+  "task": "STAGE07_PYTHON_TESTS",
+  "execution_class": "MUTATING",
+  "created_utc": "2026-10-06T02:46:00Z",
+  "expires_utc": "2026-10-06T06:46:00Z",
+  "ref": "main",
+  "args": {
+    "mode": "WORKSPACE_DESKTOP_COMMANDER_REPAIR_DIRECT"
+  }
+}
