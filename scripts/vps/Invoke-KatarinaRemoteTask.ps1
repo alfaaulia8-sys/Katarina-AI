@@ -645,6 +645,97 @@ public static class KatInteractiveLauncher {
                 break
             }
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_WMI_START_DIRECT") {
+                $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                $root=$null
+                if(Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg=Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $m=Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if([string]$m.version -eq "0.2.52"){$root=$d.FullName;break}
+                            } catch {}
+                        }
+                    }
+                }
+                if([string]::IsNullOrWhiteSpace($root)){throw "Desktop Commander 0.2.52 cache installation not found."}
+                $index=Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                if(!(Test-Path -LiteralPath $index -PathType Leaf)){throw "Desktop Commander index.js missing."}
+                $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                if(-not $nodeCmd){throw "Node.js executable not found."}
+                $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+
+                $dcRoot="C:\DesktopCommanderCompat"
+                $logRoot=Join-Path $dcRoot "logs"
+                New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
+                $runner=Join-Path $dcRoot "Run-DesktopCommanderRemote-Wmi.ps1"
+                $log=Join-Path $logRoot "remote-wmi.log"
+
+                $runnerLines=@(
+                    '$ErrorActionPreference="Continue"',
+                    '[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12',
+                    '$env:USERPROFILE="C:\Windows\System32\config\systemprofile"',
+                    '$env:HOME=$env:USERPROFILE',
+                    ('Set-Location -LiteralPath "'+$root+'"'),
+                    ('"=== Desktop Commander Remote start ===" | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8'),
+                    ('& "'+$nodePath+'" "'+$index+'" remote --debug 2>&1 | ForEach-Object { [string]$_ | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8 }'),
+                    ('"=== Desktop Commander Remote exit code $LASTEXITCODE ===" | Add-Content -LiteralPath "'+$log+'" -Encoding UTF8')
+                )
+                $runnerLines | Set-Content -LiteralPath $runner -Encoding ASCII
+                Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+
+                try {
+                    foreach($p in @(Get-WmiObject Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
+                        $cl=[string]$p.CommandLine
+                        if($cl -and $cl.IndexOf("Run-DesktopCommanderRemote-Wmi.ps1",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            try{[void]$p.Terminate()}catch{}
+                        }
+                    }
+                } catch {}
+
+                $cmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'+$runner+'"'
+                $procClass=[wmiclass]"Win32_Process"
+                $create=$procClass.Create($cmd)
+                $rv=[int]$create.ReturnValue
+                $pid=[int]$create.ProcessId
+                if($rv -ne 0){throw ("Win32_Process.Create failed return_value="+$rv)}
+                Start-Sleep -Seconds 18
+
+                $alive=$false
+                try{$alive=$null -ne (Get-Process -Id $pid -ErrorAction SilentlyContinue)}catch{}
+                $logTail=""
+                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 120)-join [Environment]::NewLine)}}catch{}
+                $safeLog=Redact-Text $logTail
+                $phase="RUNNING"
+                if($safeLog -match "(?i)Device ready"){$phase="DEVICE_READY"}
+                elseif($safeLog -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($safeLog -match "(?i)verification|device code|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
+                elseif(-not $alive -and [string]::IsNullOrWhiteSpace($safeLog)){$phase="PROCESS_EXITED"}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_WMI_START"
+                    process_id=$pid
+                    process_alive=$alive
+                    create_return_value=$rv
+                    phase=$phase
+                    sanitized_log_tail=$safeLog
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_wmi_start.json") $diag
+                ("DESKTOP COMMANDER WMI START "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["phase"]=$phase
+                $details["process_alive"]=$alive
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_START_DIRECT") {
                 $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
                 $root=$null
