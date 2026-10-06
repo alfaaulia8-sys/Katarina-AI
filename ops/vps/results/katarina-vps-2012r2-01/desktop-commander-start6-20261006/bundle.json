@@ -1,0 +1,46 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "desktop-commander-start6-20261006",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  0,
+                    "completed_utc":  "2026-10-06T03:00:49.8083462Z"
+                },
+    "files":  [
+                  {
+                      "name":  "desktop_commander_start.json",
+                      "size_bytes":  520,
+                      "sha256":  "582a67ba0e6ab80dc489ab2856b639802b117cda885e90e89ad37f9c6d24466c",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"proof_type\":  \"DESKTOP_COMMANDER_START\",\r\n    \"launch_method\":  \"WMI_CMD_FILE\",\r\n    \"launcher_process_id\":  3220,\r\n    \"launcher_process_alive\":  false,\r\n    \"node_path\":  \"C:\\\\Program Files\\\\nodejs\\\\node.exe\",\r\n    \"install_root\":  \"C:\\\\Users\\\\Administrator\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\4b4c857f6efdfb61\",\r\n    \"phase\":  \"PROCESS_EXITED\",\r\n    \"sanitized_log_tail\":  \"\",\r\n    \"task_status\":  \"\",\r\n    \"generated_utc\":  \"2026-10-06T03:00:45.4177182Z\",\r\n    \"result\":  \"FAIL\"\r\n}\r\n"
+                  },
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  554,
+                      "sha256":  "769689b9a6e30dccef42ce0acafd18108eb931f252bcc86728a2dfc3d7ccc83d",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"desktop-commander-start6-20261006\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"STAGE07_PYTHON_TESTS\",\r\n    \"started_utc\":  \"2026-10-06T03:00:30.3239316Z\",\r\n    \"completed_utc\":  \"2026-10-06T03:00:45.4489337Z\",\r\n    \"duration_ms\":  15125,\r\n    \"status\":  \"PASS\",\r\n    \"exit_code\":  0,\r\n    \"details\":  {\r\n                    \"mode\":  \"WORKSPACE_DESKTOP_COMMANDER_START_DIRECT\",\r\n                    \"phase\":  \"PROCESS_EXITED\",\r\n                    \"result\":  \"FAIL\"\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  2,
+                      "sha256":  "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+                      "content_included":  true,
+                      "content":  "\r\n"
+                  },
+                  {
+                      "name":  "stdout.txt",
+                      "size_bytes":  47,
+                      "sha256":  "5c52b0e717b87b8a29cde7646d4ac86beead8f4e9928f129d78347d8206c1fad",
+                      "content_included":  true,
+                      "content":  "DESKTOP COMMANDER START FAIL / PROCESS_EXITED\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  1123
+}
