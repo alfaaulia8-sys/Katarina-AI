@@ -418,6 +418,214 @@ try {
 
 
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_INTERACTIVE_START_DIRECT") {
+                $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                $root=$null
+                if(Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg=Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $m=Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if([string]$m.version -eq "0.2.52"){$root=$d.FullName;break}
+                            } catch {}
+                        }
+                    }
+                }
+                if([string]::IsNullOrWhiteSpace($root)){throw "Desktop Commander 0.2.52 cache installation not found."}
+                $index=Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                if(-not $nodeCmd){throw "Node.js executable not found."}
+                $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+
+                $dcRoot="C:\DesktopCommanderCompat"
+                $logRoot=Join-Path $dcRoot "logs"
+                New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
+                $log=Join-Path $logRoot "remote-interactive.log"
+                Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+                $cmdFile=Join-Path $dcRoot "Run-DesktopCommanderInteractive.cmd"
+                $cmdLines=@(
+                    "@echo off",
+                    "set USERPROFILE=C:\Users\Administrator",
+                    "set HOME=C:\Users\Administrator",
+                    ('cd /d "'+$root+'"'),
+                    ('"'+$nodePath+'" "'+$index+'" remote --debug >> "'+$log+'" 2>&1'),
+                    ('echo EXIT %%ERRORLEVEL%% >> "'+$log+'"')
+                )
+                $cmdLines | Set-Content -LiteralPath $cmdFile -Encoding ASCII
+
+                $explorer=$null
+                try {
+                    $explorer=Get-WmiObject Win32_Process -Filter "Name='explorer.exe'" -ErrorAction SilentlyContinue | Sort-Object SessionId -Descending | Select-Object -First 1
+                } catch {}
+                if($null -eq $explorer){throw "No interactive explorer.exe session is available."}
+                $explorerPid=[int]$explorer.ProcessId
+                $sessionId=[int]$explorer.SessionId
+
+                if(-not ("KatInteractiveLauncher" -as [type])) {
+                    Add-Type -TypeDefinition @'
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+
+public static class KatInteractiveLauncher {
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+    public struct STARTUPINFO {
+        public Int32 cb;
+        public string lpReserved;
+        public string lpDesktop;
+        public string lpTitle;
+        public Int32 dwX;
+        public Int32 dwY;
+        public Int32 dwXSize;
+        public Int32 dwYSize;
+        public Int32 dwXCountChars;
+        public Int32 dwYCountChars;
+        public Int32 dwFillAttribute;
+        public Int32 dwFlags;
+        public Int16 wShowWindow;
+        public Int16 cbReserved2;
+        public IntPtr lpReserved2;
+        public IntPtr hStdInput;
+        public IntPtr hStdOutput;
+        public IntPtr hStdError;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PROCESS_INFORMATION {
+        public IntPtr hProcess;
+        public IntPtr hThread;
+        public Int32 dwProcessId;
+        public Int32 dwThreadId;
+    }
+
+    [DllImport("kernel32.dll", SetLastError=true)]
+    public static extern IntPtr OpenProcess(UInt32 access, bool inherit, Int32 pid);
+
+    [DllImport("kernel32.dll", SetLastError=true)]
+    public static extern bool CloseHandle(IntPtr handle);
+
+    [DllImport("advapi32.dll", SetLastError=true)]
+    public static extern bool OpenProcessToken(IntPtr process, UInt32 access, out IntPtr token);
+
+    [DllImport("advapi32.dll", SetLastError=true)]
+    public static extern bool DuplicateTokenEx(
+        IntPtr existingToken,
+        UInt32 desiredAccess,
+        IntPtr tokenAttributes,
+        Int32 impersonationLevel,
+        Int32 tokenType,
+        out IntPtr newToken);
+
+    [DllImport("userenv.dll", SetLastError=true)]
+    public static extern bool CreateEnvironmentBlock(out IntPtr environment, IntPtr token, bool inherit);
+
+    [DllImport("userenv.dll", SetLastError=true)]
+    public static extern bool DestroyEnvironmentBlock(IntPtr environment);
+
+    [DllImport("advapi32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+    public static extern bool CreateProcessAsUser(
+        IntPtr token,
+        string applicationName,
+        StringBuilder commandLine,
+        IntPtr processAttributes,
+        IntPtr threadAttributes,
+        bool inheritHandles,
+        UInt32 creationFlags,
+        IntPtr environment,
+        string currentDirectory,
+        ref STARTUPINFO startupInfo,
+        out PROCESS_INFORMATION processInformation);
+}
+'@
+                }
+
+                $PROCESS_QUERY_INFORMATION=0x0400
+                $TOKEN_ASSIGN_PRIMARY=0x0001
+                $TOKEN_DUPLICATE=0x0002
+                $TOKEN_QUERY=0x0008
+                $TOKEN_ALL=$TOKEN_ASSIGN_PRIMARY -bor $TOKEN_DUPLICATE -bor $TOKEN_QUERY
+                $hProcess=[KatInteractiveLauncher]::OpenProcess($PROCESS_QUERY_INFORMATION,$false,$explorerPid)
+                if($hProcess -eq [IntPtr]::Zero){throw ("OpenProcess failed: "+[Runtime.InteropServices.Marshal]::GetLastWin32Error())}
+                $hToken=[IntPtr]::Zero
+                $dupToken=[IntPtr]::Zero
+                $envBlock=[IntPtr]::Zero
+                $pi=New-Object KatInteractiveLauncher+PROCESS_INFORMATION
+                try {
+                    if(-not [KatInteractiveLauncher]::OpenProcessToken($hProcess,$TOKEN_ALL,[ref]$hToken)){
+                        throw ("OpenProcessToken failed: "+[Runtime.InteropServices.Marshal]::GetLastWin32Error())
+                    }
+                    if(-not [KatInteractiveLauncher]::DuplicateTokenEx($hToken,0xF01FF,[IntPtr]::Zero,2,1,[ref]$dupToken)){
+                        throw ("DuplicateTokenEx failed: "+[Runtime.InteropServices.Marshal]::GetLastWin32Error())
+                    }
+                    [void][KatInteractiveLauncher]::CreateEnvironmentBlock([ref]$envBlock,$dupToken,$false)
+                    $si=New-Object KatInteractiveLauncher+STARTUPINFO
+                    $si.cb=[Runtime.InteropServices.Marshal]::SizeOf($si)
+                    $si.lpDesktop="winsta0\default"
+                    $cmdLine=New-Object System.Text.StringBuilder
+                    [void]$cmdLine.Append('cmd.exe /D /C '+$cmdFile)
+                    $flags=0x00000400 -bor 0x00000010
+                    $ok=[KatInteractiveLauncher]::CreateProcessAsUser(
+                        $dupToken,
+                        "C:\Windows\System32\cmd.exe",
+                        $cmdLine,
+                        [IntPtr]::Zero,
+                        [IntPtr]::Zero,
+                        $false,
+                        $flags,
+                        $envBlock,
+                        $dcRoot,
+                        [ref]$si,
+                        [ref]$pi
+                    )
+                    if(-not $ok){throw ("CreateProcessAsUser failed: "+[Runtime.InteropServices.Marshal]::GetLastWin32Error())}
+                }
+                finally {
+                    if($pi.hThread -ne [IntPtr]::Zero){[void][KatInteractiveLauncher]::CloseHandle($pi.hThread)}
+                    if($pi.hProcess -ne [IntPtr]::Zero){[void][KatInteractiveLauncher]::CloseHandle($pi.hProcess)}
+                    if($envBlock -ne [IntPtr]::Zero){[void][KatInteractiveLauncher]::DestroyEnvironmentBlock($envBlock)}
+                    if($dupToken -ne [IntPtr]::Zero){[void][KatInteractiveLauncher]::CloseHandle($dupToken)}
+                    if($hToken -ne [IntPtr]::Zero){[void][KatInteractiveLauncher]::CloseHandle($hToken)}
+                    if($hProcess -ne [IntPtr]::Zero){[void][KatInteractiveLauncher]::CloseHandle($hProcess)}
+                }
+
+                Start-Sleep -Seconds 15
+                $launchedPid=[int]$pi.dwProcessId
+                $alive=$false
+                try{$alive=$null -ne (Get-Process -Id $launchedPid -ErrorAction SilentlyContinue)}catch{}
+                $logTail=""
+                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 120)-join [Environment]::NewLine)}}catch{}
+                $safeLog=Redact-Text $logTail
+                $phase="RUNNING"
+                if($safeLog -match "(?i)Device ready"){$phase="DEVICE_READY"}
+                elseif($safeLog -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($safeLog -match "(?i)verification|device code|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
+                elseif(-not $alive){$phase="PROCESS_EXITED"}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_INTERACTIVE_START"
+                    explorer_process_id=$explorerPid
+                    interactive_session_id=$sessionId
+                    launched_process_id=$launchedPid
+                    launched_process_alive=$alive
+                    phase=$phase
+                    sanitized_log_tail=$safeLog
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_interactive_start.json") $diag
+                ("DESKTOP COMMANDER INTERACTIVE "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["phase"]=$phase
+                $details["session_id"]=$sessionId
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_START_DIRECT") {
                 $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
                 $root=$null
