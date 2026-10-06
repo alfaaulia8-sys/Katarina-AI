@@ -1,0 +1,32 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "desktop-commander-start2-20261006",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "MUTATING",
+                    "ref":  "main",
+                    "exit_code":  1,
+                    "completed_utc":  "2026-10-06T02:54:58.4958177Z"
+                },
+    "files":  [
+                  {
+                      "name":  "result.json",
+                      "size_bytes":  393,
+                      "sha256":  "e455a75be6b06faf77bd72ed2cb8c869a6fee81fa0f668bdd837a269227617cd",
+                      "content_included":  true,
+                      "content":  "{\r\n    \"schema_version\":  1,\r\n    \"request_id\":  \"desktop-commander-start2-20261006\",\r\n    \"agent_id\":  \"katarina-vps-2012r2-01\",\r\n    \"task\":  \"DesktopCommanderRemote\",\r\n    \"started_utc\":  \"2026-10-06T02:54:53.8864701Z\",\r\n    \"completed_utc\":  \"2026-10-06T02:54:53.9489353Z\",\r\n    \"duration_ms\":  62,\r\n    \"status\":  \"FAIL\",\r\n    \"exit_code\":  1,\r\n    \"details\":  {\r\n\r\n                }\r\n}\r\n"
+                  },
+                  {
+                      "name":  "stderr.txt",
+                      "size_bytes":  30,
+                      "sha256":  "b77693796c7ca55f02df91f1b9aa5fc4a7852f2d34c519255314a593f708043d",
+                      "content_included":  true,
+                      "content":  "ERROR: Class does not exist.\r\n"
+                  }
+              ],
+    "bundle_content_bytes":  423
+}
