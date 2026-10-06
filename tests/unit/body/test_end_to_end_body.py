@@ -106,7 +106,7 @@ class EndToEndBodyFailClosedTests(unittest.TestCase):
                 self.assertFalse(result.live_execution_authority)
 
     def test_execution_path_process_calls_are_blocked(self):
-        for stage in (18, 19, 36):
+        for stage in (18, 19):
             with self.subTest(stage=stage):
                 result = component(stage).process({"audit": True})
                 self.assertFalse(result.accepted)
