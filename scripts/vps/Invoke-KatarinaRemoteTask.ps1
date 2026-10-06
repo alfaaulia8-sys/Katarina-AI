@@ -695,7 +695,7 @@ public static class KatInteractiveLauncher {
                     }
                 } catch {}
 
-                $commandLine='cmd.exe /d /c ""'+$cmdFile+'""'
+                $commandLine='C:\Windows\System32\cmd.exe /d /c '+$cmdFile
                 $procClass=[wmiclass]"Win32_Process"
                 $create=$procClass.Create($commandLine)
                 $rv=[int]$create.ReturnValue
