@@ -2,7 +2,7 @@
 
 **Status:** ACTIVE
 **Primary legacy agent:** `katarina-vps-2012r2-01`
-**Repository:** `alfaaulia-katarina/Katarina-AI`
+**Repository:** `alfaaulia8-sys/Katarina-AI`
 
 ## Goal
 
