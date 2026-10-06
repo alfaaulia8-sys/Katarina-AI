@@ -1,6 +1,6 @@
 {
   "stage": 25,
-  "name": "Shadow Katarina",
+  "name": "Tester Evaluation",
   "dependencies": [
     18,
     19,
@@ -14,8 +14,8 @@
   "status": "body_framework_complete",
   "live_risk_ready": false,
   "live_execution_authority": false,
-  "github_reference_query": "dry run paper trading shadow execution",
-  "github_reference_url": "https://github.com/freqtrade/freqtrade/blob/338e264643c113642a69e44094870ccb0d84bdb8/README.md",
-  "functional_body_kernel": "ShadowKatarinaBody",
+  "github_reference_query": "strategy tester simulated execution offline evaluation trading",
+  "github_reference_url": "https://github.com/maadjiba24-afk/Olympus-/blob/2723488e065029406152fcc41995deace0e9c4ff/docs/TRADING_ARCHITECTURE.md",
+  "functional_body_kernel": "TesterEvaluationBody",
   "functional_body_complete": true
 }
