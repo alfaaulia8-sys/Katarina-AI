@@ -650,6 +650,62 @@ public static class KatInteractiveLauncher {
 
 
 
+
+            if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_PAIR_STATUS_DIRECT") {
+                $remoteLog="C:\DesktopCommanderCompat\logs\remote-persistent.log"
+                $logText=""
+                if(Test-Path -LiteralPath $remoteLog -PathType Leaf){
+                    $logText=Get-Content -LiteralPath $remoteLog -Raw
+                }
+
+                $verificationUrl=""
+                $userCode=""
+                try {
+                    $mUrl=[regex]::Match($logText,'(?ms)Verify this device in your browser:\s*\r?\n(?:\[[^\]]+\]\s*)?(https://[^\s]+)')
+                    if($mUrl.Success){$verificationUrl=$mUrl.Groups[1].Value.Trim()}
+                    $mCode=[regex]::Match($logText,'(?ms)Make sure the code matches:\s*\r?\n(?:\[[^\]]+\]\s*)?([^\r\n]+)')
+                    if($mCode.Success){$userCode=$mCode.Groups[1].Value.Trim()}
+                } catch {}
+
+                $processes=@()
+                try {
+                    foreach($p0 in @(Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue)) {
+                        $cl=[string]$p0.CommandLine
+                        if($cl -and $cl.IndexOf("katarina-desktop-commander-persistent-wrapper.mjs",[StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                            $processes += [ordered]@{process_id=[int]$p0.ProcessId}
+                        }
+                    }
+                } catch {}
+
+                $phase="OFFLINE"
+                if($logText -match "(?i)Desktop Commander Remote is connected|Device ready"){$phase="DEVICE_READY"}
+                elseif($logText -match "(?i)Device verified"){$phase="VERIFIED"}
+                elseif($logText -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($logText -match "(?i)Waiting for authorization|Please complete authentication|Device code received"){$phase="AUTH_REQUIRED"}
+                elseif($processes.Count -gt 0){$phase="RUNNING"}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_PAIR_STATUS"
+                    process_count=$processes.Count
+                    processes=$processes
+                    phase=$phase
+                    verification_url=$verificationUrl
+                    user_code=$userCode
+                    device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","VERIFIED","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_pair_status.json") $diag
+                ("DESKTOP COMMANDER PAIR STATUS "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]=$mode
+                $details["phase"]=$phase
+                $details["process_count"]=$processes.Count
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_DESKTOP_COMMANDER_PERSISTENT_PAIR_DIRECT") {
                 $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
                 $root=$null
