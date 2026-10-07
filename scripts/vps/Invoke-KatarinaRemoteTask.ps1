@@ -3016,6 +3016,123 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
                 break
             }
 
+            if ($mode -eq "WORKSPACE_APPLY" -and
+                $null -ne $request.args.PSObject.Properties["dc_recovery"] -and
+                [bool]$request.args.dc_recovery) {
+
+                $cacheBase="C:\Users\Administrator\AppData\Local\npm-cache\_npx"
+                $root=$null
+                if(Test-Path -LiteralPath $cacheBase -PathType Container) {
+                    foreach($d in @(Get-ChildItem -LiteralPath $cacheBase -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
+                        $pkg=Join-Path $d.FullName "node_modules\@wonderwhy-er\desktop-commander\package.json"
+                        if(Test-Path -LiteralPath $pkg -PathType Leaf) {
+                            try {
+                                $m=Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json
+                                if([string]$m.version -eq "0.2.52"){$root=$d.FullName;break}
+                            } catch {}
+                        }
+                    }
+                }
+                if([string]::IsNullOrWhiteSpace($root)){throw "Desktop Commander 0.2.52 cache installation not found."}
+
+                $index=Join-Path $root "node_modules\@wonderwhy-er\desktop-commander\dist\index.js"
+                $wsPkg=Join-Path $root "node_modules\ws\package.json"
+                if(!(Test-Path -LiteralPath $index -PathType Leaf)){throw "Desktop Commander index.js missing."}
+                if(!(Test-Path -LiteralPath $wsPkg -PathType Leaf)){throw "Desktop Commander WebSocket shim dependency missing."}
+
+                $nodeCmd=Get-Command node.exe -ErrorAction SilentlyContinue
+                if(-not $nodeCmd){$nodeCmd=Get-Command node -ErrorAction SilentlyContinue}
+                if(-not $nodeCmd){throw "Node.js executable not found."}
+                $nodePath=[string]$(if($nodeCmd.Path){$nodeCmd.Path}elseif($nodeCmd.Definition){$nodeCmd.Definition}else{$nodeCmd.Name})
+
+                $dcRoot="C:\DesktopCommanderCompat"
+                $logRoot=Join-Path $dcRoot "logs"
+                New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
+                $log=Join-Path $logRoot "remote-recovery.log"
+                $shim=Join-Path $dcRoot "desktop-commander-recovery-shim.mjs"
+                $cmdFile=Join-Path $dcRoot "Run-DesktopCommanderRecovery.cmd"
+                Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+
+                $shimLines=@(
+                    "import { createRequire } from 'node:module';",
+                    "const require = createRequire(import.meta.url);",
+                    ('const WS = require("'+($root -replace '\\','/')+'/node_modules/ws");'),
+                    "globalThis.WebSocket = WS.WebSocket || WS;",
+                    ('await import("file:///'+(($index -replace '\\','/') -replace ' ','%20')+'");')
+                )
+                $shimLines | Set-Content -LiteralPath $shim -Encoding ASCII
+
+                $cmdLines=@(
+                    "@echo off",
+                    "set USERPROFILE=C:\Users\Administrator",
+                    "set HOME=C:\Users\Administrator",
+                    ('cd /d "'+$root+'"'),
+                    ('echo ==== Desktop Commander recovery start ====>>"'+$log+'"'),
+                    ('"'+$nodePath+'" "'+$shim+'" remote --debug >>"'+$log+'" 2>&1'),
+                    ('echo ==== Desktop Commander recovery exit %ERRORLEVEL% ====>>"'+$log+'"')
+                )
+                $cmdLines | Set-Content -LiteralPath $cmdFile -Encoding ASCII
+
+                try {
+                    foreach($p in @(Get-WmiObject Win32_Process -ErrorAction SilentlyContinue)) {
+                        $cl=[string]$p.CommandLine
+                        if($cl -and (
+                            $cl.IndexOf("Run-DesktopCommanderRecovery.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                            $cl.IndexOf("Run-DesktopCommanderRemote.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                            $cl.IndexOf("Run-DesktopCommanderInteractive.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0
+                        )) {
+                            try{[void]$p.Terminate()}catch{}
+                        }
+                    }
+                } catch {}
+
+                $commandLine='C:\Windows\System32\cmd.exe /d /c '+$cmdFile
+                $procClass=[wmiclass]"Win32_Process"
+                $create=$procClass.Create($commandLine)
+                $rv=[int]$create.ReturnValue
+                $dcPid=[int]$create.ProcessId
+                if($rv -ne 0){throw ("Win32_Process.Create failed return_value="+$rv)}
+
+                Start-Sleep -Seconds 25
+
+                $alive=$false
+                try{$alive=$null -ne (Get-Process -Id $dcPid -ErrorAction SilentlyContinue)}catch{}
+                $logTail=""
+                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 180)-join [Environment]::NewLine)}}catch{}
+                $safeLog=Redact-Text $logTail
+                $phase="RUNNING"
+                if($safeLog -match "(?i)Desktop Commander Remote is connected|Device ready"){$phase="DEVICE_READY"}
+                elseif($safeLog -match "(?i)Device verified"){$phase="VERIFIED"}
+                elseif($safeLog -match "(?i)Failed to start device authorization"){$phase="UPSTREAM_AUTH_FAILED"}
+                elseif($safeLog -match "(?i)Waiting for authorization|Please complete authentication|Device code received|verification|Requesting device code|Authenticating|Connecting this computer"){$phase="AUTH_REQUIRED"}
+                elseif(-not $alive -and $safeLog -match "(?i)ERR_|Error|failed|not supported|unsupported"){$phase="PROCESS_ERROR"}
+                elseif(-not $alive){$phase="PROCESS_EXITED"}
+
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_SAME_PROCESS_RECOVERY"
+                    launch_method="WMI_CMD_NODE18_SHIM"
+                    process_id=$dcPid
+                    process_alive=$alive
+                    create_return_value=$rv
+                    phase=$phase
+                    device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
+                    node_path=$nodePath
+                    install_root=$root
+                    sanitized_log_tail=$safeLog
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","VERIFIED","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_same_process_recovery.json") $diag
+                ("DESKTOP COMMANDER SAME PROCESS RECOVERY "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]="WORKSPACE_APPLY_DC_RECOVERY"
+                $details["phase"]=$phase
+                $details["process_alive"]=$alive
+                $details["result"]=[string]$diag.result
+                break
+            }
+
             if ($mode -eq "WORKSPACE_APPLY") {
                 $workspaceRoot = "C:\KatarinaDev\workspace"
                 $evidenceRoot = "C:\KatarinaDev\evidence"
