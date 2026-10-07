@@ -3048,9 +3048,9 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
                 $dcRoot="C:\DesktopCommanderCompat"
                 $logRoot=Join-Path $dcRoot "logs"
                 New-Item -ItemType Directory -Force -Path $dcRoot,$logRoot | Out-Null
-                $log=Join-Path $logRoot "remote-recovery.log"
+                $log=Join-Path $logRoot "remote-recovery-interactive.log"
                 $shim=Join-Path $dcRoot "desktop-commander-recovery-shim.mjs"
-                $cmdFile=Join-Path $dcRoot "Run-DesktopCommanderRecovery.cmd"
+                $cmdFile=Join-Path $dcRoot "Run-DesktopCommanderRecoveryInteractive.cmd"
                 Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
 
                 $shimLines=@(
@@ -3067,16 +3067,18 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
                     "set USERPROFILE=C:\Users\Administrator",
                     "set HOME=C:\Users\Administrator",
                     ('cd /d "'+$root+'"'),
-                    ('echo ==== Desktop Commander recovery start ====>>"'+$log+'"'),
+                    ('echo ==== Desktop Commander interactive recovery start ====>>"'+$log+'"'),
                     ('"'+$nodePath+'" "'+$shim+'" remote --debug >>"'+$log+'" 2>&1'),
-                    ('echo ==== Desktop Commander recovery exit %ERRORLEVEL% ====>>"'+$log+'"')
+                    ('echo ==== Desktop Commander interactive recovery exit %ERRORLEVEL% ====>>"'+$log+'"')
                 )
                 $cmdLines | Set-Content -LiteralPath $cmdFile -Encoding ASCII
 
+                # Remove only prior Desktop Commander launchers, never KATARINA control-plane processes.
                 try {
                     foreach($p in @(Get-WmiObject Win32_Process -ErrorAction SilentlyContinue)) {
                         $cl=[string]$p.CommandLine
                         if($cl -and (
+                            $cl.IndexOf("Run-DesktopCommanderRecoveryInteractive.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
                             $cl.IndexOf("Run-DesktopCommanderRecovery.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
                             $cl.IndexOf("Run-DesktopCommanderRemote.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
                             $cl.IndexOf("Run-DesktopCommanderInteractive.cmd",[StringComparison]::OrdinalIgnoreCase) -ge 0
@@ -3086,19 +3088,57 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
                     }
                 } catch {}
 
-                $commandLine='C:\Windows\System32\cmd.exe /d /c '+$cmdFile
-                $procClass=[wmiclass]"Win32_Process"
-                $create=$procClass.Create($commandLine)
-                $rv=[int]$create.ReturnValue
-                $dcPid=[int]$create.ProcessId
-                if($rv -ne 0){throw ("Win32_Process.Create failed return_value="+$rv)}
+                $explorerSession=$null
+                try {
+                    $explorerSession=@(
+                        Get-WmiObject Win32_Process -Filter "Name='explorer.exe'" -ErrorAction SilentlyContinue |
+                        Sort-Object SessionId -Descending |
+                        Select-Object -First 1
+                    )
+                } catch {}
+                if($null -eq $explorerSession){throw "No interactive Administrator explorer session is available."}
+                $sessionId=[int]$explorerSession.SessionId
 
-                Start-Sleep -Seconds 25
+                # Register and run through Task Scheduler COM using the already logged-on
+                # Administrator token. The service creates the child in the interactive
+                # desktop, avoiding the agent's failing Start-Process path.
+                $taskName="KatarinaDesktopCommanderRecovery"
+                $svc=New-Object -ComObject "Schedule.Service"
+                $svc.Connect()
+                $folder=$svc.GetFolder("\")
+                try { $folder.DeleteTask($taskName,0) } catch {}
+                $task=$svc.NewTask(0)
+                $task.RegistrationInfo.Description="KATARINA Desktop Commander recovery"
+                $task.Settings.Enabled=$true
+                $task.Settings.Hidden=$true
+                $task.Settings.AllowDemandStart=$true
+                $task.Settings.ExecutionTimeLimit="PT0S"
+                $task.Principal.UserId="Administrator"
+                $task.Principal.LogonType=3
+                $task.Principal.RunLevel=1
+                $action=$task.Actions.Create(0)
+                $action.Path="C:\Windows\System32\cmd.exe"
+                $action.Arguments=('/D /C "'+$cmdFile+'"')
+                $action.WorkingDirectory=$dcRoot
+                [void]$folder.RegisterTaskDefinition($taskName,$task,6,"Administrator",$null,3,$null)
+                $registered=$folder.GetTask($taskName)
+                $running=$registered.Run($null)
 
-                $alive=$false
-                try{$alive=$null -ne (Get-Process -Id $dcPid -ErrorAction SilentlyContinue)}catch{}
+                Start-Sleep -Seconds 30
+
+                $nodeProcesses=@()
+                try {
+                    $nodeProcesses=@(
+                        Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            ([string]$_.CommandLine).IndexOf("desktop-commander-recovery-shim.mjs",[StringComparison]::OrdinalIgnoreCase) -ge 0
+                        }
+                    )
+                } catch {}
+                $alive=($nodeProcesses.Count -gt 0)
+                $pidValue=$(if($alive){[int]$nodeProcesses[0].ProcessId}else{0})
                 $logTail=""
-                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 180)-join [Environment]::NewLine)}}catch{}
+                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 200)-join [Environment]::NewLine)}}catch{}
                 $safeLog=Redact-Text $logTail
                 $phase="RUNNING"
                 if($safeLog -match "(?i)Desktop Commander Remote is connected|Device ready"){$phase="DEVICE_READY"}
@@ -3109,12 +3149,13 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
                 elseif(-not $alive){$phase="PROCESS_EXITED"}
 
                 $diag=[ordered]@{
-                    schema_version=1
-                    proof_type="DESKTOP_COMMANDER_SAME_PROCESS_RECOVERY"
-                    launch_method="WMI_CMD_NODE18_SHIM"
-                    process_id=$dcPid
+                    schema_version=2
+                    proof_type="DESKTOP_COMMANDER_INTERACTIVE_TASK_RECOVERY"
+                    launch_method="TASK_SCHEDULER_COM_INTERACTIVE_TOKEN"
+                    task_name=$taskName
+                    interactive_session_id=$sessionId
+                    process_id=$pidValue
                     process_alive=$alive
-                    create_return_value=$rv
                     phase=$phase
                     device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
                     node_path=$nodePath
@@ -3124,7 +3165,7 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
                     result=$(if($phase -in @("DEVICE_READY","VERIFIED","AUTH_REQUIRED","RUNNING")){"PASS"}elseif($phase -eq "UPSTREAM_AUTH_FAILED"){"BLOCKED_UPSTREAM"}else{"FAIL"})
                 }
                 Write-JsonFile (Join-Path $OutputDir "desktop_commander_same_process_recovery.json") $diag
-                ("DESKTOP COMMANDER SAME PROCESS RECOVERY "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                ("DESKTOP COMMANDER INTERACTIVE TASK RECOVERY "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
                 "" | Set-Content $stderrPath -Encoding UTF8
                 $details["mode"]="WORKSPACE_APPLY_DC_RECOVERY"
                 $details["phase"]=$phase
