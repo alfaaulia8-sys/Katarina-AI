@@ -3017,6 +3017,54 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
             }
 
             if ($mode -eq "WORKSPACE_APPLY" -and
+                $null -ne $request.args.PSObject.Properties["dc_status"] -and
+                [bool]$request.args.dc_status) {
+
+                $dcRoot="C:\DesktopCommanderCompat"
+                $log=Join-Path $dcRoot "logs\remote-recovery-interactive.log"
+                $nodes=@()
+                try {
+                    $nodes=@(
+                        Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            $cl=[string]$_.CommandLine
+                            $cl -and (
+                                $cl.IndexOf("desktop-commander-recovery-shim.mjs",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                                $cl.IndexOf("@wonderwhy-er\desktop-commander",[StringComparison]::OrdinalIgnoreCase) -ge 0
+                            )
+                        }
+                    )
+                } catch {}
+                $logTail=""
+                try{if(Test-Path -LiteralPath $log -PathType Leaf){$logTail=(@(Get-Content -LiteralPath $log -Tail 120)-join [Environment]::NewLine)}}catch{}
+                $safeLog=Redact-Text $logTail
+                $phase="OFFLINE"
+                if($safeLog -match "(?i)Channel subscribed"){$phase="CHANNEL_SUBSCRIBED"}
+                if($safeLog -match "(?i)Device marked as online|Presence tracked.*visible as online"){$phase="DEVICE_READY"}
+                elseif($safeLog -match "(?i)IncreaseConnectionPool"){$phase="BACKEND_POOL_BLOCKED"}
+                elseif($nodes.Count -gt 0){$phase="RUNNING"}
+                $diag=[ordered]@{
+                    schema_version=1
+                    proof_type="DESKTOP_COMMANDER_STATUS"
+                    process_count=$nodes.Count
+                    process_ids=@($nodes | ForEach-Object {[int]$_.ProcessId})
+                    phase=$phase
+                    device_session_exists=(Test-Path -LiteralPath "C:\Users\Administrator\.desktop-commander-device\device.json" -PathType Leaf)
+                    sanitized_log_tail=$safeLog
+                    generated_utc=[DateTime]::UtcNow.ToString("o")
+                    result=$(if($phase -in @("DEVICE_READY","CHANNEL_SUBSCRIBED","RUNNING")){"PASS"}else{"BLOCKED"})
+                }
+                Write-JsonFile (Join-Path $OutputDir "desktop_commander_status.json") $diag
+                ("DESKTOP COMMANDER STATUS "+[string]$diag.result+" / "+$phase) | Set-Content $stdoutPath -Encoding UTF8
+                "" | Set-Content $stderrPath -Encoding UTF8
+                $details["mode"]="WORKSPACE_APPLY_DC_STATUS"
+                $details["phase"]=$phase
+                $details["process_count"]=$nodes.Count
+                $details["result"]=[string]$diag.result
+                break
+            }
+
+            if ($mode -eq "WORKSPACE_APPLY" -and
                 $null -ne $request.args.PSObject.Properties["dc_recovery"] -and
                 [bool]$request.args.dc_recovery) {
 
