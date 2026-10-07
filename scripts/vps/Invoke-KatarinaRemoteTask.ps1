@@ -3088,6 +3088,22 @@ try { & schtasks.exe /Delete /F /TN "KatarinaVpsFirstDeferredRestart" | Out-Null
                     }
                 } catch {}
 
+                # Also terminate stale Desktop Commander node processes. Old remote
+                # channels can exhaust the Supabase Realtime connection pool.
+                try {
+                    foreach($p in @(Get-WmiObject Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue)) {
+                        $cl=[string]$p.CommandLine
+                        if($cl -and (
+                            $cl.IndexOf("@wonderwhy-er\desktop-commander",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                            $cl.IndexOf("desktop-commander-node18-shim.mjs",[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                            $cl.IndexOf("desktop-commander-recovery-shim.mjs",[StringComparison]::OrdinalIgnoreCase) -ge 0
+                        )) {
+                            try{[void]$p.Terminate()}catch{}
+                        }
+                    }
+                } catch {}
+                Start-Sleep -Seconds 8
+
                 $explorerSession=$null
                 try {
                     $explorerSession=@(
