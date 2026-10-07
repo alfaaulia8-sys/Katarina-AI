@@ -1,0 +1,19 @@
+{
+    "schema_version":  1,
+    "receipt":  {
+                    "schema_version":  1,
+                    "agent_version":  "1.4.8",
+                    "agent_id":  "katarina-vps-2012r2-01",
+                    "lane":  "primary",
+                    "request_id":  "dc-recover-scan-20261007-0105",
+                    "task":  "STAGE07_PYTHON_TESTS",
+                    "execution_class":  "READONLY",
+                    "ref":  "main",
+                    "exit_code":  -1073741502,
+                    "completed_utc":  "2026-10-07T01:05:13.0733979Z"
+                },
+    "files":  [
+
+              ],
+    "bundle_content_bytes":  0
+}
