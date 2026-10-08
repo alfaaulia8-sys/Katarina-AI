@@ -1,0 +1,3 @@
+KATARINA Git bridge control test
+Requested by ChatGPT connector.
+Purpose: verify GitHub -> VPS synchronization path.
