@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 2.0
 
-$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptRoot = Split-Path -Parent $PSCommandPath
 if (-not $RepoRoot) {
     $RepoRoot = (Resolve-Path -LiteralPath (Join-Path $ScriptRoot "..\..")).Path
 } else {
@@ -656,7 +656,7 @@ function Start-BridgeBackground {
             }
         } catch {}
     }
-    $args=@("-NoProfile","-ExecutionPolicy","Bypass","-File",$MyInvocation.MyCommand.Path,"-Mode","Bridge","-RepoRoot",$RepoRoot)
+    $args=@("-NoProfile","-ExecutionPolicy","Bypass","-File",$PSCommandPath,"-Mode","Bridge","-RepoRoot",$RepoRoot)
     Start-Process -FilePath "powershell.exe" -ArgumentList (($args|ForEach-Object{Quote-Argument $_}) -join " ") -WindowStyle Minimized|Out-Null
     Start-Sleep -Seconds 1
     Write-Host "KATARINA VPS bridge started."

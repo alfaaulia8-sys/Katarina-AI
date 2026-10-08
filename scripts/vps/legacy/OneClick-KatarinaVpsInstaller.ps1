@@ -1,4 +1,4 @@
-param()
+﻿param()
 
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -6,7 +6,7 @@ try { Add-Type -AssemblyName System.Security -ErrorAction Stop } catch {}
 
 $InstallerVersion = "1.2.5"
 $AgentId = "katarina-vps-2012r2-01"
-$Repository = "alfaaulia-katarina/Katarina-AI"
+$Repository = "alfaaulia8-sys/Katarina-AI"
 $Branch = "main"
 $InstallRoot = "C:\KatarinaVPSAgent"
 $PreflightScript = Join-Path $PSScriptRoot "Test-KatarinaVpsPrerequisites.ps1"
@@ -319,3 +319,4 @@ catch {
 finally {
     $pat = $null
 }
+
