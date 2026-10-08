@@ -1,2 +1,0 @@
-QL	0	10:18:02.308	Tester	Cloud servers switched off
-

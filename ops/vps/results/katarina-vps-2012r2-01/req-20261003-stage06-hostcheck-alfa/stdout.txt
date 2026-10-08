@@ -1,8 +1,0 @@
-Katarina Stage 06 host check
-OS:            Microsoft Windows Server 2012 R2 Standard
-Version:       6.3.9600
-Architecture:  64-bit
-Normalized:    WINDOWS_SERVER_2012_R2_X64
-Class:         DEFERRED
-PowerShell:    4.0
-

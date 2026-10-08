@@ -1,6 +1,0 @@
-MN	0	00:20:18.174	Network	'374880962': scanning network for access points
-NH	0	00:20:22.031	Network	'374880962': scanning network finished
-NO	0	06:20:18.784	Network	'374880962': scanning network for access points
-RJ	0	06:20:22.468	Network	'374880962': scanning network finished
-KR	0	08:46:23.585	System	terminal stopped due to system shutdown
-

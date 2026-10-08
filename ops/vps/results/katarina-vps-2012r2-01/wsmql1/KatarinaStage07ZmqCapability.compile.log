@@ -1,7 +1,0 @@
-
-
-C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Scripts\KatarinaStage07ZmqCapability.mq5 : information: compiling C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Scripts\KatarinaStage07ZmqCapability.mq5
-C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Scripts\KatarinaStage07ZmqCapability.mq5 : information: including C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Include\Zmq\Zmq.mqh
-C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Scripts\KatarinaStage07ZmqCapability.mq5(4,10) : error 106: file 'C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Include\Zmq\Zmq.mqh' not found
-(0,0) : warning 51: no OnStart function defined in the script
-Result: 1 errors, 1 warnings

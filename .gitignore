@@ -227,3 +227,8 @@ credentials/
 
 # KATARINA local supervisor/runtime state
 .katarina/
+
+# Generated VPS execution evidence
+ops/vps/results/*
+!ops/vps/results/README.md
+vps_bridge/reports/

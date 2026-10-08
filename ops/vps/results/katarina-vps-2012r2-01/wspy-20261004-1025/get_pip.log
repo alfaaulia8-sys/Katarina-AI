@@ -1,1 +1,0 @@
-ERROR: This script does not work on Python 3.8. The minimum supported Python version is 3.10. Please use https://bootstrap.pypa.io/pip/3.8/get-pip.py instead.

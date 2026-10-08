@@ -1,9 +1,0 @@
-{
-    "schema_version":  1,
-    "mode":  "WORKSPACE_MT5_RUNTIME_SMOKE",
-    "root":  "C:\\KatarinaDev",
-    "workspace":  "C:\\KatarinaDev\\workspace",
-    "file_count":  220,
-    "python_runtime":  "C:\\KatarinaDev\\runtime\\python\\python.exe",
-    "result":  "PASS"
-}

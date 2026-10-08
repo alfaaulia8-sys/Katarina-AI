@@ -1,2 +1,0 @@
-STAGE06 PREPARE_RUNTIME PASS
-Path: C:\KatarinaStage06Runtime

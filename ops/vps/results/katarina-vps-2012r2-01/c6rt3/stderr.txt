@@ -1,1 +1,0 @@
-Required Stage-06 runtime evidence missing: Katarina_Stage06_self_test_result.txt

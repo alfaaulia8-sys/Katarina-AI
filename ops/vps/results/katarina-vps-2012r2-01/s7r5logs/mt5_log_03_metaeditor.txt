@@ -1,2 +1,0 @@
-0	2026.10.04 10:18:02.329	Compile	C:\Program Files\MetaTrader 5\MQL5\Experts\Advisors\ExpertMACD.mq5 - 0 errors, 0 warnings
-
