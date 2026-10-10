@@ -1,16 +1,15 @@
 name: Katarina VPS Low-Memory Rescue
 
+# Manual-only. GitHub pushes must not operate the self-hosted VPS.
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "ops/vps/rescue/*.trigger"
 
 permissions:
   contents: read
 
 jobs:
   rescue:
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, windows, x64, katarina-vps]
     timeout-minutes: 10
     steps:
