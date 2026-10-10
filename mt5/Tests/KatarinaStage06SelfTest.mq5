@@ -1,5 +1,5 @@
 #property strict
-#property script_show_inputs
+// No inputs: run unattended when launched by the runtime proof config.
 
 #include <Katarina/BarSource.mqh>
 #include <Katarina/BridgeState.mqh>
