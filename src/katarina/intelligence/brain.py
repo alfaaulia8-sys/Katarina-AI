@@ -92,6 +92,14 @@ class KatarinaAIBrain:
         self.min_brier_improvement = min_brier_improvement
         self.min_win_probability = min_win_probability
 
+    def train_strategy_selector(self, observations, *, train_cutoff_ns, selection_end_ns):
+        """Separate offline expected-R research path; does not replace live policy."""
+        from katarina.intelligence.strategy_selector import StrategySelectionBrain
+        selector = StrategySelectionBrain()
+        evidence = selector.fit(observations, train_cutoff_ns=train_cutoff_ns,
+                                selection_end_ns=selection_end_ns)
+        return selector, evidence
+
     def train_candidate(
         self,
         examples: Sequence[LabeledMarketExample],
