@@ -1,0 +1,23 @@
+# KATARINA security: do not commit secrets or personal documents
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+*credential*
+*secret*
+*password*
+*cookie*
+*session-store*
+*recovery-code*
+*access-token*
+*id-card*
+*ktp*
+profiles/private-documents/
+profiles/raw-identities/
+profiles/local-secrets/
+**/node_modules/
+**/__pycache__/
+*.log

@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "payout_reference": "bca-primary",
+  "bank": "BCA",
+  "currency": "IDR",
+  "country": "Indonesia",
+  "encrypted_blob": "vault/bca-primary.enc.json",
+  "decryption_key": "Termux private-vault only, never commit key to GitHub",
+  "account_number_stored_in_plaintext": false,
+  "source": "user-provided; not yet verified with bank or platform",
+  "usage": [
+    "For overseas client invoices or accepted job payments, use the encrypted PayPal reference, but verify payment is possible",
+    "BCA is the potential downstream bank withdrawal method; link/beneficiary/name match must be verified independently",
+    "Do not change details on an existing platform without owner review"
+  ],
+  "permissions": {
+    "autofill_draft": true,
+    "autofill_requires_user_review": true,
+    "withdrawal_requires_explicit_confirmation_per_transaction": true,
+    "auto_withdraw": false,
+    "auto_change_bank_details": false,
+    "auto_purchase": false
+  },
+  "financial_security": {
+    "never_log_plaintext_account_number": true,
+    "never_commit_key_or_secrets": true,
+    "never_share_bank_details_with_clients_outside_official_platform": true
+  },
+  "status": "configured_encrypted_not_verified",
+  "account_holder_stored_in_plaintext": false,
+  "primary_receiving_method": "PayPal",
+  "primary_receiving_reference": "paypal-primary",
+  "primary_receiving_currency": "USD",
+  "primary_receiving_encrypted_blob": "vault/paypal-primary.enc.json",
+  "primary_receiving_status": "owner_reports_unrestricted; ability_to_receive_payment_not_transaction_tested",
+  "receiving_account_email_stored_in_plaintext": false,
+  "secondary_bank_withdrawal_reference": "bca-primary",
+  "updated_utc": "2026-10-08T06:17:15.458Z"
+}
