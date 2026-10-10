@@ -1,0 +1,32 @@
+name: Stage 35 Tester Safety
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/stage35/**'
+      - 'tests/static/test_stage35*'
+      - 'tests/fixtures/stage35/**'
+      - '.github/workflows/stage35-tester-safety.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runner-behavior:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Parse runner with Windows PowerShell
+        shell: powershell
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            "$env:GITHUB_WORKSPACE/scripts/stage35/Run-KatarinaStage35Tester.ps1", [ref]$null, [ref]$errors)
+          if ($errors.Count) { throw ($errors | Out-String) }
+      - name: Test runner with simulated terminal
+        shell: pwsh
+        run: python -m unittest discover -s tests/static -p 'test_stage35*.py' -v

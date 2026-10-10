@@ -14,7 +14,7 @@ class Stage35TesterRunnerStaticTests(unittest.TestCase):
         cls.text = SCRIPT.read_text(encoding="utf-8")
 
     def test_headless_config_launch_is_present(self):
-        self.assertIn('"/config:$IniPath"', self.text)
+        self.assertIn('/config:`"$IniPath`"', self.text)
         self.assertIn("Start-Process -FilePath $TerminalPath", self.text)
 
     def test_real_ticks_is_default_and_governed(self):
