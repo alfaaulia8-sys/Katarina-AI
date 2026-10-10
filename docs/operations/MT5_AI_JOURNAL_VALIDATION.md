@@ -21,6 +21,9 @@ not certify per-trade entry commissions or data provenance.
 
 Only 11 pre-entry measurements become predictors. Outcome columns never enter
 the feature vector. Fixed transforms require no fitting on future observations.
+The EA currently records the signal bar time as `entry_time`, not the actual
+execution timestamp. This is a conservative earlier cutoff for training-label
+purging; the journal cannot establish exact execution latency.
 Broker dates are wall-clock coordinates, not verified UTC timestamps. Entry is
 bounded below and label availability above by the timestamp precision. Labels
 not known strictly before the holdout cutoff are purged from training.

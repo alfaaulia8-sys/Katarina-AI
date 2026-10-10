@@ -78,7 +78,7 @@ class MT5JournalTests(unittest.TestCase):
             with self.assertRaises(ValueError): self.load()
 
     def test_insufficient_data_does_not_export_model(self):
-        source = Path(__file__).resolve().parents[1] / 'scripts/ai/validate_mt5_journal.py'
+        source = Path(__file__).resolve().parents[2] / 'scripts/ai/validate_mt5_journal.py'
         spec = importlib.util.spec_from_file_location('journal_cli', source)
         module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
         self.write([self.row])
