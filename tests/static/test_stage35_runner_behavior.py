@@ -42,8 +42,16 @@ class TesterRunnerBehaviorTests(unittest.TestCase):
                 self.assertEqual(evidence['result'], 'FAIL_STAGE35_TESTER_INFRASTRUCTURE')
                 self.assertFalse(evidence['live_risk_ready'])
 
+    def test_existing_installation_uses_bound_data_directory(self):
+        result, evidence = self.run_case('existing')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(evidence['result'], 'PASS_STAGE35_TESTER_INFRASTRUCTURE')
+        self.assertFalse(evidence['portable'])
+        self.assertTrue(evidence['terminal_data_path'].endswith('existing data'))
+        self.assertRegex(evidence['parameters_sha256'], r'^[0-9A-Fa-f]{64}$')
+
     def test_unsafe_launch_rejected_before_evidence(self):
-        for mode in ('running', 'injection', 'dates', 'traversal', 'nonportable'):
+        for mode in ('running', 'injection', 'dates', 'traversal', 'nonportable', 'wrong_origin', 'both_modes'):
             with self.subTest(mode=mode):
                 result, evidence = self.run_case(mode)
                 self.assertNotEqual(result.returncode, 0)

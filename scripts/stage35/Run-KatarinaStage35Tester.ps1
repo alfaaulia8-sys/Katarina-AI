@@ -11,7 +11,9 @@ param(
     [int]$Leverage = 100,
     [int]$TimeoutSeconds = 3600,
     [string]$OutputRoot = "C:\KatarinaDev\stage35",
-    [switch]$Portable
+    [switch]$Portable,
+    [string]$ExistingTerminalDataPath = "",
+    [string]$ParametersPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,8 +31,9 @@ if ($Model -ne 4) {
 }
 if ($TimeoutSeconds -lt 60) { throw "TimeoutSeconds must be >= 60" }
 
-# Only an isolated portable installation gives unambiguous report ownership.
-if (-not $Portable) { throw "Use -Portable with a dedicated tester installation." }
+# Existing installations require their explicit, origin-bound data directory.
+if ($Portable -and $ExistingTerminalDataPath) { throw 'Choose one terminal mode.' }
+if (-not $Portable -and -not $ExistingTerminalDataPath) { throw "Use -Portable or an explicit ExistingTerminalDataPath." }
 foreach ($Value in @($Expert, $Symbol, $Period, $FromDate, $ToDate, $ReportName)) {
     if ([string]::IsNullOrWhiteSpace($Value) -or $Value -match '[\r\n\x00]') {
         throw "Tester fields must be nonempty single-line values."
@@ -48,9 +51,19 @@ if ($EndDate -le $StartDate) { throw "ToDate must follow FromDate." }
 if ($Deposit -le 0 -or $Leverage -le 0) { throw "Deposit and Leverage must be positive." }
 $TerminalPath = (Resolve-Path -LiteralPath $TerminalPath).Path
 $TerminalDir = Split-Path -Parent $TerminalPath
+$DataDir = $TerminalDir
+if ($ExistingTerminalDataPath) {
+    $DataDir = (Resolve-Path -LiteralPath $ExistingTerminalDataPath).Path
+    $Origin = Join-Path $DataDir 'origin.txt'
+    if (-not (Test-Path -LiteralPath $Origin -PathType Leaf)) { throw 'Missing terminal origin binding.' }
+    $BoundHome = (Get-Content -LiteralPath $Origin -Raw).Trim()
+    if (-not [string]::Equals($BoundHome.TrimEnd('\','/'), $TerminalDir.TrimEnd('\','/'), [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Data directory belongs to a different terminal installation.'
+    }
+}
 $ExpertFile = $Expert
 if (-not $ExpertFile.EndsWith('.ex5')) { $ExpertFile += '.ex5' }
-$ExpertPath = Join-Path (Join-Path $TerminalDir 'MQL5\Experts') $ExpertFile
+$ExpertPath = Join-Path (Join-Path $DataDir 'MQL5\Experts') $ExpertFile
 if (-not (Test-Path -LiteralPath $ExpertPath -PathType Leaf)) { throw "Compiled Expert missing: $ExpertPath" }
 # Refuse reuse of a running terminal; never terminate a pre-existing session.
 foreach ($Existing in @(Get-Process -Name terminal64 -ErrorAction SilentlyContinue)) {
@@ -64,6 +77,17 @@ $ReportName = $ReportName + '-' + $RunId
 $RunRoot = Join-Path $Root $RunId
 $EvidenceRoot = Join-Path $RunRoot "evidence"
 New-Item -ItemType Directory -Force -Path $EvidenceRoot | Out-Null
+$ParametersName = $null
+$ParametersHash = $null
+if ($ParametersPath) {
+    $ParametersPath = (Resolve-Path -LiteralPath $ParametersPath).Path
+    $ParametersName = 'Katarina-' + $RunId + '.set'
+    $PresetDir = Join-Path $DataDir 'MQL5\Profiles\Tester'
+    New-Item -ItemType Directory -Force -Path $PresetDir | Out-Null
+    Copy-Item -LiteralPath $ParametersPath -Destination (Join-Path $PresetDir $ParametersName)
+    Copy-Item -LiteralPath $ParametersPath -Destination (Join-Path $EvidenceRoot 'parameters.set')
+    $ParametersHash = (Get-FileHash -LiteralPath $ParametersPath -Algorithm SHA256).Hash
+}
 
 $IniPath = Join-Path $RunRoot "tester.ini"
 $Ini = @(
@@ -71,7 +95,7 @@ $Ini = @(
     "AllowLiveTrading=0",
     "AllowDllImport=0",
     "[Tester]",
-    "Expert=$Expert",
+    "Expert=$ExpertFile",
     "Symbol=$Symbol",
     "Period=$Period",
     "Model=$Model",
@@ -87,6 +111,7 @@ $Ini = @(
     "ShutdownTerminal=1",
     "Visual=0"
 )
+if ($ParametersName) { $Ini += "ExpertParameters=$ParametersName" }
 $Ini | Set-Content -LiteralPath $IniPath -Encoding UTF8
 
 $Before = [DateTime]::UtcNow
@@ -108,7 +133,7 @@ try {
 if (-not $TimedOut) { $Process.Refresh() }
 $ExitCode = if ($TimedOut) { $null } else { $Process.ExitCode }
 $Report = $null
-$ExpectedReport = Join-Path $TerminalDir ($ReportName + ".htm")
+$ExpectedReport = Join-Path $DataDir ($ReportName + ".htm")
 if (Test-Path -LiteralPath $ExpectedReport -PathType Leaf) {
     $Candidate = Get-Item -LiteralPath $ExpectedReport
     if ($Candidate.LastWriteTimeUtc -ge $Before -and $Candidate.Length -gt 0) { $Report = $Candidate }
@@ -118,6 +143,9 @@ $ReportSha256 = $null
 if ($Report) {
     $ReportPath = Join-Path $EvidenceRoot 'tester-report.htm'
     Copy-Item -LiteralPath $Report.FullName -Destination $ReportPath
+    foreach ($Asset in @(Get-ChildItem -LiteralPath $DataDir -Filter ($ReportName + '*.png') -File)) {
+        Copy-Item -LiteralPath $Asset.FullName -Destination (Join-Path $EvidenceRoot $Asset.Name)
+    }
     $ReportSha256 = (Get-FileHash -LiteralPath $ReportPath -Algorithm SHA256).Hash
 }
 
@@ -127,10 +155,13 @@ $Evidence = [ordered]@{
     expert_sha256 = $ExpertSha256
     runner_sha256 = $RunnerSha256
     config_sha256 = $IniSha256
+    parameters_sha256 = $ParametersHash
     strategy_validated = $false
     proof_type = "KATARINA_STAGE35_MT5_TESTER"
     generated_utc = [DateTime]::UtcNow.ToString("o")
     terminal_path = $TerminalPath
+    terminal_data_path = $DataDir
+    portable = [bool]$Portable
     expert = $Expert
     symbol = $Symbol
     period = $Period
@@ -159,4 +190,5 @@ $Evidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -En
 
 Write-Host $Evidence.result
 Write-Host "Evidence: $EvidencePath"
+if ($ParametersName) { Remove-Item -LiteralPath (Join-Path $PresetDir $ParametersName) -ErrorAction SilentlyContinue }
 if ($Evidence.result -ne "PASS_STAGE35_TESTER_INFRASTRUCTURE") { exit 2 }

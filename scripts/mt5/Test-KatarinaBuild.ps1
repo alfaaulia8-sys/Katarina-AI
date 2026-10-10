@@ -16,10 +16,13 @@ $mql = Join-Path $run 'MQL5'
 New-Item -ItemType Directory -Path "$mql\Include", "$mql\Experts", "$mql\Scripts", "$run\logs" -Force | Out-Null
 # Compile in a fresh tree: existing terminal programs and accounts are untouched.
 Copy-Item "$repo\mt5\Include\Katarina" "$mql\Include\Katarina" -Recurse
-foreach ($name in @('Zmq', 'Mql', 'Arrays')) {
+foreach ($name in @('Zmq', 'Mql', 'Arrays', 'Trade')) {
     $source = Join-Path $DependencyInclude $name
     if (!(Test-Path -LiteralPath $source -PathType Container)) { throw "Missing include dependency: $name" }
     Copy-Item -LiteralPath $source -Destination "$mql\Include\$name" -Recurse
+}
+foreach ($name in @('Object.mqh', 'StdLibErr.mqh')) {
+    Copy-Item -LiteralPath (Join-Path $DependencyInclude $name) -Destination "$mql\Include\$name"
 }
 $targets = @()
 foreach ($mapping in @(@('Experts','Experts'), @('Tests','Scripts'))) {
