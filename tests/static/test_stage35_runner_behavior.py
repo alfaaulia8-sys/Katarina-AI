@@ -48,6 +48,7 @@ class TesterRunnerBehaviorTests(unittest.TestCase):
         self.assertEqual(evidence['result'], 'PASS_STAGE35_TESTER_INFRASTRUCTURE')
         self.assertFalse(evidence['portable'])
         self.assertTrue(evidence['terminal_data_path'].endswith('existing data'))
+        self.assertRegex(evidence['parameters_sha256'], r'^[0-9A-Fa-f]{64}$')
 
     def test_unsafe_launch_rejected_before_evidence(self):
         for mode in ('running', 'injection', 'dates', 'traversal', 'nonportable', 'wrong_origin', 'both_modes'):

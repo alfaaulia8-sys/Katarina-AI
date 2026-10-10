@@ -28,6 +28,7 @@ function Start-Process {
     if ($Values['AllowLiveTrading'] -ne '0') { throw 'Real trading not disabled' }
     if ($Mode -eq 'existing') {
         if ($ArgumentList -contains '/portable') { throw 'Existing installation launched as portable' }
+        if (-not $Values['ExpertParameters']) { throw 'Explicit parameters missing' }
     } elseif ($ArgumentList -notcontains '/portable') { throw 'Portable mode missing' }
     $Report = Join-Path $ReportRoot ($Values['Report'] + '.htm')
     if ($Mode -eq 'unrelated') { $Report = Join-Path $Work 'old-report.htm' }
@@ -61,6 +62,10 @@ if ($Mode -eq 'nonportable') { $Args.Portable = $false }
 if ($Mode -in @('existing','wrong_origin','both_modes')) {
     $Args.Portable = ($Mode -eq 'both_modes')
     $Args.ExistingTerminalDataPath = $ReportRoot
+}
+if ($Mode -eq 'existing') {
+    $Args.ParametersPath = Join-Path $Work 'fixture.set'
+    Set-Content $Args.ParametersPath 'InpEnableBuy=true'
 }
 $global:LASTEXITCODE = 0
 & $Runner @Args

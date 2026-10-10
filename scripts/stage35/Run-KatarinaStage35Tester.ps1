@@ -12,7 +12,8 @@ param(
     [int]$TimeoutSeconds = 3600,
     [string]$OutputRoot = "C:\KatarinaDev\stage35",
     [switch]$Portable,
-    [string]$ExistingTerminalDataPath = ""
+    [string]$ExistingTerminalDataPath = "",
+    [string]$ParametersPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -76,6 +77,17 @@ $ReportName = $ReportName + '-' + $RunId
 $RunRoot = Join-Path $Root $RunId
 $EvidenceRoot = Join-Path $RunRoot "evidence"
 New-Item -ItemType Directory -Force -Path $EvidenceRoot | Out-Null
+$ParametersName = $null
+$ParametersHash = $null
+if ($ParametersPath) {
+    $ParametersPath = (Resolve-Path -LiteralPath $ParametersPath).Path
+    $ParametersName = 'Katarina-' + $RunId + '.set'
+    $PresetDir = Join-Path $DataDir 'MQL5\Profiles\Tester'
+    New-Item -ItemType Directory -Force -Path $PresetDir | Out-Null
+    Copy-Item -LiteralPath $ParametersPath -Destination (Join-Path $PresetDir $ParametersName)
+    Copy-Item -LiteralPath $ParametersPath -Destination (Join-Path $EvidenceRoot 'parameters.set')
+    $ParametersHash = (Get-FileHash -LiteralPath $ParametersPath -Algorithm SHA256).Hash
+}
 
 $IniPath = Join-Path $RunRoot "tester.ini"
 $Ini = @(
@@ -83,7 +95,7 @@ $Ini = @(
     "AllowLiveTrading=0",
     "AllowDllImport=0",
     "[Tester]",
-    "Expert=$Expert",
+    "Expert=$ExpertFile",
     "Symbol=$Symbol",
     "Period=$Period",
     "Model=$Model",
@@ -99,6 +111,7 @@ $Ini = @(
     "ShutdownTerminal=1",
     "Visual=0"
 )
+if ($ParametersName) { $Ini += "ExpertParameters=$ParametersName" }
 $Ini | Set-Content -LiteralPath $IniPath -Encoding UTF8
 
 $Before = [DateTime]::UtcNow
@@ -139,6 +152,7 @@ $Evidence = [ordered]@{
     expert_sha256 = $ExpertSha256
     runner_sha256 = $RunnerSha256
     config_sha256 = $IniSha256
+    parameters_sha256 = $ParametersHash
     strategy_validated = $false
     proof_type = "KATARINA_STAGE35_MT5_TESTER"
     generated_utc = [DateTime]::UtcNow.ToString("o")
@@ -173,4 +187,5 @@ $Evidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -En
 
 Write-Host $Evidence.result
 Write-Host "Evidence: $EvidencePath"
+if ($ParametersName) { Remove-Item -LiteralPath (Join-Path $PresetDir $ParametersName) -ErrorAction SilentlyContinue }
 if ($Evidence.result -ne "PASS_STAGE35_TESTER_INFRASTRUCTURE") { exit 2 }
