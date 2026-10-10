@@ -10,6 +10,7 @@ param(
     [int]$Deposit = 10000,
     [int]$Leverage = 100,
     [int]$TimeoutSeconds = 3600,
+    [string]$OutputRoot = "C:\KatarinaDev\stage35",
     [switch]$Portable
 )
 
@@ -28,14 +29,47 @@ if ($Model -ne 4) {
 }
 if ($TimeoutSeconds -lt 60) { throw "TimeoutSeconds must be >= 60" }
 
-$Root = "C:\KatarinaDev\stage35"
-$RunId = [DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss")
+# Only an isolated portable installation gives unambiguous report ownership.
+if (-not $Portable) { throw "Use -Portable with a dedicated tester installation." }
+foreach ($Value in @($Expert, $Symbol, $Period, $FromDate, $ToDate, $ReportName)) {
+    if ([string]::IsNullOrWhiteSpace($Value) -or $Value -match '[\r\n\x00]') {
+        throw "Tester fields must be nonempty single-line values."
+    }
+}
+if ($Expert -notmatch '^[A-Za-z0-9_\\/-]+(?:\.ex5)?$' -or $Expert.Contains('..') -or $Expert.StartsWith('\') -or $Expert.StartsWith('/')) {
+    throw "Expert must be a relative MQL5 Experts path."
+}
+if ($ReportName -notmatch '^[A-Za-z0-9_-]+$') { throw "ReportName must be a filename stem." }
+if ($Symbol -notmatch '^[A-Za-z0-9_.#-]+$') { throw "Invalid Symbol." }
+if ($Period -notmatch '^(M(1|2|3|4|5|6|10|12|15|20|30)|H(1|2|3|4|6|8|12)|D1|W1|MN1)$') { throw "Invalid Period." }
+$StartDate = [DateTime]::ParseExact($FromDate, 'yyyy.MM.dd', [Globalization.CultureInfo]::InvariantCulture)
+$EndDate = [DateTime]::ParseExact($ToDate, 'yyyy.MM.dd', [Globalization.CultureInfo]::InvariantCulture)
+if ($EndDate -le $StartDate) { throw "ToDate must follow FromDate." }
+if ($Deposit -le 0 -or $Leverage -le 0) { throw "Deposit and Leverage must be positive." }
+$TerminalPath = (Resolve-Path -LiteralPath $TerminalPath).Path
+$TerminalDir = Split-Path -Parent $TerminalPath
+$ExpertFile = $Expert
+if (-not $ExpertFile.EndsWith('.ex5')) { $ExpertFile += '.ex5' }
+$ExpertPath = Join-Path (Join-Path $TerminalDir 'MQL5\Experts') $ExpertFile
+if (-not (Test-Path -LiteralPath $ExpertPath -PathType Leaf)) { throw "Compiled Expert missing: $ExpertPath" }
+# Refuse reuse of a running terminal; never terminate a pre-existing session.
+foreach ($Existing in @(Get-Process -Name terminal64 -ErrorAction SilentlyContinue)) {
+    if (-not $Existing.Path -or $Existing.Path -eq $TerminalPath) {
+        throw "Tester terminal is running or its identity cannot be verified."
+    }
+}
+$Root = $OutputRoot
+$RunId = [Guid]::NewGuid().ToString('N')
+$ReportName = $ReportName + '-' + $RunId
 $RunRoot = Join-Path $Root $RunId
 $EvidenceRoot = Join-Path $RunRoot "evidence"
 New-Item -ItemType Directory -Force -Path $EvidenceRoot | Out-Null
 
 $IniPath = Join-Path $RunRoot "tester.ini"
 $Ini = @(
+    "[Experts]",
+    "AllowLiveTrading=0",
+    "AllowDllImport=0",
     "[Tester]",
     "Expert=$Expert",
     "Symbol=$Symbol",
@@ -55,8 +89,11 @@ $Ini = @(
 )
 $Ini | Set-Content -LiteralPath $IniPath -Encoding UTF8
 
-$Before = Get-Date
-$LaunchArgs = @("/skipupdate", "/config:$IniPath")
+$Before = [DateTime]::UtcNow
+$ExpertSha256 = (Get-FileHash -LiteralPath $ExpertPath -Algorithm SHA256).Hash
+$RunnerSha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash
+$IniSha256 = (Get-FileHash -LiteralPath $IniPath -Algorithm SHA256).Hash
+$LaunchArgs = @("/skipupdate", "/config:`"$IniPath`"")
 if ($Portable) { $LaunchArgs += "/portable" }
 
 $Process = Start-Process -FilePath $TerminalPath -ArgumentList $LaunchArgs -PassThru
@@ -68,22 +105,29 @@ try {
     Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
 }
 
-$TerminalDir = Split-Path -Parent $TerminalPath
-$Candidates = @()
-$PortableReport = Join-Path $TerminalDir ($ReportName + ".htm")
-if (Test-Path -LiteralPath $PortableReport) { $Candidates += Get-Item $PortableReport }
-
-$AppDataRoot = Join-Path $env:APPDATA "MetaQuotes\Terminal"
-if (Test-Path -LiteralPath $AppDataRoot) {
-    $Candidates += Get-ChildItem -LiteralPath $AppDataRoot -Filter ($ReportName + ".htm") -Recurse -File -ErrorAction SilentlyContinue
+if (-not $TimedOut) { $Process.Refresh() }
+$ExitCode = if ($TimedOut) { $null } else { $Process.ExitCode }
+$Report = $null
+$ExpectedReport = Join-Path $TerminalDir ($ReportName + ".htm")
+if (Test-Path -LiteralPath $ExpectedReport -PathType Leaf) {
+    $Candidate = Get-Item -LiteralPath $ExpectedReport
+    if ($Candidate.LastWriteTimeUtc -ge $Before -and $Candidate.Length -gt 0) { $Report = $Candidate }
+}
+$ReportPath = $null
+$ReportSha256 = $null
+if ($Report) {
+    $ReportPath = Join-Path $EvidenceRoot 'tester-report.htm'
+    Copy-Item -LiteralPath $Report.FullName -Destination $ReportPath
+    $ReportSha256 = (Get-FileHash -LiteralPath $ReportPath -Algorithm SHA256).Hash
 }
 
-$Report = $Candidates | Where-Object { $_.LastWriteTime -ge $Before.AddMinutes(-1) } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-$ReportPath = if ($Report) { $Report.FullName } else { $null }
-$ReportSha256 = if ($Report) { (Get-FileHash -LiteralPath $Report.FullName -Algorithm SHA256).Hash } else { $null }
-
 $Evidence = [ordered]@{
-    schema_version = 1
+    schema_version = 2
+    run_id = $RunId
+    expert_sha256 = $ExpertSha256
+    runner_sha256 = $RunnerSha256
+    config_sha256 = $IniSha256
+    strategy_validated = $false
     proof_type = "KATARINA_STAGE35_MT5_TESTER"
     generated_utc = [DateTime]::UtcNow.ToString("o")
     terminal_path = $TerminalPath
@@ -97,13 +141,13 @@ $Evidence = [ordered]@{
     optimization = 0
     shutdown_terminal = 1
     timed_out = $TimedOut
-    process_exit_code = if ($TimedOut) { $null } else { $Process.ExitCode }
+    process_exit_code = $ExitCode
     report_path = $ReportPath
     report_sha256 = $ReportSha256
     report_present = ($null -ne $Report)
     live_risk_ready = $false
     live_execution_enabled = $false
-    result = if ((-not $TimedOut) -and $Report -and ($Model -eq 4)) {
+    result = if ((-not $TimedOut) -and ($null -ne $ExitCode) -and ($ExitCode -eq 0) -and $Report -and ($Model -eq 4)) {
         "PASS_STAGE35_TESTER_INFRASTRUCTURE"
     } else {
         "FAIL_STAGE35_TESTER_INFRASTRUCTURE"
