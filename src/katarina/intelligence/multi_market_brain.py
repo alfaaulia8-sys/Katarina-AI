@@ -177,6 +177,7 @@ def save_observation(store, result):
                 row[tf].pop("returns",None)
     store.db.execute("""CREATE TABLE IF NOT EXISTS brain_observations(
         id INTEGER PRIMARY KEY, observed_utc TEXT, decision TEXT, payload TEXT)""")
-    store.db.execute("INSERT INTO brain_observations VALUES(NULL,?,?,?)",
+    cursor = store.db.execute("INSERT INTO brain_observations VALUES(NULL,?,?,?)",
                      (result["as_of_utc"],result["decision"],json.dumps(result,allow_nan=False)))
     store.db.commit()
+    return cursor.lastrowid

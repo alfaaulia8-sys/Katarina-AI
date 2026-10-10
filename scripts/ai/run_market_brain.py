@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime,timezone
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"src"))
 from katarina.intelligence.brain import KatarinaAIBrain
+from katarina.intelligence.forward_outcomes import ForwardOutcomes
 from katarina.intelligence.public_context import ContextStore,SOURCES
 from katarina.intelligence.multi_market_brain import collect,screen,save_observation
 
@@ -41,7 +42,8 @@ def main():
                             live_execution_enabled=False,symbols_scanned=0,
                             research_watchlist=[],error=type(exc).__name__)
             result["feeds"]={name:{k:v for k,v in store.latest(name,now).items() if k!="payload"} for name in SOURCES}
-            save_observation(store,result)
+            observation_id=save_observation(store,result)
+            result["forward_evaluation"]=ForwardOutcomes(store.db).process(observation_id,result)
             temp=directory/"latest.tmp"
             temp.write_text(json.dumps(result,indent=2,allow_nan=False)+"\n",encoding="utf-8")
             temp.replace(directory/"latest.json")
