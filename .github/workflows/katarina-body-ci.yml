@@ -71,6 +71,9 @@ jobs:
           print("PASS_VPS_MANUAL_ONLY")
           PY
 
+      - name: Repository hygiene guard
+        run: python scripts/governance/audit_repo_hygiene.py --repo-root . --output build/repository-hygiene.json
+
       - name: Verify fail-closed evidence
         run: |
           python - <<'PY'
@@ -100,5 +103,6 @@ jobs:
             build/governance/constitution_guard.json
             build/body/body_framework_audit.json
             build/body/katarina_body_local_clearance.json
+            build/repository-hygiene.json
           if-no-files-found: warn
           retention-days: 30

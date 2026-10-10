@@ -232,3 +232,10 @@ credentials/
 ops/vps/results/*
 !ops/vps/results/README.md
 vps_bridge/reports/
+
+# Historical VPS control-plane artifacts must stay out of new source commits
+ops/vps/bootstrap/
+ops/vps/rescue/*.trigger
+ops/vps/requests/**/*.log
+infrastructure/legacy-vps-control/
+ops/bridge/CONTROL_TEST.txt
