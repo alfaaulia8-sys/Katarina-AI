@@ -2,37 +2,89 @@ name: KATARINA Body CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: katarina-body-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   body:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
+      - name: Install Stage 07 test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-stage07.txt
+
       - name: Compile Python
-        run: PYTHONPATH=src python -m compileall -q src
+        run: python -m compileall -q src
 
       - name: Unit regression
-        run: PYTHONPATH=src python -m unittest discover -s tests/unit -p 'test_*.py'
+        run: PYTHONPATH=src python -m unittest discover -s tests/unit -p 'test_*.py' -v
+
+      - name: Static regression
+        run: PYTHONPATH=src python -m unittest discover -s tests/static -p 'test_*.py' -v
+
+      - name: Integration regression
+        run: PYTHONPATH=src python -m unittest discover -s tests/integration -p 'test_*.py' -v
 
       - name: Stage 10 local audit
         run: |
-          PYTHONPATH=src python scripts/stage10/audit_stage10_final.py             --repo-root .             --output build/stage10/stage10_local_final_clearance.json
+          PYTHONPATH=src python scripts/stage10/audit_stage10_final.py --repo-root . --output build/stage10/stage10_local_final_clearance.json
 
       - name: Constitution Guard
         run: |
-          PYTHONPATH=src python scripts/governance/audit_constitution_guard.py             --repo-root .             --output build/governance/constitution_guard.json
+          PYTHONPATH=src python scripts/governance/audit_constitution_guard.py --repo-root . --output build/governance/constitution_guard.json
 
       - name: Stage 11-40 framework audit
         run: |
-          PYTHONPATH=src python scripts/body/audit_body_framework.py             --repo-root .             --output build/body/body_framework_audit.json
+          PYTHONPATH=src python scripts/body/audit_body_framework.py --repo-root . --output build/body/body_framework_audit.json
 
-      - name: Functional body audit
+      - name: Stage 11-40 functional audit
         run: |
-          PYTHONPATH=src python scripts/body/audit_functional_body.py             --repo-root .             --output build/body/katarina_body_local_clearance.json
+          PYTHONPATH=src python scripts/body/audit_functional_body.py --repo-root . --output build/body/katarina_body_local_clearance.json
+
+      - name: Verify fail-closed evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          expectations = {
+              "build/stage10/stage10_local_final_clearance.json": "PASS_STAGE10_LOCAL_FINAL_CLEARANCE",
+              "build/governance/constitution_guard.json": "PASS_KATARINA_CONSTITUTION_GUARD",
+              "build/body/body_framework_audit.json": "PASS_KATARINA_BODY_FRAMEWORK_11_40",
+              "build/body/katarina_body_local_clearance.json": "PASS_KATARINA_BODY_LOCAL_10_40",
+          }
+          for path, result in expectations.items():
+              payload = json.loads(Path(path).read_text(encoding="utf-8"))
+              assert payload["result"] == result, (path, payload.get("result"))
+              assert payload["live_risk_ready"] is False, path
+              assert payload.get("live_execution_enabled", False) is False, path
+          print("PASS_GITHUB_FIRST_GATE: audited and live risk remains disabled")
+          PY
+
+      - name: Upload GitHub CI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katarina-body-gate-${{ github.run_id }}
+          path: |
+            build/stage10/stage10_local_final_clearance.json
+            build/governance/constitution_guard.json
+            build/body/body_framework_audit.json
+            build/body/katarina_body_local_clearance.json
+          if-no-files-found: warn
+          retention-days: 30
