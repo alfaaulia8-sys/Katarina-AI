@@ -1,53 +1,44 @@
 name: Katarina VPS Lab
 
+# This workflow must never start the self-hosted VPS on repository pushes.
+# Only an explicit main-branch dispatch after GitHub-hosted verification may use it.
 on:
   workflow_dispatch:
     inputs:
       request_path:
-        description: "Path to one ops/vps/requests/actions/*.json request"
+        description: "Path to one pre-reviewed ops/vps/requests/actions/*.json request"
         required: true
         type: string
-  push:
-    paths:
-      - "ops/vps/requests/actions/*.json"
 
 permissions:
   contents: read
 
 jobs:
   vps-task:
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, windows, x64, katarina-vps]
     timeout-minutes: 120
 
     steps:
-      - name: Checkout requested commit
+      - name: Checkout verified main
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          persist-credentials: false
 
-      - name: Resolve request
+      - name: Resolve allowlisted request path
         id: request
         shell: powershell
+        env:
+          REQUEST_PATH: ${{ inputs.request_path }}
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            $path = "${{ inputs.request_path }}"
-          } else {
-            $before = "${{ github.event.before }}"
-            $after = "${{ github.sha }}"
-            $paths = @(git diff --name-only $before $after -- "ops/vps/requests/actions/*.json")
-            if ($paths.Count -ne 1) {
-              throw "Expected exactly one VPS request in the triggering commit; found $($paths.Count)."
-            }
-            $path = $paths[0]
+          # Use an environment variable, not direct interpolation into script text.
+          $path = $env:REQUEST_PATH
+          if ($path -cnotmatch '^ops/vps/requests/actions/[A-Za-z0-9._-]+\.json$') {
+            throw "Invalid request path."
           }
-
-          if ($path -notmatch '^ops/vps/requests/actions/[A-Za-z0-9._-]+\.json$') {
-            throw "Invalid request path: $path"
+          if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Request file not found."
           }
-          if (!(Test-Path $path)) {
-            throw "Request file not found: $path"
-          }
-
           "path=$path" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Execute allowlisted VPS task
