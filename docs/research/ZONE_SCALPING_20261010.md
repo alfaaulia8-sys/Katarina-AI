@@ -161,3 +161,68 @@ Frozen choices: []. Decision: **NO_TRADE**.
 Individual positive totals remain development results, not proven live edge.
 
 No candidate is activated for live trading. October remains unused.
+
+## Session-room execution fix (7.136)
+
+The 7.135 source and all 20 original trials are preserved at commit
+005bb491f3a5df5be3f435fc64647324a36599b4. The legacy non-zone baseline also reproduced
+264 trades and -165.32 USD, confirming that the new method did not change that path.
+
+One M5-zone SELL was entered on March 18 at 22:47 and exited March 19 at 01:05
+(server clock), a 138-minute difference in minute-resolution timestamps. It lost
+14.68 USD against 9.90 USD initial stop risk. Initial risk is not a guarantee of
+maximum realized loss through gaps. This prevents claiming a hard 45-minute cap.
+
+7.136 requires at least holding-limit + five minutes before the end of a broker
+trading session. Missing session metadata blocks entry; overnight sessions are
+handled explicitly and synthetic tests cover ordinary/overnight boundaries.
+Both active M5/M1 BUY and SELL paths were re-executed for Jan-Jun without a
+confirmation filter, solely to verify the execution change, not to select winners.
+
+| Side | Trades | Net USD | Cash PF | Median holding upper bound (min) | Holding upper bound >46 min |
+|---|---:|---:|---:|---:|---:|
+| BUY | 65 | -1.86 | 0.99 | 7.0 | 0 |
+| SELL | 65 | 26.02 | 1.09 | 10.0 | 1 |
+
+Every resulting fill passed the session-room audit. Remaining long exits, if any,
+are explicitly listed in the verification JSON. Session metadata reflects the
+tester's broker specification and cannot guarantee historical schedule accuracy
+or protection from unforeseen outages. This fix does not establish strategy edge.
+
+Journal entry/exit timestamps are minute-resolution; reported conservative duration
+statistics add one minute at the exit boundary. A displayed upper bound of 46 does
+not itself mean a 46-minute actual holding time.
+
+All 18 targets in build zone-session-build/62ea1213b95b426d8a87e97cade14ff6 compile
+with zero errors/warnings. The final branch remains research only: **NO_TRADE**.
+Twenty strategy trials, one legacy regression, and two execution checks completed.
+
+Reference: https://www.mql5.com/en/docs/marketinformation/symbolinfosessiontrade
+
+## Final execution verification (7.138)
+
+A dedicated 7.137 trace reproduced the long SELL and recorded return code 10018
+(market closed) on timed-close attempts. Broker session metadata is 01:05-23:55
+server time, but that did not prevent the observed quote/session interruption.
+The five-minute session buffer did not fix it; that failed check is retained.
+
+7.138 uses a 60-minute safety buffer in addition to the 45-minute holding horizon,
+with an explicit input and failed-close retcode logging. This operational buffer
+was chosen after the observed discrepancy, not by optimizing profit. It still
+cannot guarantee execution during an unforeseen halt or data outage.
+
+| Side (M5 zone / M1 entry, middle-TF filter off) | Trades | Net USD | Cash PF | Stressed Jan-Mar R | Stressed Apr-Jun R | Exits over 46-min upper bound |
+|---|---:|---:|---:|---:|---:|---:|
+| BUY | 64 | 8.34 | 1.03 | -12.2606 | 4.6679 | 0 |
+| SELL | 63 | 31.66 | 1.12 | 10.0402 | -11.9989 | 0 |
+
+All fills in these two re-executions satisfied the 105-minute session-room check.
+The result is an execution verification on reused history, not fresh strategy
+validation or permission to promote. The broader matrix was executed with 7.135;
+only these two paths were rerun with the final buffer. No other layout inherits
+these results. Final decision remains **NO_TRADE**.
+
+Total this task: 26 real-tick tester runs (20 candidate trials, one legacy
+regression, two initial session checks, one close-error trace, two final buffer
+checks). Final build 2616e0e6ba9643a18d59c7e9c22011b1 compiles all 18 targets with
+zero errors/warnings. 44 Python research tests passed. October remained unused.

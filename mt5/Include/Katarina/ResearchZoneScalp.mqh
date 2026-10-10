@@ -6,6 +6,7 @@ input ENUM_TIMEFRAMES InpZoneConfirmTF=PERIOD_M15;
 input bool InpZoneUseConfirmation=true;
 input double InpZoneRiskCash=10.0;
 input int InpZoneMaxHoldMinutes=45;
+input int InpZoneSessionBufferMinutes=60;
 input int InpZoneLifetimeBars=48;
 input int InpZoneTriggerBars=3;
 
@@ -42,6 +43,54 @@ bool ZoneDeparture(const MqlRates &z[],const int side,double &low,double &high)
      }
    low=MathMin(z[2].open,z[2].close); high=z[2].high;
    return high>low && z[1].close<lo && z[1].close<low-0.5*tr;
+  }
+
+datetime g_zone_session_end=0;
+bool ZoneSessionRoom(const int start_sec,const int end_sec,const int offset,const int required)
+  {
+   int finish=end_sec;
+   if(finish<=start_sec) finish+=86400;
+   return offset>=start_sec && offset<finish && finish-offset>=required;
+  }
+
+bool ZoneTradingSessionAllows()
+  {
+   g_zone_session_end=0;
+   const datetime now=TimeCurrent();
+   MqlDateTime dt; if(!TimeToStruct(now,dt)) return false;
+   const int tod=dt.hour*3600+dt.min*60+dt.sec;
+   const datetime midnight=now-tod;
+   for(int lag=0;lag<=1;lag++)
+     {
+      const ENUM_DAY_OF_WEEK day=(ENUM_DAY_OF_WEEK)((dt.day_of_week-lag+7)%7);
+      for(uint i=0;i<32;i++)
+        {
+         datetime from,to;
+         if(!SymbolInfoSessionTrade(_Symbol,day,i,from,to)) break;
+         const int a=(int)((long)from%86400),b=(int)((long)to%86400);
+         if(ZoneSessionRoom(a,b,tod+lag*86400,(InpZoneMaxHoldMinutes+InpZoneSessionBufferMinutes)*60))
+           {
+            g_zone_session_end=midnight-lag*86400+b+(b<=a?86400:0);
+            return true;
+           }
+        }
+     }
+   return false;
+  }
+
+void WriteZoneSessions(const string run_tag)
+  {
+   int h=FileOpen("KatarinaZoneSessions_"+run_tag+".csv",FILE_WRITE|FILE_CSV|FILE_COMMON,';');
+   if(h==INVALID_HANDLE) return;
+   FileWrite(h,"day_of_week","session_index","start_second","end_second");
+   for(int day=0;day<7;day++)
+      for(uint i=0;i<32;i++)
+        {
+         datetime from,to;
+         if(!SymbolInfoSessionTrade(_Symbol,(ENUM_DAY_OF_WEEK)day,i,from,to)) break;
+         FileWrite(h,day,i,(long)from%86400,(long)to%86400);
+        }
+   FileClose(h);
   }
 
 void UpdateResearchZones()
@@ -120,17 +169,21 @@ void AuditZoneFill(const string run_tag,const ResearchZone &zone,const datetime 
       if(g_zone_audit==INVALID_HANDLE) return;
       FileWrite(g_zone_audit,"run_tag","side","zone_tf","confirm_tf","entry_tf","base_time",
          "zone_known","first_touch","signal_time","entry_time","confirmation_known","confirmation_used",
-         "zone_low","zone_high","entry","sl","volume","cash_risk","risk_budget","max_hold_minutes");
+         "zone_low","zone_high","entry","sl","volume","cash_risk","risk_budget","max_hold_minutes","seconds_to_session_close","session_buffer_minutes");
      }
    datetime ck; ZoneConfirmation(zone.side,ck);
    FileWrite(g_zone_audit,run_tag,zone.side,EnumToString(InpZoneTF),EnumToString(InpZoneConfirmTF),
       EnumToString(_Period),(long)zone.base_time,(long)zone.known_time,(long)zone.touch_time,
       (long)signal_time,(long)TimeCurrent(),(long)ck,InpZoneUseConfirmation,
-      zone.low,zone.high,entry,sl,volume,cash_risk,InpZoneRiskCash,InpZoneMaxHoldMinutes);
+      zone.low,zone.high,entry,sl,volume,cash_risk,InpZoneRiskCash,InpZoneMaxHoldMinutes,(long)(g_zone_session_end-TimeCurrent()),InpZoneSessionBufferMinutes);
   }
 
 bool ZoneSelfTest()
   {
+   if(!ZoneSessionRoom(3600,82800,80000,1800) ||
+      ZoneSessionRoom(3600,82800,82000,1800) ||
+      !ZoneSessionRoom(82800,3600,87000,1800) ||
+      ZoneSessionRoom(3600,82800,0,1800)) return false;
    MqlRates z[]; ArrayResize(z,19); ZeroMemory(z);
    for(int i=0;i<19;i++)
      { z[i].open=100; z[i].close=100; z[i].high=101; z[i].low=99; }

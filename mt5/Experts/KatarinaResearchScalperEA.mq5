@@ -1,5 +1,5 @@
 #property strict
-#property version   "7.135"
+#property version   "7.138"
 #property description "KATARINA research-only real-tick conformance scalper. No production authority."
 
 #include <Trade/Trade.mqh>
@@ -1052,6 +1052,8 @@ bool OpenResearchTrade(const int side,
    const double sl_mult=(side>0?InpBuySLATR:InpSellSLATR);
    const double rr=(side>0?InpBuyRR:InpSellRR);
    const bool zone_mode=(side>0?InpBuyMethod:InpSellMethod)==KRM_ZONE_SCALP;
+   if(zone_mode && !ZoneTradingSessionAllows())
+     { g_diag_session_reject++; return false; }
    const double zone_stop=(side>0?g_zone_buy_sl:g_zone_sell_sl);
    const double risk=(zone_mode?side*(entry-zone_stop):sl_mult*atr);
    if(zone_mode && (risk<atr || risk>3.0*atr || spread>0.1*risk))
@@ -1643,8 +1645,10 @@ int OnInit()
       if(PeriodSeconds(InpZoneTF)<=PeriodSeconds(InpZoneConfirmTF) ||
          PeriodSeconds(InpZoneConfirmTF)<=PeriodSeconds(_Period) ||
          InpZoneRiskCash<=0 || InpZoneMaxHoldMinutes<=0 ||
+         InpZoneSessionBufferMinutes<0 || InpZoneSessionBufferMinutes>1440 ||
          InpZoneLifetimeBars<1 || InpZoneTriggerBars<1 || !ZoneSelfTest())
          return INIT_PARAMETERS_INCORRECT;
+      WriteZoneSessions(g_run_tag);
       Print("KATARINA_ZONE_SELFTEST=PASS");
      }
    InitFeatureJournal();
@@ -1686,7 +1690,15 @@ void OnTick()
       ExistingResearchPosition() &&
       TimeCurrent()-(datetime)PositionGetInteger(POSITION_TIME)>=InpZoneMaxHoldMinutes*60)
      {
-      g_trade.PositionClose((ulong)PositionGetInteger(POSITION_TICKET));
+      static datetime last_close_trace=0;
+      const ulong ticket=(ulong)PositionGetInteger(POSITION_TICKET);
+      const bool closed=g_trade.PositionClose(ticket);
+      if(!closed && TimeCurrent()-last_close_trace>=60)
+        {
+         PrintFormat("KAT_ZONE_TIMECLOSE_FAIL ticket=%I64u retcode=%u detail=%s",
+            ticket,g_trade.ResultRetcode(),g_trade.ResultRetcodeDescription());
+         last_close_trace=TimeCurrent();
+        }
       return;
      }
    const datetime bar=iTime(_Symbol,_Period,0);
