@@ -1,9 +1,11 @@
-# MT5 build verification
+# MT5 verification
 
-Run `scripts/mt5/Test-KatarinaBuild.ps1` with `-MetaEditorPath`, `-DependencyInclude` (containing Zmq, Mql and Arrays), and `-OutputRoot`. It compiles all repository EAs and test scripts in a fresh directory and writes `build-evidence.json` with source, include and EX5 hashes. Existing terminal programs are not replaced. Compiler processes have a bounded timeout. All targets must have zero errors/warnings and fresh nonempty artifacts.
+`Test-KatarinaBuild.ps1` compiles every EA/test in a fresh output directory. Supply MetaEditorPath, DependencyInclude (Zmq, Mql, Arrays, Trade, Object.mqh and StdLibErr.mqh), and OutputRoot. Evidence records source/include/EX5 hashes and requires zero errors/warnings.
 
-Verified on 2026-10-10: all 17 targets compiled with MetaEditor 5.0.0.6230; the Stage06 MQL self-test ran in MT5 and returned PASS, zero failures. Python suite: 456 tests, no failures, three local PowerShell-dependent skips. This Windows Server 2012 R2 result remains exploratory compatibility evidence.
+Verified 2026-10-10: 18 MQL5 targets compiled with MetaEditor 6230; Stage06 self-test returned PASS. Windows Server 2012 R2 remains exploratory compatibility evidence. Python suite: 457 tests without failure, four local PowerShell skips covered by Windows runner checks.
 
-The isolated real-tick tester attempt failed before testing because its account was unspecified (exit -1000012353). Sign into a demo account in the dedicated tester installation before rerunning `scripts/stage35/Run-KatarinaStage35Tester.ps1 -Portable`. A missing report is a failure, never a successful backtest.
+The existing MT5 ALFA installation successfully ran September 2026 XAUUSD.vx M1 with 100% real ticks. The research baseline used explicit `config/mt5-research-baseline.set` inputs. Results: 136 trades, net USD -46.52, profit factor 0.89; these results do not validate profitability or live readiness. Private reports and journals remain under `C:\KatarinaDev\artifacts\mt5`.
 
-Build and self-test results do not validate the AI strategy. The current Stage07 bridge still has inactive market/trade publication methods, and end-to-end AI signal execution and out-of-sample strategy validation remain incomplete. Live execution is not enabled by these tools.
+For an existing terminal, pass `-ExistingTerminalDataPath` to `Run-KatarinaStage35Tester.ps1`; origin.txt must match the executable directory and the terminal must be stopped. Pass `-ParametersPath` to prevent reuse of cached tester parameters. The runner hashes and retains the preset, writes a uniquely named report, disables live trading, and never closes a pre-existing terminal. Portable mode remains available as a mutually exclusive option.
+
+The imported research EA implements rule-based pullback, sweep and Fibonacci experiments. It rejects non-tester initialization and trade submission. Full AI bridge publication and end-to-end AI execution remain separate unfinished work; a successful tester run does not establish that integration.
