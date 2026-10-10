@@ -11,7 +11,8 @@ param(
     [int]$Leverage = 100,
     [int]$TimeoutSeconds = 3600,
     [string]$OutputRoot = "C:\KatarinaDev\stage35",
-    [switch]$Portable
+    [switch]$Portable,
+    [string]$ExistingTerminalDataPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,8 +30,9 @@ if ($Model -ne 4) {
 }
 if ($TimeoutSeconds -lt 60) { throw "TimeoutSeconds must be >= 60" }
 
-# Only an isolated portable installation gives unambiguous report ownership.
-if (-not $Portable) { throw "Use -Portable with a dedicated tester installation." }
+# Existing installations require their explicit, origin-bound data directory.
+if ($Portable -and $ExistingTerminalDataPath) { throw 'Choose one terminal mode.' }
+if (-not $Portable -and -not $ExistingTerminalDataPath) { throw "Use -Portable or an explicit ExistingTerminalDataPath." }
 foreach ($Value in @($Expert, $Symbol, $Period, $FromDate, $ToDate, $ReportName)) {
     if ([string]::IsNullOrWhiteSpace($Value) -or $Value -match '[\r\n\x00]') {
         throw "Tester fields must be nonempty single-line values."
@@ -48,9 +50,19 @@ if ($EndDate -le $StartDate) { throw "ToDate must follow FromDate." }
 if ($Deposit -le 0 -or $Leverage -le 0) { throw "Deposit and Leverage must be positive." }
 $TerminalPath = (Resolve-Path -LiteralPath $TerminalPath).Path
 $TerminalDir = Split-Path -Parent $TerminalPath
+$DataDir = $TerminalDir
+if ($ExistingTerminalDataPath) {
+    $DataDir = (Resolve-Path -LiteralPath $ExistingTerminalDataPath).Path
+    $Origin = Join-Path $DataDir 'origin.txt'
+    if (-not (Test-Path -LiteralPath $Origin -PathType Leaf)) { throw 'Missing terminal origin binding.' }
+    $BoundHome = (Get-Content -LiteralPath $Origin -Raw).Trim()
+    if (-not [string]::Equals($BoundHome.TrimEnd('\','/'), $TerminalDir.TrimEnd('\','/'), [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Data directory belongs to a different terminal installation.'
+    }
+}
 $ExpertFile = $Expert
 if (-not $ExpertFile.EndsWith('.ex5')) { $ExpertFile += '.ex5' }
-$ExpertPath = Join-Path (Join-Path $TerminalDir 'MQL5\Experts') $ExpertFile
+$ExpertPath = Join-Path (Join-Path $DataDir 'MQL5\Experts') $ExpertFile
 if (-not (Test-Path -LiteralPath $ExpertPath -PathType Leaf)) { throw "Compiled Expert missing: $ExpertPath" }
 # Refuse reuse of a running terminal; never terminate a pre-existing session.
 foreach ($Existing in @(Get-Process -Name terminal64 -ErrorAction SilentlyContinue)) {
@@ -108,7 +120,7 @@ try {
 if (-not $TimedOut) { $Process.Refresh() }
 $ExitCode = if ($TimedOut) { $null } else { $Process.ExitCode }
 $Report = $null
-$ExpectedReport = Join-Path $TerminalDir ($ReportName + ".htm")
+$ExpectedReport = Join-Path $DataDir ($ReportName + ".htm")
 if (Test-Path -LiteralPath $ExpectedReport -PathType Leaf) {
     $Candidate = Get-Item -LiteralPath $ExpectedReport
     if ($Candidate.LastWriteTimeUtc -ge $Before -and $Candidate.Length -gt 0) { $Report = $Candidate }
@@ -131,6 +143,8 @@ $Evidence = [ordered]@{
     proof_type = "KATARINA_STAGE35_MT5_TESTER"
     generated_utc = [DateTime]::UtcNow.ToString("o")
     terminal_path = $TerminalPath
+    terminal_data_path = $DataDir
+    portable = [bool]$Portable
     expert = $Expert
     symbol = $Symbol
     period = $Period
