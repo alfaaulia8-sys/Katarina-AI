@@ -1,7 +1,9 @@
 # Katarina AI — Current Project Handoff
 
-**Updated:** 2026-10-04
+**Updated:** 2026-10-10
 **Purpose:** Persistent cross-chat handoff for continuing development after a chat is deleted or replaced.
+
+> **Current operating rule (2026-10-10): GitHub-first.** Develop, run tests, and audit on GitHub-hosted Actions. Do not access the VPS until a specific GitHub-validated change needs read-only terminal/broker/environment verification. Prior VPS-first implementation notes below are historical. See [GitHub-First Development](operations/GITHUB_FIRST_DEVELOPMENT.md).
 
 ## Current roadmap position
 

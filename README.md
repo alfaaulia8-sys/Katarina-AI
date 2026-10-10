@@ -266,94 +266,34 @@ Security baseline:
 
 See `docs/operations/KATARINA_VPS_REMOTE_LAB.md`.
 
-## VPS-First Development Workflow
+## GitHub-First Development Workflow (active since 2026-10-10)
 
-The active Windows Server 2012 R2 host is a **VPS-first development worker**. GitHub is intentionally kept out of the hot development loop as much as possible.
+KATARINA AI now uses **GitHub as the development and test environment**. Source changes are made on branches and reviewed through pull requests. GitHub-hosted Actions run the Python tests, static/integration regressions and safety audits before a change is considered validated.
 
-~~~text
-ChatGPT / maintainer
-        |
-        | small allowlisted JSON request
-        v
-GitHub command queue
-        |
-        | outbound HTTPS poll
-        v
-Katarina primary VPS agent
-        |
-        v
-C:\KatarinaDev\workspace
-   |        |        |
- edit     test     build
-   \________|________/
-            |
-            | one compact evidence bundle
-            v
-GitHub results
-            |
-            v
-review / next command
+```text
+GitHub branch / pull request
+          |
+          v
+GitHub-hosted CI + safety audits
+          |
+          +--- FAIL ---> fix branch and retest (no VPS)
+          |
+          v
+PASS evidence for exact commit SHA
+          |
+          +--- No external verification needed ---> merge/record
+          |
+          v
+Specific VPS-only verification required
+          |
+          v
+Explicit allowlisted request + read-only evidence
+```
 
-Only after a coherent milestone:
-VPS workspace -> reviewed source update -> canonical GitHub commit
-~~~
+The **VPS is no longer the default editing/testing worker**. Access it only after relevant GitHub checks pass, or if a specific terminal/broker/environment verification cannot be performed in GitHub-hosted Actions. The self-hosted VPS workflows require manual dispatch rather than repository pushes; passing CI never permits live brokerage operations.
 
-Operating rules:
-
-- `C:\KatarinaDev\workspace` is the hot working copy for implementation, testing, and build iteration.
-- GitHub is the **sparse command/evidence bus and canonical release history**, not a per-step scratch filesystem.
-- Intermediate source changes stay on the VPS; do not commit every edit/test cycle.
-- A normal remote task uses **one request write + one compact result bundle write**.
-- Result files are bundled when `compact_results=true`; routine health stays local and GitHub health publication is transition-only.
-- The guarded Server 2012 R2 profile keeps **one persistent primary lane** and serializes memory-heavy jobs.
-- Secondary worker/recovery lanes remain disabled on the low-memory host unless a later resource profile explicitly enables them.
-- The primary queue target is `ops/vps/requests/primary/`.
-- Result evidence is returned under `ops/vps/results/<agent-id>/<request-id>/`.
-- Control/status operations use sparse source fetches instead of downloading the whole repository.
-- Full repository snapshots are reserved for tasks that genuinely need canonical source input.
-- The primary agent is self-healed by the watchdog/guardian and survives closing the interactive PowerShell window.
-- No Desktop Commander dependency is required for normal KATARINA development.
-
-### Fast guarded control profile
-
-The recommended low-memory control profile is:
-
-~~~text
-resource_profile: LEGACY_LOW_MEMORY_GUARDED
-primary poll:     3 seconds
-persistent lanes: primary only
-heavy jobs:       1 at a time
-results:          compact bundle
-GitHub health:    transitions only
-~~~
-
-This reduces command pickup latency while avoiding multiple resident PowerShell workers and unnecessary GitHub writes. The poll itself is read-only; writes are reserved for commands, compact evidence, meaningful health transitions, and reviewed milestone commits.
-
-### Low-write transport policy
-
-The **active production control path** on the current VPS is the fast guarded repository queue:
-
-~~~text
-one compact request -> VPS local workspace/build/test -> one compact result bundle
-~~~
-
-The primary lane polls every **3 seconds**, control files are eligible for short local caching, routine health is kept local/transition-only, and related edits plus checks should be batched into one request. This keeps the hot implementation loop on the VPS and limits GitHub writes to command/evidence pairs plus reviewed milestone source commits.
-
-GitHub Issue **#2** is reserved as an optional comment-based transport (`KATARINA_CMD_V1` / `KATARINA_RESULT_V1`) when the VPS GitHub token has Issue read/write permission. The agent is designed to fall back to the repository queue if that optional transport is unavailable; the repository queue remains the recovery authority.
-
-Intermediate source remains on the VPS and is synchronized to GitHub only at a reviewed milestone.
-
-### Development cycle
-
-1. Send one allowlisted request to the primary queue.
-2. The VPS applies the requested change to its local KATARINA workspace.
-3. Run focused tests locally on the VPS.
-4. Continue local edit/test iterations without source commits for every attempt.
-5. Return a compact evidence bundle to GitHub.
-6. When the milestone is stable, review the accumulated workspace change and publish a canonical source commit.
-7. Run the milestone regression/clearance suite and record the final evidence.
-
-This is the default workflow for ongoing KATARINA development on the current Server 2012 R2 VPS.
+Detailed gate, escalation checklist, and public-repository hygiene:
+[GitHub-First Development & VPS Verification Gate](docs/operations/GITHUB_FIRST_DEVELOPMENT.md).
 
 ## Current 40-Stage Implementation Status
 
