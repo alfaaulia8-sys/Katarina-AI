@@ -1,6 +1,6 @@
 # Indicator combinations research, 2026-10-10
 
-Status: research implementation and retrospective screening; no validated strategy.
+Status: research implementation, fresh MT5 real-tick execution and retrospective screening; no validated strategy.
 Base: 0c0ffee (latest fetched main). Work performed on VPS in a separate git worktree.
 
 ## What was implemented
@@ -65,9 +65,30 @@ Total: 124 nominal side/month evaluations, 40 distinct within-side/month masks,
 not prove all these indicators are ineffective: minimum-sample and consistency
 requirements are not met.
 
-Older journals lack the four new telemetry columns. They are explicitly marked
-missing rather than imputed, so ADR, relative volume, chart pattern and explicit
-candle pattern have NOT undergone market-performance validation.
+Older journals lack the four new telemetry columns and remain explicitly marked
+missing rather than imputed. A subsequent new run generated all four features.
+
+### New full-feature real-tick run
+
+The dedicated idle ALFA research terminal completed a new baseline execution for
+2026-08-01 through 2026-10-01 (XAUUSD.vx, M1, Model 4, USD 10,000, 1:100,
+0.01 lot). The MT5 report states 100% real ticks, 264 trades and -165.32 USD.
+All four added fields are present on all 264 observations. Candle patterns occur on 45 trades; the consolidation-breakout feature is zero on every baseline entry and contributes no usable signal in this dataset. This does not test breakout-only entries outside the baseline. Totals reconcile
+with the report, and source/report/expert/parameter hashes are recorded.
+
+All nine available families generate 511 BUY and 511 SELL conjunctions.
+Development-mask deduplication removes 473 BUY and 459 SELL evaluations, leaving
+38 BUY and 52 SELL distinct candidate masks. Neither side meets development
+eligibility, so no final candidate was selected or exported. Development has
+198 observations and final audit reserves 66. The same market history was
+previously inspected, so this is new execution evidence, not unseen market data.
+
+- ../validation/2026-10-10-full-indicator-combinations.json
+- ../validation/2026-10-10-indicator-runtime-evidence.json
+
+The combined-period run overlaps the earlier two reports. Do not count its
+264 trades as additional independent observations. No full-execution candidate
+reruns are performed because no screening candidate qualifies.
 
 Reports:
 - ../validation/2026-10-10-august-combinations.json
@@ -88,11 +109,14 @@ the research EA is included. Compile success is not runtime or strategy validati
 Build evidence on VPS:
 C:\KatarinaDev\artifacts\mt5\indicator-build\d41dd43b3dba435389c0e7326e0127d0\build-evidence.json
 
-No terminal restart, running-account modification, or live promotion was performed.
-The earlier instruction to leave MT5 unchanged is preserved. To complete the
-remaining market tests, use an authorized isolated research terminal to produce
-new journals, reconcile them with their tester reports, freeze a candidate on
-development history, then run fresh execution-aware validation and forward demo.
+The primary terminal was not changed. The idle ALFA research terminal ran the
+requested test with a separate research Expert path and run-specific tester
+parameters, live trading disabled, and an EA that refuses non-tester execution.
+No pre-existing terminal process was stopped. The runner shut down its own
+research terminal after completion. No live strategy was promoted.
+Further research needs more independent periods, additional entry families
+(the current journal contains baseline entries only), and execution-aware
+validation of any qualifying candidate followed by forward demo.
 
 Example (PowerShell; run from repo, supply reconciled report totals):
 ```powershell
