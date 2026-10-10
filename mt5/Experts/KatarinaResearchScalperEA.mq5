@@ -1,8 +1,9 @@
 #property strict
-#property version   "7.131"
+#property version   "7.132"
 #property description "KATARINA research-only real-tick conformance scalper. No production authority."
 
 #include <Trade/Trade.mqh>
+#include <Katarina/ResearchExtraFeatures.mqh>
 
 enum EKatarinaResearchMethod
   {
@@ -148,6 +149,10 @@ double g_entry_supply_dist_atr=EMPTY_VALUE;
 double g_entry_session_vwap_dist_atr=EMPTY_VALUE;
 double g_entry_round_dist_atr=EMPTY_VALUE;
 double g_entry_candle_pressure=0.0;
+double g_entry_previous_day_adr_ratio=EMPTY_VALUE;
+double g_entry_relative_tick_volume=EMPTY_VALUE;
+double g_entry_chart_breakout=EMPTY_VALUE;
+double g_entry_candle_pattern=EMPTY_VALUE;
 string g_entry_vol_regime="UNKNOWN";
 string g_entry_context_regime="UNKNOWN";
 double g_entry_context_rsi=EMPTY_VALUE;
@@ -569,6 +574,10 @@ void CaptureStructureFeatures(const MqlRates &rates[],const MqlRates &bar,
    g_entry_session_vwap_dist_atr=EMPTY_VALUE;
    g_entry_round_dist_atr=EMPTY_VALUE;
    g_entry_candle_pressure=0.0;
+   g_entry_previous_day_adr_ratio=KatPreviousDayADRRatio(_Symbol,bar.time);
+   g_entry_relative_tick_volume=KatRelativeTickVolume(rates);
+   g_entry_chart_breakout=KatConsolidationBreakout(rates,atr);
+   g_entry_candle_pattern=KatCandlePattern(rates);
    g_entry_vol_regime="UNKNOWN";
 
    if(!InpEnableStructureFeatures || atr<=0.0)
@@ -743,6 +752,7 @@ void InitFeatureJournal()
       "context_support_dist_atr","context_resistance_dist_atr",
       "context_demand_dist_atr","context_supply_dist_atr",
       "context_bull_fvg_dist_atr","context_bear_fvg_dist_atr",
+      "previous_day_adr_ratio","relative_tick_volume","chart_breakout","candle_pattern",
       "initial_risk_cash","r_multiple","net_profit","win");
    FileClose(h);
   }
@@ -806,6 +816,10 @@ void AppendFeatureJournal(const double net,const datetime exit_time)
       FeatureValue(g_entry_context_supply_dist_atr),
       FeatureValue(g_entry_context_bull_fvg_dist_atr),
       FeatureValue(g_entry_context_bear_fvg_dist_atr),
+      FeatureValue(g_entry_previous_day_adr_ratio),
+      FeatureValue(g_entry_relative_tick_volume),
+      FeatureValue(g_entry_chart_breakout),
+      FeatureValue(g_entry_candle_pattern),
       DoubleToString(g_entry_risk_cash,2),
       DoubleToString((g_entry_risk_cash>0.0?net/g_entry_risk_cash:0.0),6),
       DoubleToString(net,2),
