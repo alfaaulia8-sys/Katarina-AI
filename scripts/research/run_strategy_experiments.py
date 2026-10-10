@@ -42,6 +42,7 @@ def run(candidate,start,end,phase):
         InpBuyRR=str(candidate["rr"]),InpSellRR=str(candidate["rr"]),
         InpMinADX=str(candidate["min_adx"]),InpEnableOpportunityJournal="true",
         InpResearchContextGate=candidate.get("context_gate",""))
+    settings.update({k:str(v) for k,v in candidate.get("settings",{}).items()})
     preset=runroot/"parameters.set"
     preset.write_text("".join(k+"="+v+"\n" for k,v in settings.items()))
     before=set(COMMON.glob("KatarinaFeatureJournal_*.csv"))
@@ -50,7 +51,7 @@ def run(candidate,start,end,phase):
         str(ROOT/"scripts/stage35/Run-KatarinaStage35Tester.ps1"),
         "-TerminalPath",TERMINAL,"-ExistingTerminalDataPath",str(DATA),
         "-Expert",r"KatarinaBrainResearch20261010\KatarinaResearchScalperEA",
-        "-Symbol","XAUUSD.vx","-Period","M1","-FromDate",start,"-ToDate",end,
+        "-Symbol","XAUUSD.vx","-Period",candidate.get("period","M1"),"-FromDate",start,"-ToDate",end,
         "-ParametersPath",str(preset),"-OutputRoot",str(runroot),"-TimeoutSeconds","600"]
     completed=subprocess.run(command,capture_output=True,text=True,timeout=660)
     (runroot/"runner.log").write_text(completed.stdout+completed.stderr)
