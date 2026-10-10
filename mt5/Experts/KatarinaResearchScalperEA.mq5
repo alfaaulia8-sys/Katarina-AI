@@ -1,5 +1,5 @@
 #property strict
-#property version   "7.130"
+#property version   "7.131"
 #property description "KATARINA research-only real-tick conformance scalper. No production authority."
 
 #include <Trade/Trade.mqh>
@@ -760,7 +760,7 @@ void AppendFeatureJournal(const double net,const datetime exit_time)
      }
    FileSeek(h,0,SEEK_END);
    FileWrite(h,
-      InpRunTag,
+      g_run_tag,
       TimeToString(g_entry_time,TIME_DATE|TIME_MINUTES),
       TimeToString(exit_time,TIME_DATE|TIME_MINUTES),
       (g_open_side>0?"BUY":"SELL"),
@@ -1360,7 +1360,7 @@ void WriteSummary()
       g_diag_ambiguous_reject);
    FileClose(h);
    PrintFormat("KAT3_SUMMARY run=%s buy=%d/%d(%.2f%%) sell=%d/%d(%.2f%%) PF=%.3f net=%.2f",
-               InpRunTag,g_buy_wins,g_buy_trades,Rate(g_buy_wins,g_buy_trades),
+               g_run_tag,g_buy_wins,g_buy_trades,Rate(g_buy_wins,g_buy_trades),
                g_sell_wins,g_sell_trades,Rate(g_sell_wins,g_sell_trades),pf,g_net_profit);
    PrintFormat("KAT3_DIAG_BUY bars=%d adx_reject=%d trend=%d pullback=%d sweep=%d fib=%d htf=%d method=%d signals=%d",
                g_diag_bars_seen,g_diag_adx_reject,g_diag_buy_trend_true,
