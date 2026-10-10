@@ -143,6 +143,9 @@ $ReportSha256 = $null
 if ($Report) {
     $ReportPath = Join-Path $EvidenceRoot 'tester-report.htm'
     Copy-Item -LiteralPath $Report.FullName -Destination $ReportPath
+    foreach ($Asset in @(Get-ChildItem -LiteralPath $DataDir -Filter ($ReportName + '*.png') -File)) {
+        Copy-Item -LiteralPath $Asset.FullName -Destination (Join-Path $EvidenceRoot $Asset.Name)
+    }
     $ReportSha256 = (Get-FileHash -LiteralPath $ReportPath -Algorithm SHA256).Hash
 }
 
