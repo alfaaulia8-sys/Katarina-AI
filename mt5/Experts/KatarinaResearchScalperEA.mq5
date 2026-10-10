@@ -1,5 +1,5 @@
 #property strict
-#property version   "7.138"
+#property version   "7.140"
 #property description "KATARINA research-only real-tick conformance scalper. No production authority."
 
 #include <Trade/Trade.mqh>
@@ -14,7 +14,9 @@ enum EKatarinaResearchMethod
    KRM_SWEEP_REVERSAL=4,
    KRM_SR_REJECTION=5,
    KRM_BREAKOUT_RETEST=6,
-   KRM_ZONE_SCALP=7
+   KRM_ZONE_SCALP=7,
+   KRM_M5_TREND_RECLAIM=8,
+   KRM_M5_RANGE_SWEEP=9
   };
 
 enum EKatarinaSessionMode
@@ -1026,6 +1028,59 @@ bool GetReferenceRange(const MqlRates &rates[],double &ref_high,double &ref_low)
    return(ref_high>ref_low && ref_low>0.0);
   }
 
+int g_scalp_fill_audit=INVALID_HANDLE;
+datetime g_scalp_context_known=0;
+bool ManagedScalpMethod(const EKatarinaResearchMethod method)
+  {
+   return method==KRM_ZONE_SCALP || method==KRM_M5_TREND_RECLAIM || method==KRM_M5_RANGE_SWEEP;
+  }
+
+bool ScalpContextRule(const int side,const bool trend,const double close,
+                      const double fast,const double slow,const double adx)
+  {
+   if(side!=1 && side!=-1) return false;
+   if(adx<0 || close<=0 || fast<=0 || slow<=0) return false;
+   if(!trend) return adx<=20.0;
+   return adx>=20.0 && (side>0?(close>fast && fast>slow):(close<fast && fast<slow));
+  }
+
+bool ScalpContextSelfTest()
+  {
+   return ScalpContextRule(1,true,103,102,101,25) &&
+      !ScalpContextRule(-1,true,103,102,101,25) &&
+      ScalpContextRule(-1,true,99,100,101,25) &&
+      !ScalpContextRule(1,true,103,102,101,15) &&
+      ScalpContextRule(1,false,100,100,100,15) &&
+      !ScalpContextRule(-1,false,100,100,100,25);
+  }
+
+bool ScalpContextAllows(const int side,const bool trend)
+  {
+   double fast,slow,adx;
+   if(!ReadValue(g_ctx_fast,0,1,fast) || !ReadValue(g_ctx_slow,0,1,slow) ||
+      !ReadValue(g_ctx_adx,0,1,adx)) return false;
+   const datetime bar=iTime(_Symbol,InpContextTF,1);
+   g_scalp_context_known=bar+PeriodSeconds(InpContextTF);
+   if(bar<=0 || g_scalp_context_known>TimeCurrent()) return false;
+   return ScalpContextRule(side,trend,iClose(_Symbol,InpContextTF,1),fast,slow,adx);
+  }
+
+void AuditScalpFill(const int side,const double atr)
+  {
+   if(g_scalp_fill_audit==INVALID_HANDLE)
+     {
+      g_scalp_fill_audit=FileOpen("KatarinaScalpAudit_"+g_run_tag+".csv",FILE_WRITE|FILE_CSV|FILE_COMMON,';');
+      if(g_scalp_fill_audit==INVALID_HANDLE) return;
+      FileWrite(g_scalp_fill_audit,"run_tag","side","entry_time","signal_time","context_known",
+         "entry","sl","atr","initial_risk_cash","risk_budget","seconds_to_session_close",
+         "method","context_tf","context_adx","context_regime");
+     }
+   FileWrite(g_scalp_fill_audit,g_run_tag,side,(long)g_entry_time,(long)iTime(_Symbol,_Period,1),
+      (long)g_scalp_context_known,g_actual_entry,PositionGetDouble(POSITION_SL),atr,
+      g_entry_risk_cash,InpZoneRiskCash,(long)(g_zone_session_end-TimeCurrent()),
+      (int)(side>0?InpBuyMethod:InpSellMethod),EnumToString(InpContextTF),g_entry_context_adx,g_entry_context_regime);
+  }
+
 bool OpenResearchTrade(const int side,
                        const string reason,
                        const double atr)
@@ -1052,11 +1107,12 @@ bool OpenResearchTrade(const int side,
    const double sl_mult=(side>0?InpBuySLATR:InpSellSLATR);
    const double rr=(side>0?InpBuyRR:InpSellRR);
    const bool zone_mode=(side>0?InpBuyMethod:InpSellMethod)==KRM_ZONE_SCALP;
-   if(zone_mode && !ZoneTradingSessionAllows())
+   const bool managed=ManagedScalpMethod(side>0?InpBuyMethod:InpSellMethod);
+   if(managed && !ZoneTradingSessionAllows())
      { g_diag_session_reject++; return false; }
    const double zone_stop=(side>0?g_zone_buy_sl:g_zone_sell_sl);
    const double risk=(zone_mode?side*(entry-zone_stop):sl_mult*atr);
-   if(zone_mode && (risk<atr || risk>3.0*atr || spread>0.1*risk))
+   if(managed && (risk<atr || risk>3.0*atr || spread>0.1*risk))
       return false;
    if(risk<=0.0 || rr<=1.0)
       return false;
@@ -1064,7 +1120,7 @@ bool OpenResearchTrade(const int side,
    const double sl=NormalizeDouble(entry-(side>0?1.0:-1.0)*risk,digits);
    const double tp=NormalizeDouble(entry+(side>0?1.0:-1.0)*risk*rr,digits);
    double volume=InpLot;
-   if(zone_mode)
+   if(managed)
      {
       double projected;
       const double minlot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
@@ -1118,6 +1174,7 @@ bool OpenResearchTrade(const int side,
       else AuditZoneFill(g_run_tag,g_supply,iTime(_Symbol,_Period,1),g_actual_entry,
          PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_VOLUME),g_entry_risk_cash);
      }
+   if(ok && managed && !zone_mode) AuditScalpFill(side,atr);
    return ok;
   }
 
@@ -1297,14 +1354,24 @@ void EvaluateClosedBar()
       buy_zone=ZoneSignal(g_demand,b,atr1,g_zone_buy_sl);
       sell_zone=ZoneSignal(g_supply,b,atr1,g_zone_sell_sl);
      }
-   const bool buy_method_ok=(InpBuyMethod==KRM_ZONE_SCALP?buy_zone:
+   bool buy_method_ok=(InpBuyMethod==KRM_ZONE_SCALP?buy_zone:
       (InpBuyMethod==KRM_SR_REJECTION?buy_sr:
       (InpBuyMethod==KRM_BREAKOUT_RETEST?buy_break:
        MethodAllows(InpBuyMethod,buy_pullback,buy_sweep,buy_fibo,buy_reversal))));
-   const bool sell_method_ok=(InpSellMethod==KRM_ZONE_SCALP?sell_zone:
+   bool sell_method_ok=(InpSellMethod==KRM_ZONE_SCALP?sell_zone:
       (InpSellMethod==KRM_SR_REJECTION?sell_sr:
       (InpSellMethod==KRM_BREAKOUT_RETEST?sell_break:
        MethodAllows(InpSellMethod,sell_pullback,sell_sweep,sell_fibo,sell_reversal))));
+   if(InpBuyMethod==KRM_M5_TREND_RECLAIM)
+      buy_method_ok=ScalpContextAllows(1,true) && b.low<=ema_fast1+0.1*atr1 &&
+         b.close>ema_fast1 && b.close>b.open && b.close>rates[2].high;
+   if(InpSellMethod==KRM_M5_TREND_RECLAIM)
+      sell_method_ok=ScalpContextAllows(-1,true) && b.high>=ema_fast1-0.1*atr1 &&
+         b.close<ema_fast1 && b.close<b.open && b.close<rates[2].low;
+   if(InpBuyMethod==KRM_M5_RANGE_SWEEP)
+      buy_method_ok=ScalpContextAllows(1,false) && buy_sweep;
+   if(InpSellMethod==KRM_M5_RANGE_SWEEP)
+      sell_method_ok=ScalpContextAllows(-1,false) && sell_sweep;
    if(buy_htf_ok) g_diag_buy_htf_true++;
    if(buy_method_ok) g_diag_buy_method_true++;
    if(sell_htf_ok) g_diag_sell_htf_true++;
@@ -1330,7 +1397,9 @@ void EvaluateClosedBar()
       if(InpBuyMethod==KRM_SR_REJECTION) reason="SR_REJECTION";
       if(InpBuyMethod==KRM_BREAKOUT_RETEST) reason="BREAKOUT_RETEST";
       if(InpBuyMethod==KRM_ZONE_SCALP) reason="ZONE_SCALP";
-      if(buy_reversal && InpBuyMethod!=KRM_ZONE_SCALP) reason+=(reason==""?"":"+")+"REVERSAL";
+      if(InpBuyMethod==KRM_M5_TREND_RECLAIM) reason="M5_TREND_RECLAIM";
+      if(InpBuyMethod==KRM_M5_RANGE_SWEEP) reason="M5_RANGE_SWEEP";
+      if(buy_reversal && !ManagedScalpMethod(InpBuyMethod)) reason+=(reason==""?"":"+")+"REVERSAL";
       if(InpUseHTFTrend && buy_needs_htf) reason+="+HTF";
       if(InpSessionMode!=KSM_ALL) reason+="+SESSION";
       CaptureEntryFeatures(rates,b,ema_fast1,ema_slow1,ema_slow2,rsi1,atr1,adx1,
@@ -1349,7 +1418,9 @@ void EvaluateClosedBar()
       if(InpSellMethod==KRM_SR_REJECTION) reason="SR_REJECTION";
       if(InpSellMethod==KRM_BREAKOUT_RETEST) reason="BREAKOUT_RETEST";
       if(InpSellMethod==KRM_ZONE_SCALP) reason="ZONE_SCALP";
-      if(sell_reversal && InpSellMethod!=KRM_ZONE_SCALP) reason+=(reason==""?"":"+")+"REVERSAL";
+      if(InpSellMethod==KRM_M5_TREND_RECLAIM) reason="M5_TREND_RECLAIM";
+      if(InpSellMethod==KRM_M5_RANGE_SWEEP) reason="M5_RANGE_SWEEP";
+      if(sell_reversal && !ManagedScalpMethod(InpSellMethod)) reason+=(reason==""?"":"+")+"REVERSAL";
       if(InpUseHTFTrend && sell_needs_htf) reason+="+HTF";
       if(InpSessionMode!=KSM_ALL) reason+="+SESSION";
       CaptureEntryFeatures(rates,b,ema_fast1,ema_slow1,ema_slow2,rsi1,atr1,adx1,
@@ -1598,6 +1669,10 @@ int OnInit()
    if(InpResearchContextGate!="" && InpResearchContextGate!="UP" &&
       InpResearchContextGate!="DOWN" && InpResearchContextGate!="MIXED")
       return INIT_PARAMETERS_INCORRECT;
+   if(InpBuyMethod==KRM_M5_TREND_RECLAIM || InpBuyMethod==KRM_M5_RANGE_SWEEP ||
+      InpSellMethod==KRM_M5_TREND_RECLAIM || InpSellMethod==KRM_M5_RANGE_SWEEP)
+      if(!InpEnableStructureFeatures || InpContextTF!=PERIOD_M5 || _Period!=PERIOD_M1)
+         return INIT_PARAMETERS_INCORRECT;
    g_run_tag="verified_"+IntegerToString((long)TimeLocal())+"_"+IntegerToString((long)GetTickCount64());
    Print("KATARINA_RESEARCH_RUN_TAG=",g_run_tag);
    if(InpLookbackBars<5 || InpLot<=0.0 || InpFibMin<0.0 || InpFibMax<=InpFibMin || InpFibMax>1.0)
@@ -1640,13 +1715,15 @@ int OnInit()
        (g_htf_fast==INVALID_HANDLE || g_htf_slow==INVALID_HANDLE)))
       return INIT_FAILED;
 
-   if(InpBuyMethod==KRM_ZONE_SCALP || InpSellMethod==KRM_ZONE_SCALP)
+   if(ManagedScalpMethod(InpBuyMethod) || ManagedScalpMethod(InpSellMethod))
      {
       if(PeriodSeconds(InpZoneTF)<=PeriodSeconds(InpZoneConfirmTF) ||
          PeriodSeconds(InpZoneConfirmTF)<=PeriodSeconds(_Period) ||
          InpZoneRiskCash<=0 || InpZoneMaxHoldMinutes<=0 ||
          InpZoneSessionBufferMinutes<0 || InpZoneSessionBufferMinutes>1440 ||
-         InpZoneLifetimeBars<1 || InpZoneTriggerBars<1 || !ZoneSelfTest())
+         InpZoneLifetimeBars<1 || InpZoneTriggerBars<1 ||
+         InpZoneLockR<0 || InpZoneLockTriggerR<=InpZoneLockR ||
+         !ZoneSelfTest() || !ZoneLockSelfTest() || !ScalpContextSelfTest())
          return INIT_PARAMETERS_INCORRECT;
       WriteZoneSessions(g_run_tag);
       Print("KATARINA_ZONE_SELFTEST=PASS");
@@ -1659,6 +1736,8 @@ int OnInit()
 void OnDeinit(const int reason)
   {
    if(!MQLInfoInteger(MQL_TESTER)) return;
+   if(g_scalp_fill_audit!=INVALID_HANDLE) FileClose(g_scalp_fill_audit);
+   if(g_zone_exit_audit!=INVALID_HANDLE) FileClose(g_zone_exit_audit);
    if(g_zone_audit!=INVALID_HANDLE) FileClose(g_zone_audit);
    if(g_opportunity_handle!=INVALID_HANDLE) FileClose(g_opportunity_handle);
    RebuildStatsFromHistory();
@@ -1678,6 +1757,38 @@ void OnDeinit(const int reason)
    if(g_htf_slow!=INVALID_HANDLE) IndicatorRelease(g_htf_slow);
   }
 
+void ManageZoneProfitLock()
+  {
+   if(!InpZoneEnableProfitLock ||
+      (InpBuyMethod!=KRM_ZONE_SCALP && InpSellMethod!=KRM_ZONE_SCALP) ||
+      !ExistingResearchPosition() || g_open_side==0 || g_initial_price_risk<=0) return;
+   MqlTick tick; if(!SymbolInfoTick(_Symbol,tick)) return;
+   const ulong ticket=(ulong)PositionGetInteger(POSITION_TICKET);
+   const double old_sl=PositionGetDouble(POSITION_SL),tp=PositionGetDouble(POSITION_TP);
+   double target;
+   if(!ZoneLockCandidate(g_open_side,g_actual_entry,g_initial_price_risk,tick.bid,tick.ask,
+                        old_sl,InpZoneLockTriggerR,InpZoneLockR,target)) return;
+   const double step=SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_SIZE);
+   if(step<=0) return;
+   target=(g_open_side>0?MathFloor(target/step):MathCeil(target/step))*step;
+   target=NormalizeDouble(target,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS));
+   if(g_open_side*(target-old_sl)<=_Point*0.5) return;
+   const double min_distance=(MathMax(SymbolInfoInteger(_Symbol,SYMBOL_TRADE_STOPS_LEVEL),
+       SymbolInfoInteger(_Symbol,SYMBOL_TRADE_FREEZE_LEVEL))+1)*_Point;
+   const double liquidation=(g_open_side>0?tick.bid:tick.ask);
+   if(g_open_side*(liquidation-target)<min_distance) return;
+   if(!g_trade.PositionModify(ticket,target,tp) || g_trade.ResultRetcode()!=TRADE_RETCODE_DONE) return;
+   if(g_zone_exit_audit==INVALID_HANDLE)
+     {
+      g_zone_exit_audit=FileOpen("KatarinaExitChanges_"+g_run_tag+".csv",FILE_WRITE|FILE_CSV|FILE_COMMON,';');
+      if(g_zone_exit_audit==INVALID_HANDLE) return;
+      FileWrite(g_zone_exit_audit,"run_tag","time","side","ticket","entry","initial_risk",
+         "bid","ask","old_sl","new_sl","trigger_r","lock_r");
+     }
+   FileWrite(g_zone_exit_audit,g_run_tag,(long)TimeCurrent(),g_open_side,ticket,g_actual_entry,
+      g_initial_price_risk,tick.bid,tick.ask,old_sl,target,InpZoneLockTriggerR,InpZoneLockR);
+  }
+
 void OnTick()
   {
    if(g_open_side!=0 && g_initial_price_risk>0.0)
@@ -1686,7 +1797,7 @@ void OnTick()
       if(SymbolInfoTick(_Symbol,current))
          TrackResearchExcursion(g_open_side>0?current.bid:current.ask);
      }
-   if((InpBuyMethod==KRM_ZONE_SCALP || InpSellMethod==KRM_ZONE_SCALP) &&
+   if((ManagedScalpMethod(InpBuyMethod) || ManagedScalpMethod(InpSellMethod)) &&
       ExistingResearchPosition() &&
       TimeCurrent()-(datetime)PositionGetInteger(POSITION_TIME)>=InpZoneMaxHoldMinutes*60)
      {
@@ -1701,6 +1812,7 @@ void OnTick()
         }
       return;
      }
+   ManageZoneProfitLock();
    const datetime bar=iTime(_Symbol,_Period,0);
    if(bar<=0 || bar==g_last_bar)
       return;

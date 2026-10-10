@@ -9,6 +9,36 @@ input int InpZoneMaxHoldMinutes=45;
 input int InpZoneSessionBufferMinutes=60;
 input int InpZoneLifetimeBars=48;
 input int InpZoneTriggerBars=3;
+input bool InpZoneEnableProfitLock=false;
+input double InpZoneLockTriggerR=0.75;
+input double InpZoneLockR=0.05;
+int g_zone_exit_audit=INVALID_HANDLE;
+
+bool ZoneLockCandidate(const int side,const double entry,const double risk,
+                       const double bid,const double ask,const double old_stop,
+                       const double trigger,const double lock,double &target)
+  {
+   target=0.0;
+   if((side!=1 && side!=-1) || risk<=0 || entry<=0 || bid<=0 || ask<bid ||
+      lock<0 || trigger<=lock) return false;
+   const double liquidation=(side>0?bid:ask);
+   if(side*(liquidation-entry)/risk<trigger) return false;
+   target=entry+side*lock*risk;
+   return (old_stop<=0 || side*(target-old_stop)>0) && side*(liquidation-target)>0;
+  }
+
+bool ZoneLockSelfTest()
+  {
+   double p;
+   if(ZoneLockCandidate(1,100,2,101,101.2,98,0.75,0.05,p)) return false;
+   if(!ZoneLockCandidate(1,100,2,101.5,101.7,98,0.75,0.05,p) || MathAbs(p-100.1)>1e-8) return false;
+   if(!ZoneLockCandidate(-1,100,2,98.3,98.5,102,0.75,0.05,p) || MathAbs(p-99.9)>1e-8) return false;
+   if(ZoneLockCandidate(1,100,2,102,102.2,100.2,0.75,0.05,p)) return false;
+   if(ZoneLockCandidate(-1,100,2,98,98.2,99.8,0.75,0.05,p)) return false;
+   if(ZoneLockCandidate(1,100,0,102,102.2,98,0.75,0.05,p)) return false;
+   return true;
+  }
+
 
 struct ResearchZone
   {
