@@ -65,8 +65,8 @@ jobs:
           for name in ("katarina-vps-lab.yml", "katarina-vps-low-memory-rescue.yml"):
               text = (Path(".github/workflows") / name).read_text(encoding="utf-8")
               trigger_section = text.split("permissions:", 1)[0]
-              assert re.search(r"(?m)^  workflow_dispatch:\\s*$", trigger_section), name
-              assert not re.search(r"(?m)^  push:\\s*$", trigger_section), name
+              assert re.search(r"(?m)^  workflow_dispatch:\s*$", trigger_section), name
+              assert not re.search(r"(?m)^  push:\s*$", trigger_section), name
               assert "if: github.ref == 'refs/heads/main'" in text, name
           print("PASS_VPS_MANUAL_ONLY")
           PY
