@@ -47,7 +47,8 @@ class EconomicFeedGate:
         relevant=[e for e in snapshot.events if e.impact>=min_impact and set(e.currencies)&set(currencies)]
         if not relevant:
             return EconomicFeedDecision(True,False,False,"calendar_clear",None,None)
-        event=min(relevant,key=lambda e:abs((e.timestamp_utc-now_utc).total_seconds()))
+        blocking=[e for e in relevant if -post_minutes <= (e.timestamp_utc-now_utc).total_seconds()/60 <= pre_minutes]
+        event=min(blocking or relevant,key=lambda e:abs((e.timestamp_utc-now_utc).total_seconds()))
         mins=(event.timestamp_utc-now_utc).total_seconds()/60.0
         blackout=(-post_minutes)<=mins<=pre_minutes
         return EconomicFeedDecision(True,blackout,False,"economic_blackout" if blackout else "calendar_clear",event.name,mins)
