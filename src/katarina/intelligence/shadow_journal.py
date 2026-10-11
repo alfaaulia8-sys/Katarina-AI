@@ -247,7 +247,10 @@ class ShadowJournal:
             except (OSError, KeyError, TypeError, ValueError, UnicodeError) as exc:
                 raise ValueError("journal_corrupt_or_incomplete") from exc
         # Files are named by hash, not chronology; install parents before closes.
-        for kind, event, payload in sorted(stored, key=lambda x: x[0] != "signal"):
+        for kind, event, payload in sorted(
+                stored, key=lambda x: (x[0] != "signal",
+                                       x[1].closed_at_utc if x[0] == "close"
+                                       else x[1].observed_at_utc)):
             self._install(kind, event)
             self._payload[(kind, event.event_id)] = payload
 
