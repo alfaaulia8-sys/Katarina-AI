@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "title": "KATARINA preregistered alpha survival research — NOT trading permission",
+  "preregistration_effective_at_utc": "2026-10-12T00:00:00+00:00",
+  "new_holdout_start_utc": "2026-10-13T00:00:00+00:00",
+  "new_holdout_end_utc": "2027-04-30T23:59:59+00:00",
+  "symbols": [
+    "XAUUSD.vx",
+    "NAS100.vx",
+    "US30.vx",
+    "JPN225.vx",
+    "EURUSD.vx",
+    "GBPUSD.vx",
+    "USDJPY.vx"
+  ],
+  "directional_regimes": [
+    "TREND_UP",
+    "TREND_DOWN",
+    "PULLBACK_UP",
+    "PULLBACK_DOWN",
+    "BREAKOUT_UP",
+    "BREAKOUT_DOWN",
+    "REVERSAL_UP",
+    "REVERSAL_DOWN"
+  ],
+  "dual_direction_regime": "SIDEWAYS",
+  "no_trade_regimes": [
+    "VOLATILITY_SHOCK",
+    "TRANSITION",
+    "UNKNOWN"
+  ],
+  "minimum_trades_per_symbol_regime_side": 60,
+  "minimum_distinct_weeks": 20,
+  "minimum_distinct_months": 5,
+  "additional_cost_stress_R": 0.1,
+  "minimum_profit_factor": 1.25,
+  "minimum_positive_week_fraction": 0.55,
+  "maximum_drawdown_R": 12,
+  "maximum_top5_concentration": "net R remains positive after removing the five largest trades",
+  "bootstrap": "weekly resampling; Bonferroni lower confidence bound > 0 (descriptive, not formal proof)",
+  "execution": {
+    "live_execution_authorized": false,
+    "research_only": true,
+    "auto_trade": false
+  },
+  "data_requirements": {
+    "real_bid_ask_tick_data": true,
+    "actual_broker_spec_cost_margin_verified": true,
+    "outcomes_are_not_reused_selection_period": true,
+    "independence_attested": true
+  },
+  "label": "Predeclared hypotheses only — no alpha validated",
+  "sources": [
+    "https://doi.org/10.1016/j.jfineco.2011.11.003",
+    "https://doi.org/10.1111/1468-0262.00152",
+    "https://www.nber.org/papers/w20592",
+    "https://doi.org/10.1111/j.1467-6419.2007.00519.x"
+  ]
+}
