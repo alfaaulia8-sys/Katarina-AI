@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "policy": "Only verified, high-level, non-proprietary project updates. Never publish strategy logic, source data, internal settings, account details, broker credentials, unverifiable performance or private infrastructure.",
+  "items": [
+    {
+      "id": "website-multilingual",
+      "date": "2026-10-11",
+      "category": "project",
+      "titleKey": "updateSiteTitle",
+      "summaryKey": "updateSiteText",
+      "evidence": "Published public website deployment, not a research test claim."
+    },
+    {
+      "id": "research-development-preview",
+      "date": "2026-10-11",
+      "category": "research",
+      "titleKey": "updateDevTitle",
+      "summaryKey": "updateDevText",
+      "evidence": "Public Katarina-AI project README explicitly states Development Preview."
+    }
+  ]
+}
