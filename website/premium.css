@@ -320,3 +320,41 @@ header.shell .lang{font-size:11px;max-width:140px;padding:9px;border-radius:8px}
  .pulse-page .calendar-focus .econ-entry strong{font-size:13px}
  .pulse-page .pulse-hero:after{right:-28%!important;width:75%!important;opacity:.32!important}
 }
+
+
+/* KATARINA / searchable synchronized chart pair selector v8 */
+.pulse-page .instrument-toolbar{position:relative;overflow:visible}
+.pulse-page .instrument-toolbar .instrument-lookup{position:relative;flex:0 0 auto;z-index:25;min-width:0}
+.pulse-page .pair-search-trigger{display:inline-flex;justify-content:center;align-items:center;gap:6px;background:linear-gradient(125deg,#0b4780,#073055);border:1px solid #36b4ee;border-radius:10px;color:#e6faff;min-height:46px;padding:11px 16px;white-space:nowrap;font:750 13px 'DM Sans',sans-serif;cursor:pointer;box-shadow:0 0 11px #1196e830}
+.pulse-page .pair-search-trigger[aria-expanded=true]{background:#11649e;border-color:#79deff}
+.pulse-page .pair-search-trigger:focus-visible,.pulse-page .pair-search-choice:focus-visible{outline:2px solid #b5eeff;outline-offset:2px}
+.pulse-page .pair-search-panel{position:absolute;z-index:200;top:calc(100% + 9px);left:0;width:min(400px,calc(100vw - 38px));max-height:min(600px,75vh);background:linear-gradient(160deg,#0b274a,#041427);border:1px solid #328ab9;border-radius:14px;box-shadow:0 24px 52px #000d,0 0 25px #0d72bc44;padding:15px;display:flex;flex-direction:column;gap:9px}
+.pulse-page .pair-search-panel[hidden]{display:none!important}
+.pulse-page .pair-search-panel>label{display:block!important;width:auto!important;min-width:0!important}
+.pulse-page .pair-search-inputrow{display:flex;align-items:center;gap:8px;border:1px solid #2589c4;background:#06162a;border-radius:9px;padding:3px 10px}
+.pulse-page .pair-search-inputrow>span{font-size:25px;color:#5ce3ff}
+.pulse-page .pair-search-inputrow input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#eaf7ff;font-size:14px;min-height:44px;font-family:'DM Sans',sans-serif}
+.pulse-page .pair-search-inputrow input::placeholder{color:#83a6c1}
+.pulse-page .pair-search-inputrow button{border:0;background:transparent;color:#99d9ef;font-size:26px;cursor:pointer;padding:3px 8px}
+.pulse-page .pair-search-results{overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#2589bb #071a34;scrollbar-width:thin;min-height:58px;max-height:325px;padding:1px 4px 1px 0}
+.pulse-page .pair-search-group{font-size:10px;font-weight:850;letter-spacing:.11em;color:#5bc5e8;padding:12px 10px 6px}
+.pulse-page .pair-search-choice{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid transparent;border-radius:8px;background:transparent;padding:10px 12px;color:#d4f1ff;font:500 12px 'DM Sans',sans-serif;text-align:left;cursor:pointer;min-height:43px}
+.pulse-page .pair-search-choice strong{color:#e4f9ff;font-size:14px}
+.pulse-page .pair-search-choice span{color:#7daed0;text-align:right}
+.pulse-page .pair-search-choice:hover,.pulse-page .pair-search-choice[aria-selected=true]{background:#0b3c65;border-color:#297cad;color:#fff}
+.pulse-page .pair-search-help,.pulse-page .pair-no-result{font-size:11px;color:#92b9d5;margin:4px 0 0;line-height:1.5}
+.pulse-page .chart-pair-toolbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:16px 0 17px;padding:14px 15px;background:linear-gradient(115deg,#061e38,#05142a);border:1px solid #215d87;border-radius:10px}
+.pulse-page .chart-instrument-label{display:flex;flex-direction:column;min-width:min(290px,100%);max-width:390px;flex:1;gap:8px}
+.pulse-page .chart-instrument-label [data-instrument-select]{min-height:49px;font-size:16px;font-weight:800;border-color:#46b9f3;box-shadow:0 0 13px #0b8bca2c}
+.pulse-page .chart-pair-note{flex:1;min-width:220px;color:#a9cadd;font-size:12px;line-height:1.6;margin:0}
+.pulse-page .chart-pair-note b{color:#6fd7ff}
+@media(max-width:900px){.pulse-page .instrument-toolbar .instrument-lookup{flex:1 1 auto}.pulse-page .pair-search-trigger{width:100%}}
+@media(max-width:570px){.pulse-page .instrument-toolbar{gap:11px}
+.pulse-page .instrument-toolbar .instrument-lookup{width:100%;flex:1 1 100%}
+.pulse-page .pair-search-panel{width:100%;max-height:66vh;top:calc(100% + 7px);padding:12px}
+.pulse-page .pair-search-results{max-height:260px}
+.pulse-page .pair-search-trigger{width:100%}
+.pulse-page .chart-pair-toolbar{padding:13px 11px;gap:10px}
+.pulse-page .chart-instrument-label,.pulse-page .chart-pair-note{width:100%;flex:1 1 100%;min-width:0}
+.pulse-page .chart-instrument-label [data-instrument-select]{font-size:14px}
+}
