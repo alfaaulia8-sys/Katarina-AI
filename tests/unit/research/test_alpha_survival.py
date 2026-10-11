@@ -93,6 +93,10 @@ class AlphaSurvivalTests(unittest.TestCase):
         self.assertFalse(out["shadow_research_qualified"])
 
     def test_all_market_states_have_explicit_routes(self):
+        from katarina.intelligence.adaptive_regime import MarketState, Playbook
+        self.assertEqual(set(REGIME_ROUTES), {state.value for state in MarketState})
+        self.assertTrue(all(playbook in {value.value for value in Playbook}
+                            for side, playbook in REGIME_ROUTES.values()))
         self.assertIn("SIDEWAYS", REGIME_ROUTES)
         self.assertIn("BREAKOUT_DOWN", REGIME_ROUTES)
         self.assertIn("REVERSAL_UP", REGIME_ROUTES)
@@ -103,6 +107,7 @@ class AlphaSurvivalTests(unittest.TestCase):
                                  playbook="OBSERVE"), rows,
                          audit_at=datetime(2027, 7, 2, tzinfo=UTC))
         self.assertFalse(blocked["shadow_research_qualified"])
+        self.assertEqual(blocked["status"], "BLOCKED_REGIME_NO_TRADE")
 
     def test_wrong_direction_and_playbook_rejected(self):
         spec, rows = fixtures()
