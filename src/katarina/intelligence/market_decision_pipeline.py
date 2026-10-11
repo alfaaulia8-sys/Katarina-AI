@@ -16,6 +16,9 @@ from katarina.engines.adaptive_scalper import ScalpSide
 from katarina.engines.adaptive_risk import AdaptiveRiskProfile
 from katarina.intelligence.adaptive_brain_v2 import KatarinaAdaptiveBrainV2
 from katarina.intelligence.closed_swing_structure import ClosedBar
+from katarina.intelligence.explainable_market_decision import (
+    AdaptiveMarketDecisionAdvisor, MarketDecision,
+)
 
 
 _PERIOD = {"M5": timedelta(minutes=5), "M15": timedelta(minutes=15),
@@ -46,6 +49,9 @@ class DecisionObservation:
     risk_fraction_reference: float | None
     research_only: bool = True
     live_execution_authorized: bool = False
+    potential_action: str = "WAIT"
+    setup_ready: bool = False
+    decision_detail: MarketDecision | None = None
 
 
 def _frame(candles: Sequence[SensorCandle]):
@@ -118,6 +124,7 @@ class MarketDecisionPipeline:
 
     def __init__(self):
         self.brain = KatarinaAdaptiveBrainV2()
+        self.advisor = AdaptiveMarketDecisionAdvisor()
 
     @staticmethod
     def _wait(symbol: str, reason: str) -> DecisionObservation:
@@ -178,9 +185,21 @@ class MarketDecisionPipeline:
             reasons = observations.regime.reasons + plan.evidence
             if not news_context_verified:
                 reasons += ("news_context_unverified_no_trade",)
+            decision_detail = self.advisor.decide(
+                regime=observations.regime, proposal=plan, frames=frames,
+                m5=candles["M5"], m15=candles["M15"],
+                actual_spread=actual_spread,
+                broker_session_open=broker_session_open,
+                data_fresh=data_fresh,
+                news_blackout=news_blackout,
+                news_context_verified=news_context_verified,
+            )
             return DecisionObservation(
                 symbol, action, observations.regime.state.value,
                 plan.strategy.value, reasons,
-                tool_context, risk)
+                tool_context, risk,
+                potential_action=plan.side.value if plan.ready_for_research else "WAIT",
+                setup_ready=bool(plan.ready_for_research),
+                decision_detail=decision_detail)
         except (ValueError, KeyError, TypeError, ArithmeticError, OverflowError) as e:
             return self._wait(symbol, "sensor_or_risk_rejected:" + type(e).__name__)
