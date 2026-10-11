@@ -1,0 +1,60 @@
+name: One-time KATARINA branch archive and prune
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/archive-branches-once-20261011.yml
+permissions:
+  contents: write
+jobs:
+  safe-branch-gc:
+    if: github.repository == 'alfaauliau-katarinaAI/Katarina-AI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Archive exact branch heads to immutable ref names
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, sys, urllib.request, urllib.parse, urllib.error
+          repo=os.environ['GITHUB_REPOSITORY']
+          base='https://api.github.com/repos/'+repo
+          expected={"chore/github-first-ci-gates-20261010":"dc41848a254efd0809e249f1ee69f6f5b7cac326","chore/repository-cleanup-20261010":"825aff858df079fca48ba2bc1e944cb9a628e768","chore/repository-hygiene-20261011":"c58e7396ceac7fc3951889b11af2784816e50e13","codex/existing-mt5-tester-20261010":"22984567b28ec5074b40a0914c5da4032da597f2","codex/independent-ai-audit":"98555fb6f2c7a6595e830d8c4e0223dd4cbc1eeb","codex/mt5-ai-journal-20261010":"b1a88a3ef34170b1128b9148c95ab1244e9cfe11","codex/mt5-ready-verification-20261010":"1f6fefb7023be31fee8b614800263d1530235d63","codex/mt5-tester-evidence-20261010":"6c86708b7cf9d02675d7ca415adb3f1f6cdba7b2","docs/concise-public-readme-20261010":"231b10df0cb4b6fa566916ee49c155434118f222","feat/ai-brain-oos-research-20261010":"1cbec9a47e741d5f2d31cb2b95a53d1583075839","feat/repository-consolidation-20261010":"df0b7e95c14abd6a85d686aded07031fab6ffd54","feature/monetization-early-access-20261011":"5df8b33672f0fb140bc7312ac2743ea28dda949b","research/adaptive-brain-v2-20261011":"fb859bafcd2eddaf93f272e767f97d22fedef66d","research/brain-diagnostics-20261010":"da3ecee7f83a75806b8274dda4bbcbb02d9f5039","research/brain-forward-outcomes-20261010":"640521837477b0736bc965643017765e6b423eab","research/indicator-combinations-20261010":"dc51f0075fce6e9d1f6d6fd81972dfdc27a230d3","research/mtf-zone-scalping-20261010":"f7c543130472fded8ab0f89aff7bfacb031ab722","research/multi-market-brain-20261010":"fa52dfffed9dce06186d2b235e449a422a413c77","research/scalp-exit-audit-20261010":"52f40e7920ba0590a2e203fa4e1abd86b1a50533","sync/vps-brain-forward-outcomes-20261011":"305bb18749bc542ce2451446452e1743743ee432"}
+          mode='archive'
+          def api(method,path,data=None,missing_ok=False):
+              body=None if data is None else json.dumps(data).encode()
+              req=urllib.request.Request(base+path, data=body,method=method,headers={
+                  'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                  'Accept':'application/vnd.github+json',
+                  'X-GitHub-Api-Version':'2022-11-28',
+                  'Content-Type':'application/json',
+              })
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as resp:
+                      raw=resp.read(); return json.loads(raw) if raw else {}
+              except urllib.error.HTTPError as exc:
+                  if missing_ok and exc.code==404: return None
+                  raise RuntimeError(f'{method} {path}: HTTP {exc.code} {exc.read().decode()[:300]}')
+          archived=0; skipped=[]; deleted=0
+          for branch,sha in expected.items():
+              q=urllib.parse.quote(branch,safe='/')
+              ref=api('GET','/git/ref/heads/'+q,missing_ok=True)
+              if not ref:
+                  skipped.append(branch+' missing'); continue
+              if ref['object']['sha']!=sha:
+                  skipped.append(branch+' moved; skip'); continue
+              tag='archive/2026-10-11/'+branch
+              path='/git/ref/tags/'+urllib.parse.quote(tag,safe='/')
+              current=api('GET',path,missing_ok=True)
+              if current is None:
+                  api('POST','/git/refs',{'ref':'refs/tags/'+tag,'sha':sha})
+              elif current['object']['sha']!=sha:
+                  raise RuntimeError('Archive tag differs: '+tag)
+              check=api('GET',path)
+              if check['object']['sha']!=sha: raise RuntimeError('Archive verification failed: '+tag)
+              archived+=1; print('ARCHIVED',branch,sha)
+          print('RESULT archived='+str(archived)+' skipped='+str(len(skipped))+' mode='+mode)
+          for item in skipped: print('SKIPPED',item)
+          if skipped: raise RuntimeError('Archive incomplete; review skipped branches')
+          PY
