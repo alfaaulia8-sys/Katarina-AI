@@ -13,7 +13,7 @@ CONFIG = Path(__file__).resolve().parents[3]/"config"/"risk_governor_v2.json"
 class ResearchCostMarginGateTests(unittest.TestCase):
     def setUp(self):
         self.gate = ResearchCostMarginGate(RiskGovernor.from_config(CONFIG))
-        self.account = AccountFacts("USD",1000,1000,1000,1000,verified=True)
+        self.account = AccountFacts("USD",1000,1000,1000,1000,uncertainty=.1,expected_rr=2.,verified=True)
         self.broker = BrokerFacts("USD",1,100,.01,50,.01,1000,verified=True)
         self.costs = TradingCosts(.02,.03,.5,verified=True)
 
@@ -71,12 +71,20 @@ class ResearchCostMarginGateTests(unittest.TestCase):
         self.assertFalse(self.qualify(account=replace(self.account,equity=float("nan"))).eligible_for_research)
 
     def test_cent_proxy_not_live_authorization(self):
-        a=AccountFacts("USC",10000,10000,10000,10000,verified=True)
+        a=AccountFacts("USC",10000,10000,10000,10000,uncertainty=.1,expected_rr=2.,verified=True)
         b=BrokerFacts("USC",1,100,.01,50,.01,200,verified=True)
         r=self.qualify(account=a,broker=b)
         self.assertTrue(r.eligible_for_research)
         self.assertAlmostEqual(r.fraction,.02)
         self.assertFalse(r.live_execution_authorized)
+
+    def test_signal_evidence_required(self):
+        self.assertEqual(self.qualify(account=replace(self.account,expected_rr=None)).reason,
+                         "missing_signal_quality_evidence")
+        self.assertEqual(self.qualify(account=replace(self.account,uncertainty=None)).reason,
+                         "missing_signal_quality_evidence")
+        self.assertFalse(self.qualify(account=replace(self.account,expected_rr=0)).eligible_for_research)
+        self.assertFalse(self.qualify(account=replace(self.account,uncertainty=.8)).eligible_for_research)
 
     def test_risk_soft_limit_reduces_lots(self):
         normal=self.qualify()
