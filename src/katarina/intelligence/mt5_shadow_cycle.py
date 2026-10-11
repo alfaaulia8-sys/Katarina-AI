@@ -81,11 +81,15 @@ class MT5ShadowCycle:
         for timestamp,pnl in transactions:
             key=timestamp.date()
             if key!=today:
-                today=key;day_base=balance
+                today=key;day_base=balance;daily_dd=0.
             balance+=pnl
             peak=max(peak,balance)
-            daily_dd=max(0,(day_base-balance)/day_base) if day_base>0 else 1.
-            total_dd=max(0,(peak-balance)/peak) if peak>0 else 1.
+            # A hard drawdown pause must remain latched for the whole
+            # trading day, even if later paper wins recover the balance.
+            daily_now=max(0,(day_base-balance)/day_base) if day_base>0 else 1.
+            daily_dd=max(daily_dd,daily_now)
+            total_now=max(0,(peak-balance)/peak) if peak>0 else 1.
+            total_dd=max(total_dd,total_now)
         if today != _utc(as_of_utc).date():
             daily_dd=0.
         return balance,peak,daily_dd,total_dd
