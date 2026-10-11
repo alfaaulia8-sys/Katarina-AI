@@ -164,8 +164,21 @@ class MT5ShadowCycle:
                     signal=replace(signal,action="REJECT",reason="risk_governor:"+approved.reason)
                 else:
                     try:
+                        # A virtual account must never borrow the *real*
+                        # terminal account's extra margin. Include only
+                        # unused virtual capital after worst-case reserved
+                        # paper losses, and separately respect the broker's
+                        # reported margin availability.
+                        virtual_reserved=sum(
+                            p.initial_risk_account for p in self.book.pending())
+                        virtual_free=max(0.,balance-virtual_reserved)
+                        if virtual_free<=0:
+                            raise ValueError("shadow_virtual_margin_exhausted")
+                        capped_snapshot=replace(
+                            snap,free_margin_account=min(
+                                snap.free_margin_account,virtual_free))
                         position=self.broker.build_position(
-                            signal,snap,stop_distance=setup.sl_distance,
+                            signal,capped_snapshot,stop_distance=setup.sl_distance,
                             reward_ratio=setup.rr,holding_minutes=setup.hold_minutes,
                             risk_budget_account=approved.approved_fraction*balance,
                             commission_round_trip_per_lot=self.commission,
