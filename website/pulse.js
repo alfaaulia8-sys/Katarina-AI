@@ -49,14 +49,21 @@ info.append(element('p','econ-comment',x.description));
 const analysis=element('p','econ-comment');analysis.append(element('span','econ-label',words[5]+': '));analysis.append(d.createTextNode(x.analysisShort||x.conditional||x.whatToWatch||''));info.append(analysis);
 const imp=window.katarinaInstrument?(x.instrumentImpact?.[window.katarinaInstrument]||0):0;const impTxt=imp>=4?'SANGAT TINGGI':imp===3?'TINGGI':imp===2?'SEDANG':x.impact;const attributions=element('div','econ-sources');const origin=element('a','econ-badge',impTxt+' · '+(x.region||'')+' ↗');origin.href=safeUrl(x.source)||sources.bls;origin.target='_blank';origin.rel='noopener noreferrer';attributions.append(origin);
 if(safeUrl(x.forecastSource)){const market=element('a','econ-badge',d.documentElement.lang==='id'?'Sumber konsensus ↗':'Consensus source ↗');market.href=x.forecastSource;market.target='_blank';market.rel='noopener noreferrer';attributions.append(market)}
-info.append(attributions);card.append(info);return card;
+info.append(attributions);
+const details=element('div','econ-effects');
+details.append(element('h4','econ-effects-title',d.documentElement.lang==='id'?'Penjelasan dampak & skenario ekonomi':'Economic impact and scenarios'));
+const add=(label,content)=>{if(!content)return;const row=element('div','econ-effect-row');row.append(element('strong','',label));row.append(element('p','',content));details.append(row)};
+add(d.documentElement.lang==='id'?'Mengapa rilis ini penting':'Why this matters',x.transmission||x.description);
+add(d.documentElement.lang==='id'?'Jika aktual di atas prediksi':'If actual exceeds consensus',x.ifAbove);
+add(d.documentElement.lang==='id'?'Jika aktual di bawah prediksi':'If actual misses consensus',x.ifBelow);
+add(d.documentElement.lang==='id'?'Apa yang wajib dipantau':'What to monitor',x.detailedWatch||x.whatToWatch);
+info.append(details);card.append(info);return card;
 }
 function renderCalendar(){const root=qs('#economic-events');if(root){root.replaceChildren();
 if(!state.cal?.events?.length){root.append(element('p','placeholder',lex('Kalender resmi belum dimuat.','Official schedule not available.')))}
 else for(const ev of state.cal.events.filter(x=>!window.katarinaInstrument||(x.instrumentImpact?.[window.katarinaInstrument]||0)>=2)){if(!safeDate(ev.dateWIB)||!/^\d\d:\d\d$/.test(ev.timeWIB)||!safeUrl(ev.source))continue;root.append(compactEvent(ev))}
 }
-const right=qs('#analysis-calendar');
-if(right){right.replaceChildren();if(state.cal?.events){for(const ev of state.cal.events.filter(x=>!window.katarinaInstrument||(x.instrumentImpact?.[window.katarinaInstrument]||0)>=2)){let p=element('article','econ-entry');p.style.gridTemplateColumns='1fr';let title=element('strong','',dateLabel(ev.dateWIB)+' · '+ev.timeWIB+' WIB');let desc=element('p','',ev.title+' — '+ev.whatToWatch);p.append(title,desc);right.append(p)}}else right.append(element('p','muted',lex('Agenda ekonomi resmi belum tersedia.','Official events unavailable.')))}
+
 }
 function watchCategory(){const controls=all('.pulse-tags button[data-filter]');
 if(!controls.length)return;for(const button of controls){button.addEventListener('click',()=>{controls.forEach(x=>x.setAttribute('aria-pressed',String(x===button)));window.katarinaMarketFilter=button.dataset.filter||'all';window.dispatchEvent(new Event('katarina-language'))})}}
