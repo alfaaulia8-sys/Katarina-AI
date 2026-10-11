@@ -1,14 +1,14 @@
 /* KATARINA static market chart v5, mobile-safe. No third-party iframe.
    All OHLC snapshots are independently sourced and timestamped.
-   GBPUSD official-reference rate is intentionally a LINE, not synthetic OHLC.
+   GBPUSD official-reference rate is intentionally a GARIS, not synthetic OHLC.
    NASDAQ data is an index proxy and must never be labelled a NAS100 CFD. */
 (()=>{"use strict";
 const root=document.getElementById("tv-host");if(!root)return;
 const mapping={"OANDA:XAUUSD":"xau","INDEX:DJI":"us30","OANDA:NAS100USD":"nasdaq","INDEX:SPX":"sp500","OANDA:EURUSD":"eurusd","OANDA:GBPUSD":"gbpusd","BITSTAMP:BTCUSD":"bitcoin","OANDA:XAGUSD":"silver"};
-const names={"xau":"XAUUSD · Gold Spot","us30":"US30 · Dow Jones Index ^DJI (proxy CFD)","nasdaq":"NASDAQ Composite (bukan NAS100 CFD)","sp500":"S&P 500 (proxy US500 CFD)","eurusd":"EURUSD","gbpusd":"GBPUSD · Referensi Forex","bitcoin":"BTCUSD","silver":"XAGUSD · Silver"};
+const names={"xau":"XAUUSD · Emas Spot","us30":"US30 · Dow Jones Index ^DJI (referensi indeks)","nasdaq":"NASDAQ Composite (bukan NAS100 CFD)","sp500":"S&P 500 (proxy US500 CFD)","eurusd":"EURUSD","gbpusd":"GBPUSD · Kurs Referensi","bitcoin":"BTCUSD","silver":"XAGUSD · Perak"};
 const providerLink={"xau":"https://www.tradingview.com/symbols/XAUUSD/","us30":"https://www.tradingview.com/symbols/DJ-DJI/","nasdaq":"https://www.tradingview.com/symbols/NASDAQ-IXIC/","sp500":"https://www.tradingview.com/symbols/SP-SPX/","eurusd":"https://www.tradingview.com/symbols/EURUSD/","gbpusd":"https://www.tradingview.com/symbols/GBPUSD/","bitcoin":"https://www.tradingview.com/symbols/BTCUSD/","silver":"https://www.tradingview.com/symbols/XAGUSD/"};
 const forexPairs=["USDJPY","USDCHF","USDCAD","AUDUSD","NZDUSD","EURGBP","EURJPY","EURCHF","EURCAD","EURAUD","EURNZD","GBPJPY","GBPCHF","GBPCAD","GBPAUD","GBPNZD","AUDJPY","AUDCAD","AUDCHF","AUDNZD","CADJPY","CADCHF","CHFJPY","NZDJPY","NZDCAD","NZDCHF"];
-for(const p of forexPairs){const k=p.toLowerCase();mapping["FX:"+p]=k;names[k]=p+" · Referensi Forex";providerLink[k]="https://www.tradingview.com/symbols/"+p+"/"}
+for(const p of forexPairs){const k=p.toLowerCase();mapping["FX:"+p]=k;names[k]=p+" · Kurs Referensi";providerLink[k]="https://www.tradingview.com/symbols/"+p+"/"}
 let data=null,symbol="OANDA:XAUUSD",range=60,offset=0,hover=-1,canvas,ctx,frame,stats,status,selection,retainedObserver;let touches=new Map(),drag=null,pinch=null,detailBox;
 const $=s=>document.querySelector(s);
 function el(tag,cls,value){const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e}
@@ -70,7 +70,7 @@ root.append(nav);
 update()}
 function update(){const key=mapping[symbol],item=data?.series?.[key];if(!item||!item.bars?.length){showError("Data grafik belum tersedia");return}
 const dt=new Date(item.asOf);const asOf=Number.isFinite(dt.getTime())?dt.toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Jakarta"})+" WIB":"waktu tidak tersedia";
-const days=Math.max(0,Math.floor((Date.now()-new Date(item.asOf).getTime())/86400000));stats.textContent="Sumber: "+(item.source||data.provider)+" • Terakhir: "+asOf+(days>3?" • DATA LAMA, bukan harga terkini":"")+" • "+(item.type==="close-only"?"kurs penutupan referensi":"candle historis")+(item.status==="stale"?" • DATA STALE: sumber terbaru tidak lolos validasi":"")+(item.latestBarIsOpen?" • candle harian belum final":"")+" • Bukan sinyal KATARINA";
+const days=Math.max(0,Math.floor((Date.now()-new Date(item.asOf).getTime())/86400000));stats.textContent="Sumber: "+(item.source||data.provider)+" • Terakhir: "+asOf+(days>3?" • DATA LAMA, bukan harga terkini":"")+" • "+(item.type==="close-only"?"kurs penutupan referensi":"candle historis")+(item.status==="stale"?" • DATA LAMA: sumber terbaru tidak lolos validasi":"")+(item.latestBarIsOpen?" • candle harian belum final":"")+" • Bukan sinyal KATARINA";
 if(ctx)requestAnimationFrame(paint);}
 function select(s){if(symbol!==s){offset=0;range=60}symbol=s;hover=-1;const key=mapping[s];const btns=document.querySelectorAll("[data-tv-symbol]");btns.forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tvSymbol===s)));
 const tv=$('#chart-direct-link');const lbl=$('#chart-symbol-label');if(tv)tv.href=providerLink[key]||"https://www.tradingview.com/";if(lbl)lbl.textContent=key==="nasdaq"?"NASDAQ":key.toUpperCase();
