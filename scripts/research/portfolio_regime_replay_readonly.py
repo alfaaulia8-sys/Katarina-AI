@@ -231,3 +231,54 @@ print("BEST",json.dumps(best,ensure_ascii=False))
 print("FULL",json.dumps({k:report[k] for k in ("combined_full_sample_BASE","combined_full_sample_STRESS","combined_full_sample_EXTRA_10PCT_R")},ensure_ascii=False)[:4000])
 print("MONTHLY",json.dumps(monthly_rows,ensure_ascii=False))
 print("OUTPUT",str(OUT))
+
+
+# Independent conservative paper baseline (NOT re-selected on 2026 results).
+# The 2025 optimizer above may return higher risk, but a smaller reproducible
+# stress-test baseline is exported separately without granting execution rights.
+PAPER_RISK = dict(risk=0.005, slots=1, day_stop=0.01, max_dd=0.06)
+paper_stress = simulate(g, j, "STRESS", **PAPER_RISK)
+paper_extra = simulate(g, j, "EXTRA_10PCT_R", **PAPER_RISK)
+paper_base = simulate(g, j, "BASE", **PAPER_RISK)
+paper_monthly = []
+for month in months:
+    item = {"month": month}
+    for label, rep in (("base", paper_base), ("stress", paper_stress), ("extra_10pctR", paper_extra)):
+        opened = [t for t in rep["ledger"] if tsdt(t["entry"]).strftime("%Y-%m") == month]
+        exited = [t for t in rep["ledger"] if tsdt(t["exit"]).strftime("%Y-%m") == month]
+        item[label + "_entries"] = len(opened)
+        item[label + "_XAUUSD"] = sum(t["symbol"] == "XAUUSD.vx" for t in opened)
+        item[label + "_JPN225"] = sum(t["symbol"] == "JPN225.vx" for t in opened)
+        item[label + "_closed"] = len(exited)
+        item[label + "_USD_model"] = round(sum(t["pnl"] for t in exited), 2)
+    paper_monthly.append(item)
+with (OUT / "paper_baseline_0p5pct_monthly.csv").open("w", newline="", encoding="utf-8-sig") as file:
+    writer = csv.DictWriter(file, fieldnames=list(paper_monthly[0]))
+    writer.writeheader()
+    writer.writerows(paper_monthly)
+with (OUT / "paper_baseline_0p5pct_all_entries.csv").open("w", newline="", encoding="utf-8-sig") as file:
+    fields = ["symbol", "rule", "side", "entry_UTC", "exit_UTC", "R_STRESS",
+              "risk_USD_model", "pnl_USD_model"]
+    writer = csv.DictWriter(file, fieldnames=fields)
+    writer.writeheader()
+    for t in sorted(paper_stress["ledger"], key=lambda x: x["entry"]):
+        writer.writerow({
+            "symbol": t["symbol"], "rule": t["rule"],
+            "side": "BUY" if t["side"] == 1 else "SELL",
+            "entry_UTC": tsdt(t["entry"]).isoformat(),
+            "exit_UTC": tsdt(t["exit"]).isoformat(),
+            "R_STRESS": round(t["R"], 6),
+            "risk_USD_model": round(t["stake"], 5),
+            "pnl_USD_model": round(t["pnl"], 5),
+        })
+(OUT / "paper_baseline_0p5pct_summary.json").write_text(json.dumps({
+    "model_only": True, "live_authorized": False,
+    "capital_USD_model": 10000, "risk": PAPER_RISK,
+    "BASE": clipped(paper_base),
+    "STRESS": clipped(paper_stress),
+    "EXTRA_10PCT_R": clipped(paper_extra),
+    "source_sha256": hashlib.sha256(RAW).hexdigest(),
+}, indent=2), encoding="utf-8")
+assert sum(row["stress_entries"] for row in paper_monthly) == paper_stress["trades"]
+print("PAPER_0p5pct", paper_stress["trades"], paper_stress["pnl"],
+      paper_extra["pnl"], "live_authorized=False")
