@@ -106,10 +106,14 @@ class ForwardStrategyEvidenceGate:
         seen: set[str] = set()
         verified = []
         for trade in trades:
+            try:
+                valid_return = isfinite(float(trade.net_r))
+            except (TypeError, ValueError, OverflowError):
+                valid_return = False
             if (not trade.trade_id or trade.trade_id in seen or
                     trade.symbol != symbol or trade.strategy_id != strategy_id or
                     not self._aware(trade.closed_at_utc) or
-                    not isfinite(trade.net_r)):
+                    not valid_return):
                 return self._deny("invalid_duplicate_or_mismatched_trade")
             seen.add(trade.trade_id)
             instant = trade.closed_at_utc.astimezone(timezone.utc)
