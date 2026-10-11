@@ -24,6 +24,7 @@ FEEDS=[
  ("Federal Reserve","https://www.federalreserve.gov/feeds/press_monetary.xml","www.federalreserve.gov"),
 ]
 KEYWORDS=re.compile(r"\b(fed|federal reserve|fomc|rate[s]?|bond[s]?|treasur(?:y|ies)|inflation|cpi|ppi|nfp|oil|crude|energy|gold|silver|dollar|forex|currency|currencies|yen|euro|pound|market[s]?|wall street|stock[s]?|equities|s&p|nasdaq|dow jones|geopolitic\w*|iran|saudi|china|tariff[s]?|commodit\w*|payroll[s]?|employment|central bank|crypto\w*|bitcoin|debt|yield[s]?|jpmorgan|bank[s]?|econom\w*|recession|monetary|interest|imf|world bank)\b", re.I)
+EXCLUDED=re.compile(r"\b(NBA|NFL|basketball|baseball|soccer|football|hockey|tennis|athlete|smart ball|celebrity|movie|entertainment|music awards|actor|streaming series)\b",re.I)
 def topic(title):
  text=title.lower()
  if re.search(r"\b(gold|silver|precious metal)\b",text):return "Emas / Logam"
@@ -55,7 +56,7 @@ def collect():
     title=normalize(node.findtext("title"))
     link=(node.findtext("link") or "").strip()
     date=node.findtext("pubDate") or ""
-    if not (24<=len(title)<=215 and KEYWORDS.search(title) and valid_link(link,host)):continue
+    if not (24<=len(title)<=215 and KEYWORDS.search(title) and not EXCLUDED.search(title) and valid_link(link,host)):continue
     try:published=email.utils.parsedate_to_datetime(date).astimezone(UTC)
     except (ValueError,TypeError,OverflowError):continue
     age=(NOW-published).total_seconds()
