@@ -1,0 +1,71 @@
+{
+  "policy_sha256": "fa9de0ac02a26919bbddf119416db9b70150e7635f643538d285a60ae0909da5",
+  "cells": [
+    {
+      "side": "SELL",
+      "regime": "DOWN",
+      "candidate": "sr_rejection_SELL_wider_stop",
+      "metrics": {
+        "trades": 81,
+        "days": 31,
+        "expectancy_r": -0.2765035431100702,
+        "net_r": -22.396786991915686,
+        "profit_factor": 0.6669776847187179,
+        "win_rate": 0.25925925925925924,
+        "daily_mean_minus_2se": -1.4951182911515293
+      },
+      "result": "REJECTED"
+    }
+  ],
+  "research_only": true,
+  "live_risk_authorized": false,
+  "validated_strategy": false,
+  "limitation": "Independent family runs do not simulate a combined router's position availability.",
+  "runs": [
+    {
+      "candidate": {
+        "id": "sr_rejection_SELL_wider_stop",
+        "family": "sr_rejection",
+        "side": "SELL",
+        "method": 5,
+        "min_adx": 0,
+        "sl_atr": 2.0,
+        "rr": 2.2
+      },
+      "phase": "final",
+      "from_date": "2026.08.01",
+      "to_date": "2026.10.01",
+      "report": {
+        "trades": 263,
+        "net_profit": "40.03",
+        "history_quality": "100% real ticks",
+        "cash_profit_factor": "1.03",
+        "equity_drawdown": "194.48 (1.94%)",
+        "deal_commission": "0.00",
+        "deal_swap": "0.00",
+        "deal_profit": "40.03",
+        "exit_comments": {
+          "SL": 178,
+          "TP": 85
+        },
+        "report_sha256": "df516529514dbae76fa2312e6a52468b3800af894690a7b69cd6b8d33b35dea4"
+      },
+      "run_id": "04dc4450081740f8b0ab6dadd07973a2",
+      "expert_sha256": "C0018E4308C30854D9D893F094FDB4B3740560A9BD007EA5C0E74482746ECF44",
+      "parameters_sha256": "FF0CF89ECB6D0A23A838BCF6FD302A733AC21300B249AF14620BAB3867539C63",
+      "journal_path": "C:\\KatarinaDev\\artifacts\\mt5\\brain-experiments\\final\\sr_rejection_SELL_wider_stop\\04dc4450081740f8b0ab6dadd07973a2\\evidence\\KatarinaFeatureJournal_verified_1785542400_483481359.csv",
+      "journal_sha256": "fe189d6040e28a60263bd806f0e7a5572115df9912e2ab1a07e0c9f89efb2e0a",
+      "opportunity_path": "C:\\KatarinaDev\\artifacts\\mt5\\brain-experiments\\final\\sr_rejection_SELL_wider_stop\\04dc4450081740f8b0ab6dadd07973a2\\evidence\\KatarinaOpportunity_verified_1785542400_483481359.csv",
+      "opportunity_sha256": "4fb96042e4077e42dc0f6c3a884213ed1eb0cf424098a926a063b56d6450e8f1",
+      "opportunity_rows": 58980,
+      "occupied_rows": 9939,
+      "strategy_validated": false,
+      "live_execution_enabled": false
+    }
+  ],
+  "limitations": [
+    "Aug/Sep market history was previously inspected in other research.",
+    "Per-regime journal filtering is diagnostic: combined strategy router needs its own execution rerun.",
+    "October remains untouched; no prospective demo or live promotion."
+  ]
+}
