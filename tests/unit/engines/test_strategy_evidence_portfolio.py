@@ -8,6 +8,7 @@ from katarina.engines.multi_symbol_execution import MultiSymbolCandidate, MultiS
 from katarina.engines.opportunity import RankedOpportunity
 from katarina.engines.risk import RiskGovernor
 from katarina.engines.scalper_entry import EntryMode, EntryProposal, EntrySide
+from katarina.intelligence.strategy_drift import StrategyDriftDecision
 from katarina.intelligence.strategy_evidence import (
     ClosedStrategyTrade, ForwardStrategyEvidenceGate, StrategyEvidenceDecision,
 )
@@ -139,6 +140,48 @@ class StrategyAndExposureRoutingTests(unittest.TestCase):
         self.assertEqual(len(plan.accepted),0)
         self.assertEqual(plan.rejected[0].reason,"strategy_forward_evidence_missing")
         self.assertEqual(self.state.reservations.total_fraction,0)
+
+    def test_drift_no_trade_prevents_reservation_even_when_forward_was_good(self):
+        router=MultiSymbolExecutionOrchestrator(
+            risk=self.risk,require_strategy_evidence=True,
+            require_drift_clearance=True)
+        forward=verified_paper_evidence()
+        stopped=StrategyDriftDecision("NO_TRADE","recent_loss_streak",0.,60)
+        plan=router.build_plan(
+            [make_candidate("XAUUSD",1)],positions=self.positions,
+            day_key="2026-10-11",returns={"XAUUSD":[1,0,-1]},
+            evidence_decisions={("XAUUSD","GOLD_OR"):forward},
+            drift_decisions={("XAUUSD","GOLD_OR"):stopped})
+        self.assertEqual(len(plan.accepted),0)
+        self.assertEqual(plan.rejected[0].reason,"strategy_drift_no_trade")
+        self.assertAlmostEqual(self.state.reservations.total_fraction,0)
+
+    def test_drift_clearance_cannot_increase_lots_or_override_risk(self):
+        router=MultiSymbolExecutionOrchestrator(
+            risk=self.risk,require_strategy_evidence=True,
+            require_drift_clearance=True)
+        forward=verified_paper_evidence()
+        drift=StrategyDriftDecision(
+            "RISK_REVIEW_ONLY","forward_edge_and_recent_costs_within_limits",
+            .20,60)
+        plan=router.build_plan(
+            [make_candidate("XAUUSD",1)],positions=self.positions,
+            day_key="2026-10-11",returns={"XAUUSD":[1,0,-1]},
+            evidence_decisions={("XAUUSD","GOLD_OR"):forward},
+            drift_decisions={("XAUUSD","GOLD_OR"):drift})
+        self.assertEqual(len(plan.accepted),1)
+        self.assertAlmostEqual(plan.accepted[0].approved_risk_fraction,.01)
+        self.assertAlmostEqual(plan.accepted[0].intent.volume,.02)
+        self.assertFalse(drift.live_execution_authorized)
+
+    def test_missing_drift_attestation_is_no_trade(self):
+        router=MultiSymbolExecutionOrchestrator(
+            risk=self.risk,require_drift_clearance=True)
+        plan=router.build_plan(
+            [make_candidate("XAUUSD",1)],positions=self.positions,
+            day_key="2026-10-11",returns={"XAUUSD":[1,0,-1]})
+        self.assertEqual(len(plan.accepted),0)
+        self.assertEqual(plan.rejected[0].reason,"strategy_drift_no_trade")
 
     def test_failed_forward_evidence_cannot_be_forgiven_by_higher_score(self):
         router=MultiSymbolExecutionOrchestrator(
