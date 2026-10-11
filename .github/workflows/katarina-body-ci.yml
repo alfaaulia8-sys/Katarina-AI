@@ -26,8 +26,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Stage 07 test dependencies
-        run: python -m pip install --disable-pip-version-check -r requirements-stage07.txt
+      - name: Install Stage 07 and NumPy research test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements-stage07.txt
+          python -m pip install --disable-pip-version-check numpy==2.5.3
 
       - name: Compile Python
         run: python -m compileall -q src
