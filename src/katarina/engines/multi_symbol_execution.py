@@ -225,7 +225,10 @@ class MultiSymbolExecutionOrchestrator:
                 rejected.append(RejectedExecution(symbol,"correlation_exposure_cap"))
                 continue
 
-            scaled_volume=c.base_volume*(auth.approved_fraction/req)
+            # base_volume was sized against c.requested_risk_fraction, BEFORE
+            # any quality/evidence multiplier. Scaling by req would silently
+            # undo that multiplier and leave the physical lot too large.
+            scaled_volume=c.base_volume*(auth.approved_fraction/float(c.requested_risk_fraction))
             volume=self._quantize_volume(scaled_volume,c.volume_min,c.volume_step)
             if volume <= 0:
                 self.risk.state_engine.reservations.release(reservation_id)
