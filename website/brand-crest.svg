@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 610" role="img" aria-label="KATARINA cyber K emblem"><defs>
+<radialGradient id="a" cx="50%" cy="50%" r="50%"><stop stop-color="#0b75ff" stop-opacity=".42"/><stop offset=".6" stop-color="#0a81ee" stop-opacity=".08"/><stop offset="1" stop-color="#0a81ee" stop-opacity="0"/></radialGradient>
+<linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e4faff"/><stop offset=".18" stop-color="#38c8ff"/><stop offset=".35" stop-color="#051d60"/><stop offset=".55" stop-color="#1feaff"/><stop offset=".8" stop-color="#003cb8"/><stop offset="1" stop-color="#b8f8ff"/></linearGradient>
+<linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dcfcff"/><stop offset=".22" stop-color="#23c0ff"/><stop offset=".52" stop-color="#0a3db7"/><stop offset=".82" stop-color="#00154d"/><stop offset="1" stop-color="#14caff"/></linearGradient>
+<linearGradient id="dark" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#0c387f"/><stop offset=".5" stop-color="#00091f"/><stop offset="1" stop-color="#072867"/></linearGradient>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="13"/></filter>
+<pattern id="grid" width="31" height="31" patternUnits="userSpaceOnUse"><path d="M31 0H0V31" fill="none" stroke="#0f88c6" stroke-opacity=".14"/></pattern></defs>
+<circle cx="345" cy="297" r="260" fill="url(#a)"/><circle cx="345" cy="297" r="231" fill="none" stroke="#159cfd" stroke-width="1.8" stroke-opacity=".72"/><circle cx="345" cy="297" r="249" fill="none" stroke="#5bc7ff" stroke-width="1" stroke-opacity=".26" stroke-dasharray="8 12"/>
+<circle cx="345" cy="297" r="199" fill="none" stroke="#0b9aed" stroke-opacity=".27"/><path d="M88 317C142 90 398 -24 613 182" fill="none" stroke="#0f8efe" stroke-width="5" stroke-opacity=".36" filter="url(#glow)"/>
+<path d="M92 380C120 514 348 624 594 399" fill="none" stroke="#0edcff" stroke-width="3" stroke-opacity=".54" filter="url(#glow)"/>
+<path d="M178 165C220 118 278 78 354 75C439 68 520 110 583 172C510 149 474 160 425 181C378 130 314 126 262 151Z" fill="url(#blue)" stroke="#76eaff" stroke-width="3"/>
+<path d="M232 158C175 178 110 262 99 330C137 282 186 258 230 244C184 331 176 397 213 482C217 400 265 343 293 297C306 254 277 204 232 158Z" fill="url(#dark)" stroke="url(#chrome)" stroke-width="5"/>
+<path d="M303 196C381 153 484 164 552 219C599 253 620 298 634 326C603 309 560 286 514 284C477 280 443 285 413 304C403 266 363 220 303 196Z" fill="url(#blue)" stroke="url(#chrome)" stroke-width="5"/>
+<path d="M390 177L397 428L515 323L609 325L457 460L613 550L489 550L398 480L397 548L308 548L308 232Z" fill="url(#dark)" stroke="#66dfff" stroke-width="10" stroke-linejoin="round" filter="url(#glow)"/>
+<path d="M398 178L400 427L516 323L606 327L456 457L613 550L490 550L397 480L398 547L309 547L309 232Z" fill="url(#chrome)" stroke="#d0faff" stroke-width="3" stroke-linejoin="round"/>
+<path d="M470 234C514 222 562 247 595 288C544 268 511 269 473 284L435 302Z" fill="#041132" stroke="#50cbff" stroke-width="2"/>
+<path d="M513 254L542 257L519 273Z" fill="#adfaff" filter="url(#glow)"/>
+<path d="M146 330Q198 256 290 247M159 360Q228 309 293 310M230 448Q275 384 296 348" fill="none" stroke="#19ddff" stroke-width="2" stroke-opacity=".85"/>
+<path d="M270 284L309 284M244 345L307 345M259 408L311 408" fill="none" stroke="#19dfff" stroke-width="3"/><g fill="#36d8ff" filter="url(#glow)"><circle cx="230" cy="284" r="5"/><circle cx="219" cy="346" r="4"/><circle cx="252" cy="410" r="5"/><circle cx="464" cy="118" r="5"/><circle cx="568" cy="459" r="6"/><circle cx="131" cy="215" r="4"/></g>
+<g fill="none" stroke="#0acfff" stroke-width="1.5" opacity=".54"><path d="M115 460L156 437L191 451"/><path d="M530 144L590 123L616 135"/><path d="M553 498L621 492L646 469"/></g><circle cx="345" cy="297" r="261" fill="url(#grid)" opacity=".35"/>
+</svg>
