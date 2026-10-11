@@ -96,3 +96,18 @@ body.kt-focus-active .kt-chart-bottom{display:flex}
 .kt-unified .kt-chart-touch-info{font-size:11px}
 .kt-unified .kt-hero-clarity{line-height:1.7}
 }
+/* Prioritize the actual chart immediately after pair selection */
+.kt-unified .kt-chart-primary{display:block!important;margin-bottom:16px}
+.kt-unified .kt-chart-primary #kt-analysis-terminal{width:100%;padding:clamp(15px,2.4vw,23px)!important}
+.kt-unified .kt-chart-primary .tv-embed{min-height:420px}
+.kt-unified .kt-chart-primary .self-chart-frame{min-height:355px}
+.kt-unified .kt-calendar-primary #economic-calendar{padding:clamp(16px,2.4vw,24px)!important}
+.kt-unified .kt-calendar-primary #economic-events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px;max-height:none;overflow:visible}
+.kt-unified .kt-calendar-primary .econ-entry{height:100%;margin:0}
+.kt-unified .kt-calendar-primary .econ-entry>div{min-width:0}
+.kt-unified .kt-calendar-primary .kt-calendar-details{margin-top:auto}
+.kt-unified .kt-calendar-primary .kt-calendar-details[open]{height:auto}
+.kt-unified #kt-analysis-terminal .market-chart-controls{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.kt-unified #kt-analysis-terminal .market-chart-controls button{touch-action:manipulation}
+@media(max-width:790px){.kt-unified .kt-calendar-primary #economic-events{grid-template-columns:1fr}.kt-unified .kt-chart-primary .tv-embed{min-height:340px}}
+@media(max-width:590px){.kt-unified .kt-chart-primary #kt-analysis-terminal{padding:15px 10px!important}.kt-unified .kt-chart-primary .tv-embed{min-height:310px}.kt-unified .kt-chart-primary .self-chart-frame{min-height:285px}.kt-unified .kt-chart-primary{margin-bottom:13px}}
