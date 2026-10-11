@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-10-11",
+  "policy": "Analysis levels must originate from an auditable KATARINA research run, with approvedForPublication=true, verified=true and suitable OHLC candles. Never treat macro conditional explanations as trading signals. Do not publish a confidence number absent independent calibration. Never publish raw broker positions, source strategy, or proprietary trading parameters.",
+  "analyses": []
+}
