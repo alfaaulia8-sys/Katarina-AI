@@ -145,7 +145,10 @@ class MT5ShadowCycle:
                 h4_closed_at_utc=snap.h4[-1].closed_at_utc,
                 side=side,action=action,reason=reason,
                 broker_session_open=True,data_fresh=True,
-                news_blackout=not research_news_clear,
+                # Calendar state is UNKNOWN until an authenticated news
+                # adapter supplies it. Missing clearance is a REJECT reason,
+                # not false evidence that a real blackout was detected.
+                news_blackout=False,
                 spread_price_units=snap.ask-snap.bid,
                 spec_revision=1)  # research schema revision, not broker spec hash
             position=None
