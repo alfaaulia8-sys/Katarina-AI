@@ -6,6 +6,7 @@ but news context is NOT VERIFIED, so all recommendations fail closed to WAIT.
 from __future__ import annotations
 import json
 import os
+from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -25,13 +26,24 @@ def publish(data):
     try:
         temp.replace(target)
     except PermissionError:
-        with target.open("r+b") as file:
-            file.seek(0)
-            file.write(payload)
-            file.truncate()
-            file.flush()
-            os.fsync(file.fileno())
-        temp.unlink(missing_ok=True)
+        # The legacy latest.json may have protected ACLs or be locked by the
+        # website. Never weaken its ACL or overwrite another owner's file.
+        try:
+            with target.open("r+b") as file:
+                file.seek(0)
+                file.write(payload)
+                file.truncate()
+                file.flush()
+                os.fsync(file.fileno())
+            temp.unlink(missing_ok=True)
+        except PermissionError:
+            try:
+                temp.replace(OUT / "latest-explainable.json")
+            except PermissionError:
+                snapshot = OUT / ("explainable-" +
+                    datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + ".json")
+                snapshot.write_bytes(payload)
+                temp.unlink(missing_ok=True)
 
 
 def main():
@@ -40,6 +52,7 @@ def main():
                   as_of_utc=now.isoformat(),
                   news_context_verified=False,
                   live_execution_authorized=False,
+                  decision_model="EXPLAINABLE_MARKET_DECISION_V1",
                   symbols={})
     if not mt5.initialize(path=TERMINAL):
         report["error"] = "mt5_connection_failed"
@@ -77,6 +90,10 @@ def main():
                     "regime": read.market_state, "playbook": read.playbook,
                     "action": read.action, "reasons": read.reasons,
                     "tools": read.tools,
+                    "decision_detail": (
+                        asdict(read.decision_detail)
+                        if read.decision_detail is not None else None
+                    ),
                     "market_data_fresh": fresh,
                     "quote_fresh": quote_fresh,
                     "live_execution_authorized": False,

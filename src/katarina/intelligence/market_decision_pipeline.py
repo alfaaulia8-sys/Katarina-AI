@@ -194,6 +194,10 @@ class MarketDecisionPipeline:
                 news_blackout=news_blackout,
                 news_context_verified=news_context_verified,
             )
+            # One public research signal: the explainable advisor may veto
+            # an earlier direction-only candidate when scenario/entry checks
+            # reveal poor geometry or mismatched playbook confirmation.
+            action = decision_detail.signal
             return DecisionObservation(
                 symbol, action, observations.regime.state.value,
                 plan.strategy.value, reasons,
