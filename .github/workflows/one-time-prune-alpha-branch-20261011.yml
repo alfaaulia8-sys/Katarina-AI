@@ -1,0 +1,48 @@
+name: One-time remove merged alpha research branch
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-time-prune-alpha-branch-20261011.yml']
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  prune-reviewed-branch:
+    if: github.repository == 'alfaauliau-katarinaAI/Katarina-AI' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete only the merged exact source head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error, urllib.parse
+          base="https://api.github.com/repos/alfaauliau-katarinaAI/Katarina-AI"
+          branch="research/alpha-regime-survival-20261011"
+          expected="c94941f457de2f77be70c35859bba5b369404df4"
+          head={"Authorization":"Bearer "+os.environ["GH_TOKEN"],
+                "Accept":"application/vnd.github+json",
+                "X-GitHub-Api-Version":"2022-11-28"}
+          def call(method,url,missing=False):
+              req=urllib.request.Request(base+url,headers=head,method=method)
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as r:
+                      payload=r.read()
+                      return json.loads(payload) if payload else {}
+              except urllib.error.HTTPError as exc:
+                  if missing and exc.code==404:return None
+                  raise
+          pr=call("GET","/pulls/26")
+          assert pr["merged"] is True and pr["head"]["ref"]==branch and pr["head"]["sha"]==expected
+          encoded=urllib.parse.quote(branch,safe="/")
+          ref=call("GET","/git/ref/heads/"+encoded,missing=True)
+          if ref is not None:
+              assert ref["object"]["sha"] == expected, "Source moved; refusing cleanup"
+              call("DELETE","/git/refs/heads/"+encoded)
+          assert call("GET","/git/ref/heads/"+encoded,missing=True) is None
+          print("PASS_ALPHA_RESEARCH_MERGED_BRANCH_PRUNED")
+          PY
