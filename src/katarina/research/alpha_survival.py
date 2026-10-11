@@ -85,14 +85,14 @@ def assess(hypothesis: FrozenHypothesis, outcomes, *, audit_at: datetime,
     frozen, start, end = (_utc(x) for x in (
         hypothesis.freeze_at, hypothesis.holdout_start, hypothesis.holdout_end))
     expected = REGIME_ROUTES.get(hypothesis.market_state)
-    if (not hypothesis.symbol or expected is None or
-        hypothesis.side not in ("BUY", "SELL") or
-        hypothesis.side not in (expected[0], "BUY" if expected[0] == "BOTH" else expected[0],
-                                "SELL" if expected[0] == "BOTH" else expected[0]) or
-        hypothesis.playbook != expected[1]):
+    if not hypothesis.symbol or expected is None:
         return _blocked("INVALID_REGIME_ROUTE")
     if expected[0] == "WAIT":
         return _blocked("REGIME_NO_TRADE")
+    if (hypothesis.side not in ("BUY", "SELL")
+        or (expected[0] != "BOTH" and hypothesis.side != expected[0])
+        or hypothesis.playbook != expected[1]):
+        return _blocked("INVALID_REGIME_ROUTE")
     if not (frozen < start < end and hypothesis.preregistered_tests >= 1
             and isfinite(hypothesis.extra_cost_r) and
             0 <= hypothesis.extra_cost_r < 10 and
@@ -146,7 +146,7 @@ def assess(hypothesis: FrozenHypothesis, outcomes, *, audit_at: datetime,
     profit_factor = pos/neg if neg else None
     top_five_excluded = gross - sum(sorted(net_values, reverse=True)[:5])
     positives = sum(value > 0 for value in week_returns)
-    # Weekly resampling retains intraw eek dependence, not cross-week regimes.
+    # Weekly resampling retains intraweek dependence, not cross-week regimes.
     rng = Random(int(sha256(
         (hypothesis.dataset_sha256 + hypothesis.symbol
          + hypothesis.market_state + hypothesis.side).encode()).hexdigest()[:16], 16))
