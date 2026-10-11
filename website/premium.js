@@ -58,7 +58,7 @@ const nav=el("div","market-chart-controls");for(const [period,value] of [["1 bul
 update()}
 function update(){const key=mapping[symbol],item=data?.series?.[key];if(!item||!item.bars?.length){showError("Data grafik belum tersedia");return}
 const dt=new Date(item.asOf);const asOf=Number.isFinite(dt.getTime())?dt.toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Jakarta"})+" WIB":"waktu tidak tersedia";
-const days=Math.max(0,Math.floor((Date.now()-new Date(item.asOf).getTime())/86400000));stats.textContent="Sumber: "+(item.source||data.provider)+" • Terakhir: "+asOf+(days>3?" • DATA LAMA, bukan harga terkini":"")+" • "+(item.type==="close-only"?"kurs penutupan referensi":"candle historis")+" • Bukan sinyal KATARINA";
+const days=Math.max(0,Math.floor((Date.now()-new Date(item.asOf).getTime())/86400000));stats.textContent="Sumber: "+(item.source||data.provider)+" • Terakhir: "+asOf+(days>3?" • DATA LAMA, bukan harga terkini":"")+" • "+(item.type==="close-only"?"kurs penutupan referensi":"candle historis")+(item.status==="stale"?" • DATA STALE: sumber terbaru tidak lolos validasi":"")+(item.latestBarIsOpen?" • candle harian belum final":"")+" • Bukan sinyal KATARINA";
 if(ctx)requestAnimationFrame(paint);}
 function select(s){symbol=s;hover=-1;const key=mapping[s];const btns=document.querySelectorAll("[data-tv-symbol]");btns.forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tvSymbol===s)));
 const tv=$('#chart-direct-link');const lbl=$('#chart-symbol-label');if(tv)tv.href=providerLink[key]||"https://www.tradingview.com/";if(lbl)lbl.textContent=key==="nasdaq"?"NASDAQ":key.toUpperCase();

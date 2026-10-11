@@ -310,6 +310,34 @@
   "note": "Jadwal tanggal/jam: BLS dan Federal Reserve Bank of New York. Konsensus dan angka sebelumnya: Trading Economics, diperiksa pada 11 Oktober 2026; angka dapat direvisi. Aktual sengaja kosong sampai rilis resmi. Waktu WIB menggunakan UTC+7, September/Oktober 2026 ET adalah EDT (UTC−4).",
   "news": [
     {
+      "id": "reuters-imf-energy-debt-20261011",
+      "date": "2026-10-11",
+      "category": "macro",
+      "markets": [
+        "macro",
+        "indices",
+        "forex",
+        "gold"
+      ],
+      "sourceName": "Reuters",
+      "url": "https://www.reuters.com/world/china/middle-east-war-high-debt-levels-dominate-imf-world-bank-meetings-bangkok-2026-10-11/",
+      "title": "IMF–Bank Dunia: Risiko pasokan energi, utang, dan yield membayangi ekonomi global",
+      "summary": "Reuters (11 Oktober 2026): pertemuan IMF–Bank Dunia di Bangkok dibayangi gangguan pasokan energi, tekanan utang, dan kenaikan biaya pembiayaan. Arah pasar tidak dapat disimpulkan dari satu laporan.",
+      "analysis": "Kenaikan biaya energi dapat memengaruhi inflasi dan yield, yang relevan bagi emas, perak, indeks saham AS, EURUSD dan GBPUSD. Pantau data serta respons pasar; bukan sinyal investasi.",
+      "impact": "TINGGI",
+      "impactRationale": "Risiko energi, inflasi dan yield memiliki hubungan langsung dengan biaya modal; skala dampak bersifat editorial, bukan probabilitas.",
+      "symbols": [
+        "XAUUSD",
+        "XAGUSD",
+        "US30",
+        "US500",
+        "NASDAQ",
+        "EURUSD",
+        "GBPUSD"
+      ],
+      "classification": "article"
+    },
+    {
       "id": "reuters-global-week-2026-10-09",
       "date": "2026-10-09",
       "category": "macro",
