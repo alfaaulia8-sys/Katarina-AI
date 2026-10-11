@@ -178,3 +178,36 @@ header.shell .lang{font-size:11px;max-width:140px;padding:9px;border-radius:8px}
 .pulse-page .news-section-notice{font-size:11px;color:#9abbd2;margin:7px 0 14px}
 @media(max-width:900px){.pulse-page .pulse-hero .copy{max-width:100%}.pulse-page .pulse-hero .copy:after{display:none}}
 @media(max-width:570px){.pulse-page .news-scroll{max-height:340px}.pulse-page .econ-metrics{gap:6px}.pulse-page .econ-metric{padding:10px 7px}}
+
+
+/* v5: clear, scrollable economic agenda and editorial news */
+.pulse-page .news-scroll{max-height:510px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#278fd2 #07172e;padding-right:10px;min-width:0}
+.pulse-page .econ-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}
+.pulse-page .econ-metric{min-width:0;padding:11px 9px;border-color:#266088}
+.pulse-page .econ-metric small{font:700 10px/1.4 'DM Sans',sans-serif;color:#85b7d4;letter-spacing:0}
+.pulse-page .econ-metric b{font:750 clamp(11px,1vw,15px)/1.35 'Space Grotesk',sans-serif;color:#e3f6ff;overflow-wrap:break-word}
+.pulse-page .econ-metric:first-child b{color:#a5cde4}
+.pulse-page .econ-metric:nth-child(2){background:linear-gradient(145deg,#07243d,#07182f);border-color:#1e85ba}
+.pulse-page .econ-metric:nth-child(2) b{color:#42daff}
+.pulse-page .econ-sources{display:flex;gap:7px;flex-wrap:wrap}
+.pulse-page .econ-sources .econ-badge{margin-top:9px;font-size:10px;letter-spacing:0;line-height:1.4}
+.pulse-page #news-feed{display:grid;gap:11px;align-content:start}
+.pulse-page .market-news-card{padding:15px 15px 13px;background:linear-gradient(160deg,#071e37,#041329);border:1px solid #20597e;border-radius:11px}
+.pulse-page .market-news-top{display:flex;align-items:center;justify-content:space-between;gap:9px;color:#72bfe7;font-size:10px;letter-spacing:.03em;text-transform:uppercase}
+.pulse-page .market-news-top span{color:#86d6f5;font-size:10px;font-weight:700}
+.pulse-page .market-news-card h3{font:700 14px/1.45 'Space Grotesk',sans-serif;color:#e9f7ff;margin:10px 0!important}
+.pulse-page .market-news-card>p{font:450 12px/1.7 'DM Sans',sans-serif;color:#b3cedf;margin:0 0 9px}
+.pulse-page .market-insight{background:#06223c;border-left:2px solid #18bbf6;border-radius:0 7px 7px 0;padding:10px 12px;margin:12px 0}
+.pulse-page .market-insight strong{font-size:10px;color:#59d8ff;letter-spacing:.06em;text-transform:uppercase}
+.pulse-page .market-insight p{font:450 12px/1.7 'DM Sans',sans-serif;color:#a9cedf;margin:5px 0 0}
+.pulse-page .news-source-link{display:inline-block;color:#70d8ff;font:700 11px 'DM Sans',sans-serif;text-decoration:none;padding:8px 0 2px}
+.pulse-page .news-source-link:hover{text-decoration:underline}
+.pulse-page #news-feed .market-news-card:hover{border-color:#2396c9}
+@media(max-width:570px){
+ .pulse-page .econ-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .pulse-page .econ-metric{padding:10px 7px}
+ .pulse-page .econ-metric small{font-size:9px}
+ .pulse-page .econ-metric b{font-size:11px}
+ .pulse-page .news-scroll{max-height:435px;padding-right:5px}
+ .pulse-page .market-news-card{padding:12px}
+}
