@@ -56,3 +56,23 @@ GitHub PR #30 CI includes Python compilation, unit tests, full baseline, operati
 **Release policy:** keep the change in Draft PR while broker-dependent live tick read-only smoke validation and source attestation are outstanding. Never treat a green CI as proven trading profitability.
 
 References: [MT5 copy_rates_from_pos](https://www.mql5.com/en/docs/python_metatrader5/mt5copyratesfrompos_py), [copy_ticks_range](https://www.mql5.com/en/docs/python_metatrader5/mt5copyticksrange_py), [order_calc_profit](https://www.mql5.com/en/docs/python_metatrader5/mt5ordercalcprofit_py).
+
+## First real MT5 read-only smoke: October 11, 2026, 15:25 UTC
+
+The independent test worktree on the authorized Windows VPS successfully called only MetaTrader5 initialization, account currency/symbol reads, quote/candle reads, `order_calc_profit`, `order_calc_margin`, and shutdown. Account login/credentials were not printed and no deal/order was sent.
+
+| Verified broker observation | Result |
+|---|---|
+| Terminal connection | PASS |
+| XAUUSD.vx quote/spec exists | PASS |
+| Account currency | USD |
+| Broker contract size | 100 oz per lot |
+| Minimum volume / step | 0.01 / 0.01 |
+| One 0.01-lot paper BUY, $10 adverse price stop | $10 theoretical stop loss before fees |
+| `order_calc_profit` and `order_calc_margin` available | PASS |
+| M5/H1/H4 rates accessible | 114 / 81 / 56 bars queried |
+| Quote freshness | FAIL CLOSED, approx. 142,203 seconds old on Sunday |
+| Actual new live paper signal | NONE, due stale quote |
+| Broker orders submitted | ZERO |
+
+This is a valid **read-only terminal-adapter / data-quality fail-closed smoke**, NOT an open-market streaming fill test or successful continuous shadow-running proof. Re-test while XAUUSD market is open with current bid/ask and independently verified commission/calendar feed before asserting operational readiness.
