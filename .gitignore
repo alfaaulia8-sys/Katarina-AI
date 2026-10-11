@@ -239,3 +239,27 @@ ops/vps/rescue/*.trigger
 ops/vps/requests/**/*.log
 infrastructure/legacy-vps-control/
 ops/bridge/CONTROL_TEST.txt
+
+# Editor/OS transient files and accidental scratch copies
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.stackdump
+
+# Local environment variants (allow safe documented templates)
+.env.*
+!.env.example
+!.env.sample
+
+# Temporary top-level workspaces
+/scratch/
+/tmp/
+/temp/
