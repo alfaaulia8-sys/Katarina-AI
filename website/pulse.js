@@ -53,15 +53,15 @@ info.append(attributions);card.append(info);return card;
 }
 function renderCalendar(){const root=qs('#economic-events');if(root){root.replaceChildren();
 if(!state.cal?.events?.length){root.append(element('p','placeholder',lex('Kalender resmi belum dimuat.','Official schedule not available.')))}
-else for(const ev of state.cal.events){if(!safeDate(ev.dateWIB)||!/^\d\d:\d\d$/.test(ev.timeWIB)||!safeUrl(ev.source))continue;root.append(compactEvent(ev))}
+else for(const ev of state.cal.events.filter(x=>!window.katarinaInstrument||(Array.isArray(x.symbols)&&x.symbols.includes(window.katarinaInstrument)))){if(!safeDate(ev.dateWIB)||!/^\d\d:\d\d$/.test(ev.timeWIB)||!safeUrl(ev.source))continue;root.append(compactEvent(ev))}
 }
 const right=qs('#analysis-calendar');
-if(right){right.replaceChildren();if(state.cal?.events){for(const ev of state.cal.events){let p=element('article','econ-entry');p.style.gridTemplateColumns='1fr';let title=element('strong','',dateLabel(ev.dateWIB)+' · '+ev.timeWIB+' WIB');let desc=element('p','',ev.title+' — '+ev.whatToWatch);p.append(title,desc);right.append(p)}}else right.append(element('p','muted',lex('Agenda ekonomi resmi belum tersedia.','Official events unavailable.')))}
+if(right){right.replaceChildren();if(state.cal?.events){for(const ev of state.cal.events.filter(x=>!window.katarinaInstrument||(Array.isArray(x.symbols)&&x.symbols.includes(window.katarinaInstrument)))){let p=element('article','econ-entry');p.style.gridTemplateColumns='1fr';let title=element('strong','',dateLabel(ev.dateWIB)+' · '+ev.timeWIB+' WIB');let desc=element('p','',ev.title+' — '+ev.whatToWatch);p.append(title,desc);right.append(p)}}else right.append(element('p','muted',lex('Agenda ekonomi resmi belum tersedia.','Official events unavailable.')))}
 }
 function watchCategory(){const controls=all('.pulse-tags button[data-filter]');
 if(!controls.length)return;for(const button of controls){button.addEventListener('click',()=>{controls.forEach(x=>x.setAttribute('aria-pressed',String(x===button)));window.katarinaMarketFilter=button.dataset.filter||'all';window.dispatchEvent(new Event('katarina-language'))})}}
 function validCandles(items){if(!Array.isArray(items)||items.length<10||items.length>500)return false;let previous='';for(const c of items){if(!c||!safeDate(c.time)||typeof c.open!=='number'||typeof c.high!=='number'||typeof c.low!=='number'||typeof c.close!=='number'||![c.open,c.high,c.low,c.close].every(x=>Number.isFinite(x)&&x>0))return false;if(c.low>Math.min(c.open,c.close)||c.high<Math.max(c.open,c.close)||previous>=c.time)return false;previous=c.time}return true}
-function validApprovedAnalysis(a){return a&&a.verified===true&&a.approvedForPublication===true&&typeof a.verification==='string'&&a.verification.trim().length>=20&&typeof a.evidenceUrl==='string'&&safeUrl(a.evidenceUrl)&&['OANDA:XAUUSD','OANDA:EURUSD','OANDA:GBPUSD','BITSTAMP:BTCUSD','OANDA:XAGUSD','OANDA:NAS100USD'].includes(a.symbol)&&['D','240','60','W'].includes(a.timeframe)&&validCandles(a.candles)&&Array.isArray(a.zones)&&a.zones.length<=12&&a.zones.every(z=>z&&['support','resistance','liquidity','invalidation'].includes(z.type)&&typeof z.low==='number'&&typeof z.high==='number'&&Number.isFinite(z.low)&&Number.isFinite(z.high)&&z.low>0&&z.high>=z.low&&typeof z.reason==='string'&&z.reason.length>=10&&z.reason.length<=350)&&typeof a.macroThesis==='string'&&a.macroThesis.length>=20&&typeof a.microThesis==='string'&&a.microThesis.length>=20&&safeDate(a.date)}
+function validApprovedAnalysis(a){return a&&a.verified===true&&a.approvedForPublication===true&&typeof a.verification==='string'&&a.verification.trim().length>=20&&typeof a.evidenceUrl==='string'&&safeUrl(a.evidenceUrl)&&['OANDA:XAUUSD','INDEX:DJI','INDEX:SPX','OANDA:EURUSD','OANDA:GBPUSD','BITSTAMP:BTCUSD','OANDA:XAGUSD','OANDA:NAS100USD'].includes(a.symbol)&&['D','240','60','W'].includes(a.timeframe)&&validCandles(a.candles)&&Array.isArray(a.zones)&&a.zones.length<=12&&a.zones.every(z=>z&&['support','resistance','liquidity','invalidation'].includes(z.type)&&typeof z.low==='number'&&typeof z.high==='number'&&Number.isFinite(z.low)&&Number.isFinite(z.high)&&z.low>0&&z.high>=z.low&&typeof z.reason==='string'&&z.reason.length>=10&&z.reason.length<=350)&&typeof a.macroThesis==='string'&&a.macroThesis.length>=20&&typeof a.microThesis==='string'&&a.microThesis.length>=20&&safeDate(a.date)}
 function analysisForSymbol(symbol){return (state.analysis?.analyses||[]).filter(validApprovedAnalysis).filter(x=>x.symbol===symbol).sort((a,b)=>b.date.localeCompare(a.date))[0]||null}
 function appendReasonList(a){const el=qs('#zone-reasons');if(!el)return;el.replaceChildren();if(!a){el.textContent=lex('Area support, resistance, invalidasi, dan alasan analisa baru muncul setelah keluaran KATARINA diaudit.','Support, resistance and invalidation levels appear only after KATARINA analysis is audited.');return}
 el.append(element('b','',lex('ALASAN MEMETAKAN AREA','RATIONALE FOR MARKING THESE ZONES')));
@@ -103,7 +103,7 @@ fixTitle();window.addEventListener('katarina-language',fixTitle);
 watchCategory();bindCharts();
 requestJson('/calendar-brief.json').then(x=>{if(x.schema===1&&x.weekStart==='2026-10-12'&&Array.isArray(x.events))state.cal=x;renderCalendar()}).catch(renderCalendar);
 requestJson('/market-analysis.json').then(x=>{if(x.schema===1&&Array.isArray(x.analyses))state.analysis=x;renderZones()}).catch(renderZones);
-window.addEventListener('katarina-language',()=>{renderCalendar();renderZones()});
+window.addEventListener('katarina-language',()=>{renderCalendar();renderZones()});window.addEventListener('katarina-instrument',renderCalendar);
 })();
 
 /* KATARINA AI — independent market news cards, source-linked and scrollable */
@@ -115,7 +115,9 @@ const text=(t,v)=>{const e=document.createElement(t);e.textContent=String(v);ret
 let cached=[];let filtering='all';
 function render(){
 root.replaceChildren();let lang=document.documentElement.lang||'id';const word=langs[lang]||langs.en;
-const visible=cached.filter(item=>filtering==='all'||(item.markets||[]).includes(filtering)).slice().sort((a,b)=>b.date.localeCompare(a.date));
+const focus=window.katarinaInstrument;
+const ranks={'SANGAT TINGGI':4,'TINGGI':3,'SEDANG':2,'RENDAH':1};
+const visible=cached.filter(item=>(!focus||(item.symbols||[]).includes(focus))&&(filtering==='all'||(item.markets||[]).includes(filtering))).slice().sort((a,b)=>(ranks[b.impact]||0)-(ranks[a.impact]||0)||b.date.localeCompare(a.date));
 if(!visible.length){root.append(text('p',word.empty));return}
 for(const item of visible){
 const url=(()=>{try{let u=new URL(item.url);return u.protocol==='https:'?u.href:null}catch(e){return null}})();
@@ -129,5 +131,5 @@ let link=text('a',word.view||langs.en.view);link.href=url;link.target='_blank';l
 }}
 fetch('/calendar-brief.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Unavailable');return r.json()}).then(j=>{if(j.schema===1&&Array.isArray(j.news))cached=j.news.filter(x=>x&&typeof x.title==='string'&&typeof x.summary==='string'&&typeof x.analysis==='string'&&typeof x.sourceName==='string'&&typeof x.url==='string');render()}).catch(()=>render());
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-filter]');if(!b)return;filtering=b.dataset.filter||'all';render()});
-window.addEventListener('katarina-language',render);
+window.addEventListener('katarina-language',render);window.addEventListener('katarina-instrument',render);
 })();
