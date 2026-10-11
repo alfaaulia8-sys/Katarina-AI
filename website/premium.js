@@ -4,9 +4,9 @@
    NASDAQ data is an index proxy and must never be labelled a NAS100 CFD. */
 (()=>{"use strict";
 const root=document.getElementById("tv-host");if(!root)return;
-const mapping={"OANDA:XAUUSD":"xau","OANDA:EURUSD":"eurusd","OANDA:GBPUSD":"gbpusd","BITSTAMP:BTCUSD":"bitcoin","OANDA:XAGUSD":"silver","OANDA:NAS100USD":"nasdaq"};
-const names={xau:"XAUUSD · Gold Spot",eurusd:"EURUSD",gbpusd:"GBPUSD · Kurs referensi",bitcoin:"BTCUSD",silver:"XAGUSD · Silver",nasdaq:"NASDAQ Composite · BUKAN NAS100 CFD"};
-const providerLink={"xau":"https://www.tradingview.com/symbols/XAUUSD/","eurusd":"https://www.tradingview.com/symbols/EURUSD/","gbpusd":"https://www.tradingview.com/symbols/GBPUSD/","bitcoin":"https://www.tradingview.com/symbols/BTCUSD/","silver":"https://www.tradingview.com/symbols/XAGUSD/","nasdaq":"https://www.tradingview.com/symbols/NASDAQ-IXIC/"};
+const mapping={"OANDA:XAUUSD":"xau","INDEX:DJI":"us30","OANDA:NAS100USD":"nasdaq","INDEX:SPX":"sp500","OANDA:EURUSD":"eurusd","OANDA:GBPUSD":"gbpusd","BITSTAMP:BTCUSD":"bitcoin","OANDA:XAGUSD":"silver"};
+const names={"xau":"XAUUSD · Gold Spot","us30":"US30 · Dow Jones Index ^DJI (proxy CFD)","nasdaq":"NASDAQ Composite (bukan NAS100 CFD)","sp500":"S&P 500 (proxy US500 CFD)","eurusd":"EURUSD","gbpusd":"GBPUSD · Kurs referensi","bitcoin":"BTCUSD","silver":"XAGUSD · Silver"};
+const providerLink={"xau":"https://www.tradingview.com/symbols/XAUUSD/","us30":"https://www.tradingview.com/symbols/DJ-DJI/","nasdaq":"https://www.tradingview.com/symbols/NASDAQ-IXIC/","sp500":"https://www.tradingview.com/symbols/SP-SPX/","eurusd":"https://www.tradingview.com/symbols/EURUSD/","gbpusd":"https://www.tradingview.com/symbols/GBPUSD/","bitcoin":"https://www.tradingview.com/symbols/BTCUSD/","silver":"https://www.tradingview.com/symbols/XAGUSD/"};
 let data=null,symbol="OANDA:XAUUSD",range=70,hover=-1,canvas,ctx,frame,stats,status,selection,retainedObserver;
 const $=s=>document.querySelector(s);
 function el(tag,cls,value){const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e}
@@ -67,5 +67,5 @@ if(data?.series?.[key]){if(!frame)build();else update()}else showError("Data har
 document.querySelectorAll("[data-tv-symbol]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.tvSymbol)));
 const warning=el("p","market-disclaimer","Grafik ini menggunakan snapshot harga publik yang diperiksa berkala. Bukan data tick real-time MT5. Gunakan chart broker untuk eksekusi.");
 root.after(warning);
-fetch("/market-ohlc.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Gagal ambil market-ohlc.json");return r.json()}).then(j=>{if(j?.schema!==1||typeof j.series!=="object"||!Array.isArray(j.series.xau?.bars))throw Error("Format data tidak valid");data=j;select("OANDA:XAUUSD")}).catch(err=>{showError("Grafik belum tersedia: "+err.message)});
+fetch("/market-ohlc.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Gagal ambil market-ohlc.json");return r.json()}).then(j=>{if(j?.schema!==1||typeof j.series!=="object"||!Array.isArray(j.series.xau?.bars))throw Error("Format data tidak valid");data=j;select(symbol)}).catch(err=>{showError("Grafik belum tersedia: "+err.message)});
 })();
