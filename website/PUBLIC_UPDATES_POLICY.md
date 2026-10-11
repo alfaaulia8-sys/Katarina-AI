@@ -13,3 +13,11 @@ This directory contains **only public-facing website copy** and a curated public
 7. Sponsor donations are not accepted until GitHub Sponsors approval is verified with a publicly reachable functioning sponsor page. No investment-return language or profit guarantees.
 
 This policy must be applied to any automated job that edits or deploys this public page.
+
+## Trading journal and weekly market research
+
+- The public UI reads `website/reports.json`. It is a **curated publication queue**, not raw trading storage. Empty arrays mean no approved report is publicly available; do not fill them with samples presented as real trading history.
+- For each daily or weekly entry, require reliable source evidence, documented independent verification and explicit permission to publish. Set `verified: true` and `approvedForPublication: true` only after both checks. Use `date` (YYYY-MM-DD), `mode` (one of `backtest`, `demo`, `live`), `verification` (non-sensitive audit description), and a `summary` in each of the website's 14 languages.
+- Only aggregate and already-cleared performance metrics may be released. Keep simulated, demo and live data separate and conspicuously labeled. Never mix modes in one published performance curve.
+- Strictly exclude raw orders, positions, lots, exact entry/exit settings, trading account identifiers or balances, brokerage details, source trading data, strategies, models, secrets and unpublished tests. Treat absence of verification as absence of a public result.
+- For a publication deployment, preserve **all three files** `website/index.html`, `website/updates.json` and `website/reports.json` in the same Vercel project; a GitHub commit by itself does not publish to this project's source-inline production deployment. Verify that the live page and both feeds match after deployment.
