@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "weekStart": "2026-10-12",
+  "weekEnd": "2026-10-16",
+  "verifiedAt": "2026-10-11",
+  "zone": "Asia/Jakarta",
+  "events": [
+    {
+      "id": "bls-cpi-2026-10-14",
+      "dateWIB": "2026-10-14",
+      "timeWIB": "19:30",
+      "dateET": "2026-10-14",
+      "timeET": "08:30",
+      "region": "AS",
+      "title": "CPI AS — inflasi konsumen September",
+      "impact": "Sangat tinggi",
+      "source": "https://www.bls.gov/schedule/2026/10_sched_list.htm",
+      "description": "CPI mengukur inflasi harga konsumen. Perbedaan antara angka aktual dan ekspektasi dapat mengubah perkiraan arah kebijakan The Fed dan yield obligasi.",
+      "whatToWatch": "Bandingkan CPI headline/core dengan konsensus yang benar-benar tersedia; lihat respons USD, yield Treasury, XAUUSD, dan indeks saham setelah rilis.",
+      "conditional": "Inflasi di atas perkiraan dapat menguatkan ekspektasi pengetatan; tetapi arah harga tetap perlu konfirmasi pasar."
+    },
+    {
+      "id": "bls-ppi-2026-10-15",
+      "dateWIB": "2026-10-15",
+      "timeWIB": "19:30",
+      "dateET": "2026-10-15",
+      "timeET": "08:30",
+      "region": "AS",
+      "title": "PPI AS — inflasi produsen September",
+      "impact": "Tinggi",
+      "source": "https://www.bls.gov/schedule/2026/10_sched_list.htm",
+      "description": "PPI mengukur perubahan harga di tingkat produsen, salah satu petunjuk tekanan biaya yang berpotensi diteruskan ke konsumen.",
+      "whatToWatch": "Pisahkan perubahan harga energi dan jasa serta respon pasar obligasi. Revisi ekspektasi inflasi bisa mengubah dolar dan emas.",
+      "conditional": "PPI tidak otomatis diteruskan ke CPI; dampak pasar bergantung komposisi dan ekspektasi."
+    },
+    {
+      "id": "bls-trade-price-2026-10-16",
+      "dateWIB": "2026-10-16",
+      "timeWIB": "19:30",
+      "dateET": "2026-10-16",
+      "timeET": "08:30",
+      "region": "AS",
+      "title": "Indeks harga impor & ekspor AS — September",
+      "impact": "Sedang",
+      "source": "https://www.bls.gov/schedule/2026/10_sched_list.htm",
+      "description": "Menunjukkan perkembangan harga perdagangan internasional dan potensi tekanan biaya dari luar negeri.",
+      "whatToWatch": "Pantau import prices energi dan nonenergi serta pergerakan USD dan inflasi global.",
+      "conditional": "Pengaruh pada XAUUSD dan forex sering tidak langsung; gabungkan dengan CPI/PPI dan sentimen risiko."
+    }
+  ],
+  "sources": [
+    {
+      "name": "BLS — Kalender rilis Oktober 2026",
+      "url": "https://www.bls.gov/schedule/2026/10_sched_list.htm"
+    },
+    {
+      "name": "BEA — Jadwal rilis ekonomi",
+      "url": "https://www.bea.gov/news/schedule"
+    },
+    {
+      "name": "TradingView — Economic Calendar",
+      "url": "https://www.tradingview.com/economic-calendar/"
+    }
+  ],
+  "note": "Waktu AS 08.30 EDT adalah 19.30 WIB pada 14–16 Oktober 2026. Jadwal resmi dapat berubah. Angka actual/forecast sengaja tidak diisi tanpa verifikasi."
+}
