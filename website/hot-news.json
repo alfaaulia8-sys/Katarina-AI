@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-11T16:21:27Z",
+  "updatedAt": "2026-10-11T16:22:51Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
@@ -11,14 +11,6 @@
       "url": "https://www.cnbc.com/2026/10/11/trump-saudi-arabia-iran-houthis.html",
       "publishedAt": "2026-10-11T14:09:22Z",
       "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "NBA commissioner Adam Silver says league could introduce ‘smart ball’ technology as soon as next year",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/11/commissioner-adam-silver-nba-could-launch-smart-ball-tech-next-year.html",
-      "publishedAt": "2026-10-11T12:54:04Z",
-      "category": "Emas / Logam",
       "language": "en"
     },
     {
@@ -99,6 +91,14 @@
       "url": "https://www.cnbc.com/2026/10/09/fed-lisa-cook-trump.html",
       "publishedAt": "2026-10-09T17:56:24Z",
       "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Hurricane Isaias disrupts U.S. oil production in Gulf of Mexico, threatens refineries",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/09/hurricane-isaias-gulf-mexico-oil-refinery.html",
+      "publishedAt": "2026-10-09T17:12:17Z",
+      "category": "Energi / Geopolitik",
       "language": "en"
     }
   ]
