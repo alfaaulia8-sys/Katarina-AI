@@ -1,44 +1,22 @@
-# KATARINA AI
+# KATARINA Web — standalone website source
 
-**Analisis lebih terarah. Keputusan lebih disiplin.**
+Folder ini merupakan salinan terpisah dari aset publik website KATARINA AI.
 
-KATARINA AI adalah proyek yang dikembangkan untuk membantu pengamatan pasar, evaluasi strategi, dan pengambilan keputusan yang lebih sistematis.
+## Cloudflare Pages Free
+- Repository: khusus source website (tidak berisi bot/EA/MT5/VPS)
+- Framework preset: None
+- Build command: kosong
+- Build output directory: `website`
+- Production branch: `main`
+- Cloudflare Pages Functions: `functions/api/hot-news.js`
+- API berita: `/api/hot-news`, cache 15 menit selama request tersedia
 
-## Tentang proyek
+## Aset
+- `website/`: dashboard, halaman riset, HTML/CSS/JS, dan data publik
+- `functions/`: Cloudflare Pages Functions untuk RSS publik
+- `scripts/update_hot_news.py`: fallback pembaruan data
+- `.github/workflows/katarina-hotnews.yml`: fallback pada GitHub Action tiap enam jam
 
-Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur, dan memperhatikan risiko. Pengembangan dan pengujian masih berlangsung.
+Simpan `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID` hanya di GitHub Actions Secrets, jangan commit ke repository.
 
-## Status
-
-**Development Preview** — belum merupakan produk siap pakai untuk trading langsung. Ketersediaan fitur dan kompatibilitas dapat berubah selama pengembangan.
-
-## Informasi
-
-- [Perkembangan proyek](https://github.com/alfaauliau-katarinaAI/Katarina-AI/commits/main)
-- [Status pengujian](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions)
-- [Laporkan kendala](https://github.com/alfaauliau-katarinaAI/Katarina-AI/issues)
-
-> **Perhatian:** Pasar keuangan memiliki risiko kerugian. Tidak ada jaminan hasil atau keuntungan. Gunakan lingkungan pengujian terlebih dahulu dan jangan membagikan kredensial akun.
-
-## Pendanaan riset & kerja sama teknis
-
-- [**KATARINA AI Research & Sponsorship — situs publik**](https://katarina-research.vercel.app/) (bisa dibaca tanpa login).
-- Terbuka untuk pembahasan sponsor infrastruktur (VPS/data), riset yang dibiayai dengan ruang lingkup tertulis, serta jasa evaluasi sistem Python/MT5 dan laporan pengujian yang disepakati.
-- **GitHub Sponsors masih dalam peninjauan** per 11 Oktober 2026. Belum ada tautan pembayaran sponsor aktif, paket berbayar yang sudah dijual, atau dana yang diterima melalui halaman ini.
-- KATARINA AI masih **development preview**. Belum terbukti menghasilkan profit stabil, belum siap ditawarkan sebagai robot trading live, dan bukan produk investasi atau janji imbal hasil. Semua angka kinerja harus berasal dari pengujian yang dapat direproduksi.
-- Hubungi: [email kerja sama](mailto:alfaaulia8@gmail.com?subject=KATARINA%20AI%20Research%20Collaboration).
-
-
-## Layanan dan paket yang direncanakan
-
-- [**KATALOG KATARINA — early access, belum menerima pembayaran**](website/plans.html): rencana akses gratis, paket riset premium, dan lisensi EA ketika selesai divalidasi. Harga bersifat indikatif, bukan penawaran transaksi aktif.
-- [**Konsultasi dan jasa teknis**](mailto:alfaaulia8@gmail.com?subject=KATARINA%20AI%20Technical%20Services%20Quote): pengujian Python/MT5, QA data, integrasi non-trading, dan dokumentasi dengan penawaran tertulis.
-- [**Kemitraan riset/infrastruktur**](website/sponsors.html): kontak awal, bukan checkout GitHub Sponsors.
-- TIDAK menerima pembayaran paket langganan atau lisensi EA sampai produk, ketentuan penggunaan, verifikasi pembayaran, dan dukungan pelanggan siap. Tidak ada jaminan hasil trading.
-
-
-## Status teknis terverifikasi
-
-- [Laporan validasi jalur, kode MT5, dan observer](docs/validation/2026-10-11-paths-mt5-integration.md).
-- [Audit struktur dan dependensi otomatis](scripts/governance/audit_dependency_links.py) diperiksa di GitHub Actions. Ini adalah pemeriksaan sumber, **bukan** bukti kesiapan live.
-- [Status tahap pengembangan dan batas validasi](docs/operations/GITHUB_FIRST_STATUS_20261011.md).
+Tidak ada broker order, EA privat, atau klaim hasil live trading di paket ini.

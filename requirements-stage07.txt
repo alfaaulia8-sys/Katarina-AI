@@ -1,4 +1,0 @@
-# Stage-07 live transport dependencies only.
-# Core, ports, and frozen protocol code must remain dependency-free.
-pyzmq==27.2.0
-tornado>=6.1,<7
