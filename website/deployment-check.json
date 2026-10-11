@@ -1,0 +1,7 @@
+{
+  "project": "KATARINA AI",
+  "target": "cloudflare-pages",
+  "feature": "edge-hotnews-v1",
+  "publishedVia": "GitHub main",
+  "notes": "Static frontend plus optional free Pages Function; no paid services"
+}

@@ -1,4 +1,4 @@
-/* KATARINA Dashboard Hot News — 15-minute OPEN PAGE poll, source-linked RSS titles.
+/* KATARINA Dashboard Hot News — Cloudflare edge RSS, 15-minute open-page poll.
  * Feed updated by public GitHub Actions on best-effort */ 
 (()=>{"use strict";
 const root=document.getElementById("kt-hotnews");if(!root)return;
@@ -53,8 +53,8 @@ async function check(){
  if(busy)return;busy=true;lastPoll=Date.now();
  manual.disabled=true;status.textContent="Memeriksa sumber berita…";
  let items=null;
- try{items=await loadOne(REMOTE+"?v="+lastPoll)}
- catch(e){try{items=await loadOne("/hot-news.json?v="+lastPoll)}catch(e2){}}
+ try{items=await loadOne("/api/hot-news")}
+ catch(e){try{items=await loadOne(REMOTE+"?v="+lastPoll)}catch(e2){try{items=await loadOne("/hot-news.json?v="+lastPoll)}catch(e3){}}}
  if(items!==null)render(items);
  else {status.textContent=lastValid.length?"Sumber pembaruan belum tersedia; mempertahankan headline sebelumnya":"Sumber belum tersedia, tidak menampilkan berita tanpa bukti"}
  stamp.textContent="Diperiksa: "+new Date().toLocaleTimeString("id-ID",{timeZone:"Asia/Jakarta",hour:"2-digit",minute:"2-digit"})+" WIB · cek ulang setiap 15 menit selama halaman terbuka";
