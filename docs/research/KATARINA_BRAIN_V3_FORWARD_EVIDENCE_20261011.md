@@ -35,14 +35,27 @@ Optional `require_strategy_evidence=True`: proposal must provide a stable `strat
 - No data support claiming that this strategy pays KATARINA monthly operating costs or will sustain any target win rate.
 - Higher volatility alone does not equal expected profitability. Multi-pair strategies that failed validation stay `NO_TRADE`.
 
-## Next changes (not in this PR)
+## Shadow MT5 read-only implemented in this PR
 
-1. Add a typed closed-M5 H1/H4 broker adapter and instrument/session clock normalization; use MT5/VPS only for bid/ask ticks and broker order_calc_profit verification.
-2. Wire setup IDs from the execution-independent intraday candidate registry to the runtime broker snapshot, first in shadow mode with a period frozen before the first observation.
-3. Implement *durable* forward journal, startup restoration and regular strategy-drift checks (recency, losing streaks, cost growth, slippage, calendar-month stability). On loss of edge return `NO_TRADE` without increasing risk.
-4. Add portfolio gross/sector correlation caps using aligned fresh return data, alongside the exclusive underlying group guard.
-5. Run strategy-by-strategy walk-forward evaluation with a sealed future window. Track per-month BUY/SELL, execution acceptance, costs, net P&L and floating drawdown by $100/$1,000/$10,000 account.
-6. Keep MT5 execution disarmed until all original live authorization requirements are satisfied.
+- `src/katarina/adapters/mt5_shadow_read_only.py`: price, fully closed M5/H1/H4 and broker `order_calc_profit`/`order_calc_margin` for virtual position sizing; no broker order submission.
+- `src/katarina/intelligence/shadow_gold_intraday.py`: separately versioned **research hypotheses** for Gold opening range + ADX20 and rolling tick-volume reclaim + ADX25. These are not certified copies of the historical EA.
+- `src/katarina/intelligence/shadow_paper_book.py`: durable single-writer opening, Bid/Ask quote-side closing at observed market prices, protective SL/TP and timeout, post-restart recovery; grouped Gold exposure prevents simultaneous correlated paper positions.
+- `src/katarina/intelligence/mt5_shadow_cycle.py`: one-cycle research coordinator, separate virtual capital ledger, adaptive Risk Governor, one setup per session, quote-side fills; **virtual free margin is capped at paper balance**, not allowed to borrow the real MT5 account's available margin.
+- `src/katarina/intelligence/shadow_manifest.py`: immutable study identity, binding broker fingerprint, currency, starting virtual balance, frozen strategy version and risk-config checksum to the journal root. A restart with changed identity stops.
+- `scripts/ai/mt5_shadow_lab.py`: single-writer locking, operator-controlled read-only MT5 research entrypoint. **Default news status is unverified, so paper entry is rejected unless the operator explicitly chooses paper-only bypass**; no live authorization even with bypass.
+- `tests/unit/intelligence/test_mt5_shadow_paper_cycle.py`: fake-MT5 regression for SL, TP, spread, currency, margin, minimum volume, recovery and no broker order surface.
+- Cost modeling does not certify a broker statement: any manually assumed PAPER commission has `costs_verified=False`, so the forward evidence gate **must reject promotion to live risk review**.
+
+**Broker observation on Sunday, 2026-10-11:** MT5 account/symbol were reachable through a read-only test, but latest XAUUSD quote was Friday 2026-10-09 23:54:59 UTC. The live-quote freshness guard therefore intentionally blocks real-time shadow sampling until fresh ticks become available; tests against the synthetic terminal are not real MT5 execution proof.
+
+### Outstanding before forward approval
+
+1. Observe fresh live-session MT5 quotes on the authorized VPS; validate broker contract, session calendars and UTC/DST rules. No actual order send.
+2. Feed news clearance from a **verified economic-calendar adapter**, not a manual paper override. True macro filter is not finished.
+3. Confirm actual spread/commission/swap/slippage/latency against independent MT5 deal data; PAPER observations with estimated fees are unverified and cannot meet the promotion gate.
+4. Add intratrade equity/drawdown, quotes sampled faster than the 10-second default if practical, tick-gap detection and a strategy-drift runtime scheduler. 10-second quote snapshots **can miss interim SL/TP touches**, unlike broker-side attached stops.
+5. Freeze the setup before a genuinely new forward holdout. The historical 2025–2026 data were repeatedly optimized/inspected and are not a clean holdout.
+6. Keep execution disarmed and PR in draft until these conditions are tested.
 
 ## Reproducibility
 
