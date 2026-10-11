@@ -36,7 +36,17 @@
         "BTCUSD",
         "XAGUSD"
       ],
-      "classification": "economic_event"
+      "classification": "economic_event",
+      "instrumentImpact": {
+        "XAUUSD": 4,
+        "US30": 4,
+        "NASDAQ": 4,
+        "US500": 4,
+        "EURUSD": 4,
+        "GBPUSD": 4,
+        "BTCUSD": 4,
+        "XAGUSD": 4
+      }
     },
     {
       "id": "core-cpi-sep2026",
@@ -65,7 +75,17 @@
         "BTCUSD",
         "XAGUSD"
       ],
-      "classification": "economic_event"
+      "classification": "economic_event",
+      "instrumentImpact": {
+        "XAUUSD": 4,
+        "US30": 4,
+        "NASDAQ": 4,
+        "US500": 4,
+        "EURUSD": 4,
+        "GBPUSD": 4,
+        "BTCUSD": 4,
+        "XAGUSD": 4
+      }
     },
     {
       "id": "real-earnings-sep2026",
@@ -93,7 +113,17 @@
         "BTCUSD",
         "XAGUSD"
       ],
-      "classification": "economic_event"
+      "classification": "economic_event",
+      "instrumentImpact": {
+        "XAUUSD": 1,
+        "US30": 3,
+        "NASDAQ": 2,
+        "US500": 3,
+        "EURUSD": 1,
+        "GBPUSD": 1,
+        "BTCUSD": 1,
+        "XAGUSD": 1
+      }
     },
     {
       "id": "bls-ppi-2026-10-15",
@@ -126,7 +156,17 @@
         "BTCUSD",
         "XAGUSD"
       ],
-      "classification": "economic_event"
+      "classification": "economic_event",
+      "instrumentImpact": {
+        "XAUUSD": 3,
+        "US30": 3,
+        "NASDAQ": 3,
+        "US500": 3,
+        "EURUSD": 3,
+        "GBPUSD": 3,
+        "BTCUSD": 3,
+        "XAGUSD": 3
+      }
     },
     {
       "id": "core-ppi-sep2026",
@@ -155,7 +195,17 @@
         "BTCUSD",
         "XAGUSD"
       ],
-      "classification": "economic_event"
+      "classification": "economic_event",
+      "instrumentImpact": {
+        "XAUUSD": 3,
+        "US30": 3,
+        "NASDAQ": 3,
+        "US500": 3,
+        "EURUSD": 3,
+        "GBPUSD": 3,
+        "BTCUSD": 3,
+        "XAGUSD": 3
+      }
     },
     {
       "id": "jobless-claims-oct10",
@@ -183,7 +233,17 @@
         "BTCUSD",
         "XAGUSD"
       ],
-      "classification": "economic_event"
+      "classification": "economic_event",
+      "instrumentImpact": {
+        "XAUUSD": 2,
+        "US30": 4,
+        "NASDAQ": 3,
+        "US500": 4,
+        "EURUSD": 3,
+        "GBPUSD": 3,
+        "BTCUSD": 3,
+        "XAGUSD": 2
+      }
     },
     {
       "id": "bls-trade-price-2026-10-16",
@@ -216,7 +276,17 @@
         "BTCUSD",
         "XAGUSD"
       ],
-      "classification": "economic_event"
+      "classification": "economic_event",
+      "instrumentImpact": {
+        "XAUUSD": 2,
+        "US30": 2,
+        "NASDAQ": 2,
+        "US500": 2,
+        "EURUSD": 3,
+        "GBPUSD": 3,
+        "BTCUSD": 1,
+        "XAGUSD": 2
+      }
     }
   ],
   "sources": [
