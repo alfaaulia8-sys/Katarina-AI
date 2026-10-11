@@ -46,6 +46,9 @@ jobs:
       - name: Integration regression
         run: PYTHONPATH=src python -m unittest discover -s tests/integration -p 'test_*.py' -v
 
+      - name: Stage 14/15 research evidence honesty audit
+        run: PYTHONPATH=src python scripts/governance/audit_stage14_15_research.py --repo-root . --output build/validation/stage14-15-research-honesty.json
+
       - name: Stage 16/17 synthetic cost and margin gates
         run: PYTHONPATH=src python scripts/governance/audit_stage16_17_synthetic.py --repo-root . --output build/validation/stage16-17-synthetic.json
 
@@ -113,6 +116,7 @@ jobs:
             build/body/katarina_body_local_clearance.json
             build/repository-hygiene.json
             build/validation/dependency-links.json
+            build/validation/stage14-15-research-honesty.json
             build/validation/stage16-17-synthetic.json
           if-no-files-found: warn
           retention-days: 30
