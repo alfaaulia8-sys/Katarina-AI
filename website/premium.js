@@ -7,10 +7,12 @@ const root=document.getElementById("tv-host");if(!root)return;
 const mapping={"OANDA:XAUUSD":"xau","INDEX:DJI":"us30","OANDA:NAS100USD":"nasdaq","INDEX:SPX":"sp500","OANDA:EURUSD":"eurusd","OANDA:GBPUSD":"gbpusd","BITSTAMP:BTCUSD":"bitcoin","OANDA:XAGUSD":"silver"};
 const names={"xau":"XAUUSD · Gold Spot","us30":"US30 · Dow Jones Index ^DJI (proxy CFD)","nasdaq":"NASDAQ Composite (bukan NAS100 CFD)","sp500":"S&P 500 (proxy US500 CFD)","eurusd":"EURUSD","gbpusd":"GBPUSD · Kurs referensi","bitcoin":"BTCUSD","silver":"XAGUSD · Silver"};
 const providerLink={"xau":"https://www.tradingview.com/symbols/XAUUSD/","us30":"https://www.tradingview.com/symbols/DJ-DJI/","nasdaq":"https://www.tradingview.com/symbols/NASDAQ-IXIC/","sp500":"https://www.tradingview.com/symbols/SP-SPX/","eurusd":"https://www.tradingview.com/symbols/EURUSD/","gbpusd":"https://www.tradingview.com/symbols/GBPUSD/","bitcoin":"https://www.tradingview.com/symbols/BTCUSD/","silver":"https://www.tradingview.com/symbols/XAGUSD/"};
+const forexPairs=["USDJPY","USDCHF","USDCAD","AUDUSD","NZDUSD","EURGBP","EURJPY","EURCHF","EURCAD","EURAUD","EURNZD","GBPJPY","GBPCHF","GBPCAD","GBPAUD","GBPNZD","AUDJPY","AUDCAD","AUDCHF","AUDNZD","CADJPY","CADCHF","CHFJPY","NZDJPY","NZDCAD","NZDCHF"];
+for(const p of forexPairs){const k=p.toLowerCase();mapping["FX:"+p]=k;names[k]=p+" · Referensi Forex";providerLink[k]="https://www.tradingview.com/symbols/"+p+"/"}
 let data=null,symbol="OANDA:XAUUSD",range=70,hover=-1,canvas,ctx,frame,stats,status,selection,retainedObserver;
 const $=s=>document.querySelector(s);
 function el(tag,cls,value){const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e}
-function fmt(n,type){const decimal=(type==="eurusd"||type==="gbpusd")?5:2;return Number(n).toLocaleString("id-ID",{maximumFractionDigits:decimal,minimumFractionDigits:decimal})}
+function fmt(n,type){const decimal=/^[a-z]{6}$/.test(type)?(type.endsWith("jpy")?3:5):2;return Number(n).toLocaleString("id-ID",{maximumFractionDigits:decimal,minimumFractionDigits:decimal})}
 function showError(message){root.replaceChildren();const box=el("div","market-empty");box.append(el("strong",null,message));box.append(el("p",null,"Gunakan tombol TradingView untuk membuka grafik penyedia secara langsung."));root.append(box)}
 function niceStep(x){const raw=x||1,base=Math.pow(10,Math.floor(Math.log10(raw)));const r=raw/base;return(r<=1?1:r<=2?2:r<=5?5:10)*base}
 function paint(){if(!canvas||!ctx||!frame)return;const key=mapping[symbol],pack=data?.series?.[key],raw=pack?.bars;
@@ -65,6 +67,7 @@ const tv=$('#chart-direct-link');const lbl=$('#chart-symbol-label');if(tv)tv.hre
 const source=$('#source-chart');if(source)source.href="https://www.tradingview.com/chart/";
 if(data?.series?.[key]){if(!frame)build();else update()}else showError("Data harga "+key.toUpperCase()+" belum tersedia dari penyedia tepercaya");}
 document.querySelectorAll("[data-tv-symbol]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.tvSymbol)));
+window.addEventListener("katarina-select-symbol",e=>{const target=e.detail?.symbol;if(target&&Object.prototype.hasOwnProperty.call(mapping,target))select(target)});
 const warning=el("p","market-disclaimer","Grafik ini menggunakan snapshot harga publik yang diperiksa berkala. Bukan data tick real-time MT5. Gunakan chart broker untuk eksekusi.");
 root.after(warning);
 fetch("/market-ohlc.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Gagal ambil market-ohlc.json");return r.json()}).then(j=>{if(j?.schema!==1||typeof j.series!=="object"||!Array.isArray(j.series.xau?.bars))throw Error("Format data tidak valid");data=j;select(symbol)}).catch(err=>{showError("Grafik belum tersedia: "+err.message)});
