@@ -19,7 +19,7 @@ article.append(text('p',item.summary));let insight=document.createElement('div')
 const label=text('strong',word.analysis);insight.append(label);insight.append(text('p',item.analysis));article.append(insight);
 let link=text('a',word.view||langs.en.view);link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.className='news-source-link';article.append(link);root.append(article);
 }}
-fetch('/market-news.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Unavailable');return r.json()}).then(j=>{if(j.schema===1&&Array.isArray(j.items))cached=j.items.filter(x=>x&&typeof x.title==='string'&&typeof x.summary==='string'&&typeof x.analysis==='string'&&typeof x.sourceName==='string'&&typeof x.url==='string');render()}).catch(()=>render());
+fetch('/calendar-brief.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Unavailable');return r.json()}).then(j=>{if(j.schema===1&&Array.isArray(j.news))cached=j.news.filter(x=>x&&typeof x.title==='string'&&typeof x.summary==='string'&&typeof x.analysis==='string'&&typeof x.sourceName==='string'&&typeof x.url==='string');render()}).catch(()=>render());
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-filter]');if(!b)return;filtering=b.dataset.filter||'all';render()});
 window.addEventListener('katarina-language',render);
 })();
