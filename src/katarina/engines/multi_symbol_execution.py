@@ -10,6 +10,7 @@ from katarina.engines.exposure import CorrelationExposureEngine
 from katarina.engines.manual_risk import AccountRiskAssessment
 from katarina.engines.opportunity import RankedOpportunity
 from katarina.intelligence.strategy_evidence import StrategyEvidenceDecision
+from katarina.intelligence.strategy_drift import StrategyDriftDecision
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +78,7 @@ class MultiSymbolExecutionOrchestrator:
         require_correlation_evidence: bool = False,
         min_correlation_observations: int = 20,
         require_strategy_evidence: bool = False,
+        require_drift_clearance: bool = False,
         exclusive_exposure_groups: Mapping[str, str] | None = None,
     ):
         if max_new_positions <= 0:
@@ -91,6 +93,7 @@ class MultiSymbolExecutionOrchestrator:
         self.require_correlation_evidence=bool(require_correlation_evidence)
         self.min_correlation_observations=int(min_correlation_observations)
         self.require_strategy_evidence=bool(require_strategy_evidence)
+        self.require_drift_clearance=bool(require_drift_clearance)
         self.exclusive_exposure_groups=dict(exclusive_exposure_groups or {})
         if any(not symbol or not group for symbol,group in self.exclusive_exposure_groups.items()):
             raise ValueError("invalid_exclusive_exposure_group")
@@ -140,6 +143,7 @@ class MultiSymbolExecutionOrchestrator:
         fresh: bool = True,
         account_currency: str | None = None,
         evidence_decisions: Mapping[tuple[str, str], StrategyEvidenceDecision] | None = None,
+        drift_decisions: Mapping[tuple[str, str], StrategyDriftDecision] | None = None,
     ) -> MultiSymbolExecutionPlan:
         accepted=[]
         rejected=[]
@@ -173,6 +177,17 @@ class MultiSymbolExecutionOrchestrator:
                     rejected.append(RejectedExecution(symbol,"strategy_forward_evidence_missing"))
                     continue
 
+            drift=None
+            if self.require_drift_clearance:
+                drift=(drift_decisions or {}).get((symbol,c.strategy_id))
+                if (not c.strategy_id or not isinstance(drift,StrategyDriftDecision)
+                        or drift.state != "RISK_REVIEW_ONLY"
+                        or drift.live_execution_authorized
+                        or not isfinite(drift.risk_multiplier)
+                        or not 0 < drift.risk_multiplier <= .75):
+                    rejected.append(RejectedExecution(symbol,"strategy_drift_no_trade"))
+                    continue
+
             group=self.exclusive_exposure_groups.get(symbol)
             if group is not None:
                 # Caller must explicitly attest current symbol risks were reconciled.
@@ -187,6 +202,8 @@ class MultiSymbolExecutionOrchestrator:
             quality_multiplier=max(0.0,min(1.0,float(c.quality_risk_multiplier)))
             if evidence is not None:
                 quality_multiplier=min(quality_multiplier,evidence.risk_multiplier)
+            if drift is not None:
+                quality_multiplier=min(quality_multiplier,drift.risk_multiplier)
             req=max(0.0,float(c.requested_risk_fraction))*quality_multiplier
             if req <= 0:
                 rejected.append(RejectedExecution(symbol,"invalid_requested_risk_or_quality"))
