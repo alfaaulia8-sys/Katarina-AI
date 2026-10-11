@@ -9,6 +9,7 @@ from katarina.engines.execution import ExecutionEngine, ExecutionIntent
 from katarina.engines.exposure import CorrelationExposureEngine
 from katarina.engines.manual_risk import AccountRiskAssessment
 from katarina.engines.opportunity import RankedOpportunity
+from katarina.intelligence.strategy_evidence import StrategyEvidenceDecision
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +25,7 @@ class MultiSymbolCandidate:
     risk_id: str
     spread_ok: bool = True
     quality_risk_multiplier: float = 1.0
+    strategy_id: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +76,8 @@ class MultiSymbolExecutionOrchestrator:
         correlation_cap: float = 0.08,
         require_correlation_evidence: bool = False,
         min_correlation_observations: int = 20,
+        require_strategy_evidence: bool = False,
+        exclusive_exposure_groups: Mapping[str, str] | None = None,
     ):
         if max_new_positions <= 0:
             raise ValueError("max_new_positions")
@@ -86,6 +90,10 @@ class MultiSymbolExecutionOrchestrator:
         self.correlation_cap=correlation_cap
         self.require_correlation_evidence=bool(require_correlation_evidence)
         self.min_correlation_observations=int(min_correlation_observations)
+        self.require_strategy_evidence=bool(require_strategy_evidence)
+        self.exclusive_exposure_groups=dict(exclusive_exposure_groups or {})
+        if any(not symbol or not group for symbol,group in self.exclusive_exposure_groups.items()):
+            raise ValueError("invalid_exclusive_exposure_group")
 
     def _valid_correlation_inputs(
         self, symbols: Sequence[str], returns: Mapping[str,Sequence[float]],
@@ -131,6 +139,7 @@ class MultiSymbolExecutionOrchestrator:
         execution_armed: bool = True,
         fresh: bool = True,
         account_currency: str | None = None,
+        evidence_decisions: Mapping[tuple[str, str], StrategyEvidenceDecision] | None = None,
     ) -> MultiSymbolExecutionPlan:
         accepted=[]
         rejected=[]
@@ -151,7 +160,31 @@ class MultiSymbolExecutionOrchestrator:
             if c.opportunity.instrument_id <= 0 or c.opportunity.proposal.side.value not in {"BUY","SELL"}:
                 rejected.append(RejectedExecution(symbol,"invalid_opportunity"))
                 continue
+            # A score or indicator alone must never be treated as verified alpha.
+            # Strict mode requires forward PAPER/DEAL results from a frozen setup.
+            evidence=None
+            if self.require_strategy_evidence:
+                evidence=(evidence_decisions or {}).get((symbol,c.strategy_id))
+                if (not c.strategy_id or not isinstance(evidence,StrategyEvidenceDecision)
+                        or not evidence.eligible_for_risk_review
+                        or evidence.live_authorized):
+                    rejected.append(RejectedExecution(symbol,"strategy_forward_evidence_missing"))
+                    continue
+
+            group=self.exclusive_exposure_groups.get(symbol)
+            if group is not None:
+                # Caller must explicitly attest current symbol risks were reconciled.
+                if existing_symbol_risks is None:
+                    rejected.append(RejectedExecution(symbol,"exclusive_group_positions_unverified"))
+                    continue
+                if any(self.exclusive_exposure_groups.get(other)==group and exposure>0
+                       for other,exposure in symbol_risks.items()):
+                    rejected.append(RejectedExecution(symbol,"exclusive_exposure_group_busy"))
+                    continue
+
             quality_multiplier=max(0.0,min(1.0,float(c.quality_risk_multiplier)))
+            if evidence is not None:
+                quality_multiplier=min(quality_multiplier,evidence.risk_multiplier)
             req=max(0.0,float(c.requested_risk_fraction))*quality_multiplier
             if req <= 0:
                 rejected.append(RejectedExecution(symbol,"invalid_requested_risk_or_quality"))
