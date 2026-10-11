@@ -1,47 +1,71 @@
-/* KATARINA AI premium live-chart loader, TradingView official advanced-chart widget */
-(function(){
-'use strict';
-const doc=document;
-const host=doc.getElementById('tv-host');
-const map={
-'OANDA:XAUUSD':{symbol:'OANDA:XAUUSD',url:'https://www.tradingview.com/symbols/XAUUSD/'},
-'OANDA:EURUSD':{symbol:'OANDA:EURUSD',url:'https://www.tradingview.com/symbols/EURUSD/'},
-'OANDA:GBPUSD':{symbol:'OANDA:GBPUSD',url:'https://www.tradingview.com/symbols/GBPUSD/'},
-'BITSTAMP:BTCUSD':{symbol:'BITSTAMP:BTCUSD',url:'https://www.tradingview.com/symbols/BTCUSD/'},
-'OANDA:XAGUSD':{symbol:'OANDA:XAGUSD',url:'https://www.tradingview.com/symbols/XAGUSD/'},
-'OANDA:NAS100USD':{symbol:'OANDA:NAS100USD',url:'https://www.tradingview.com/symbols/NAS100/'}
-};
-if(!host)return;
-let version=0,observer=null,timeout=null;
-const text=(id,en)=>document.documentElement.lang==='id'?id:en;
-function make(tag,cls,value){const el=doc.createElement(tag);if(cls)el.className=cls;if(value)el.textContent=value;return el}
-function externalLink(url,label){const a=make('a','',label);a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a}
-function fresh(symbol){
-if(!Object.prototype.hasOwnProperty.call(map,symbol))symbol='OANDA:XAUUSD';
-const ticket=++version;if(observer)observer.disconnect();if(timeout)clearTimeout(timeout);
-host.replaceChildren();host.classList.remove('chart-hidden');
-const view=make('div','tradingview-widget-container');view.style.cssText='height:100%;width:100%';
-const widget=make('div','tradingview-widget-container__widget');widget.style.cssText='height:100%;width:100%';
-view.append(widget);host.append(view);
-const loading=make('div','tv-loading');loading.setAttribute('role','status');
-loading.append(make('span','tv-graphic','⌁'));
-loading.append(make('strong','',text('Memuat Grafik Pasar','Loading Market Chart')));
-loading.append(make('p','',text('Menghubungkan chart interaktif TradingView untuk '+symbol.split(':')[1]+'…','Connecting interactive TradingView chart…')));
-const fail=externalLink(map[symbol].url,text('Buka chart langsung ↗','Open chart ↗'));fail.style.cssText='display:inline-block;padding:10px 15px;border:1px solid #218bbd;color:#c9f5ff;border-radius:7px;text-decoration:none;font-size:12px';
-loading.append(fail);host.append(loading);
-const source=doc.getElementById('source-chart');if(source)source.href=map[symbol].url;
-const direct=doc.getElementById('chart-direct-link');if(direct)direct.href=map[symbol].url;
-const live=doc.getElementById('chart-symbol-label');if(live)live.textContent=symbol.split(':')[1];
-function loaded(){if(ticket!==version)return;loading.classList.add('is-hidden');}
-observer=new MutationObserver(()=>{if(ticket!==version)return;const iframe=host.querySelector('iframe');if(iframe){iframe.setAttribute('title','TradingView '+symbol);iframe.style.background='#04152a';iframe.addEventListener('load',()=>setTimeout(loaded,800),{once:true})}});
-observer.observe(widget,{childList:true,subtree:true});
-const script=doc.createElement('script');script.type='text/javascript';script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';script.async=true;
-script.textContent=JSON.stringify({autosize:true,symbol,interval:'240',timezone:'Asia/Jakarta',theme:'dark',style:'1',locale:'id',backgroundColor:'#061225',gridColor:'rgba(30,98,146,0.18)',hide_top_toolbar:false,hide_legend:false,hide_side_toolbar:true,allow_symbol_change:false,save_image:false,calendar:false,details:false,withdateranges:true,support_host:'https://www.tradingview.com'});
-script.onerror=()=>{if(ticket===version){loading.querySelector('strong').textContent=text('Chart eksternal tidak dapat dimuat','External chart unavailable');loading.querySelector('p').textContent=text('Gunakan tautan di bawah untuk membuka TradingView.','Use the link below to open TradingView.')}};
-view.append(script);
-timeout=setTimeout(()=>{if(ticket===version&&!loading.classList.contains('is-hidden')){loading.querySelector('strong').textContent=text('Chart lambat atau diblokir jaringan','Chart delayed or blocked');loading.querySelector('p').textContent=text('Grafik eksternal mungkin tidak didukung pada jaringan ini. Buka chart TradingView secara langsung.','External widget may not load on this network. Open TradingView directly.')}},10000);
+/* KATARINA static market chart v5, mobile-safe. No third-party iframe.
+   All OHLC snapshots are independently sourced and timestamped.
+   GBPUSD official-reference rate is intentionally a LINE, not synthetic OHLC.
+   NASDAQ data is an index proxy and must never be labelled a NAS100 CFD. */
+(()=>{"use strict";
+const root=document.getElementById("tv-host");if(!root)return;
+const mapping={"OANDA:XAUUSD":"xau","OANDA:EURUSD":"eurusd","OANDA:GBPUSD":"gbpusd","BITSTAMP:BTCUSD":"bitcoin","OANDA:XAGUSD":"silver","OANDA:NAS100USD":"nasdaq"};
+const names={xau:"XAUUSD · Gold Spot",eurusd:"EURUSD",gbpusd:"GBPUSD · Kurs referensi",bitcoin:"BTCUSD",silver:"XAGUSD · Silver",nasdaq:"NASDAQ Composite · BUKAN NAS100 CFD"};
+const providerLink={xau:"https://xaus.com/api/v1/chart?symbol=xau",eurusd:"https://xaus.com/api/v1/chart?symbol=eurusd",gbpusd:"https://frankfurter.dev/",bitcoin:"https://xaus.com/api/v1/chart?symbol=bitcoin",silver:"https://xaus.com/api/v1/chart?symbol=silver",nasdaq:"https://xaus.com/api/v1/chart?symbol=nasdaq"};
+let data=null,symbol="OANDA:XAUUSD",range=70,hover=-1,canvas,ctx,frame,stats,status,selection,retainedObserver;
+const $=s=>document.querySelector(s);
+function el(tag,cls,value){const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e}
+function fmt(n,type){const decimal=(type==="eurusd"||type==="gbpusd")?5:2;return Number(n).toLocaleString("id-ID",{maximumFractionDigits:decimal,minimumFractionDigits:decimal})}
+function showError(message){root.replaceChildren();const box=el("div","market-empty");box.append(el("strong",null,message));box.append(el("p",null,"Gunakan tombol TradingView untuk membuka grafik penyedia secara langsung."));root.append(box)}
+function niceStep(x){const raw=x||1,base=Math.pow(10,Math.floor(Math.log10(raw)));const r=raw/base;return(r<=1?1:r<=2?2:r<=5?5:10)*base}
+function paint(){if(!canvas||!ctx||!frame)return;const key=mapping[symbol],pack=data?.series?.[key],raw=pack?.bars;
+if(!Array.isArray(raw)||!raw.length)return;
+const list=raw.slice(-range),isLine=pack.type==="close-only";if(list.length<8)return;
+const bbox=frame.getBoundingClientRect(),w=Math.max(280,Math.floor(bbox.width)),h=Math.max(280,Math.floor(bbox.height)),dpr=Math.min(2.4,devicePixelRatio||1);
+canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);canvas.style.width=w+"px";canvas.style.height=h+"px";
+ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+const left=12,right=72,top=57,bottom=37,plotW=w-left-right,plotH=h-top-bottom;
+ctx.fillStyle="#041226";ctx.fillRect(0,0,w,h);
+let lows=list.map(b=>isLine?b[1]:b[3]),highs=list.map(b=>isLine?b[1]:b[2]);const low=Math.min(...lows),high=Math.max(...highs),ext=Math.max((high-low)*.09,Math.abs(high)*.0009),min=low-ext,max=high+ext;
+const y=v=>top+(max-v)/(max-min)*plotH;
+const xx=i=>left+((i+.5)*plotW/list.length);
+ctx.font="11px system-ui,Arial";ctx.textAlign="right";ctx.textBaseline="middle";
+for(let z=0;z<=4;z++){const yy=top+plotH*z/4;
+ ctx.strokeStyle="#17334e";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,yy+.5);ctx.lineTo(w-right+5,yy+.5);ctx.stroke();
+ ctx.fillStyle="#8bb0cd";ctx.fillText(fmt(max-(max-min)*z/4,key),w-5,yy);
 }
-const choices=Array.from(doc.querySelectorAll('[data-tv-symbol]'));
-choices.forEach(button=>button.addEventListener('click',()=>{const symbol=button.dataset.tvSymbol;fresh(symbol);choices.forEach(x=>x.setAttribute('aria-selected',String(x===button)))}));
-fresh('OANDA:XAUUSD');
+for(let z=0;z<=4;z++){const idx=Math.round((list.length-1)*z/4),x=xx(idx),v=list[idx][0];
+ ctx.strokeStyle="#102943";ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,top+plotH);ctx.stroke();
+ const date=new Date(v*1000);ctx.textAlign="center";ctx.fillStyle="#93b8d2";ctx.fillText(date.toLocaleDateString("id-ID",{day:"numeric",month:"short",timeZone:"UTC"}),x,top+plotH+19);
+}
+if(isLine){const gradient=ctx.createLinearGradient(0,top,0,top+plotH);gradient.addColorStop(0,"rgba(31,219,255,.22)");gradient.addColorStop(1,"rgba(12,119,224,0)");
+ ctx.beginPath();list.forEach((b,i)=>{const x=xx(i),q=y(b[1]);i?ctx.lineTo(x,q):ctx.moveTo(x,q)});
+ ctx.lineTo(xx(list.length-1),top+plotH);ctx.lineTo(xx(0),top+plotH);ctx.closePath();ctx.fillStyle=gradient;ctx.fill();
+ ctx.beginPath();list.forEach((b,i)=>{const x=xx(i),q=y(b[1]);i?ctx.lineTo(x,q):ctx.moveTo(x,q)});ctx.strokeStyle="#35d3ff";ctx.lineWidth=2.3;ctx.stroke();
+}else{const cw=Math.max(1.8,Math.min(14,plotW/list.length*.66));list.forEach((b,i)=>{const x=xx(i),[,o,hi,lo,c]=b,green=c>=o;color(green);ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x,y(hi));ctx.lineTo(x,y(lo));ctx.stroke();ctx.fillRect(x-cw/2,y(Math.max(o,c)),cw,Math.max(1.5,Math.abs(y(o)-y(c))))});}
+function color(g){ctx.fillStyle=ctx.strokeStyle=g?"#20dbc3":"#ff677e"}
+const last=list.at(-1),prev=list.at(-2),price=isLine?last[1]:last[4],prevPrice=isLine?prev[1]:prev[4],pct=(price/prevPrice-1)*100;
+ctx.textAlign="left";ctx.textBaseline="middle";ctx.font="700 14px system-ui,Arial";ctx.fillStyle="#daf4ff";ctx.fillText(names[key]||key,left,21);
+ctx.textAlign="right";ctx.fillStyle=pct>=0?"#38e9cc":"#ff8192";ctx.fillText(fmt(price,key)+"  "+(pct>=0?"+":"")+pct.toFixed(2)+"%",w-12,21);
+const rangeCaption=range===30?"1 bulan":"3 bulan";ctx.textAlign="left";ctx.fillStyle="#7fabc9";ctx.font="11px system-ui,Arial";ctx.fillText((isLine?"KURS REFERENSI · LINE":"OHLC · CANDLE") +"  •  1D  •  "+rangeCaption,left,42);
+if(hover>=0&&hover<list.length){const b=list[hover],x=xx(hover),p=isLine?b[1]:b[4],cy=y(p);ctx.save();ctx.setLineDash([3,4]);ctx.strokeStyle="#8dcef8";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,top+plotH);ctx.moveTo(left,cy);ctx.lineTo(w-right,cy);ctx.stroke();ctx.restore();
+ let text=isLine?"C "+fmt(p,key):"O "+fmt(b[1],key)+"   H "+fmt(b[2],key)+"   L "+fmt(b[3],key)+"   C "+fmt(b[4],key);
+ ctx.fillStyle="#031729";ctx.fillRect(left,top,Math.min(w-right-left,340),22);ctx.fillStyle="#b9e9ff";ctx.font="10px system-ui,Arial";ctx.textAlign="left";ctx.fillText(new Date(b[0]*1000).toISOString().slice(0,10)+"   "+text,left+4,top+12);
+ ctx.beginPath();ctx.arc(x,cy,3,0,Math.PI*2);ctx.fillStyle="#aaf1ff";ctx.fill();
+}
+}
+function pointer(e){const r=frame.getBoundingClientRect(),key=mapping[symbol],count=Math.min(data?.series?.[key]?.bars?.length||0,range),plotW=r.width-84;hover=Math.min(count-1,Math.max(0,Math.floor(((e.clientX-r.left-12)/plotW)*count)));requestAnimationFrame(paint)}
+function build(){root.replaceChildren();const wrap=el("div","self-chart-frame");root.append(wrap);frame=wrap;canvas=document.createElement("canvas");canvas.setAttribute("role","img");canvas.setAttribute("aria-label","Grafik historis OHLC atau garis dari data pasar eksternal, bukan hasil trading KATARINA");canvas.style.cssText="display:block;width:100%;height:100%;touch-action:pan-y";wrap.append(canvas);ctx=canvas.getContext("2d");if(!ctx){showError("Canvas grafik tidak didukung");return}
+canvas.addEventListener("pointermove",pointer,{passive:true});canvas.addEventListener("pointerleave",()=>{hover=-1;paint()});
+retainedObserver=new ResizeObserver(()=>requestAnimationFrame(paint));retainedObserver.observe(wrap);
+stats=el("div","market-chart-meta");root.append(stats);
+const nav=el("div","market-chart-controls");for(const [period,value] of [["1 bulan",30],["3 bulan",70]]){const b=el("button","market-period",period);b.type="button";b.dataset.days=value;b.setAttribute("aria-pressed",String(range===value));b.addEventListener("click",()=>{range=value;hover=-1;nav.querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",String(z===b)));update()});nav.append(b)}root.append(nav);
+update()}
+function update(){const key=mapping[symbol],item=data?.series?.[key];if(!item||!item.bars?.length){showError("Data grafik belum tersedia");return}
+const dt=new Date(item.asOf);const asOf=Number.isFinite(dt.getTime())?dt.toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Jakarta"})+" WIB":"waktu tidak tersedia";
+const days=Math.max(0,Math.floor((Date.now()-new Date(item.asOf).getTime())/86400000));stats.textContent="Sumber: "+(item.source||data.provider)+" • Terakhir: "+asOf+(days>3?" • DATA LAMA, bukan harga terkini":"")+" • "+(item.type==="close-only"?"kurs penutupan referensi":"candle historis")+" • Bukan sinyal KATARINA";
+if(ctx)requestAnimationFrame(paint);}
+function select(s){symbol=s;hover=-1;const key=mapping[s];const btns=document.querySelectorAll("[data-tv-symbol]");btns.forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tvSymbol===s)));
+const tv=$('#chart-direct-link');const lbl=$('#chart-symbol-label');if(tv)tv.href=providerLink[key]||"https://www.tradingview.com/";if(lbl)lbl.textContent=key==="nasdaq"?"NASDAQ":key.toUpperCase();
+const source=$('#source-chart');if(source)source.href="https://www.tradingview.com/chart/";
+if(data?.series?.[key]){if(!frame)build();else update()}else showError("Data harga "+key.toUpperCase()+" belum tersedia dari penyedia tepercaya");}
+document.querySelectorAll("[data-tv-symbol]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.tvSymbol)));
+const warning=el("p","market-disclaimer","Grafik ini menggunakan snapshot harga publik yang diperiksa berkala. Bukan data tick real-time MT5. Gunakan chart broker untuk eksekusi.");
+root.after(warning);
+fetch("/market-ohlc.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Gagal ambil market-ohlc.json");return r.json()}).then(j=>{if(j?.schema!==1||typeof j.series!=="object"||!Array.isArray(j.series.xau?.bars))throw Error("Format data tidak valid");data=j;select("OANDA:XAUUSD")}).catch(err=>{showError("Grafik belum tersedia: "+err.message)});
 })();
