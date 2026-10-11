@@ -29,7 +29,7 @@
       "playbook": "DONCHIAN24",
       "session_start_utc": "12:00",
       "timeframe": "M5",
-      "filter": "ADX < 18; Donchian24 signal",
+      "filter": "ADX <= 18; Donchian24 signal",
       "stop_h1_atr": 0.8,
       "target_r": 2,
       "max_holding_hours": 3,
