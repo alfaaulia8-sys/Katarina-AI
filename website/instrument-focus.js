@@ -28,7 +28,7 @@ for(const urlLink of document.querySelectorAll('a[href^="/analisa.html"],a[href^
      urlLink.href=destination.pathname+destination.search+destination.hash;
  }catch(e){}
 }
-if(opts.history!==false && location.pathname.endsWith('.html')){
+if(opts.history!==false && (location.pathname.endsWith('.html')||['/research','/analisa'].includes(location.pathname))){
   const destination=new URL(location.href);destination.searchParams.set('symbol',value);
   if(destination.search!==location.search)history.replaceState(history.state,'',destination.pathname+destination.search+destination.hash);
 }

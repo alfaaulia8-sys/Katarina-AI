@@ -22,11 +22,11 @@ const asof=series.asOf?new Date(series.asOf):null;
 const stamp=asof&&Number.isFinite(asof.getTime())?asof.toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}):"tanggal tidak tersedia";
 show("kt-ohlc-source",sym+" · "+stamp+" · "+(series.source||data.provider||"Data harga publik")+" · historis, bukan quote broker MT5");
 }
-function focus(active){document.body.classList.toggle("kt-focus-active",active);if(btn){btn.setAttribute("aria-pressed",String(active));btn.textContent=active?"⊟  Kembali ke Analisa":"⛶  Fokus Chart";}const top=el("kt-analysis-terminal");if(active)top?.scrollIntoView({block:"start",behavior:"smooth"});}
+function focus(active){document.body.classList.toggle("kt-focus-active",active);if(btn){btn.setAttribute("aria-pressed",String(active));btn.textContent=active?"⊟  Kembali ke halaman":"⛶  Fokus grafik";}const top=el("kt-analysis-terminal");if(active)top?.scrollIntoView({block:"start",behavior:"smooth"});}
 btn?.addEventListener("click",()=>focus(!document.body.classList.contains("kt-focus-active")));
 share?.addEventListener("click",async()=>{
 const u=new URL(location.href);u.searchParams.set("symbol",current());u.hash="kt-analysis-terminal";
-try{await navigator.clipboard.writeText(u.toString());share.textContent="✓ Link disalin";setTimeout(()=>{share.textContent="↗  Bagikan"},1800)}
+try{await navigator.clipboard.writeText(u.toString());share.textContent="✓ Tautan tersalin";setTimeout(()=>{share.textContent="↗  Salin tautan"},1800)}
 catch(e){share.textContent="Salin URL dari browser";}
 });
 window.addEventListener("katarina-instrument",render);

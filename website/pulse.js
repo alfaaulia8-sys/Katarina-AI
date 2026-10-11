@@ -101,14 +101,14 @@ renderZones();
 }
 function fixTitle(){const titles={
 '/':['Dashboard Utama','Dashboard'],
-'/research.html':['Pusat Research','Research Hub'],
+'/research.html':['Riset & Analisa','Research & Analysis'],
 '/analisa.html':['Analisa Lengkap','Full Market Analysis'],
 '/journal.html':['Jurnal Trading','Trading Journal'],
 '/sponsors.html':['Sponsors & Kolaborasi','Sponsors & Collaboration']};
 const pair=titles[location.pathname];if(pair)document.title='KATARINA AI · '+pair[activeLang()==='id'?0:1];}
 fixTitle();window.addEventListener('katarina-language',fixTitle);
 watchCategory();bindCharts();
-requestJson('/calendar-brief.json').then(x=>{if(x.schema===1&&x.weekStart==='2026-10-12'&&Array.isArray(x.events))state.cal=x;renderCalendar()}).catch(renderCalendar);
+requestJson('/calendar-brief.json').then(x=>{if(x.schema===1&&Array.isArray(x.events))state.cal=x;renderCalendar()}).catch(renderCalendar);
 requestJson('/market-analysis.json').then(x=>{if(x.schema===1&&Array.isArray(x.analyses))state.analysis=x;renderZones()}).catch(renderZones);
 window.addEventListener('katarina-language',()=>{renderCalendar();renderZones()});window.addEventListener('katarina-instrument',renderCalendar);
 window.addEventListener('katarina-select-symbol',event=>{
