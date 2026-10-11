@@ -8,7 +8,7 @@ bars here. Signals outside the chosen UTC window are WAIT.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from math import isfinite
 
 from katarina.adapters.mt5_shadow_read_only import ClosedBar, ShadowMarketSnapshot
@@ -117,7 +117,7 @@ class GoldShadowIntraday:
                  and 360 <= b.open_at_utc.hour*60+b.open_at_utc.minute < 420]
         if len(opening)!=12 or any(
                 opening[i].open_at_utc-opening[i-1].open_at_utc !=
-                __import__("datetime").timedelta(minutes=5)
+                timedelta(minutes=5)
                 for i in range(1,12)):
             return tuple(ShadowSetup(k,"WAIT","opening_range_not_complete",0.,0.,0)
                          for k in self.STRATEGIES)
