@@ -46,6 +46,18 @@ jobs:
       - name: Integration regression
         run: PYTHONPATH=src python -m unittest discover -s tests/integration -p 'test_*.py' -v
 
+      - name: Private alpha evidence remains blocked without uploaded broker sources
+        run: |
+          PYTHONPATH=src python scripts/research/audit_private_alpha_holdout.py --repo-root . --output build/validation/private-alpha-holdout.json
+          python - <<'PY'
+          import json
+          report=json.load(open('build/validation/private-alpha-holdout.json'))
+          assert report['result']=='BLOCKED_PRIVATE_INPUT_FILES_NOT_PROVIDED'
+          assert not report['shadow_research_qualified']
+          assert not report['live_execution_authorized']
+          print('PASS_PRIVATE_ALPHA_CANNOT_PROMOTE_WITHOUT_EVIDENCE')
+          PY
+
       - name: Pre-registered 7-market regime alpha program (research-only)
         run: PYTHONPATH=src python scripts/governance/audit_alpha_regime_program.py --repo-root . --output build/validation/alpha-regime-program.json
 
@@ -121,6 +133,7 @@ jobs:
             build/validation/dependency-links.json
             build/validation/stage14-15-research-honesty.json
             build/validation/alpha-regime-program.json
+            build/validation/private-alpha-holdout.json
             build/validation/stage16-17-synthetic.json
           if-no-files-found: warn
           retention-days: 30
