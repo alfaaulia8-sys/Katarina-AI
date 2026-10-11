@@ -34,6 +34,9 @@ jobs:
       - name: Compile Python
         run: python -m compileall -q src
 
+      - name: Verify Python, MQL5, JSON, and website local dependencies
+        run: python scripts/governance/audit_dependency_links.py --repo-root . --output build/validation/dependency-links.json
+
       - name: Unit regression
         run: PYTHONPATH=src python -m unittest discover -s tests/unit -p 'test_*.py' -v
 
@@ -106,5 +109,6 @@ jobs:
             build/body/body_framework_audit.json
             build/body/katarina_body_local_clearance.json
             build/repository-hygiene.json
+            build/validation/dependency-links.json
           if-no-files-found: warn
           retention-days: 30

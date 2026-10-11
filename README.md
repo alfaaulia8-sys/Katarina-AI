@@ -14,9 +14,9 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 
 ## Informasi
 
-- [Perkembangan proyek](https://github.com/alfaaulia8-sys/Katarina-AI/commits/main)
-- [Status pengujian](https://github.com/alfaaulia8-sys/Katarina-AI/actions)
-- [Laporkan kendala](https://github.com/alfaaulia8-sys/Katarina-AI/issues)
+- [Perkembangan proyek](https://github.com/alfaauliau-katarinaAI/Katarina-AI/commits/main)
+- [Status pengujian](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions)
+- [Laporkan kendala](https://github.com/alfaauliau-katarinaAI/Katarina-AI/issues)
 
 > **Perhatian:** Pasar keuangan memiliki risiko kerugian. Tidak ada jaminan hasil atau keuntungan. Gunakan lingkungan pengujian terlebih dahulu dan jangan membagikan kredensial akun.
 
@@ -36,3 +36,9 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 - [**Kemitraan riset/infrastruktur**](website/sponsors.html): kontak awal, bukan checkout GitHub Sponsors.
 - TIDAK menerima pembayaran paket langganan atau lisensi EA sampai produk, ketentuan penggunaan, verifikasi pembayaran, dan dukungan pelanggan siap. Tidak ada jaminan hasil trading.
 
+
+## Status teknis terverifikasi
+
+- [Laporan validasi jalur, kode MT5, dan observer](docs/validation/2026-10-11-paths-mt5-integration.md).
+- [Audit struktur dan dependensi otomatis](scripts/governance/audit_dependency_links.py) diperiksa di GitHub Actions. Ini adalah pemeriksaan sumber, **bukan** bukti kesiapan live.
+- [Status tahap pengembangan dan batas validasi](docs/operations/GITHUB_FIRST_STATUS_20261011.md).
