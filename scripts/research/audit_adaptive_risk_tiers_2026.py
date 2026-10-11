@@ -6,7 +6,7 @@ from __future__ import annotations
 import json,sys,hashlib
 from pathlib import Path
 
-ROOT=Path(r"C:\KatarinaDev\github-main")
+ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"src"))
 from katarina.engines.risk import RiskGovernor,RiskRequest,RiskAction
 from katarina.engines.sizing import PositionSizingEngine

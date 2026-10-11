@@ -10,7 +10,7 @@ import sys,json,hashlib
 from datetime import datetime,timezone,timedelta
 from collections import defaultdict
 from pathlib import Path
-ROOT=Path(r"C:\KatarinaDev\github-main")
+ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"scripts"/"research"))
 from backtest_brain_v2_from_2025 import load_bars,aggregate,build_frames,frame_last,getframe,MT5PATH,AUDIT
 from intraday_tool_method_matrix_2025 import replay,metrics

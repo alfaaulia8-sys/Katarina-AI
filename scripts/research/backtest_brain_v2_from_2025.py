@@ -11,7 +11,7 @@ from datetime import datetime,timezone,timedelta
 from pathlib import Path
 from dataclasses import dataclass
 
-ROOT=Path(r"C:\KatarinaDev\github-main")
+ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"src"))
 from katarina.intelligence.adaptive_regime import AdaptiveRegimeEngine, ClosedFrame, MarketState
 from katarina.intelligence.closed_swing_structure import ClosedSwingStructure, ClosedBar

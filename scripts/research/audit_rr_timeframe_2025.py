@@ -1,7 +1,7 @@
 """Read-only validation of frozen 2025–2026 KATARINA optimization artifacts."""
 import json,hashlib,subprocess
 from pathlib import Path
-ROOT=Path(r"C:\KatarinaDev\github-main")
+ROOT=Path(__file__).resolve().parents[2]
 A=Path(r"C:\KatarinaDev\artifacts\historical-brain")
 files={
  "baseline":"katarina_rr_grid_from_2025_2026.json",

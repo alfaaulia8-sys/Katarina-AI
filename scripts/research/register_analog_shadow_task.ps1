@@ -1,7 +1,7 @@
 $ErrorActionPreference='Stop'
 $name='Katarina-AnalogMemory-Observer'
 $source=Get-ScheduledTask -TaskName 'Katarina-MarketBrain-Observer'
-$root='C:\KatarinaDev\indicator-research'
+$root=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $script=Join-Path $root 'scripts\research\probe_current_market_analogs.py'
 $python='C:\KatarinaDev\brain-runtime\Scripts\python.exe'
 $memory='C:\KatarinaDev\artifacts\historical-brain\frozen-per-symbol-analog-memory-v1.json'

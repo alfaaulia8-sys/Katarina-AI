@@ -13,7 +13,7 @@ import json,sys,math,hashlib
 from pathlib import Path
 from datetime import datetime,timezone
 from collections import defaultdict,Counter
-ROOT=Path(r"C:\KatarinaDev\github-main")
+ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"scripts"/"research"))
 from backtest_brain_v2_from_2025 import load_bars,MT5PATH,AUDIT
 import MetaTrader5 as mt5

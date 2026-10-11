@@ -1,7 +1,7 @@
 """Audit KATARINA 2025-26 intraday-first monthly projected cash accounting."""
 import json,math,hashlib
 from pathlib import Path
-ROOT=Path(r"C:\KatarinaDev\github-main")
+ROOT=Path(__file__).resolve().parents[2]
 A=Path(r"C:\KatarinaDev\artifacts\historical-brain")
 src=A/"katarina_intraday_first_monthly_projection_2025_2026.json"
 r=json.loads(src.read_text(encoding="utf-8"))

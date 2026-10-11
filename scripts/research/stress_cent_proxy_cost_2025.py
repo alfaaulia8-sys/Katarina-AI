@@ -1,7 +1,7 @@
 """Research only: extra R cost on cent broker price-path proxy."""
 import json,sys
 from pathlib import Path
-ROOT=Path(r"C:\KatarinaDev\github-main")
+ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"scripts"/"research"))
 from simulate_three_capitals_adaptive_2025 import simulate,SOURCE,AUDIT
 base=[x for x in SOURCE["individual_event_outcomes"] if x["rr"]==2

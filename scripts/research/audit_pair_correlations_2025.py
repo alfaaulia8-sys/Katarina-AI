@@ -8,7 +8,7 @@ import sys, json, math, statistics
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-REPO=Path(r"C:\KatarinaDev\github-main")
+REPO=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/"scripts"/"research"))
 from backtest_brain_v2_from_2025 import load_bars,AUDIT,MT5PATH
 import MetaTrader5 as mt5

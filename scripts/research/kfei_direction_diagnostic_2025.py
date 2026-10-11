@@ -10,7 +10,7 @@ from collections import defaultdict
 from datetime import datetime,timezone
 from pathlib import Path
 DIR=Path(r"C:\KatarinaDev\artifacts\historical-brain")
-sys.path.insert(0,str(Path(r"C:\KatarinaDev\github-main\scripts\research")))
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 from kfei_native_tf_2025 import native_history,xau_recon,labels_and_signal,FRAME_MINUTES
 import MetaTrader5 as mt5
 def main():

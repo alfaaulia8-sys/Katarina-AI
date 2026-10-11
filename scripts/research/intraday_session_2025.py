@@ -13,7 +13,7 @@ from datetime import datetime,timezone,timedelta
 from pathlib import Path
 from bisect import bisect_right
 
-REPO=Path(r"C:\KatarinaDev\github-main")
+REPO=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/"scripts"/"research"))
 from backtest_brain_v2_from_2025 import load_bars, aggregate,build_frames,frame_last,getframe,MT5PATH,AUDIT
 import MetaTrader5 as mt5
