@@ -39,6 +39,8 @@ class AccountFacts:
     healthy: bool = True
     reconciled: bool = True
     unbounded_risk: bool = False
+    uncertainty: float | None = None
+    expected_rr: float | None = None
     verified: bool = False
 
 
@@ -65,6 +67,8 @@ class ResearchCostMarginGate:
         reject = lambda reason: Qualification(False, reason)
         if not (account.verified and broker.verified and costs.verified):
             return reject("unverified_account_contract_or_cost")
+        if account.uncertainty is None or account.expected_rr is None:
+            return reject("missing_signal_quality_evidence")
         if not account.native_currency or account.native_currency != broker.currency:
             return reject("currency_unverified_or_mismatch")
         if side not in ("BUY", "SELL"):
@@ -72,6 +76,7 @@ class ResearchCostMarginGate:
         values = (account.active_capital, account.equity, account.peak_reference_capital,
                   account.available_margin, account.committed_risk_fraction,
                   account.daily_drawdown, account.total_drawdown,
+                  account.uncertainty, account.expected_rr,
                   broker.loss_per_price_unit_per_lot, broker.min_volume,
                   broker.max_volume, broker.volume_step, broker.margin_per_lot,
                   costs.spread_distance, costs.adverse_slippage_distance,
@@ -96,7 +101,8 @@ class ResearchCostMarginGate:
             return reject("invalid_buffered_loss")
         risk = self.governor.evaluate(RiskRequest(
             None, account.committed_risk_fraction, account.total_drawdown,
-            .1, 2., account.healthy, account.reconciled, account.daily_drawdown,
+            account.uncertainty, account.expected_rr, account.healthy,
+            account.reconciled, account.daily_drawdown,
             account.unbounded_risk, capital, account.peak_reference_capital,
             account.native_currency))
         if risk.action not in (RiskAction.APPROVE, RiskAction.REDUCE):
