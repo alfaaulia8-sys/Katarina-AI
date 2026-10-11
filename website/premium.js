@@ -6,7 +6,7 @@
 const root=document.getElementById("tv-host");if(!root)return;
 const mapping={"OANDA:XAUUSD":"xau","OANDA:EURUSD":"eurusd","OANDA:GBPUSD":"gbpusd","BITSTAMP:BTCUSD":"bitcoin","OANDA:XAGUSD":"silver","OANDA:NAS100USD":"nasdaq"};
 const names={xau:"XAUUSD · Gold Spot",eurusd:"EURUSD",gbpusd:"GBPUSD · Kurs referensi",bitcoin:"BTCUSD",silver:"XAGUSD · Silver",nasdaq:"NASDAQ Composite · BUKAN NAS100 CFD"};
-const providerLink={xau:"https://xaus.com/api/v1/chart?symbol=xau",eurusd:"https://xaus.com/api/v1/chart?symbol=eurusd",gbpusd:"https://frankfurter.dev/",bitcoin:"https://xaus.com/api/v1/chart?symbol=bitcoin",silver:"https://xaus.com/api/v1/chart?symbol=silver",nasdaq:"https://xaus.com/api/v1/chart?symbol=nasdaq"};
+const providerLink={"xau":"https://www.tradingview.com/symbols/XAUUSD/","eurusd":"https://www.tradingview.com/symbols/EURUSD/","gbpusd":"https://www.tradingview.com/symbols/GBPUSD/","bitcoin":"https://www.tradingview.com/symbols/BTCUSD/","silver":"https://www.tradingview.com/symbols/XAGUSD/","nasdaq":"https://www.tradingview.com/symbols/NASDAQ-IXIC/"};
 let data=null,symbol="OANDA:XAUUSD",range=70,hover=-1,canvas,ctx,frame,stats,status,selection,retainedObserver;
 const $=s=>document.querySelector(s);
 function el(tag,cls,value){const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e}
