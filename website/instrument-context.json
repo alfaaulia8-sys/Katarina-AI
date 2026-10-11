@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-10-11",
+  "description": "Public-market context taxonomy. Driver rankings are editorial relevance, NOT quantitative market-impact probability or trading signals.",
+  "instruments": [
+    {
+      "id": "XAUUSD",
+      "symbol": "OANDA:XAUUSD",
+      "chart": "xau",
+      "label": "XAUUSD · Emas",
+      "asset": "Gold / Spot",
+      "headline": "Emas: real yield, USD dan permintaan safe haven",
+      "drivers": [
+        "Inflasi AS → ekspektasi Fed, yield riil dan DXY",
+        "Permintaan bank sentral, geopolitik, dan ETF emas",
+        "Harga minyak, likuiditas sesi New York dan volatilitas pascarilis"
+      ],
+      "monitor": "CPI, PPI, Treasury real yield, DXY, arus emas",
+      "theme": "gold"
+    },
+    {
+      "id": "US30",
+      "symbol": "INDEX:DJI",
+      "chart": "us30",
+      "label": "US30 · Dow Jones",
+      "asset": "Dow Jones Industrial Average (^DJI, proxy CFD)",
+      "headline": "Dow Jones: hasil emiten, yield dan kondisi ekonomi AS",
+      "drivers": [
+        "Laporan laba perbankan dan saham-saham berkapitalisasi besar",
+        "Inflasi, kebijakan Fed, yield Treasury serta biaya pembiayaan",
+        "Harga energi, risk appetite dan breadth saham"
+      ],
+      "monitor": "CPI, PPI, laba JPM/GS, DJIA breadth, Treasury 10Y",
+      "theme": "indices"
+    },
+    {
+      "id": "NASDAQ",
+      "symbol": "OANDA:NAS100USD",
+      "chart": "nasdaq",
+      "label": "NASDAQ · Composite",
+      "asset": "NASDAQ Composite (bukan NAS100 CFD)",
+      "headline": "Nasdaq: teknologi, AI, yield dan laba emiten",
+      "drivers": [
+        "Keuntungan teknologi, AI, semikonduktor dan valuasi",
+        "Sensitivitas growth stocks terhadap yield Treasury",
+        "Kondisi likuiditas, pengeluaran investasi dan prospek Fed"
+      ],
+      "monitor": "CPI, PPI, laba teknologi, Treasury 10Y, semikonduktor",
+      "theme": "indices"
+    },
+    {
+      "id": "US500",
+      "symbol": "INDEX:SPX",
+      "chart": "sp500",
+      "label": "US500 · S&P 500",
+      "asset": "S&P 500 (^GSPC proxy CFD)",
+      "headline": "S&P 500: laba lintas sektor, inflasi dan yield",
+      "drivers": [
+        "Kesehatan laba perusahaan di berbagai sektor",
+        "Pergeseran inflasi dan biaya modal",
+        "Breadth indeks, energi, serta risiko geopolitik"
+      ],
+      "monitor": "CPI, PPI, laba emiten, sektor energi dan kredit",
+      "theme": "indices"
+    },
+    {
+      "id": "EURUSD",
+      "symbol": "OANDA:EURUSD",
+      "chart": "eurusd",
+      "label": "EURUSD · Euro",
+      "asset": "Euro / USD",
+      "headline": "EURUSD: diferensial Fed–ECB dan obligasi Eropa",
+      "drivers": [
+        "Spread suku bunga Federal Reserve vs ECB",
+        "Risiko fiskal Prancis dan yield zona euro",
+        "DXY, perdagangan energi, serta data inflasi AS"
+      ],
+      "monitor": "Fed vs ECB, yield Eropa, CPI AS, DXY",
+      "theme": "forex"
+    },
+    {
+      "id": "GBPUSD",
+      "symbol": "OANDA:GBPUSD",
+      "chart": "gbpusd",
+      "label": "GBPUSD · Pound",
+      "asset": "GBP/USD — kurs penutupan referensi",
+      "headline": "GBPUSD: BoE, UK gilts dan dolar AS",
+      "drivers": [
+        "Ekspektasi suku bunga Bank of England vs Fed",
+        "Yield obligasi pemerintah Inggris dan risiko fiskal",
+        "Harga energi, inflasi AS dan volatilitas GBP"
+      ],
+      "monitor": "BoE, gilt 10Y, CPI AS, Brent, DXY",
+      "theme": "forex"
+    },
+    {
+      "id": "BTCUSD",
+      "symbol": "BITSTAMP:BTCUSD",
+      "chart": "bitcoin",
+      "label": "BTCUSD · Bitcoin",
+      "asset": "Bitcoin / USD",
+      "headline": "Bitcoin: likuiditas, yield, ETF dan regulasi",
+      "drivers": [
+        "Likuiditas global, dolar AS, dan kebijakan Fed",
+        "Arus ETF kripto serta perkembangan regulasi",
+        "Leverage derivatif, harga spot, dan risk appetite"
+      ],
+      "monitor": "ETF BTC, sentimen likuiditas, CPI AS, peraturan kripto",
+      "theme": "crypto"
+    },
+    {
+      "id": "XAGUSD",
+      "symbol": "OANDA:XAGUSD",
+      "chart": "silver",
+      "label": "XAGUSD · Perak",
+      "asset": "Silver / Spot",
+      "headline": "Perak: dolar, yield, industrial demand dan emas",
+      "drivers": [
+        "Yield riil AS, dolar, serta korelasi terhadap emas",
+        "Permintaan industri/manufaktur dan prospek China",
+        "Likuiditas logam, geopolitik dan ekspektasi Fed"
+      ],
+      "monitor": "Yield riil, DXY, manufaktur China, gold/silver ratio",
+      "theme": "silver"
+    }
+  ]
+}
