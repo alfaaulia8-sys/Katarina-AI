@@ -54,6 +54,8 @@ def select_shadow_context(ctx: ObservedMarketContext) -> ContextDecision:
     age = (now-closed).total_seconds()
     if not 0 <= age <= 600:
         return deny("closed_m5_missing_or_stale")
+    if not ctx.source_is_replay_or_paper:
+        return deny("not_research_or_paper_source")
     if not ctx.market_open or ctx.quote_age_seconds is None:
         return deny("market_or_quote_unknown")
     if not isfinite(ctx.quote_age_seconds) or not 0 <= ctx.quote_age_seconds <= 15:
