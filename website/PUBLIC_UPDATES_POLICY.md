@@ -21,3 +21,11 @@ This policy must be applied to any automated job that edits or deploys this publ
 - Only aggregate and already-cleared performance metrics may be released. Keep simulated, demo and live data separate and conspicuously labeled. Never mix modes in one published performance curve.
 - Strictly exclude raw orders, positions, lots, exact entry/exit settings, trading account identifiers or balances, brokerage details, source trading data, strategies, models, secrets and unpublished tests. Treat absence of verification as absence of a public result.
 - For a publication deployment, preserve **all three files** `website/index.html`, `website/updates.json` and `website/reports.json` in the same Vercel project; a GitHub commit by itself does not publish to this project's source-inline production deployment. Verify that the live page and both feeds match after deployment.
+
+## Monetization readiness gate
+
+- Public `plans.html` is an interest/quote catalogue. Display hypothetical/indicative prices with explicit "not yet available" status; no active payment buttons or implied entitlement.
+- GitHub Sponsors is NOT marked active until the public sponsor page, receiving account and payout status are independently verified. Only then place a real `.github/FUNDING.yml` username and activate Sponsorships in repository settings.
+- No client email addresses, payments, license tokens, transaction records or proprietary strategy source may be committed to public GitHub.
+- Paid technical service inquiries may use a mailto link but require a written quote, scope, acceptance and a verified payment method before fulfillment.
+- Changes to the GitHub repository do not deploy the independently maintained Vercel production project automatically. Publish there only after validating the entire static asset bundle; do not publish a partial update that breaks assets.

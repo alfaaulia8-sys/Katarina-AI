@@ -28,3 +28,11 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 - KATARINA AI masih **development preview**. Belum terbukti menghasilkan profit stabil, belum siap ditawarkan sebagai robot trading live, dan bukan produk investasi atau janji imbal hasil. Semua angka kinerja harus berasal dari pengujian yang dapat direproduksi.
 - Hubungi: [email kerja sama](mailto:alfaaulia8@gmail.com?subject=KATARINA%20AI%20Research%20Collaboration).
 
+
+## Layanan dan paket yang direncanakan
+
+- [**KATALOG KATARINA — early access, belum menerima pembayaran**](website/plans.html): rencana akses gratis, paket riset premium, dan lisensi EA ketika selesai divalidasi. Harga bersifat indikatif, bukan penawaran transaksi aktif.
+- [**Konsultasi dan jasa teknis**](mailto:alfaaulia8@gmail.com?subject=KATARINA%20AI%20Technical%20Services%20Quote): pengujian Python/MT5, QA data, integrasi non-trading, dan dokumentasi dengan penawaran tertulis.
+- [**Kemitraan riset/infrastruktur**](website/sponsors.html): kontak awal, bukan checkout GitHub Sponsors.
+- TIDAK menerima pembayaran paket langganan atau lisensi EA sampai produk, ketentuan penggunaan, verifikasi pembayaran, dan dukungan pelanggan siap. Tidak ada jaminan hasil trading.
+
