@@ -25,7 +25,18 @@
       "analysisShort": "CPI di atas konsensus dapat memperkuat ekspektasi suku bunga lebih tinggi dan yield USD; emas bisa tertekan, tetapi harus dikonfirmasi reaksi DXY serta yield riil.",
       "previous": "3.4%",
       "previousSource": "https://tradingeconomics.com/united-states/calendar",
-      "unit": "YoY"
+      "unit": "YoY",
+      "symbols": [
+        "XAUUSD",
+        "US30",
+        "NASDAQ",
+        "US500",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD",
+        "XAGUSD"
+      ],
+      "classification": "economic_event"
     },
     {
       "id": "core-cpi-sep2026",
@@ -43,7 +54,18 @@
       "forecastSource": "https://tradingeconomics.com/united-states/calendar",
       "actualSource": null,
       "unit": "MoM",
-      "analysisShort": "Core CPI di atas konsensus dapat mendorong revisi pandangan The Fed dan yield AS. Periksa pergerakan DXY dan emas setelah volatilitas awal."
+      "analysisShort": "Core CPI di atas konsensus dapat mendorong revisi pandangan The Fed dan yield AS. Periksa pergerakan DXY dan emas setelah volatilitas awal.",
+      "symbols": [
+        "XAUUSD",
+        "US30",
+        "NASDAQ",
+        "US500",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD",
+        "XAGUSD"
+      ],
+      "classification": "economic_event"
     },
     {
       "id": "real-earnings-sep2026",
@@ -60,7 +82,18 @@
       "previousSource": null,
       "forecastSource": null,
       "actualSource": null,
-      "analysisShort": "Perubahan upah riil dapat memengaruhi prospek konsumsi. Nilai dampaknya terhadap pasar lebih kuat bila dikombinasikan dengan CPI dan laporan tenaga kerja."
+      "analysisShort": "Perubahan upah riil dapat memengaruhi prospek konsumsi. Nilai dampaknya terhadap pasar lebih kuat bila dikombinasikan dengan CPI dan laporan tenaga kerja.",
+      "symbols": [
+        "XAUUSD",
+        "US30",
+        "NASDAQ",
+        "US500",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD",
+        "XAGUSD"
+      ],
+      "classification": "economic_event"
     },
     {
       "id": "bls-ppi-2026-10-15",
@@ -82,7 +115,18 @@
       "analysisShort": "PPI yang mengejutkan pasar dapat mengubah ekspektasi inflasi dan yield. Bandingkan pula komponen jasa, energi dan core PPI sebelum menyimpulkan arah USD/XAUUSD.",
       "previous": "0.4%",
       "previousSource": "https://tradingeconomics.com/united-states/calendar",
-      "unit": "MoM"
+      "unit": "MoM",
+      "symbols": [
+        "XAUUSD",
+        "US30",
+        "NASDAQ",
+        "US500",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD",
+        "XAGUSD"
+      ],
+      "classification": "economic_event"
     },
     {
       "id": "core-ppi-sep2026",
@@ -100,7 +144,18 @@
       "forecastSource": "https://tradingeconomics.com/united-states/calendar",
       "actualSource": null,
       "unit": "MoM",
-      "analysisShort": "Jika core PPI jauh dari perkiraan, lihat penyesuaian yield dan USD. Komponen harga input tidak selalu langsung berubah menjadi CPI."
+      "analysisShort": "Jika core PPI jauh dari perkiraan, lihat penyesuaian yield dan USD. Komponen harga input tidak selalu langsung berubah menjadi CPI.",
+      "symbols": [
+        "XAUUSD",
+        "US30",
+        "NASDAQ",
+        "US500",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD",
+        "XAGUSD"
+      ],
+      "classification": "economic_event"
     },
     {
       "id": "jobless-claims-oct10",
@@ -117,7 +172,18 @@
       "previousSource": null,
       "forecastSource": null,
       "actualSource": null,
-      "analysisShort": "Klaim di atas ekspektasi dapat menekan yield jika pasar khawatir perlambatan pekerjaan; konfirmasikan dengan inflasi dan sentimen risiko."
+      "analysisShort": "Klaim di atas ekspektasi dapat menekan yield jika pasar khawatir perlambatan pekerjaan; konfirmasikan dengan inflasi dan sentimen risiko.",
+      "symbols": [
+        "XAUUSD",
+        "US30",
+        "NASDAQ",
+        "US500",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD",
+        "XAGUSD"
+      ],
+      "classification": "economic_event"
     },
     {
       "id": "bls-trade-price-2026-10-16",
@@ -139,7 +205,18 @@
       "analysisShort": "Harga impor menambah konteks tekanan biaya perdagangan; efek terhadap emas cenderung tidak langsung. Pantau reaksi inflasi dan DXY, bukan angka ini saja.",
       "previous": "0.7%",
       "previousSource": "https://tradingeconomics.com/united-states/calendar",
-      "unit": "MoM"
+      "unit": "MoM",
+      "symbols": [
+        "XAUUSD",
+        "US30",
+        "NASDAQ",
+        "US500",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD",
+        "XAGUSD"
+      ],
+      "classification": "economic_event"
     }
   ],
   "sources": [
@@ -176,7 +253,149 @@
       "title": "Fokus pekan depan: Inflasi AS, arah suku bunga, dan risiko geopolitik",
       "summary": "Pasar menunggu CPI September AS di tengah tekanan harga energi dan pergerakan imbal hasil obligasi. Investor juga mengikuti laporan laba perbankan dan pertemuan IMF–Bank Dunia.",
       "analysis": "CPI yang berbeda dari konsensus dapat menggeser ekspektasi kebijakan The Fed. Pantau DXY dan yield riil sebelum menafsirkan dampaknya pada XAUUSD.",
-      "impact": "TINGGI"
+      "impact": "TINGGI",
+      "symbols": [
+        "XAUUSD",
+        "XAGUSD",
+        "US30",
+        "US500",
+        "NASDAQ",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "gold-rebound-20261009",
+      "date": "2026-10-09",
+      "title": "Emas pulih menjelang CPI; perak ikut menguat",
+      "sourceName": "Reuters",
+      "impact": "TINGGI",
+      "url": "https://www.reuters.com/world/india/gold-rises-softer-dollar-easing-yields-fed-outlook-focus-2026-10-09/",
+      "summary": "Emas menguat pada penutupan pekan setelah tekanan dolar dan yield mereda. Data CPI AS berikutnya menjadi katalis utama.",
+      "analysis": "XAUUSD lebih sensitif terhadap yield riil dan DXY daripada satu berita tunggal. Perak juga dapat bereaksi, dengan volatilitas relatif berbeda.",
+      "markets": [
+        "gold",
+        "macro"
+      ],
+      "symbols": [
+        "XAUUSD",
+        "XAGUSD"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "bank-earnings-20261009",
+      "date": "2026-10-09",
+      "title": "Pekan laporan laba bank AS dan inflasi jadi katalis Dow Jones",
+      "sourceName": "Reuters",
+      "impact": "SANGAT TINGGI",
+      "url": "https://www.reuters.com/business/wall-st-week-ahead-bank-earnings-cpi-headline-busy-markets-week-sp-500-hovers-2026-10-09/",
+      "summary": "Laba bank besar dan CPI AS akan menguji prospek laba, biaya modal serta sentimen saham-saham AS.",
+      "analysis": "US30 rentan perubahan ekspektasi laba sektor finansial, kondisi kredit, dan yield. Periksa respons saham bank serta breadth Dow pascarilis.",
+      "markets": [
+        "indices",
+        "macro"
+      ],
+      "symbols": [
+        "US30",
+        "US500",
+        "NASDAQ"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "wallstreet-week-20261009",
+      "date": "2026-10-09",
+      "title": "Wall Street menguat menjelang inflasi dan laporan emiten",
+      "sourceName": "Reuters",
+      "impact": "TINGGI",
+      "url": "https://www.reuters.com/business/wall-st-futures-gain-oil-slips-telecoms-pressured-by-spacex-spectrum-deal-2026-10-09/",
+      "summary": "Indeks utama AS menutup pekan dengan penguatan, sementara investor mengawasi energi, inflasi dan laba perusahaan.",
+      "analysis": "Dow, S&P 500 dan Nasdaq dapat bereaksi berbeda menurut bobot sektor. Perhatikan breadth, saham defensif dan sensitivitas biaya pendanaan.",
+      "markets": [
+        "indices",
+        "macro"
+      ],
+      "symbols": [
+        "US30",
+        "US500",
+        "NASDAQ"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "ai-earnings-20261009",
+      "date": "2026-10-09",
+      "title": "Perusahaan AI diperkirakan memimpin pertumbuhan laba kuartal III AS",
+      "sourceName": "Reuters",
+      "impact": "TINGGI",
+      "url": "https://www.reuters.com/business/ai-related-companies-drive-most-third-quarter-us-earnings-gains-2026-10-09/",
+      "summary": "Pendorong laba emiten AS terkonsentrasi pada perusahaan teknologi dan investasi infrastruktur AI.",
+      "analysis": "NASDAQ dan S&P 500 sensitif terhadap guidance emiten teknologi; cek apakah kenaikan laba merata atau hanya terkonsentrasi pada saham besar.",
+      "markets": [
+        "indices"
+      ],
+      "symbols": [
+        "NASDAQ",
+        "US500"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "sterling-oil-20261009",
+      "date": "2026-10-09",
+      "title": "Pound bergerak bersama dolar, minyak, dan yield global",
+      "sourceName": "Reuters",
+      "impact": "TINGGI",
+      "url": "https://www.reuters.com/business/sterling-ticks-high-dollar-dips-lower-oil-prices-2026-10-09/",
+      "summary": "GBP bergerak lebih kuat ketika dolar melemah seiring penurunan sementara harga minyak dan tekanan yield.",
+      "analysis": "GBPUSD tetap dipengaruhi perbedaan prospek BoE–Fed serta biaya energi; amati gilts dan DXY untuk konfirmasi.",
+      "markets": [
+        "forex"
+      ],
+      "symbols": [
+        "GBPUSD",
+        "EURUSD"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "usbank-20261008",
+      "date": "2026-10-08",
+      "title": "Investor bank AS menilai kenaikan suku bunga dan prospek kredit",
+      "sourceName": "Reuters",
+      "impact": "TINGGI",
+      "url": "https://www.reuters.com/business/finance/us-bank-investors-focus-impact-higher-rates-deals-outlook-q3-earnings-2026-10-08/",
+      "summary": "Laporan kuartalan bank akan mengungkap biaya simpanan, permintaan kredit dan aktivitas pasar modal.",
+      "analysis": "Kinerja bank besar dapat memengaruhi US30 secara langsung melalui konstituen dan secara tidak langsung melalui risk appetite pasar.",
+      "markets": [
+        "indices"
+      ],
+      "symbols": [
+        "US30",
+        "US500"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "euro-fiscal-20261008",
+      "date": "2026-10-08",
+      "title": "Dolar dan euro bergerak seiring tekanan obligasi Eropa",
+      "sourceName": "Reuters",
+      "impact": "TINGGI",
+      "url": "https://www.reuters.com/world/africa/dollar-edges-back-18-month-high-after-fomc-minutes-2026-10-08/",
+      "summary": "Tekanan fiskal dan imbal hasil negara Eropa menjadi faktor penting bagi euro, bersamaan dengan ekspektasi Fed.",
+      "analysis": "EURUSD bergantung pada selisih yield serta sentimen fiskal regional. Bandingkan yield Prancis/Jerman dan respon DXY.",
+      "markets": [
+        "forex"
+      ],
+      "symbols": [
+        "EURUSD",
+        "GBPUSD"
+      ],
+      "classification": "article"
     },
     {
       "id": "reuters-fed-minutes-2026-10-07",
@@ -192,7 +411,18 @@
       "title": "Risalah Fed jadi perhatian untuk membaca jalur kebijakan moneter",
       "summary": "Pelaku pasar mencermati perbedaan penekanan antar pejabat Fed tentang inflasi, aktivitas ekonomi, dan kebutuhan penyesuaian suku bunga.",
       "analysis": "Perubahan ekspektasi suku bunga dapat merambat lewat Treasury dan dolar ke emas serta pasangan mata uang utama. Dampaknya tetap bergantung reaksi harga.",
-      "impact": "TINGGI"
+      "impact": "TINGGI",
+      "symbols": [
+        "XAUUSD",
+        "XAGUSD",
+        "US30",
+        "US500",
+        "NASDAQ",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD"
+      ],
+      "classification": "article"
     },
     {
       "id": "reuters-nyfed-expectations-2026-10-07",
@@ -208,7 +438,36 @@
       "title": "Survei NY Fed: Ekspektasi inflasi rumah tangga jangka pendek meningkat",
       "summary": "Survei ekspektasi konsumen New York Fed untuk September menunjukkan kekhawatiran inflasi dalam setahun mendatang meningkat.",
       "analysis": "Ekspektasi inflasi lebih tinggi bisa mengubah proyeksi yield riil dan risk appetite. Bandingkan survei dengan CPI aktual sebelum mengambil kesimpulan pasar.",
-      "impact": "SEDANG"
+      "impact": "SEDANG",
+      "symbols": [
+        "XAUUSD",
+        "XAGUSD",
+        "US30",
+        "US500",
+        "NASDAQ",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "silver-gold-20261007",
+      "date": "2026-10-07",
+      "title": "Yield dan USD yang naik menekan emas serta perak",
+      "sourceName": "Reuters",
+      "impact": "TINGGI",
+      "url": "https://www.reuters.com/world/india/gold-edges-lower-with-focus-fed-minutes-rate-path-clues-2026-10-07/",
+      "summary": "Kenaikan dolar dan yield Treasury menekan logam mulia menjelang perkembangan kebijakan Fed.",
+      "analysis": "XAGUSD memiliki eksposur moneter dan industri; periksa keselarasan emas, DXY dan kekuatan permintaan industri sebelum menyimpulkan arah.",
+      "markets": [
+        "gold"
+      ],
+      "symbols": [
+        "XAUUSD",
+        "XAGUSD"
+      ],
+      "classification": "article"
     },
     {
       "id": "reuters-ism-services-2026-10-05",
@@ -224,7 +483,35 @@
       "title": "Aktivitas jasa AS melambat, sementara tekanan harga meningkat",
       "summary": "Laporan ISM sektor jasa menunjukkan pertumbuhan sedikit melambat dan tekanan biaya input yang masih tinggi.",
       "analysis": "Kombinasi pertumbuhan melambat dan inflasi tinggi membuat respons pasar ambigu. Uji apakah pasar lebih fokus pada pertumbuhan, inflasi, atau sinyal Fed.",
-      "impact": "SEDANG"
+      "impact": "SEDANG",
+      "symbols": [
+        "XAUUSD",
+        "XAGUSD",
+        "US30",
+        "US500",
+        "NASDAQ",
+        "EURUSD",
+        "GBPUSD",
+        "BTCUSD"
+      ],
+      "classification": "article"
+    },
+    {
+      "id": "crypto-citi-20261001",
+      "date": "2026-10-01",
+      "title": "Citi merevisi proyeksi Bitcoin dan Ether di tengah aktivitas kripto",
+      "sourceName": "Reuters",
+      "impact": "SEDANG",
+      "url": "https://www.reuters.com/business/finance/citi-raises-bitcoin-ether-forecasts-strong-crypto-activity-2026-10-01/",
+      "summary": "Citi menaikkan estimasi jangka panjang Bitcoin dan Ether dengan merujuk arus aktivitas serta minat institusi.",
+      "analysis": "Itu proyeksi pihak ketiga, bukan target harga KATARINA. BTC lebih bergantung pada arus ETF, likuiditas, yield dan perkembangan regulasi.",
+      "markets": [
+        "crypto"
+      ],
+      "symbols": [
+        "BTCUSD"
+      ],
+      "classification": "article"
     }
   ]
 }
