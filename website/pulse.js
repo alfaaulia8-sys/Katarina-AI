@@ -19,7 +19,14 @@ function safeDate(x){return typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
 function safeUrl(s){try{let u=new URL(s);return u.protocol==='https:'?u.href:null}catch(e){return null}}
 function dateLabel(x){try{return new Intl.DateTimeFormat(activeLang()==='id'?'id-ID':'en-US',{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(x+'T12:00:00Z'))}catch(e){return x}}
 function compactEvent(x){let card=element('article','econ-entry');const when=element('div','econ-when',dateLabel(x.dateWIB)+'\n'+x.timeWIB+' WIB');when.style.whiteSpace='pre-line';card.append(when);
-const info=element('div');info.append(element('strong','',x.title));info.append(element('p','',x.description));card.append(info);
+const info=element('div');info.append(element('strong','',x.title));
+const metrics=element('div','econ-metrics');
+for(const [label,val,source] of [['Aktual',x.actual,x.actualSource],['Prediksi / konsensus',x.forecast,x.forecastSource]]){
+const cell=element('div','econ-metric');cell.append(element('small','',label));
+const verified=val!==null&&val!==undefined&&String(val).length>0&&safeUrl(source);
+cell.append(element('b','',verified?String(val):'—'));metrics.append(cell);
+}
+info.append(metrics);info.append(element('p','econ-comment',x.description));info.append(element('p','econ-comment','Analisis: '+(x.analysisShort||x.conditional||x.whatToWatch||'Menunggu analisa')));card.append(info);
 const a=element('a','econ-badge',x.impact+' ↗');a.href=safeUrl(x.source)||sources.bls;a.target='_blank';a.rel='noopener noreferrer';card.append(a);return card;}
 function renderCalendar(){const root=qs('#economic-events');if(root){root.replaceChildren();
 if(!state.cal?.events?.length){root.append(element('p','placeholder',lex('Kalender resmi belum dimuat.','Official schedule not available.')))}
