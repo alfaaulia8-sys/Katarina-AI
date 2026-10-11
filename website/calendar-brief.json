@@ -46,7 +46,11 @@
         "GBPUSD": 4,
         "BTCUSD": 4,
         "XAGUSD": 4
-      }
+      },
+      "transmission": "CPI utama mengukur kenaikan harga barang dan jasa konsumen. Kejutan besar relatif terhadap konsensus bisa mengubah perkiraan suku bunga The Fed, yield Treasury, kurs USD dan ekspektasi inflasi.",
+      "ifAbove": "Jika inflasi konsumen lebih tinggi dari prediksi, pasar dapat menaikkan estimasi suku bunga/yield dan menguatkan USD; XAUUSD serta valuasi saham bisa tertekan. Namun jika ketidakpastian membesar, permintaan safe haven emas dapat melawan dampaknya.",
+      "ifBelow": "Jika inflasi lebih rendah dari prediksi, ekspektasi suku bunga lebih rendah dan yield melemah dapat mendukung emas/saham; tetapi respons tergantung apakah pasar membaca disinflasi sehat atau pelemahan ekonomi.",
+      "detailedWatch": "Bandingkan CPI headline, core dan komponen shelter/jasa; amati DXY, Treasury nominal & riil 2Y/10Y, XAUUSD, saham Dow/S&P, dan seberapa lama harga bertahan setelah lonjakan pertama."
     },
     {
       "id": "core-cpi-sep2026",
@@ -85,7 +89,11 @@
         "GBPUSD": 4,
         "BTCUSD": 4,
         "XAGUSD": 4
-      }
+      },
+      "transmission": "Core CPI tidak memasukkan makanan dan energi dan sering dipakai untuk membaca tekanan inflasi yang lebih persisten. Angka MoM berguna melihat momentum bulanan.",
+      "ifAbove": "Jika core CPI melampaui konsensus, pasar bisa mengubah ekspektasi Fed ke arah lebih ketat; yield/USD dapat menguat dan aset durasi panjang seperti saham teknologi lebih sensitif.",
+      "ifBelow": "Jika core CPI lebih rendah, investor dapat menurunkan ekspektasi suku bunga; lihat apakah yield benar-benar turun dan apakah DXY mengonfirmasi.",
+      "detailedWatch": "Bandingkan core MoM dengan perubahan tahunan, jasa dan shelter; amati yield AS 2Y, saham teknologi, XAUUSD, EURUSD."
     },
     {
       "id": "real-earnings-sep2026",
@@ -123,7 +131,11 @@
         "GBPUSD": 1,
         "BTCUSD": 1,
         "XAGUSD": 1
-      }
+      },
+      "transmission": "Real earnings mengukur upah setelah memperhitungkan inflasi. Data ini memberi konteks daya beli, konsumsi rumah tangga dan risiko permintaan.",
+      "ifAbove": "Jika pertumbuhan upah riil lebih tinggi dari perkiraan, konsumsi bisa lebih tangguh dan prospek laba ritel membaik; dampak pada yield bergantung komponen inflasi/nominalnya.",
+      "ifBelow": "Jika hasil lebih lemah, pasar dapat membaca daya beli tertekan. Ini bisa menurunkan proyeksi permintaan, terutama sektor konsumer, tetapi tidak otomatis menguntungkan obligasi.",
+      "detailedWatch": "Periksa perubahan upah nominal, jam kerja, CPI dan reaksi saham konsumer serta yield."
     },
     {
       "id": "bls-ppi-2026-10-15",
@@ -166,7 +178,11 @@
         "GBPUSD": 3,
         "BTCUSD": 3,
         "XAGUSD": 3
-      }
+      },
+      "transmission": "PPI mencerminkan perubahan harga produsen dan tekanan biaya sebelum harga barang/jasa mencapai konsumen. Dampak ke CPI/PCE tidak selalu satu-ke-satu.",
+      "ifAbove": "PPI lebih tinggi dari perkiraan dapat menghidupkan kembali kekhawatiran inflasi input, memperkuat USD/yield dan menekan emas atau saham jika pasar berfokus pada suku bunga.",
+      "ifBelow": "PPI lebih rendah dapat memberi sinyal meredanya tekanan input, tetapi penurunan harga energi dapat mendominasi indeks dan dampaknya mungkin terbatas.",
+      "detailedWatch": "Cermati komponen jasa, perdagangan, energi, biaya input, serta yield 2Y/10Y dan DXY."
     },
     {
       "id": "core-ppi-sep2026",
@@ -205,7 +221,11 @@
         "GBPUSD": 3,
         "BTCUSD": 3,
         "XAGUSD": 3
-      }
+      },
+      "transmission": "Core PPI menyingkirkan komponen volatil tertentu dan membantu mengevaluasi apakah inflasi tingkat produsen bersifat sementara atau meluas.",
+      "ifAbove": "Core PPI lebih tinggi bisa meningkatkan kekhawatiran tekanan biaya persisten, terutama jika jasa juga naik; yield dan USD dapat bergerak lebih dulu.",
+      "ifBelow": "Core PPI lebih rendah bisa mengurangi tekanan prospek inflasi, tetapi harus dibandingkan dengan CPI/core PCE sebelum menyimpulkan arah Fed.",
+      "detailedWatch": "Pantau subindeks jasa, revisi periode sebelumnya dan reaksi yield serta XAUUSD."
     },
     {
       "id": "jobless-claims-oct10",
@@ -243,7 +263,11 @@
         "GBPUSD": 3,
         "BTCUSD": 3,
         "XAGUSD": 2
-      }
+      },
+      "transmission": "Initial jobless claims menunjukkan jumlah permohonan tunjangan pengangguran baru. Berbeda dari inflasi, angka yang lebih tinggi sering berarti pasar kerja melemah.",
+      "ifAbove": "Klaim lebih tinggi dari prediksi bisa menambah ekspektasi pelonggaran Fed dan menekan yield/USD, tetapi juga dapat menekan saham akibat kekhawatiran pertumbuhan.",
+      "ifBelow": "Klaim lebih rendah dari prediksi dapat mencerminkan pasar kerja kuat, menopang USD/yield tetapi meningkatkan kekhawatiran suku bunga tetap tinggi.",
+      "detailedWatch": "Perhatikan rata-rata empat minggu, revisi, continuing claims, laporan ketenagakerjaan AS dan reaksi saham serta obligasi."
     },
     {
       "id": "bls-trade-price-2026-10-16",
@@ -286,7 +310,11 @@
         "GBPUSD": 3,
         "BTCUSD": 1,
         "XAGUSD": 2
-      }
+      },
+      "transmission": "Harga impor memberi gambaran tekanan biaya dari barang dagang luar negeri. Pengaruh pasar biasanya tidak sebesar CPI/PPI dan berinteraksi dengan energi serta kurs.",
+      "ifAbove": "Jika indeks impor di atas perkiraan, tekanan biaya impor dapat menguat, terutama dari energi; tetapi efek terhadap keputusan Fed bergantung data inflasi lain.",
+      "ifBelow": "Jika harga impor lebih lemah, tekanan biaya dapat mereda; pantau apakah data mengecualikan komponen energi dan apakah efeknya luas.",
+      "detailedWatch": "Amati harga impor non-bahan bakar, minyak, DXY, harga barang manufaktur dan selisih dengan PPI."
     }
   ],
   "sources": [
@@ -611,5 +639,7 @@
       ],
       "classification": "article"
     }
-  ]
+  ],
+  "editorialNote": "Interpretasi bersyarat. CPI lebih tinggi biasanya berbeda artinya dari initial jobless claims lebih tinggi. Dampak akan ditentukan kejutan data, konteks, posisi pasar, dan revisi. Tidak ada sinyal buy/sell dari kalender saja.",
+  "updatedAt": "2026-10-11"
 }
