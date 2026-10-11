@@ -44,7 +44,7 @@ if(container){container.replaceChildren();if(!selected){let empty=element('div',
 if(outcome&&selected)outcome.textContent=selected.conclusion||lex('Laporan publik telah diverifikasi; tinjau sumber sebelum menggunakannya.','Verified public analysis; inspect source before use.');
 if(!selected&&qs('#zone-annotated')?.classList.contains('visible'))toggleChart('external');
 }
-function toggleChart(mode){const frame=qs('#tv-chart'),div=qs('#zone-annotated'),a=qs('#chart-default'),b=qs('#chart-annotated');if(!frame||!div)return;const showZones=mode==='zones'&&!!state.selected;
+function toggleChart(mode){const frame=qs('#tv-host'),div=qs('#zone-annotated'),a=qs('#chart-default'),b=qs('#chart-annotated');if(!frame||!div)return;const showZones=mode==='zones'&&!!state.selected;
 frame.classList.toggle('chart-hidden',showZones);div.classList.toggle('visible',showZones);if(a)a.setAttribute('aria-pressed',String(!showZones));if(b)b.setAttribute('aria-pressed',String(showZones));if(showZones){drawApprovedChart(state.selected)}}
 function drawApprovedChart(a){const target=qs('#zone-chart');if(!target||!a||!validApprovedAnalysis(a))return;target.replaceChildren();if(!window.LightweightCharts){target.append(element('div','empty-visual',lex('Pustaka chart terverifikasi tidak tersedia.','Chart library unavailable.')));return}
 const options={width:target.clientWidth||800,height:target.clientHeight||450,layout:{background:{color:'#031327'},textColor:'#a9c9e3'},grid:{vertLines:{color:'#102e49'},horzLines:{color:'#10304e'}},crosshair:{mode:1},timeScale:{borderColor:'#1a6594',timeVisible:false},rightPriceScale:{borderColor:'#1a6594'}};
@@ -56,7 +56,7 @@ for(const z of a.zones){const col=cols[z.type];candles.createPriceLine({price:z.
 chart.timeScale().fitContent();
 if(window.ResizeObserver){const resize=new ResizeObserver(entries=>{const r=entries[0]?.contentRect;if(r?.width)chart.resize(r.width,r.height)});resize.observe(target)}
 }
-function bindCharts(){if(!qs('#tv-chart'))return;
+function bindCharts(){if(!qs('#tv-host'))return;
 all('[data-tv-symbol]').forEach(button=>{button.addEventListener('click',()=>{state.symbol=button.dataset.tvSymbol;renderZones();toggleChart('external')})});
 qs('#chart-default')?.addEventListener('click',()=>toggleChart('external'));
 qs('#chart-annotated')?.addEventListener('click',()=>toggleChart('zones'));
