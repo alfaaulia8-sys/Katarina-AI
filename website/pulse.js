@@ -57,7 +57,13 @@ add(d.documentElement.lang==='id'?'Mengapa rilis ini penting':'Why this matters'
 add(d.documentElement.lang==='id'?'Jika aktual di atas prediksi':'If actual exceeds consensus',x.ifAbove);
 add(d.documentElement.lang==='id'?'Jika aktual di bawah prediksi':'If actual misses consensus',x.ifBelow);
 add(d.documentElement.lang==='id'?'Apa yang wajib dipantau':'What to monitor',x.detailedWatch||x.whatToWatch);
-info.append(details);card.append(info);return card;
+if(document.querySelector('.kt-unified')){
+ const disclosure=element('details','kt-calendar-details');
+ const heading=element('summary','kt-calendar-summary','Lihat penjelasan dan skenario dampak');
+ disclosure.append(heading,details);
+ info.append(disclosure);
+}else info.append(details);
+card.append(info);return card;
 }
 function renderCalendar(){const root=qs('#economic-events');if(root){root.replaceChildren();
 if(!state.cal?.events?.length){root.append(element('p','placeholder',lex('Kalender resmi belum dimuat.','Official schedule not available.')))}
