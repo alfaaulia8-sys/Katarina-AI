@@ -57,7 +57,7 @@ class MT5ShadowCycle:
         self.commission=commission_round_trip_per_lot
         self.analyst=analyst or GoldShadowIntraday()
 
-    def _balance(self) -> tuple[float,float,float,float]:
+    def _balance(self, as_of_utc: datetime) -> tuple[float,float,float,float]:
         """Reconcile net closed PAPER cash, peak, daily and total drawdown.
 
         A shadow book is a separate virtual account. Never infer paper capital
@@ -86,6 +86,8 @@ class MT5ShadowCycle:
             peak=max(peak,balance)
             daily_dd=max(0,(day_base-balance)/day_base) if day_base>0 else 1.
             total_dd=max(0,(peak-balance)/peak) if peak>0 else 1.
+        if today != _utc(as_of_utc).date():
+            daily_dd=0.
         return balance,peak,daily_dd,total_dd
 
     @staticmethod
@@ -103,7 +105,7 @@ class MT5ShadowCycle:
         # using the signal candle's high/low.
         closed=self.book.on_quote(
             self.broker.quote(snap),profit_at_exit=self.broker.profit_account)
-        balance,peak,daily_dd,total_dd=self._balance()
+        balance,peak,daily_dd,total_dd=self._balance(observed)
         if balance<=0:
             raise ValueError("shadow_bankrupt_no_new_trades")
         accepted=0;rejected=0
@@ -177,5 +179,5 @@ class MT5ShadowCycle:
                 accepted+=1
             else:
                 rejected+=1
-        new_balance,_,_,_=self._balance()
+        new_balance,_,_,_=self._balance(observed)
         return ShadowCycleReport(symbol,len(closed),accepted,rejected,new_balance)
