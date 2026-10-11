@@ -32,6 +32,10 @@ from katarina.engines.risk import RiskGovernor
 from katarina.intelligence.mt5_shadow_cycle import MT5ShadowCycle
 from katarina.intelligence.shadow_journal import ShadowJournal
 from katarina.intelligence.shadow_paper_book import ShadowPaperBook
+from katarina.intelligence.shadow_manifest import (
+    ShadowStudyIdentity,broker_fingerprint,config_sha256,
+    verify_or_create_manifest,
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -99,11 +103,28 @@ def main(argv: list[str] | None = None) -> int:
             raise RuntimeError(f"MT5_readonly_connect_failed:{mt5.last_error()}")
         try:
             broker=MT5ShadowReadOnly(mt5)
+            account=mt5.account_info()
+            if account is None:
+                raise RuntimeError("MT5_account_unavailable")
+            policy=RiskGovernor.from_config(args.risk_config)
+            verify_or_create_manifest(
+                args.state_root,ShadowStudyIdentity(
+                    strategy_version=args.version,
+                    frozen_at_utc=datetime.fromisoformat(args.frozen_at)
+                        .astimezone(timezone.utc).isoformat(),
+                    symbol=args.symbol,account_currency=str(account.currency),
+                    broker_account_fingerprint=broker_fingerprint(
+                        server=str(account.server),login=account.login,
+                        currency=str(account.currency)),
+                    initial_paper_balance_native=args.initial_paper_balance_native,
+                    risk_config_sha256=config_sha256(args.risk_config),
+                    commission_per_lot_assumed=args.commission_per_lot,
+                ))
             journal=ShadowJournal(args.state_root/"journal")
             paper=ShadowPaperBook(args.state_root/"paper",journal)
             controller=MT5ShadowCycle(
                 broker=broker,journal=journal,paper_book=paper,
-                risk_governor=RiskGovernor.from_config(args.risk_config),
+                risk_governor=policy,
                 frozen_at_utc=datetime.fromisoformat(args.frozen_at),
                 strategy_version=args.version,
                 initial_paper_balance_account=args.initial_paper_balance_native,
