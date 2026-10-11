@@ -17,7 +17,13 @@
       "source": "https://www.bls.gov/schedule/2026/10_sched_list.htm",
       "description": "CPI mengukur inflasi harga konsumen. Perbedaan antara angka aktual dan ekspektasi dapat mengubah perkiraan arah kebijakan The Fed dan yield obligasi.",
       "whatToWatch": "Bandingkan CPI headline/core dengan konsensus yang benar-benar tersedia; lihat respons USD, yield Treasury, XAUUSD, dan indeks saham setelah rilis.",
-      "conditional": "Inflasi di atas perkiraan dapat menguatkan ekspektasi pengetatan; tetapi arah harga tetap perlu konfirmasi pasar."
+      "conditional": "Inflasi di atas perkiraan dapat menguatkan ekspektasi pengetatan; tetapi arah harga tetap perlu konfirmasi pasar.",
+      "actual": null,
+      "forecast": null,
+      "actualSource": null,
+      "forecastSource": null,
+      "analysisShort": "Inflasi di atas perkiraan dapat menguatkan ekspektasi pengetatan; tetapi arah harga tetap perlu konfirmasi pasar.",
+      "previous": null
     },
     {
       "id": "bls-ppi-2026-10-15",
@@ -31,7 +37,13 @@
       "source": "https://www.bls.gov/schedule/2026/10_sched_list.htm",
       "description": "PPI mengukur perubahan harga di tingkat produsen, salah satu petunjuk tekanan biaya yang berpotensi diteruskan ke konsumen.",
       "whatToWatch": "Pisahkan perubahan harga energi dan jasa serta respon pasar obligasi. Revisi ekspektasi inflasi bisa mengubah dolar dan emas.",
-      "conditional": "PPI tidak otomatis diteruskan ke CPI; dampak pasar bergantung komposisi dan ekspektasi."
+      "conditional": "PPI tidak otomatis diteruskan ke CPI; dampak pasar bergantung komposisi dan ekspektasi.",
+      "actual": null,
+      "forecast": null,
+      "actualSource": null,
+      "forecastSource": null,
+      "analysisShort": "PPI tidak otomatis diteruskan ke CPI; dampak pasar bergantung komposisi dan ekspektasi.",
+      "previous": null
     },
     {
       "id": "bls-trade-price-2026-10-16",
@@ -45,7 +57,13 @@
       "source": "https://www.bls.gov/schedule/2026/10_sched_list.htm",
       "description": "Menunjukkan perkembangan harga perdagangan internasional dan potensi tekanan biaya dari luar negeri.",
       "whatToWatch": "Pantau import prices energi dan nonenergi serta pergerakan USD dan inflasi global.",
-      "conditional": "Pengaruh pada XAUUSD dan forex sering tidak langsung; gabungkan dengan CPI/PPI dan sentimen risiko."
+      "conditional": "Pengaruh pada XAUUSD dan forex sering tidak langsung; gabungkan dengan CPI/PPI dan sentimen risiko.",
+      "actual": null,
+      "forecast": null,
+      "actualSource": null,
+      "forecastSource": null,
+      "analysisShort": "Pengaruh pada XAUUSD dan forex sering tidak langsung; gabungkan dengan CPI/PPI dan sentimen risiko.",
+      "previous": null
     }
   ],
   "sources": [
@@ -62,5 +80,5 @@
       "url": "https://www.tradingview.com/economic-calendar/"
     }
   ],
-  "note": "Waktu AS 08.30 EDT adalah 19.30 WIB pada 14–16 Oktober 2026. Jadwal resmi dapat berubah. Angka actual/forecast sengaja tidak diisi tanpa verifikasi."
+  "note": "Angka aktual, konsensus/prediksi dan sebelumnya hanya muncul bila sumber terverifikasi. Tidak ada angka sintetis. Periksa jadwal resmi pada saat pembaruan."
 }
