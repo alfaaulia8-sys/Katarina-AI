@@ -63,7 +63,7 @@ function renderMatches(){
    if(type!==last){results.append(el('div','pair-search-group',groupTitle[type]||type));last=type}
    const button=el('button','pair-search-choice');button.type='button';button.setAttribute('role','option');button.dataset.pair=id;button.id=results.id+'-opt-'+i;
    button.setAttribute('aria-selected',String(i===activeIndex));
-   const namePart=el('strong','',id);const labelPart=el('span','',name.replace(id,'').replace(/^[\\s·]+/,'').trim()||groupTitle[type]||'');
+   const namePart=el('strong','',id);const labelPart=el('span','',name.replace(id,'').replace(/^[\s·]+/,'').trim()||groupTitle[type]||'');
    button.append(namePart,labelPart);
    button.addEventListener('click',()=>choose(id));results.append(button);
   });
@@ -75,7 +75,7 @@ function updateActive(){
   const active=buttons[activeIndex];
   if(active){input.setAttribute('aria-activedescendant',active.id);active.scrollIntoView({block:'nearest'});}
 }
-function open(){panel.hidden=false;toggle.setAttribute('aria-expanded','true');input.value='';renderMatches();input.focus();}
+function open(){panel.hidden=false;toggle.setAttribute('aria-expanded','true');input.setAttribute('aria-expanded','true');input.value='';renderMatches();input.focus();}
 function close(){panel.hidden=true;toggle.setAttribute('aria-expanded','false');input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
 function choose(value){setFocus(value);close();toggle.focus();}
 toggle.addEventListener('click',()=>panel.hidden?open():close());
