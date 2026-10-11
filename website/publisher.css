@@ -1,0 +1,29 @@
+/* KATARINA AI publishing and transparency pages. No advertisements are served. */
+.publisher-main{max-width:1140px;padding-bottom:54px}
+.publisher-hero{margin:30px 0 20px;background:radial-gradient(ellipse at 95% 30%,rgba(12,117,188,.27),transparent 55%),linear-gradient(140deg,#041126,#061b35);border:1px solid #24668e;border-radius:17px;padding:clamp(24px,4.5vw,46px)}
+.publisher-kicker{color:#6fe1ff;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:800}
+.publisher-hero h1{font-size:clamp(30px,4.5vw,56px);line-height:1.12;letter-spacing:-.045em;color:#e7faff;margin:13px 0 17px;font-weight:760}
+.publisher-hero p{max-width:750px;line-height:1.8;color:#aed5e9;font-size:15px;margin:0}
+.publisher-meta{font-size:12px;color:#77aeca;margin-top:23px}
+.publisher-lang{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:16px 21px;background:#06182d;border-radius:11px;border:1px solid #1e597e;margin-bottom:22px}
+.publisher-lang span{font-size:13px;color:#91bad0;font-weight:650;margin-right:auto}
+.publisher-lang button{border:1px solid #258bbd;background:#081f39;color:#bce4f6;padding:9px 16px;font-size:13px;border-radius:9px;cursor:pointer;font-weight:730}
+.publisher-lang button[aria-pressed=true]{color:#fff;background:#08649b;box-shadow:inset 0 0 10px #19c8ff44}
+.publisher-main article{display:grid;gap:17px;max-width:970px}
+.publisher-main article[hidden]{display:none!important}
+.publisher-main .policy-section{border:1px solid #1d5379;background:linear-gradient(145deg,#06192f,#041124);border-radius:13px;padding:clamp(20px,3vw,31px)}
+.publisher-main .policy-section h2{font-family:'Space Grotesk',system-ui,sans-serif;color:#87ddfa;margin:0 0 14px;font-size:clamp(19px,2vw,25px);line-height:1.35}
+.publisher-main .policy-section p{color:#bfdaec;font-size:14px;line-height:1.95;margin:0 0 15px}
+.publisher-main .policy-section p:last-child{margin-bottom:0}
+.publisher-main .policy-section strong{color:#e6f9ff}
+.publisher-main .policy-section a,.publisher-main .publisher-side a{color:#5fe3ff;text-decoration:underline;text-underline-offset:4px}
+.publisher-main .policy-section a:hover,.publisher-main .publisher-side a:hover{color:white}
+.publisher-side{margin:23px 0 7px;border:1px solid #205579;border-radius:12px;padding:18px 22px;background:#08263e;color:#bedbea;font-size:13px;line-height:1.8}
+.publisher-side strong{color:#71ddf9;font-size:13px}
+.publisher-side p{margin:7px 0}
+.publisher-footer{margin-top:15px}
+.publisher-foot-links{display:flex;align-items:center;gap:12px 22px;flex-wrap:wrap;padding:8px 0 17px}
+.publisher-foot-links a{font-size:12px;color:#8ed4f3;text-decoration:none;padding:7px 3px;font-weight:700}
+.publisher-foot-links a:hover,.publisher-foot-links a:focus-visible{text-decoration:underline;color:#fff}
+@media(max-width:980px){.publisher-main{padding-left:17px;padding-right:17px}header.shell .navlinks{width:100%}}
+@media(max-width:580px){.publisher-main{padding-left:14px;padding-right:14px}.publisher-hero{margin:16px 0;padding:24px 19px}.publisher-main .policy-section{padding:19px 15px}.publisher-main .policy-section p{font-size:13px;line-height:1.82}.publisher-lang{padding:13px}.publisher-lang span{flex-basis:100%}.publisher-foot-links{gap:9px 15px}}
