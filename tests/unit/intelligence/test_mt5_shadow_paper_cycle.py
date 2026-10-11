@@ -333,8 +333,9 @@ class AdapterAndCycleTests(unittest.TestCase):
             rep=obj.run_once("XAUUSD.vx",observed_at_utc=OBS)
             self.assertEqual(rep.accepted_paper_positions,0)
             self.assertEqual(rep.rejected_or_wait_signals,1)
-            self.assertEqual(next(iter(journal._signals.values())).reason,
-                             "news_clearance_not_verified")
+            logged=next(iter(journal._signals.values()))
+            self.assertEqual(logged.reason,"news_clearance_not_verified")
+            self.assertFalse(logged.news_blackout)  # unknown != verified news
 
     def test_multi_strategy_same_gold_group_never_opens_two(self):
         api=FakeMT5();broker=FakeSnapshotBroker(api,snapshot())
