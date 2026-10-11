@@ -51,6 +51,7 @@ class TestRegimeResearchRouter(unittest.TestCase):
     def test_unknown_or_unverified_inputs_fail_closed(self):
         x = gold_context()
         variants=[
+            replace(x, source_is_replay_or_paper=False),
             replace(x, news_cleared=False),
             replace(x, broker_costs_verified=False),
             replace(x, quote_age_seconds=120),
