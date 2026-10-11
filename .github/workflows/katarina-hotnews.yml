@@ -1,0 +1,34 @@
+name: KATARINA verified news check
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: katarina-market-news
+  cancel-in-progress: false
+jobs:
+  refresh-sourced-headlines:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refresh headline snapshot only when fresh trusted RSS changes
+        run: python scripts/update_hot_news.py --output website/hot-news.json
+      - name: Commit only actual headline changes (no trade orders or private files)
+        run: |
+          if git diff --quiet -- website/hot-news.json && git ls-files --error-unmatch website/hot-news.json >/dev/null 2>&1; then
+            echo 'No verified market headline changes.'
+            exit 0
+          fi
+          git config user.name 'katarina-research-bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add website/hot-news.json
+          git commit -m 'news: refresh sourced market headlines'
+          git push
