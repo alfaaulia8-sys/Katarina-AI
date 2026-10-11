@@ -20,6 +20,7 @@ import json
 import os
 import sys
 import time
+from math import isfinite
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,7 +65,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         frozen=datetime.fromisoformat(args.frozen_at)
         if frozen.tzinfo is None or frozen.utcoffset() is None:
             raise ValueError("freeze timestamp must have explicit offset")
-        if args.cycles<1 or args.poll_seconds<5 or args.initial_paper_balance_native<=0:
+        if (args.cycles<1 or args.poll_seconds<5
+                or not isfinite(args.initial_paper_balance_native)
+                or args.initial_paper_balance_native<=0):
             raise ValueError("invalid cycles, poll interval or paper balance")
         if not args.symbol.startswith("XAUUSD"):
             raise ValueError("this frozen Gold shadow lab only supports XAUUSD")
@@ -73,7 +76,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             raise ValueError("do not write shadow state within git repository")
         if args.state_root.exists() and not args.state_root.is_dir():
             raise ValueError("shadow state root is not a directory")
-        if args.commission_per_lot is not None and args.commission_per_lot<0:
+        if args.commission_per_lot is not None and (
+                not isfinite(args.commission_per_lot) or args.commission_per_lot<0):
             raise ValueError("invalid commission")
     except (ValueError,OverflowError) as exc:
         p.error(str(exc))
