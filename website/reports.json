@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-10-11",
+  "policy": "Only publish high-level non-proprietary aggregate reports after independent verification and explicit publication approval. Required per item: verified=true, approvedForPublication=true, date YYYY-MM-DD, mode backtest/demo/live, verification source description, summary in all 14 website languages. No raw trades, position sizes, account/broker credentials, balances, order history, proprietary parameters, unpublished backtest results or personally identifying data. Equity curve values must be aggregate returns and all points from a single disclosed trading mode.",
+  "daily": [],
+  "weekly": [],
+  "equityCurve": []
+}
