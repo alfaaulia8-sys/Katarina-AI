@@ -293,6 +293,32 @@ class AdapterAndCycleTests(unittest.TestCase):
             recovered=ShadowPaperBook(root/"paper",ShadowJournal(root/"journal"))
             self.assertEqual(len(recovered.pending()),0)
 
+    def test_virtual_paper_margin_not_subsidized_by_large_real_mt5_balance(self):
+        class ExcessiveMarginMT5(FakeMT5):
+            def order_calc_margin(self,kind,symbol,volume,price):
+                return 60000.*volume
+
+        api=ExcessiveMarginMT5()
+        api.margin_free=10000.
+        broker=FakeSnapshotBroker(api,snapshot())
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            journal=ShadowJournal(root/"journal")
+            obj=MT5ShadowCycle(
+                broker=broker,journal=journal,
+                paper_book=ShadowPaperBook(root/"paper",journal),
+                risk_governor=RiskGovernor(per_trade_default=.02),
+                strategy_version="frozen-paper-cap",frozen_at_utc=FREEZE,
+                initial_paper_balance_account=1000.,
+                analyst=FixedAnalyzer())
+            report=obj.run_once("XAUUSD.vx",observed_at_utc=OBS,
+                                research_news_clear=True)
+            self.assertEqual(report.accepted_paper_positions,0)
+            self.assertEqual(report.rejected_or_wait_signals,1)
+            self.assertEqual(next(iter(journal._signals.values())).reason,
+                             "paper_risk_or_margin_below_minimum_broker_lot")
+            self.assertEqual(journal.close_count,0)
+
     def test_no_external_news_clearance_creates_rejection_not_position(self):
         api=FakeMT5();broker=FakeSnapshotBroker(api,snapshot())
         with tempfile.TemporaryDirectory() as directory:
