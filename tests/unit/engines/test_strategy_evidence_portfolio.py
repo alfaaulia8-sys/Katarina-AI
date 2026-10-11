@@ -115,6 +115,31 @@ class StrategyAndExposureRoutingTests(unittest.TestCase):
         self.assertEqual(plan.rejected[0].reason,"exclusive_exposure_group_busy")
         self.assertEqual(self.state.reservations.total_fraction,0)
 
+    def test_quality_multiplier_changes_both_risk_budget_and_physical_lots(self):
+        router=MultiSymbolExecutionOrchestrator(risk=self.risk)
+        proposal=replace(make_candidate("XAUUSD",1),quality_risk_multiplier=.5)
+        plan=router.build_plan(
+            [proposal],positions=self.positions,day_key="2026-10-11",
+            returns={"XAUUSD":[1,0,-1]},
+        )
+        self.assertEqual(len(plan.accepted),1)
+        self.assertAlmostEqual(plan.accepted[0].approved_risk_fraction,.025)
+        self.assertAlmostEqual(plan.accepted[0].intent.volume,.05)
+        self.assertAlmostEqual(self.state.reservations.total_fraction,.025)
+
+    def test_bogus_quality_evidence_multiplier_is_rejected(self):
+        router=MultiSymbolExecutionOrchestrator(
+            risk=self.risk,require_strategy_evidence=True)
+        forged=StrategyEvidenceDecision(
+            True,"unverified_approval",float("nan"),60,.2,.1,1.3,5.)
+        plan=router.build_plan(
+            [make_candidate("XAUUSD",1)],positions=self.positions,
+            day_key="2026-10-11",returns={},
+            evidence_decisions={("XAUUSD","GOLD_OR"):forged})
+        self.assertEqual(len(plan.accepted),0)
+        self.assertEqual(plan.rejected[0].reason,"strategy_forward_evidence_missing")
+        self.assertEqual(self.state.reservations.total_fraction,0)
+
     def test_failed_forward_evidence_cannot_be_forgiven_by_higher_score(self):
         router=MultiSymbolExecutionOrchestrator(
             risk=self.risk,require_strategy_evidence=True)
