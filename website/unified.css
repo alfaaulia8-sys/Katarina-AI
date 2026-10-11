@@ -111,3 +111,14 @@ body.kt-focus-active .kt-chart-bottom{display:flex}
 .kt-unified #kt-analysis-terminal .market-chart-controls button{touch-action:manipulation}
 @media(max-width:790px){.kt-unified .kt-calendar-primary #economic-events{grid-template-columns:1fr}.kt-unified .kt-chart-primary .tv-embed{min-height:340px}}
 @media(max-width:590px){.kt-unified .kt-chart-primary #kt-analysis-terminal{padding:15px 10px!important}.kt-unified .kt-chart-primary .tv-embed{min-height:310px}.kt-unified .kt-chart-primary .self-chart-frame{min-height:285px}.kt-unified .kt-chart-primary{margin-bottom:13px}}
+
+/* Data-derived weekly scenario legend */
+.kt-unified .kt-week-overlay-switch{border-color:#1b8cb8!important;color:#8feeff!important;background:#0b3550!important}
+.kt-unified .kt-week-overlay-switch[aria-pressed=true]{box-shadow:inset 0 0 0 1px #15b5dd85;background:#0a4162!important}
+.kt-unified .kt-map-help{margin:12px 1px 15px!important;border-left:3px solid #3baee9;background:linear-gradient(110deg,#082640,#061827);padding:12px 16px;border-radius:0 8px 8px 0;color:#a5cbe0;font-size:11px;line-height:1.8}
+.kt-unified .kt-map-help .kt-legend-up{color:#56e1b9}
+.kt-unified .kt-map-help .kt-legend-down{color:#ff97a5}
+.kt-unified .kt-map-help strong{color:#ccf3ff}
+@media(max-width:620px){.kt-unified .kt-week-overlay-switch{width:100%}.kt-unified .kt-map-help{font-size:10px;padding:11px}}
+.kt-dashboard-tail.pulse-triplet{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:720px){.kt-dashboard-tail.pulse-triplet{grid-template-columns:1fr}}
