@@ -230,3 +230,60 @@ header.shell .lang{font-size:11px;max-width:140px;padding:9px;border-radius:8px}
 .pulse-page .tv-embed .market-chart-meta{font-size:10px;padding:8px 9px 4px}
 .pulse-page .tv-embed .market-period{font-size:10px}
 }
+
+
+/* Instrument synced analyst workstation · V6 */
+.pulse-page .pulse-hero:after{
+ content:"";display:block!important;position:absolute;pointer-events:none!important;
+ background:url('/brand-crest.svg') center center / contain no-repeat!important;
+ inset:auto 0 auto auto!important;right:3%!important;top:50%!important;
+ transform:translateY(-50%)!important;opacity:.9!important;
+ width:min(44%,500px)!important;height:115%!important;max-width:none!important;
+ filter:drop-shadow(0 0 22px rgba(9,171,252,.3))!important;
+ z-index:1;
+}
+.pulse-page .pulse-hero .copy{max-width:58%!important;z-index:3}
+.pulse-page .pulse-hero .copy:after{display:none}
+.pulse-page .instrument-toolbar{display:flex;gap:17px;align-items:center;flex-wrap:wrap;background:linear-gradient(115deg,#082948,#041529);border:1px solid #2177a6;border-radius:13px;padding:16px 19px;margin:16px 0;box-shadow:inset 0 1px 0 rgba(67,183,252,.14)}
+.pulse-page .instrument-toolbar label{min-width:210px;display:flex;flex-direction:column;gap:8px}
+.pulse-page .instrument-eyebrow{color:#70cfff;letter-spacing:.12em;font-weight:750;font-size:10px}
+.pulse-page [data-instrument-select]{appearance:auto;width:100%;min-height:46px;border:1px solid #209ce2;color:#e7f9ff;padding:11px 13px;background:#062445;border-radius:8px;font:750 14px 'DM Sans',system-ui;cursor:pointer}
+.pulse-page [data-instrument-select]:focus-visible{outline:2px solid #56d8ff;outline-offset:3px}
+.pulse-page [data-instrument-select] option{background:#061c36;color:#eef9ff}
+.pulse-page .instrument-toolbar-desc{display:grid;gap:5px;min-width:0;flex:1}
+.pulse-page .instrument-toolbar-desc strong{font:700 15px 'Space Grotesk',sans-serif;color:#daf4ff}
+.pulse-page .instrument-toolbar-desc span{font-size:11px;color:#9bbbd4}
+.pulse-page .instrument-toolbar .btn{font-size:12px;border:1px solid #2787bd;border-radius:8px;background:#07305a;text-decoration:none;padding:11px 15px;color:#d6f3ff}
+.pulse-page .instrument-context{padding:16px 19px;background:#06203b;border:1px solid #205e87;border-radius:10px;margin:15px 0}
+.pulse-page .instrument-context-inline{margin:0 0 16px}
+.pulse-page .focus-headline{font:700 16px/1.35 'Space Grotesk',sans-serif!important;color:#a2e9ff!important;margin:0 0 10px!important}
+.pulse-page .focus-monitor{color:#b3d6e8;font-size:12px;line-height:1.6;margin:0 0 12px}
+.pulse-page .focus-driver-list{padding-left:21px;display:grid;gap:8px;color:#b6d4e7;font-size:12px;line-height:1.55;margin:0 0 12px}
+.pulse-page .focus-driver-list li::marker{color:#47d4ff}
+.pulse-page .focus-disclosure{font-size:11px;color:#7da8c6;line-height:1.5;margin:0}
+.pulse-page .focus-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:13px 0 16px}
+.pulse-page .focus-tiles .panel{min-height:97px}
+.pulse-page .focus-tiles .kpi-number{font-size:16px!important;line-height:1.28;overflow-wrap:anywhere}
+.pulse-page .news-scroll{max-height:400px}
+.pulse-page .econ-entry{border-color:#165780}
+.pulse-page .focus-subhead{font:700 13px 'Space Grotesk',sans-serif;color:#67d4ff;letter-spacing:.04em;margin:12px 0}
+.pulse-page .news-scroll .market-news-card{padding:12px;margin-bottom:8px}
+.pulse-page .market-news-top span{color:#72e6fc}
+@media(max-width:980px){
+ .pulse-page .pulse-hero:after{width:50%!important;right:-5%!important;opacity:.43!important}
+ .pulse-page .pulse-hero .copy{max-width:82%!important}
+ .pulse-page .focus-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:570px){
+ .pulse-page .pulse-hero:after{width:76%!important;right:-34%!important;opacity:.22!important;filter:drop-shadow(0 0 13px #099afa)!important}
+ .pulse-page .pulse-hero .copy{max-width:100%!important}
+ .pulse-page .instrument-toolbar{gap:11px;padding:14px}
+ .pulse-page .instrument-toolbar label{width:100%;min-width:0}
+ .pulse-page [data-instrument-select]{font-size:14px}
+ .pulse-page .instrument-toolbar-desc{max-width:100%}
+ .pulse-page .instrument-toolbar .btn{font-size:11px}
+ .pulse-page .focus-tiles{gap:7px}
+ .pulse-page .focus-tiles .panel{padding:12px}
+ .pulse-page .focus-tiles .kpi-number{font-size:14px!important}
+ .pulse-page .instrument-context{padding:13px}
+}
