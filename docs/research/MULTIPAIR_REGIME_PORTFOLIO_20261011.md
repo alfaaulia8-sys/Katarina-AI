@@ -18,10 +18,10 @@ Which previously inspected market-specific setups are useful in which **historic
 
 | Symbol | Hypothesis | Observed market condition | Signal definition | Stop / Target / maximum hold |
 |---|---|---|---|---|
-| XAUUSD.vx | VWAP_RECLAIM | ADX at least 25, session 06:00 UTC | Reclaim of rolling volume-weighted price on closed M5 | H1 ATR ×0.55 / 1.5R / 3h |
-| JPN225.vx | DONCHIAN24 | ADX below 18, session 12:00 UTC | Previously frozen Donchian24 / low-ADX setup on M5 | H1 ATR ×0.80 / 2R / 3h |
+| XAUUSD.vx | VWAP_RECLAIM | ADX at least 25, session 06:00–09:00 UTC | Reclaim of rolling volume-weighted price on closed M5 | H1 ATR ×0.55 / 1.5R / 3h |
+| JPN225.vx | DONCHIAN24 | ADX <= 18, session 12:00–15:00 UTC | Previously frozen Donchian24 / low-ADX setup on M5 | H1 ATR ×0.80 / 2R / 3h |
 
-**Regime router rule:** A symbol may propose a research signal only when all session/ADX/VWAP-or-Donchian filters and closed-bar causal gates match that candidate. If symbol/regime/source/quote/news/cost inputs cannot be verified: `NO_TRADE`. This document does not wire any router or change production execution.
+**Regime router rule:** A symbol may propose a research signal only when all session/ADX/VWAP-or-Donchian filters and closed-bar causal gates match that candidate. If symbol/regime/source/quote/news/cost inputs cannot be verified: `NO_TRADE`. The pure-Python `src/katarina/intelligence/regime_research_router.py` provides a **non-live** context selector with synthetic tests. It is not wired into any production order flow.
 
 **What NOT to infer:** ADX context is not a guarantee of forecast direction; high-volatility pairs alone have no proven edge. Tick volume is not an exchange order book footprint. A setup that generates no signals in a quiet regime must remain idle.
 
