@@ -25,6 +25,7 @@ const ct=$("#focus-kpi-news");if(ct){const num=publishedNews.filter(n=>(n.symbol
 }
 function setFocus(value,opts={}){if(!Object.hasOwn(map,value))return;selected=value;window.katarinaInstrument=value;window.katarinaMarketFocus=value;save(value);
 for(const select of selectors)select.value=value;
+const allFilter=document.querySelector('.pulse-tags [data-filter="all"]');if(allFilter&&allFilter.getAttribute('aria-pressed')!=='true')allFilter.click();
 if(!opts.fromButton){const control=[...document.querySelectorAll("[data-tv-symbol]")].find(b=>b.dataset.tvSymbol===map[value].symbol);if(control)control.click();}
 renderContext();
 const link=$("#focus-research-link");if(link)link.href="/research.html?symbol="+encodeURIComponent(value);
