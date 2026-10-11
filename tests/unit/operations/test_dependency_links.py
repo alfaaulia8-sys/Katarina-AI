@@ -11,6 +11,7 @@ class DependencyLinkTests(unittest.TestCase):
     def test_local_url_resolution(self):
         self.assertEqual(site_target("/research.html#calendar", "index.html"), "research.html")
         self.assertEqual(site_target("./site.js?v=2", "index.html"), "site.js")
+        self.assertEqual(site_target("/", "research.html"), "index.html")
         self.assertIsNone(site_target("https://example.org", "index.html"))
         self.assertIsNone(site_target("mailto:team@example.org", "index.html"))
 

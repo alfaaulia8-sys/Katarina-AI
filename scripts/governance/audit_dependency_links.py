@@ -32,6 +32,8 @@ def site_target(url: str, source: str) -> str | None:
     if parsed.scheme or parsed.netloc or not parsed.path or "{" in parsed.path:
         return None
     raw = parsed.path
+    if raw == "/":
+        return "index.html"  # Website root is the homepage, not a missing file.
     return posixpath.normpath(
         raw.lstrip("/") if raw.startswith("/")
         else posixpath.join(posixpath.dirname(source), raw)
