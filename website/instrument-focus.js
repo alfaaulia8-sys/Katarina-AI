@@ -9,7 +9,7 @@ const defs=[
 const map=Object.fromEntries(defs.map(x=>[x[0],{symbol:x[1],label:x[2]}]));
 const selectors=[...document.querySelectorAll("[data-instrument-select]")];if(!selectors.length)return;
 const $=s=>document.querySelector(s);
-let items=[],selected="XAUUSD";
+let items=[],selected="XAUUSD",publishedNews=[];
 const el=(tag,className,value)=>{const n=document.createElement(tag);if(className)n.className=className;if(value!==undefined)n.textContent=String(value);return n};
 function save(v){try{localStorage.setItem("katarina_public_instrument",v)}catch(e){}}
 function read(){try{const v=localStorage.getItem("katarina_public_instrument");return Object.hasOwn(map,v)?v:"XAUUSD"}catch(e){return "XAUUSD"}}
@@ -18,6 +18,10 @@ const info=el("p","focus-monitor","Faktor utama untuk diamati: "+x.monitor);node
 const list=el("ul","focus-driver-list");for(const reason of x.drivers||[]){list.append(el("li",null,reason))}node.append(list);
 const disclaimer=el("p","focus-disclosure","Faktor penggerak bersifat analisis makro/mikro bersyarat, bukan arah transaksi atau hasil pengujian KATARINA.");node.append(disclaimer);
 const headline=$("#focus-active-symbol");if(headline)headline.textContent=x.label;
+const metric=$("#focus-kpi-symbol");if(metric)metric.textContent=x.id;
+const src=$("#focus-kpi-data");if(src)src.textContent=x.id==="US30"?"Dow ^DJI":x.id==="US500"?"S&P 500":x.id==="NASDAQ"?"Nasdaq Composite":x.id==="GBPUSD"?"Kurs referensi":"OHLC Harian";
+const ct=$("#focus-kpi-news");if(ct){const num=publishedNews.filter(n=>(n.symbols||[]).includes(selected)).length;ct.textContent=num?num+" berita":"Belum ada";}
+
 }
 function setFocus(value,opts={}){if(!Object.hasOwn(map,value))return;selected=value;window.katarinaInstrument=value;window.katarinaMarketFocus=value;save(value);
 for(const select of selectors)select.value=value;
@@ -38,5 +42,6 @@ document.querySelectorAll("[data-tv-symbol]").forEach(button=>{
 button.addEventListener("click",()=>{const found=defs.find(x=>x[1]===button.dataset.tvSymbol);if(found&&found[0]!==selected)setFocus(found[0],{fromButton:true})});
 });
 fetch("/instrument-context.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("No instrument context");return r.json()}).then(j=>{if(j.schema===1&&Array.isArray(j.instruments))items=j.instruments;renderContext()}).catch(renderContext);
+fetch("/calendar-brief.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.news))publishedNews=j.news;renderContext()}).catch(()=>{});
 window.addEventListener("katarina-language",renderContext);
 })();
