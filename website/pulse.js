@@ -111,6 +111,13 @@ watchCategory();bindCharts();
 requestJson('/calendar-brief.json').then(x=>{if(x.schema===1&&x.weekStart==='2026-10-12'&&Array.isArray(x.events))state.cal=x;renderCalendar()}).catch(renderCalendar);
 requestJson('/market-analysis.json').then(x=>{if(x.schema===1&&Array.isArray(x.analyses))state.analysis=x;renderZones()}).catch(renderZones);
 window.addEventListener('katarina-language',()=>{renderCalendar();renderZones()});window.addEventListener('katarina-instrument',renderCalendar);
+window.addEventListener('katarina-select-symbol',event=>{
+  const symbol=event.detail?.symbol;
+  if(typeof symbol!=='string'||symbol===state.symbol)return;
+  state.symbol=symbol;
+  renderZones();
+  toggleChart('external');
+});
 })();
 
 /* KATARINA AI — independent market news cards, source-linked and scrollable */
