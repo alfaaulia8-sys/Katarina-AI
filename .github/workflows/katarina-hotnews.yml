@@ -1,7 +1,7 @@
-name: KATARINA verified news check
+name: KATARINA verified news backup (free build budget)
 on:
   schedule:
-    - cron: '3,18,33,48 * * * *'
+    - cron: '41 */6 * * *'
   workflow_dispatch:
 permissions:
   contents: write

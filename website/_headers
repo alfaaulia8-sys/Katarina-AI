@@ -21,3 +21,6 @@
 
 /updates.json
   Cache-Control: public, max-age=0, must-revalidate
+
+/hot-news.json
+  Cache-Control: public, max-age=0, must-revalidate
