@@ -232,7 +232,10 @@ class MT5ShadowReadOnly:
                     initial_risk_account=risk,
                     entry_commission_account=-commission*volume/2,
                     exit_commission_account=-commission*volume/2,
-                    costs_verified=commission_round_trip_per_lot is not None,
+                    # A configured PAPER commission is an assumption, NOT
+                    # broker-attested fills/fees. ForwardStrategyEvidenceGate
+                    # must remain blocked until independent reconciliation.
+                    costs_verified=False,
                     contract_verified=True,exposure_group=exposure_group)
             volume=round(volume-step,8)
         raise ValueError("paper_risk_or_margin_below_minimum_broker_lot")
