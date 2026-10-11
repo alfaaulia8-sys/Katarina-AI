@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "kind": "attributed-headline-feed",
+  "updatedAt": "2026-10-11T16:21:27Z",
+  "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
+  "status": "source-headlines",
+  "items": [
+    {
+      "title": "Trump says he is 'going to look at' joining Saudi Arabia in the fight against Iran-backed Houthis after deadly airport strike",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/11/trump-saudi-arabia-iran-houthis.html",
+      "publishedAt": "2026-10-11T14:09:22Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "NBA commissioner Adam Silver says league could introduce ‘smart ball’ technology as soon as next year",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/11/commissioner-adam-silver-nba-could-launch-smart-ball-tech-next-year.html",
+      "publishedAt": "2026-10-11T12:54:04Z",
+      "category": "Emas / Logam",
+      "language": "en"
+    },
+    {
+      "title": "After France, is Italy next? Goldman Sachs flags bond risks as Rome's deficit widens",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/11/italy-government-bonds-sovereign-debt-giorgia-meloni.html",
+      "publishedAt": "2026-10-11T05:00:01Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "JPMorgan makes bullish call in fixed income space, suggests it's a once in a generation opportunity",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/10/jpmorgan-sees-once-in-a-generation-opportunity-in-fixed-income-space.html",
+      "publishedAt": "2026-10-10T15:00:01Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Putin relayed Iran war proposal to Trump, Kremlin says",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/10/putin-trump-iran-war-russia-diesel.html",
+      "publishedAt": "2026-10-10T13:42:36Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Junk bonds are 'flashing yellow.' Watch these warning signs",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/09/junk-bonds-are-flashing-yellow-watch-these-warning-signs.html",
+      "publishedAt": "2026-10-09T20:51:25Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Trump strikes deal with Putin to supply Russian diesel to U.S. and global markets",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/09/trump-putin-russian-diesel-us-global-markets.html",
+      "publishedAt": "2026-10-09T20:20:57Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Verizon posts worst day since 2002 as SpaceX U.S. network plans whack cell provider stocks",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/09/verizon-att-tmobile-stocks-spacex-network.html",
+      "publishedAt": "2026-10-09T20:16:58Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Trump created a committee to dig into the Fed's Lisa Cook. What is it and what comes next?",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/09/trump-lisa-cook-fed-firing-committee-explained.html",
+      "publishedAt": "2026-10-09T19:19:00Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Americans' debt problems are flashing a warning not seen since the Great Recession",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/09/american-debt-delinquency.html",
+      "publishedAt": "2026-10-09T19:18:24Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "What's behind the recovery rally in tech stocks — plus, Elon Musk's very good week",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/investingclub/2026/10/09/whats-behind-the-recovery-rally-in-tech-stocks-plus-musks-good-week.html",
+      "publishedAt": "2026-10-09T19:02:29Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Trump appoints committee to investigate statements by the Fed's Lisa Cook",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/09/fed-lisa-cook-trump.html",
+      "publishedAt": "2026-10-09T17:56:24Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    }
+  ]
+}
