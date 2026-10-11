@@ -9,6 +9,31 @@
   "max_total_drawdown_fraction": 0.20,
   "daily_drawdown_action": "PAUSE_NEW_RISK_UNTIL_NEXT_TRADING_DAY",
   "environment_specific_risk_parameters": false,
+  "adaptive_risk": {
+    "enabled": true,
+    "activation": "explicit_RiskGovernor.from_config_with_verified_currency_and_capital",
+    "capital_basis": "MIN(active_trading_balance, current_equity)",
+    "reference_basis": "MAX(current_risk_capital, persistent_total_equity_high_watermark)",
+    "currency_must_be_verified": true,
+    "money_units_per_usd": {"USD": 1, "USC": 100},
+    "tiers_usd": [
+      [100, 0.02],
+      [250, 0.0175],
+      [500, 0.015],
+      [1000, 0.0125],
+      [2500, 0.01],
+      [10000, 0.0075],
+      [50000, 0.005],
+      [100000, 0.004],
+      [250000, 0.003]
+    ],
+    "interpolation": "logarithmic_continuous",
+    "soft_daily_drawdown": 0.05,
+    "soft_total_drawdown": 0.10,
+    "drawdown_multiplier": 0.5,
+    "no_trading_if_minimum_lot_exceeds_risk_budget": true,
+    "live_authorization": false
+  },
   "recovery_factor": {
     "enabled": true,
     "definition": "net_profit / max_drawdown",

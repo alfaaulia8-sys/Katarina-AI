@@ -1,8 +1,9 @@
 #property strict
-#property version   "7.131"
+#property version   "7.140"
 #property description "KATARINA research-only real-tick conformance scalper. No production authority."
 
 #include <Trade/Trade.mqh>
+#include <Katarina/ResearchExtraFeatures.mqh>
 
 enum EKatarinaResearchMethod
   {
@@ -10,7 +11,12 @@ enum EKatarinaResearchMethod
    KRM_LQ_SWEEP=1,
    KRM_FIB_PULLBACK=2,
    KRM_HYBRID=3,
-   KRM_SWEEP_REVERSAL=4
+   KRM_SWEEP_REVERSAL=4,
+   KRM_SR_REJECTION=5,
+   KRM_BREAKOUT_RETEST=6,
+   KRM_ZONE_SCALP=7,
+   KRM_M5_TREND_RECLAIM=8,
+   KRM_M5_RANGE_SWEEP=9
   };
 
 enum EKatarinaSessionMode
@@ -95,6 +101,12 @@ input double InpFilterMaxSessionVWAPATR=4.160768;
 input double InpFilterMaxRoundATR=0.672309;
 input string InpEntryStopTime="";
 input string InpRunTag="baseline";
+input bool InpEnableOpportunityJournal=false;
+input string InpResearchContextGate="";
+#include <Katarina/ResearchZoneScalp.mqh>
+int g_opportunity_handle=INVALID_HANDLE;
+double g_mae_r=0.0,g_mfe_r=0.0,g_actual_entry=0.0,g_initial_price_risk=0.0;
+long g_exit_reason=-1;
 string g_run_tag="";
 
 CTrade g_trade;
@@ -148,6 +160,10 @@ double g_entry_supply_dist_atr=EMPTY_VALUE;
 double g_entry_session_vwap_dist_atr=EMPTY_VALUE;
 double g_entry_round_dist_atr=EMPTY_VALUE;
 double g_entry_candle_pressure=0.0;
+double g_entry_previous_day_adr_ratio=EMPTY_VALUE;
+double g_entry_relative_tick_volume=EMPTY_VALUE;
+double g_entry_chart_breakout=EMPTY_VALUE;
+double g_entry_candle_pattern=EMPTY_VALUE;
 string g_entry_vol_regime="UNKNOWN";
 string g_entry_context_regime="UNKNOWN";
 double g_entry_context_rsi=EMPTY_VALUE;
@@ -569,6 +585,10 @@ void CaptureStructureFeatures(const MqlRates &rates[],const MqlRates &bar,
    g_entry_session_vwap_dist_atr=EMPTY_VALUE;
    g_entry_round_dist_atr=EMPTY_VALUE;
    g_entry_candle_pressure=0.0;
+   g_entry_previous_day_adr_ratio=KatPreviousDayADRRatio(_Symbol,bar.time);
+   g_entry_relative_tick_volume=KatRelativeTickVolume(rates);
+   g_entry_chart_breakout=KatConsolidationBreakout(rates,atr);
+   g_entry_candle_pattern=KatCandlePattern(rates);
    g_entry_vol_regime="UNKNOWN";
 
    if(!InpEnableStructureFeatures || atr<=0.0)
@@ -725,25 +745,79 @@ void InitFeatureJournal()
       PrintFormat("KAT_FEATURE_JOURNAL_INIT_FAIL err=%d",GetLastError());
       return;
      }
-   FileWrite(h,
-      "run_tag","entry_time","exit_time","side","reason",
-      "hour","session","htf_regime",
-      "rsi","adx","atr_pct","ema_slope_atr",
-      "close_fast_atr","close_slow_atr",
-      "htf_gap_pct","htf_close_fast_pct",
-      "ref_span_atr","fib_retrace","sweep_pen_atr","spread_atr",
-      "structure","bos_side",
-      "support_dist_atr","resistance_dist_atr","support_touches","resistance_touches",
-      "prev_high_dist_atr","prev_low_dist_atr","prev_high_swept","prev_low_swept",
-      "bull_fvg_dist_atr","bear_fvg_dist_atr",
-      "demand_dist_atr","supply_dist_atr",
-      "session_vwap_dist_atr","round_dist_atr","candle_pressure","vol_regime",
-      "context_tf","context_regime","context_rsi","context_adx","context_atr_pct",
-      "context_ema_gap_atr","context_close_fast_atr","context_structure","context_bos_side",
-      "context_support_dist_atr","context_resistance_dist_atr",
-      "context_demand_dist_atr","context_supply_dist_atr",
-      "context_bull_fvg_dist_atr","context_bear_fvg_dist_atr",
-      "initial_risk_cash","r_multiple","net_profit","win");
+   string columns[];
+   ArrayResize(columns,64);
+   columns[0]=(string)("run_tag");
+   columns[1]=(string)("entry_time");
+   columns[2]=(string)("exit_time");
+   columns[3]=(string)("side");
+   columns[4]=(string)("reason");
+   columns[5]=(string)("hour");
+   columns[6]=(string)("session");
+   columns[7]=(string)("htf_regime");
+   columns[8]=(string)("rsi");
+   columns[9]=(string)("adx");
+   columns[10]=(string)("atr_pct");
+   columns[11]=(string)("ema_slope_atr");
+   columns[12]=(string)("close_fast_atr");
+   columns[13]=(string)("close_slow_atr");
+   columns[14]=(string)("htf_gap_pct");
+   columns[15]=(string)("htf_close_fast_pct");
+   columns[16]=(string)("ref_span_atr");
+   columns[17]=(string)("fib_retrace");
+   columns[18]=(string)("sweep_pen_atr");
+   columns[19]=(string)("spread_atr");
+   columns[20]=(string)("structure");
+   columns[21]=(string)("bos_side");
+   columns[22]=(string)("support_dist_atr");
+   columns[23]=(string)("resistance_dist_atr");
+   columns[24]=(string)("support_touches");
+   columns[25]=(string)("resistance_touches");
+   columns[26]=(string)("prev_high_dist_atr");
+   columns[27]=(string)("prev_low_dist_atr");
+   columns[28]=(string)("prev_high_swept");
+   columns[29]=(string)("prev_low_swept");
+   columns[30]=(string)("bull_fvg_dist_atr");
+   columns[31]=(string)("bear_fvg_dist_atr");
+   columns[32]=(string)("demand_dist_atr");
+   columns[33]=(string)("supply_dist_atr");
+   columns[34]=(string)("session_vwap_dist_atr");
+   columns[35]=(string)("round_dist_atr");
+   columns[36]=(string)("candle_pressure");
+   columns[37]=(string)("vol_regime");
+   columns[38]=(string)("context_tf");
+   columns[39]=(string)("context_regime");
+   columns[40]=(string)("context_rsi");
+   columns[41]=(string)("context_adx");
+   columns[42]=(string)("context_atr_pct");
+   columns[43]=(string)("context_ema_gap_atr");
+   columns[44]=(string)("context_close_fast_atr");
+   columns[45]=(string)("context_structure");
+   columns[46]=(string)("context_bos_side");
+   columns[47]=(string)("context_support_dist_atr");
+   columns[48]=(string)("context_resistance_dist_atr");
+   columns[49]=(string)("context_demand_dist_atr");
+   columns[50]=(string)("context_supply_dist_atr");
+   columns[51]=(string)("context_bull_fvg_dist_atr");
+   columns[52]=(string)("context_bear_fvg_dist_atr");
+   columns[53]=(string)("previous_day_adr_ratio");
+   columns[54]=(string)("relative_tick_volume");
+   columns[55]=(string)("chart_breakout");
+   columns[56]=(string)("candle_pattern");
+   columns[57]=(string)("mae_r");
+   columns[58]=(string)("mfe_r");
+   columns[59]=(string)("exit_deal_reason");
+   columns[60]=(string)("initial_risk_cash");
+   columns[61]=(string)("r_multiple");
+   columns[62]=(string)("net_profit");
+   columns[63]=(string)("win");
+   string csv_line="";
+   for(int c=0;c<ArraySize(columns);c++)
+     {
+      if(c>0) csv_line+=";";
+      csv_line+=columns[c];
+     }
+   FileWriteString(h,csv_line+"\r\n");
    FileClose(h);
   }
 
@@ -759,57 +833,79 @@ void AppendFeatureJournal(const double net,const datetime exit_time)
       return;
      }
    FileSeek(h,0,SEEK_END);
-   FileWrite(h,
-      g_run_tag,
-      TimeToString(g_entry_time,TIME_DATE|TIME_MINUTES),
-      TimeToString(exit_time,TIME_DATE|TIME_MINUTES),
-      (g_open_side>0?"BUY":"SELL"),
-      g_open_reason,
-      g_entry_hour,g_entry_session,g_entry_htf_regime,
-      DoubleToString(g_entry_rsi,4),
-      DoubleToString(g_entry_adx,4),
-      DoubleToString(g_entry_atr_pct,6),
-      DoubleToString(g_entry_ema_slope_atr,6),
-      DoubleToString(g_entry_close_fast_atr,6),
-      DoubleToString(g_entry_close_slow_atr,6),
-      DoubleToString(g_entry_htf_gap_pct,6),
-      DoubleToString(g_entry_htf_close_fast_pct,6),
-      DoubleToString(g_entry_ref_span_atr,6),
-      DoubleToString(g_entry_fib_retrace,6),
-      DoubleToString(g_entry_sweep_pen_atr,6),
-      DoubleToString(g_entry_spread_atr,6),
-      g_entry_structure,g_entry_bos_side,
-      FeatureValue(g_entry_support_dist_atr),
-      FeatureValue(g_entry_resistance_dist_atr),
-      g_entry_support_touches,g_entry_resistance_touches,
-      FeatureValue(g_entry_prev_high_dist_atr),
-      FeatureValue(g_entry_prev_low_dist_atr),
-      g_entry_prev_high_swept,g_entry_prev_low_swept,
-      FeatureValue(g_entry_bull_fvg_dist_atr),
-      FeatureValue(g_entry_bear_fvg_dist_atr),
-      FeatureValue(g_entry_demand_dist_atr),
-      FeatureValue(g_entry_supply_dist_atr),
-      FeatureValue(g_entry_session_vwap_dist_atr),
-      FeatureValue(g_entry_round_dist_atr),
-      DoubleToString(g_entry_candle_pressure,6),
-      g_entry_vol_regime,
-      EnumToString(InpContextTF),g_entry_context_regime,
-      FeatureValue(g_entry_context_rsi,4),
-      FeatureValue(g_entry_context_adx,4),
-      FeatureValue(g_entry_context_atr_pct),
-      FeatureValue(g_entry_context_ema_gap_atr),
-      FeatureValue(g_entry_context_close_fast_atr),
-      g_entry_context_structure,g_entry_context_bos_side,
-      FeatureValue(g_entry_context_support_dist_atr),
-      FeatureValue(g_entry_context_resistance_dist_atr),
-      FeatureValue(g_entry_context_demand_dist_atr),
-      FeatureValue(g_entry_context_supply_dist_atr),
-      FeatureValue(g_entry_context_bull_fvg_dist_atr),
-      FeatureValue(g_entry_context_bear_fvg_dist_atr),
-      DoubleToString(g_entry_risk_cash,2),
-      DoubleToString((g_entry_risk_cash>0.0?net/g_entry_risk_cash:0.0),6),
-      DoubleToString(net,2),
-      (net>0.0?"1":"0"));
+   string columns[];
+   ArrayResize(columns,64);
+   columns[0]=(string)(g_run_tag);
+   columns[1]=(string)(TimeToString(g_entry_time,TIME_DATE|TIME_MINUTES));
+   columns[2]=(string)(TimeToString(exit_time,TIME_DATE|TIME_MINUTES));
+   columns[3]=(string)((g_open_side>0?"BUY":"SELL"));
+   columns[4]=(string)(g_open_reason);
+   columns[5]=(string)(g_entry_hour);
+   columns[6]=(string)(g_entry_session);
+   columns[7]=(string)(g_entry_htf_regime);
+   columns[8]=(string)(DoubleToString(g_entry_rsi,4));
+   columns[9]=(string)(DoubleToString(g_entry_adx,4));
+   columns[10]=(string)(DoubleToString(g_entry_atr_pct,6));
+   columns[11]=(string)(DoubleToString(g_entry_ema_slope_atr,6));
+   columns[12]=(string)(DoubleToString(g_entry_close_fast_atr,6));
+   columns[13]=(string)(DoubleToString(g_entry_close_slow_atr,6));
+   columns[14]=(string)(DoubleToString(g_entry_htf_gap_pct,6));
+   columns[15]=(string)(DoubleToString(g_entry_htf_close_fast_pct,6));
+   columns[16]=(string)(DoubleToString(g_entry_ref_span_atr,6));
+   columns[17]=(string)(DoubleToString(g_entry_fib_retrace,6));
+   columns[18]=(string)(DoubleToString(g_entry_sweep_pen_atr,6));
+   columns[19]=(string)(DoubleToString(g_entry_spread_atr,6));
+   columns[20]=(string)(g_entry_structure);
+   columns[21]=(string)(g_entry_bos_side);
+   columns[22]=(string)(FeatureValue(g_entry_support_dist_atr));
+   columns[23]=(string)(FeatureValue(g_entry_resistance_dist_atr));
+   columns[24]=(string)(g_entry_support_touches);
+   columns[25]=(string)(g_entry_resistance_touches);
+   columns[26]=(string)(FeatureValue(g_entry_prev_high_dist_atr));
+   columns[27]=(string)(FeatureValue(g_entry_prev_low_dist_atr));
+   columns[28]=(string)(g_entry_prev_high_swept);
+   columns[29]=(string)(g_entry_prev_low_swept);
+   columns[30]=(string)(FeatureValue(g_entry_bull_fvg_dist_atr));
+   columns[31]=(string)(FeatureValue(g_entry_bear_fvg_dist_atr));
+   columns[32]=(string)(FeatureValue(g_entry_demand_dist_atr));
+   columns[33]=(string)(FeatureValue(g_entry_supply_dist_atr));
+   columns[34]=(string)(FeatureValue(g_entry_session_vwap_dist_atr));
+   columns[35]=(string)(FeatureValue(g_entry_round_dist_atr));
+   columns[36]=(string)(DoubleToString(g_entry_candle_pressure,6));
+   columns[37]=(string)(g_entry_vol_regime);
+   columns[38]=(string)(EnumToString(InpContextTF));
+   columns[39]=(string)(g_entry_context_regime);
+   columns[40]=(string)(FeatureValue(g_entry_context_rsi,4));
+   columns[41]=(string)(FeatureValue(g_entry_context_adx,4));
+   columns[42]=(string)(FeatureValue(g_entry_context_atr_pct));
+   columns[43]=(string)(FeatureValue(g_entry_context_ema_gap_atr));
+   columns[44]=(string)(FeatureValue(g_entry_context_close_fast_atr));
+   columns[45]=(string)(g_entry_context_structure);
+   columns[46]=(string)(g_entry_context_bos_side);
+   columns[47]=(string)(FeatureValue(g_entry_context_support_dist_atr));
+   columns[48]=(string)(FeatureValue(g_entry_context_resistance_dist_atr));
+   columns[49]=(string)(FeatureValue(g_entry_context_demand_dist_atr));
+   columns[50]=(string)(FeatureValue(g_entry_context_supply_dist_atr));
+   columns[51]=(string)(FeatureValue(g_entry_context_bull_fvg_dist_atr));
+   columns[52]=(string)(FeatureValue(g_entry_context_bear_fvg_dist_atr));
+   columns[53]=(string)(FeatureValue(g_entry_previous_day_adr_ratio));
+   columns[54]=(string)(FeatureValue(g_entry_relative_tick_volume));
+   columns[55]=(string)(FeatureValue(g_entry_chart_breakout));
+   columns[56]=(string)(FeatureValue(g_entry_candle_pattern));
+   columns[57]=(string)(FeatureValue(g_mae_r));
+   columns[58]=(string)(FeatureValue(g_mfe_r));
+   columns[59]=(string)(IntegerToString(g_exit_reason));
+   columns[60]=(string)(DoubleToString(g_entry_risk_cash,2));
+   columns[61]=(string)(DoubleToString((g_entry_risk_cash>0.0?net/g_entry_risk_cash:0.0),6));
+   columns[62]=(string)(DoubleToString(net,2));
+   columns[63]=(string)((net>0.0?"1":"0"));
+   string csv_line="";
+   for(int c=0;c<ArraySize(columns);c++)
+     {
+      if(c>0) csv_line+=";";
+      csv_line+=columns[c];
+     }
+   FileWriteString(h,csv_line+"\r\n");
    FileClose(h);
   }
 
@@ -932,12 +1028,70 @@ bool GetReferenceRange(const MqlRates &rates[],double &ref_high,double &ref_low)
    return(ref_high>ref_low && ref_low>0.0);
   }
 
+int g_scalp_fill_audit=INVALID_HANDLE;
+datetime g_scalp_context_known=0;
+bool ManagedScalpMethod(const EKatarinaResearchMethod method)
+  {
+   return method==KRM_ZONE_SCALP || method==KRM_M5_TREND_RECLAIM || method==KRM_M5_RANGE_SWEEP;
+  }
+
+bool ScalpContextRule(const int side,const bool trend,const double close,
+                      const double fast,const double slow,const double adx)
+  {
+   if(side!=1 && side!=-1) return false;
+   if(adx<0 || close<=0 || fast<=0 || slow<=0) return false;
+   if(!trend) return adx<=20.0;
+   return adx>=20.0 && (side>0?(close>fast && fast>slow):(close<fast && fast<slow));
+  }
+
+bool ScalpContextSelfTest()
+  {
+   return ScalpContextRule(1,true,103,102,101,25) &&
+      !ScalpContextRule(-1,true,103,102,101,25) &&
+      ScalpContextRule(-1,true,99,100,101,25) &&
+      !ScalpContextRule(1,true,103,102,101,15) &&
+      ScalpContextRule(1,false,100,100,100,15) &&
+      !ScalpContextRule(-1,false,100,100,100,25);
+  }
+
+bool ScalpContextAllows(const int side,const bool trend)
+  {
+   double fast,slow,adx;
+   if(!ReadValue(g_ctx_fast,0,1,fast) || !ReadValue(g_ctx_slow,0,1,slow) ||
+      !ReadValue(g_ctx_adx,0,1,adx)) return false;
+   const datetime bar=iTime(_Symbol,InpContextTF,1);
+   g_scalp_context_known=bar+PeriodSeconds(InpContextTF);
+   if(bar<=0 || g_scalp_context_known>TimeCurrent()) return false;
+   return ScalpContextRule(side,trend,iClose(_Symbol,InpContextTF,1),fast,slow,adx);
+  }
+
+void AuditScalpFill(const int side,const double atr)
+  {
+   if(g_scalp_fill_audit==INVALID_HANDLE)
+     {
+      g_scalp_fill_audit=FileOpen("KatarinaScalpAudit_"+g_run_tag+".csv",FILE_WRITE|FILE_CSV|FILE_COMMON,';');
+      if(g_scalp_fill_audit==INVALID_HANDLE) return;
+      FileWrite(g_scalp_fill_audit,"run_tag","side","entry_time","signal_time","context_known",
+         "entry","sl","atr","initial_risk_cash","risk_budget","seconds_to_session_close",
+         "method","context_tf","context_adx","context_regime");
+     }
+   FileWrite(g_scalp_fill_audit,g_run_tag,side,(long)g_entry_time,(long)iTime(_Symbol,_Period,1),
+      (long)g_scalp_context_known,g_actual_entry,PositionGetDouble(POSITION_SL),atr,
+      g_entry_risk_cash,InpZoneRiskCash,(long)(g_zone_session_end-TimeCurrent()),
+      (int)(side>0?InpBuyMethod:InpSellMethod),EnumToString(InpContextTF),g_entry_context_adx,g_entry_context_regime);
+  }
+
 bool OpenResearchTrade(const int side,
                        const string reason,
                        const double atr)
   {
    if(!MQLInfoInteger(MQL_TESTER))
       return false;
+   if(InpResearchContextGate!="" && g_entry_context_regime!=InpResearchContextGate)
+     {
+      g_entries_rejected_filter++;
+      return false;
+     }
    MqlTick tick;
    if(!SymbolInfoTick(_Symbol,tick))
       return false;
@@ -952,24 +1106,53 @@ bool OpenResearchTrade(const int side,
    const double entry=(side>0?tick.ask:tick.bid);
    const double sl_mult=(side>0?InpBuySLATR:InpSellSLATR);
    const double rr=(side>0?InpBuyRR:InpSellRR);
-   const double risk=sl_mult*atr;
+   const bool zone_mode=(side>0?InpBuyMethod:InpSellMethod)==KRM_ZONE_SCALP;
+   const bool managed=ManagedScalpMethod(side>0?InpBuyMethod:InpSellMethod);
+   if(managed && !ZoneTradingSessionAllows())
+     { g_diag_session_reject++; return false; }
+   const double zone_stop=(side>0?g_zone_buy_sl:g_zone_sell_sl);
+   const double risk=(zone_mode?side*(entry-zone_stop):sl_mult*atr);
+   if(managed && (risk<atr || risk>3.0*atr || spread>0.1*risk))
+      return false;
    if(risk<=0.0 || rr<=1.0)
       return false;
 
    const double sl=NormalizeDouble(entry-(side>0?1.0:-1.0)*risk,digits);
    const double tp=NormalizeDouble(entry+(side>0?1.0:-1.0)*risk*rr,digits);
+   double volume=InpLot;
+   if(managed)
+     {
+      double projected;
+      const double minlot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
+      const double step=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
+      const double maxlot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MAX);
+      if(minlot<=0 || step<=0 || !OrderCalcProfit(side>0?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
+            _Symbol,minlot,entry,sl,projected) || projected>=0) return false;
+      const double raw=InpZoneRiskCash/MathAbs(projected)*minlot;
+      if(raw<minlot) return false;
+      volume=NormalizeDouble(minlot+MathFloor((MathMin(raw,maxlot)-minlot)/step+1e-9)*step,8);
+      double actual_risk;
+      if(!OrderCalcProfit(side>0?ORDER_TYPE_BUY:ORDER_TYPE_SELL,_Symbol,volume,entry,sl,actual_risk) ||
+         MathAbs(actual_risk)>InpZoneRiskCash+0.001) return false;
+     }
    const string comment="KAT3:"+reason;
 
    g_trade.SetExpertMagicNumber(InpMagic);
    g_trade.SetDeviationInPoints(30);
    bool ok=false;
    if(side>0)
-      ok=g_trade.Buy(InpLot,_Symbol,0.0,sl,tp,comment);
+      ok=g_trade.Buy(volume,_Symbol,0.0,sl,tp,comment);
    else
-      ok=g_trade.Sell(InpLot,_Symbol,0.0,sl,tp,comment);
+      ok=g_trade.Sell(volume,_Symbol,0.0,sl,tp,comment);
 
+   ok=ok && (g_trade.ResultRetcode()==TRADE_RETCODE_DONE ||
+             g_trade.ResultRetcode()==TRADE_RETCODE_DONE_PARTIAL) && PositionSelect(_Symbol);
    if(ok)
      {
+      g_mae_r=0.0; g_mfe_r=0.0; g_exit_reason=-1;
+      g_actual_entry=PositionGetDouble(POSITION_PRICE_OPEN);
+      g_initial_price_risk=MathAbs(g_actual_entry-PositionGetDouble(POSITION_SL));
+      g_entry_time=(datetime)PositionGetInteger(POSITION_TIME);
       g_open_reason=reason;
       g_open_side=side;
       g_entry_risk_cash=0.0;
@@ -980,21 +1163,86 @@ bool OpenResearchTrade(const int side,
          double projected=0.0;
          const ENUM_ORDER_TYPE order_type=(side>0?ORDER_TYPE_BUY:ORDER_TYPE_SELL);
          if(actual_entry>0.0 && actual_sl>0.0 &&
-            OrderCalcProfit(order_type,_Symbol,InpLot,actual_entry,actual_sl,projected))
+            OrderCalcProfit(order_type,_Symbol,PositionGetDouble(POSITION_VOLUME),actual_entry,actual_sl,projected))
             g_entry_risk_cash=MathAbs(projected);
         }
      }
+   if(ok && zone_mode)
+     {
+      if(side>0) AuditZoneFill(g_run_tag,g_demand,iTime(_Symbol,_Period,1),g_actual_entry,
+         PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_VOLUME),g_entry_risk_cash);
+      else AuditZoneFill(g_run_tag,g_supply,iTime(_Symbol,_Period,1),g_actual_entry,
+         PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_VOLUME),g_entry_risk_cash);
+     }
+   if(ok && managed && !zone_mode) AuditScalpFill(side,atr);
    return ok;
+  }
+
+bool ResearchSRRejection(const MqlRates &rates[],const double atr,const int side)
+  {
+   // Closest previously confirmed swing; current signal bar cannot confirm the pivot.
+   double level=EMPTY_VALUE;
+   for(int i=2+InpStructureSwingRight;i<MathMin(ArraySize(rates)-InpStructureSwingLeft,80);i++)
+     {
+      if(side>0 && IsConfirmedSwingLow(rates,i)) { level=rates[i].low; break; }
+      if(side<0 && IsConfirmedSwingHigh(rates,i)) { level=rates[i].high; break; }
+     }
+   if(level==EMPTY_VALUE) return false;
+   const MqlRates b=rates[1];
+   if(side>0) return b.low<=level+0.2*atr && b.low>=level-0.5*atr &&
+                       b.close>level && b.close>b.open && b.close-b.low>=0.6*(b.high-b.low);
+   return b.high>=level-0.2*atr && b.high<=level+0.5*atr &&
+          b.close<level && b.close<b.open && b.high-b.close>=0.6*(b.high-b.low);
+  }
+
+bool ResearchBreakoutRetest(const MqlRates &rates[],const double atr,const int side)
+  {
+   if(ArraySize(rates)<24) return false;
+   // Breakout is bar 2; level derived from bars 3..22; bar 1 is the retest.
+   double hi=rates[3].high,lo=rates[3].low;
+   for(int i=4;i<=22;i++) { hi=MathMax(hi,rates[i].high); lo=MathMin(lo,rates[i].low); }
+   const MqlRates b=rates[1], breakout=rates[2];
+   if(side>0) return breakout.close>hi+0.1*atr &&
+      b.low<=hi+0.2*atr && b.low>=hi-0.3*atr && b.close>hi && b.close>b.open;
+   return breakout.close<lo-0.1*atr &&
+      b.high>=lo-0.2*atr && b.high<=lo+0.3*atr && b.close<lo && b.close<b.open;
+  }
+
+void TrackResearchExcursion(const double price)
+  {
+   if(g_open_side==0 || g_initial_price_risk<=0.0 || price<=0.0) return;
+   double r=g_open_side*(price-g_actual_entry)/g_initial_price_risk;
+   g_mae_r=MathMax(g_mae_r,-r); g_mfe_r=MathMax(g_mfe_r,r);
+  }
+
+void LogResearchOpportunity(const datetime time,const bool occupied,const double adx,const int trend,
+   const bool bp,const bool sp,const bool br,const bool sr,const bool bb,const bool sb,
+   const bool buy_allowed,const bool sell_allowed)
+  {
+   if(!InpEnableOpportunityJournal) return;
+   if(g_opportunity_handle==INVALID_HANDLE)
+     {
+      g_opportunity_handle=FileOpen("KatarinaOpportunity_"+g_run_tag+".csv",FILE_WRITE|FILE_CSV|FILE_COMMON,';');
+      if(g_opportunity_handle==INVALID_HANDLE) return;
+      FileWrite(g_opportunity_handle,"run_tag","signal_bar_time","observed_time","occupied","adx","trend",
+         "buy_pullback","sell_pullback","buy_sr","sell_sr","buy_breakout","sell_breakout",
+         "buy_method_allowed","sell_method_allowed","adx_gate","spread_gate");
+     }
+   MqlTick tick;
+   double atr=0.0;
+   bool spread_ok=ReadValue(g_atr,0,1,atr) && atr>0.0 && SymbolInfoTick(_Symbol,tick) &&
+                  tick.ask>=tick.bid && tick.ask-tick.bid<=InpMaxSpreadATR*atr;
+   FileWrite(g_opportunity_handle,g_run_tag,TimeToString(time,TIME_DATE|TIME_SECONDS),
+      TimeToString(TimeCurrent(),TIME_DATE|TIME_SECONDS),occupied,DoubleToString(adx,4),trend,
+      bp,sp,br,sr,bb,sb,buy_allowed,sell_allowed,adx>=InpMinADX,spread_ok);
+   // Outcomes of unexecuted opportunities remain UNKNOWN, never fabricated as losses.
   }
 
 void EvaluateClosedBar()
   {
    g_diag_bars_seen++;
-   if(ExistingResearchPosition())
-     {
-      g_diag_existing_position_skip++;
-      return;
-     }
+   const bool occupied=ExistingResearchPosition();
+   if(occupied) g_diag_existing_position_skip++;
 
    MqlRates rates[];
    ArraySetAsSeries(rates,true);
@@ -1018,7 +1266,7 @@ void EvaluateClosedBar()
       g_diag_indicator_reject++;
       return;
      }
-   if(atr1<=0.0 || adx1<InpMinADX)
+   if(atr1<=0.0)
      {
       g_diag_adx_reject++;
       return;
@@ -1095,8 +1343,35 @@ void EvaluateClosedBar()
    const bool sell_needs_htf=(InpSellMethod!=KRM_SWEEP_REVERSAL);
    const bool buy_htf_ok=(!buy_needs_htf || HTFAllows(1));
    const bool sell_htf_ok=(!sell_needs_htf || HTFAllows(-1));
-   const bool buy_method_ok=MethodAllows(InpBuyMethod,buy_pullback,buy_sweep,buy_fibo,buy_reversal);
-   const bool sell_method_ok=MethodAllows(InpSellMethod,sell_pullback,sell_sweep,sell_fibo,sell_reversal);
+   const bool buy_sr=ResearchSRRejection(rates,atr1,1);
+   const bool sell_sr=ResearchSRRejection(rates,atr1,-1);
+   const bool buy_break=ResearchBreakoutRetest(rates,atr1,1);
+   const bool sell_break=ResearchBreakoutRetest(rates,atr1,-1);
+   bool buy_zone=false,sell_zone=false;
+   if(InpBuyMethod==KRM_ZONE_SCALP || InpSellMethod==KRM_ZONE_SCALP)
+     {
+      UpdateResearchZones();
+      buy_zone=ZoneSignal(g_demand,b,atr1,g_zone_buy_sl);
+      sell_zone=ZoneSignal(g_supply,b,atr1,g_zone_sell_sl);
+     }
+   bool buy_method_ok=(InpBuyMethod==KRM_ZONE_SCALP?buy_zone:
+      (InpBuyMethod==KRM_SR_REJECTION?buy_sr:
+      (InpBuyMethod==KRM_BREAKOUT_RETEST?buy_break:
+       MethodAllows(InpBuyMethod,buy_pullback,buy_sweep,buy_fibo,buy_reversal))));
+   bool sell_method_ok=(InpSellMethod==KRM_ZONE_SCALP?sell_zone:
+      (InpSellMethod==KRM_SR_REJECTION?sell_sr:
+      (InpSellMethod==KRM_BREAKOUT_RETEST?sell_break:
+       MethodAllows(InpSellMethod,sell_pullback,sell_sweep,sell_fibo,sell_reversal))));
+   if(InpBuyMethod==KRM_M5_TREND_RECLAIM)
+      buy_method_ok=ScalpContextAllows(1,true) && b.low<=ema_fast1+0.1*atr1 &&
+         b.close>ema_fast1 && b.close>b.open && b.close>rates[2].high;
+   if(InpSellMethod==KRM_M5_TREND_RECLAIM)
+      sell_method_ok=ScalpContextAllows(-1,true) && b.high>=ema_fast1-0.1*atr1 &&
+         b.close<ema_fast1 && b.close<b.open && b.close<rates[2].low;
+   if(InpBuyMethod==KRM_M5_RANGE_SWEEP)
+      buy_method_ok=ScalpContextAllows(1,false) && buy_sweep;
+   if(InpSellMethod==KRM_M5_RANGE_SWEEP)
+      sell_method_ok=ScalpContextAllows(-1,false) && sell_sweep;
    if(buy_htf_ok) g_diag_buy_htf_true++;
    if(buy_method_ok) g_diag_buy_method_true++;
    if(sell_htf_ok) g_diag_sell_htf_true++;
@@ -1104,6 +1379,10 @@ void EvaluateClosedBar()
    const bool buy_allowed=InpEnableBuy && buy_htf_ok && buy_method_ok;
    const bool sell_allowed=InpEnableSell && sell_htf_ok && sell_method_ok;
 
+   LogResearchOpportunity(b.time,occupied,adx1,ema_fast1>ema_slow1?1:-1,
+      buy_pullback,sell_pullback,buy_sr,sell_sr,buy_break,sell_break,buy_allowed,sell_allowed);
+   if(occupied) return;
+   if(adx1<InpMinADX) { g_diag_adx_reject++; return; }
    if(buy_allowed && sell_allowed)
      {
       // Ambiguous bar: do not manufacture direction.
@@ -1115,7 +1394,12 @@ void EvaluateClosedBar()
      {
       g_signals_buy++;
       string reason=BuildReason(buy_pullback,buy_sweep,buy_fibo);
-      if(buy_reversal) reason+=(reason==""?"":"+")+"REVERSAL";
+      if(InpBuyMethod==KRM_SR_REJECTION) reason="SR_REJECTION";
+      if(InpBuyMethod==KRM_BREAKOUT_RETEST) reason="BREAKOUT_RETEST";
+      if(InpBuyMethod==KRM_ZONE_SCALP) reason="ZONE_SCALP";
+      if(InpBuyMethod==KRM_M5_TREND_RECLAIM) reason="M5_TREND_RECLAIM";
+      if(InpBuyMethod==KRM_M5_RANGE_SWEEP) reason="M5_RANGE_SWEEP";
+      if(buy_reversal && !ManagedScalpMethod(InpBuyMethod)) reason+=(reason==""?"":"+")+"REVERSAL";
       if(InpUseHTFTrend && buy_needs_htf) reason+="+HTF";
       if(InpSessionMode!=KSM_ALL) reason+="+SESSION";
       CaptureEntryFeatures(rates,b,ema_fast1,ema_slow1,ema_slow2,rsi1,atr1,adx1,
@@ -1131,7 +1415,12 @@ void EvaluateClosedBar()
      {
       g_signals_sell++;
       string reason=BuildReason(sell_pullback,sell_sweep,sell_fibo);
-      if(sell_reversal) reason+=(reason==""?"":"+")+"REVERSAL";
+      if(InpSellMethod==KRM_SR_REJECTION) reason="SR_REJECTION";
+      if(InpSellMethod==KRM_BREAKOUT_RETEST) reason="BREAKOUT_RETEST";
+      if(InpSellMethod==KRM_ZONE_SCALP) reason="ZONE_SCALP";
+      if(InpSellMethod==KRM_M5_TREND_RECLAIM) reason="M5_TREND_RECLAIM";
+      if(InpSellMethod==KRM_M5_RANGE_SWEEP) reason="M5_RANGE_SWEEP";
+      if(sell_reversal && !ManagedScalpMethod(InpSellMethod)) reason+=(reason==""?"":"+")+"REVERSAL";
       if(InpUseHTFTrend && sell_needs_htf) reason+="+HTF";
       if(InpSessionMode!=KSM_ALL) reason+="+SESSION";
       CaptureEntryFeatures(rates,b,ema_fast1,ema_slow1,ema_slow2,rsi1,atr1,adx1,
@@ -1377,6 +1666,13 @@ int OnInit()
    // This research EA may only execute simulated orders in Strategy Tester.
    if(!MQLInfoInteger(MQL_TESTER))
       return INIT_FAILED;
+   if(InpResearchContextGate!="" && InpResearchContextGate!="UP" &&
+      InpResearchContextGate!="DOWN" && InpResearchContextGate!="MIXED")
+      return INIT_PARAMETERS_INCORRECT;
+   if(InpBuyMethod==KRM_M5_TREND_RECLAIM || InpBuyMethod==KRM_M5_RANGE_SWEEP ||
+      InpSellMethod==KRM_M5_TREND_RECLAIM || InpSellMethod==KRM_M5_RANGE_SWEEP)
+      if(!InpEnableStructureFeatures || InpContextTF!=PERIOD_M5 || _Period!=PERIOD_M1)
+         return INIT_PARAMETERS_INCORRECT;
    g_run_tag="verified_"+IntegerToString((long)TimeLocal())+"_"+IntegerToString((long)GetTickCount64());
    Print("KATARINA_RESEARCH_RUN_TAG=",g_run_tag);
    if(InpLookbackBars<5 || InpLot<=0.0 || InpFibMin<0.0 || InpFibMax<=InpFibMin || InpFibMax>1.0)
@@ -1419,6 +1715,19 @@ int OnInit()
        (g_htf_fast==INVALID_HANDLE || g_htf_slow==INVALID_HANDLE)))
       return INIT_FAILED;
 
+   if(ManagedScalpMethod(InpBuyMethod) || ManagedScalpMethod(InpSellMethod))
+     {
+      if(PeriodSeconds(InpZoneTF)<=PeriodSeconds(InpZoneConfirmTF) ||
+         PeriodSeconds(InpZoneConfirmTF)<=PeriodSeconds(_Period) ||
+         InpZoneRiskCash<=0 || InpZoneMaxHoldMinutes<=0 ||
+         InpZoneSessionBufferMinutes<0 || InpZoneSessionBufferMinutes>1440 ||
+         InpZoneLifetimeBars<1 || InpZoneTriggerBars<1 ||
+         InpZoneLockR<0 || InpZoneLockTriggerR<=InpZoneLockR ||
+         !ZoneSelfTest() || !ZoneLockSelfTest() || !ScalpContextSelfTest())
+         return INIT_PARAMETERS_INCORRECT;
+      WriteZoneSessions(g_run_tag);
+      Print("KATARINA_ZONE_SELFTEST=PASS");
+     }
    InitFeatureJournal();
    g_trade.SetAsyncMode(false);
    return INIT_SUCCEEDED;
@@ -1427,6 +1736,10 @@ int OnInit()
 void OnDeinit(const int reason)
   {
    if(!MQLInfoInteger(MQL_TESTER)) return;
+   if(g_scalp_fill_audit!=INVALID_HANDLE) FileClose(g_scalp_fill_audit);
+   if(g_zone_exit_audit!=INVALID_HANDLE) FileClose(g_zone_exit_audit);
+   if(g_zone_audit!=INVALID_HANDLE) FileClose(g_zone_audit);
+   if(g_opportunity_handle!=INVALID_HANDLE) FileClose(g_opportunity_handle);
    RebuildStatsFromHistory();
    WriteSummary();
    if(g_ema_fast!=INVALID_HANDLE) IndicatorRelease(g_ema_fast);
@@ -1444,8 +1757,62 @@ void OnDeinit(const int reason)
    if(g_htf_slow!=INVALID_HANDLE) IndicatorRelease(g_htf_slow);
   }
 
+void ManageZoneProfitLock()
+  {
+   if(!InpZoneEnableProfitLock ||
+      (InpBuyMethod!=KRM_ZONE_SCALP && InpSellMethod!=KRM_ZONE_SCALP) ||
+      !ExistingResearchPosition() || g_open_side==0 || g_initial_price_risk<=0) return;
+   MqlTick tick; if(!SymbolInfoTick(_Symbol,tick)) return;
+   const ulong ticket=(ulong)PositionGetInteger(POSITION_TICKET);
+   const double old_sl=PositionGetDouble(POSITION_SL),tp=PositionGetDouble(POSITION_TP);
+   double target;
+   if(!ZoneLockCandidate(g_open_side,g_actual_entry,g_initial_price_risk,tick.bid,tick.ask,
+                        old_sl,InpZoneLockTriggerR,InpZoneLockR,target)) return;
+   const double step=SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_SIZE);
+   if(step<=0) return;
+   target=(g_open_side>0?MathFloor(target/step):MathCeil(target/step))*step;
+   target=NormalizeDouble(target,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS));
+   if(g_open_side*(target-old_sl)<=_Point*0.5) return;
+   const double min_distance=(MathMax(SymbolInfoInteger(_Symbol,SYMBOL_TRADE_STOPS_LEVEL),
+       SymbolInfoInteger(_Symbol,SYMBOL_TRADE_FREEZE_LEVEL))+1)*_Point;
+   const double liquidation=(g_open_side>0?tick.bid:tick.ask);
+   if(g_open_side*(liquidation-target)<min_distance) return;
+   if(!g_trade.PositionModify(ticket,target,tp) || g_trade.ResultRetcode()!=TRADE_RETCODE_DONE) return;
+   if(g_zone_exit_audit==INVALID_HANDLE)
+     {
+      g_zone_exit_audit=FileOpen("KatarinaExitChanges_"+g_run_tag+".csv",FILE_WRITE|FILE_CSV|FILE_COMMON,';');
+      if(g_zone_exit_audit==INVALID_HANDLE) return;
+      FileWrite(g_zone_exit_audit,"run_tag","time","side","ticket","entry","initial_risk",
+         "bid","ask","old_sl","new_sl","trigger_r","lock_r");
+     }
+   FileWrite(g_zone_exit_audit,g_run_tag,(long)TimeCurrent(),g_open_side,ticket,g_actual_entry,
+      g_initial_price_risk,tick.bid,tick.ask,old_sl,target,InpZoneLockTriggerR,InpZoneLockR);
+  }
+
 void OnTick()
   {
+   if(g_open_side!=0 && g_initial_price_risk>0.0)
+     {
+      MqlTick current;
+      if(SymbolInfoTick(_Symbol,current))
+         TrackResearchExcursion(g_open_side>0?current.bid:current.ask);
+     }
+   if((ManagedScalpMethod(InpBuyMethod) || ManagedScalpMethod(InpSellMethod)) &&
+      ExistingResearchPosition() &&
+      TimeCurrent()-(datetime)PositionGetInteger(POSITION_TIME)>=InpZoneMaxHoldMinutes*60)
+     {
+      static datetime last_close_trace=0;
+      const ulong ticket=(ulong)PositionGetInteger(POSITION_TICKET);
+      const bool closed=g_trade.PositionClose(ticket);
+      if(!closed && TimeCurrent()-last_close_trace>=60)
+        {
+         PrintFormat("KAT_ZONE_TIMECLOSE_FAIL ticket=%I64u retcode=%u detail=%s",
+            ticket,g_trade.ResultRetcode(),g_trade.ResultRetcodeDescription());
+         last_close_trace=TimeCurrent();
+        }
+      return;
+     }
+   ManageZoneProfitLock();
    const datetime bar=iTime(_Symbol,_Period,0);
    if(bar<=0 || bar==g_last_bar)
       return;
@@ -1467,10 +1834,18 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
    const long entry=HistoryDealGetInteger(trans.deal,DEAL_ENTRY);
    if(entry!=DEAL_ENTRY_OUT && entry!=DEAL_ENTRY_OUT_BY)
       return;
-   const double net=
-      HistoryDealGetDouble(trans.deal,DEAL_PROFIT)+
-      HistoryDealGetDouble(trans.deal,DEAL_COMMISSION)+
-      HistoryDealGetDouble(trans.deal,DEAL_SWAP);
+   TrackResearchExcursion(HistoryDealGetDouble(trans.deal,DEAL_PRICE));
+   g_exit_reason=HistoryDealGetInteger(trans.deal,DEAL_REASON);
+   const ulong position_id=(ulong)HistoryDealGetInteger(trans.deal,DEAL_POSITION_ID);
+   double net=0.0;
+   if(!HistorySelectByPosition(position_id)) return;
+   for(int d=0;d<HistoryDealsTotal();d++)
+     {
+      const ulong deal=HistoryDealGetTicket(d);
+      net+=HistoryDealGetDouble(deal,DEAL_PROFIT)+HistoryDealGetDouble(deal,DEAL_COMMISSION)+
+           HistoryDealGetDouble(deal,DEAL_SWAP)+HistoryDealGetDouble(deal,DEAL_FEE);
+     }
+   HistoryDealSelect(trans.deal);
    const datetime exit_time=(datetime)HistoryDealGetInteger(trans.deal,DEAL_TIME);
    AppendFeatureJournal(net,exit_time);
    RecordClosedTrade(net);

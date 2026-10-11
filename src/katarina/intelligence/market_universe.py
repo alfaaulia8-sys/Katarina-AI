@@ -122,7 +122,7 @@ class BrokerMarketUniverse:
                 "profit_currency":profit,
                 "margin_currency":margin,
                 "asset_class":MarketTaxonomy.infer(canonical or broker,base,profit),
-                "trade_allowed":trade_mode != 0,
+                "trade_allowed":trade_mode in (1,2,4),
             }
             return True
 

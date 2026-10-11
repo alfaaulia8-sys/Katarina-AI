@@ -1,0 +1,101 @@
+"""Read-only periodic seven-market observer. No order_send or live trading.
+
+Requires terminal session and repo PYTHONPATH. Reports may identify regimes,
+but news context is NOT VERIFIED, so all recommendations fail closed to WAIT.
+"""
+from __future__ import annotations
+import json
+import os
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import MetaTrader5 as mt5
+from smoke_closed_market_decision import SYMBOLS, TFS, candles_for
+from katarina.intelligence.market_decision_pipeline import MarketDecisionPipeline
+
+OUT = Path(r"C:\KatarinaDev\artifacts\decision-observer")
+TERMINAL = r"C:\Program Files\MetaTrader 5 ALFA\terminal64.exe"
+
+
+def publish(data):
+    OUT.mkdir(parents=True, exist_ok=True)
+    payload = (json.dumps(data, indent=2, allow_nan=False) + "\n").encode("utf-8")
+    temp, target = OUT / "latest.tmp", OUT / "latest.json"
+    temp.write_bytes(payload)
+    try:
+        temp.replace(target)
+    except PermissionError:
+        with target.open("r+b") as file:
+            file.seek(0)
+            file.write(payload)
+            file.truncate()
+            file.flush()
+            os.fsync(file.fileno())
+        temp.unlink(missing_ok=True)
+
+
+def main():
+    now = datetime.now(timezone.utc)
+    report = dict(mode="read_only_no_orders_no_walkforward",
+                  as_of_utc=now.isoformat(),
+                  news_context_verified=False,
+                  live_execution_authorized=False,
+                  symbols={})
+    if not mt5.initialize(path=TERMINAL):
+        report["error"] = "mt5_connection_failed"
+        publish(report)
+        print("MARKET_OBSERVER: connection_failed")
+        return 2
+    try:
+        observer = MarketDecisionPipeline()
+        for symbol in SYMBOLS:
+            try:
+                info = mt5.symbol_info(symbol)
+                if info is None:
+                    raise ValueError("symbol_spec_missing")
+                bars = candles_for(symbol)
+                bars = {k: [r for r in b if r.closed_at_utc <= now] for k, b in bars.items()}
+                fresh = all(
+                    len(bars[k]) >= 55 and
+                    timedelta(0) <= now - bars[k][-1].closed_at_utc <= timedelta(minutes=mins * 2)
+                    for k, (_, mins) in TFS.items()
+                )
+                tick = mt5.symbol_info_tick(symbol)
+                valid_quote = (tick is not None and tick.bid > 0 and tick.ask >= tick.bid)
+                tick_age = (now - datetime.fromtimestamp(tick.time, timezone.utc)).total_seconds() if valid_quote else None
+                quote_fresh = tick_age is not None and 0 <= tick_age <= 180
+                open_for_research = (now.weekday() < 5 and fresh
+                                     and quote_fresh and int(info.trade_mode) > 0)
+                spread = float(tick.ask - tick.bid) if valid_quote else float("nan")
+                read = observer.evaluate(
+                    symbol=symbol, candles=bars, as_of_utc=now,
+                    actual_spread=spread, broker_session_open=open_for_research,
+                    data_fresh=fresh, news_blackout=False,
+                    news_context_verified=False)
+                report["symbols"][symbol] = {
+                    "closed_M5_utc": bars["M5"][-1].closed_at_utc.isoformat(),
+                    "regime": read.market_state, "playbook": read.playbook,
+                    "action": read.action, "reasons": read.reasons,
+                    "tools": read.tools,
+                    "market_data_fresh": fresh,
+                    "quote_fresh": quote_fresh,
+                    "live_execution_authorized": False,
+                }
+            except (RuntimeError, ValueError, TypeError, IndexError) as exc:
+                report["symbols"][symbol] = {
+                    "regime": "UNKNOWN", "action": "WAIT",
+                    "error": type(exc).__name__ + ":" + str(exc)}
+    finally:
+        mt5.shutdown()
+    report["symbols_scanned"] = len(report["symbols"])
+    report["symbols_failed"] = sum(
+        "error" in item for item in report["symbols"].values())
+    publish(report)
+    print("MARKET_OBSERVER: saved", report["symbols_scanned"],
+          "failed", report["symbols_failed"],
+          "at", report["as_of_utc"], "orders=0")
+    return 0 if report["symbols_scanned"] == len(SYMBOLS) and not report["symbols_failed"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

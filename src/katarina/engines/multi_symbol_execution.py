@@ -72,14 +72,39 @@ class MultiSymbolExecutionOrchestrator:
         correlation: CorrelationExposureEngine | None = None,
         max_new_positions: int = 5,
         correlation_cap: float = 0.08,
+        require_correlation_evidence: bool = False,
+        min_correlation_observations: int = 20,
     ):
         if max_new_positions <= 0:
             raise ValueError("max_new_positions")
+        if min_correlation_observations < 3:
+            raise ValueError("min_correlation_observations")
         self.risk=risk
         self.execution=execution or ExecutionEngine()
         self.correlation=correlation or CorrelationExposureEngine()
         self.max_new_positions=max_new_positions
         self.correlation_cap=correlation_cap
+        self.require_correlation_evidence=bool(require_correlation_evidence)
+        self.min_correlation_observations=int(min_correlation_observations)
+
+    def _valid_correlation_inputs(
+        self, symbols: Sequence[str], returns: Mapping[str,Sequence[float]],
+    ) -> bool:
+        lengths=set()
+        try:
+            for symbol in symbols:
+                series=returns.get(symbol)
+                if series is None or len(series)<self.min_correlation_observations:
+                    return False
+                values=[float(value) for value in series]
+                if any(not isfinite(value) for value in values):
+                    return False
+                if max(values)-min(values)<=1e-15:
+                    return False
+                lengths.add(len(values))
+        except (TypeError, ValueError, OverflowError):
+            return False
+        return len(lengths)==1
 
     @staticmethod
     def _quantize_volume(value: float, minimum: float, step: float) -> float:
@@ -105,6 +130,7 @@ class MultiSymbolExecutionOrchestrator:
         reconciled: bool = True,
         execution_armed: bool = True,
         fresh: bool = True,
+        account_currency: str | None = None,
     ) -> MultiSymbolExecutionPlan:
         accepted=[]
         rejected=[]
@@ -144,6 +170,7 @@ class MultiSymbolExecutionOrchestrator:
                 expected_rr=c.opportunity.proposal.expected_rr,
                 health_ok=health_ok,
                 reconciled=reconciled,
+                account_currency=account_currency,
             )
             if auth.approved_fraction <= 0 or auth.action not in {"APPROVE","REDUCE"}:
                 rejected.append(RejectedExecution(symbol,auth.reason))
@@ -151,6 +178,12 @@ class MultiSymbolExecutionOrchestrator:
 
             tentative=dict(symbol_risks)
             tentative[symbol]=tentative.get(symbol,0.0)+auth.approved_fraction
+            if self.require_correlation_evidence and not self._valid_correlation_inputs(
+                tuple(tentative),returns
+            ):
+                self.risk.state_engine.reservations.release(reservation_id)
+                rejected.append(RejectedExecution(symbol,"correlation_data_unverified"))
+                continue
             exposure=self.correlation.assess(tentative,returns,cap=self.correlation_cap)
             if not exposure.allowed:
                 self.risk.state_engine.reservations.release(reservation_id)

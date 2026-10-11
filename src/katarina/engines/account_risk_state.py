@@ -351,17 +351,31 @@ class AccountRiskCoordinator:
         self.governor=governor or RiskGovernor(max_open_risk=state_engine.max_open_risk)
         self.capital=capital
 
+    @classmethod
+    def with_adaptive_risk(cls,state_engine,*,capital=None,config_path=None):
+        """Explicitly select the account-aware profile; does not arm execution."""
+        from pathlib import Path
+        from katarina.engines.risk import RiskGovernor
+        path=config_path or Path(__file__).resolve().parents[3]/"config"/"risk_governor_v2.json"
+        governor=RiskGovernor.from_config(path)
+        if governor.adaptive_profile is None:
+            raise ValueError("adaptive_risk_disabled")
+        if abs(governor.max_open_risk-state_engine.max_open_risk)>1e-12:
+            raise ValueError("risk_state_cap_mismatch")
+        return cls(state_engine,governor,capital=capital)
+
     def authorize_and_reserve(
         self,
         positions:AccountRiskAssessment,
         *,
         reservation_id:str,
         day_key:str,
-        requested_fraction:float,
+        requested_fraction:float|None,
         uncertainty:float,
         expected_rr:float,
         health_ok:bool,
         reconciled:bool,
+        account_currency:str|None=None,
     )->RiskAuthorizationResult:
         self.state_engine.observe_equity(day_key,positions.equity)
         risk_capital=None
@@ -369,9 +383,14 @@ class AccountRiskCoordinator:
             snap=self.capital.snapshot()
             risk_capital=snap.effective_risk_capital(equity=positions.equity)
         state=self.state_engine.assess(positions,risk_capital=risk_capital)
+        # Persistent equity high-water mark prevents raising the risk percentage
+        # just because capital temporarily drops after a loss or reserve sweep.
+        high_water=max(state.risk_capital,self.state_engine.total.peak_equity)
         decision=self.governor.evaluate_state(
             state,requested_fraction=requested_fraction,uncertainty=uncertainty,
             expected_rr=expected_rr,health_ok=health_ok,reconciled=reconciled,
+            account_currency=account_currency,
+            risk_reference_capital=high_water,
         )
         reserved=False
         if decision.action.value in {"APPROVE","REDUCE"} and decision.approved_fraction>0:

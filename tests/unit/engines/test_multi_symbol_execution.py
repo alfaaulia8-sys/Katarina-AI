@@ -111,5 +111,83 @@ class MultiSymbolExecutionTests(unittest.TestCase):
         self.assertEqual(len(plan.accepted),1)
         self.assertTrue(any(x.reason=="duplicate_symbol_candidate" for x in plan.rejected))
 
+    def test_adaptive_cents_require_verified_account_currency(self):
+        state=AccountRiskStateEngine()
+        coord=AccountRiskCoordinator.with_adaptive_risk(state)
+        o=MultiSymbolExecutionOrchestrator(risk=coord)
+        positions=SharedAccountRiskEngine().assess([],equity=10000)
+        unavailable=o.build_plan(
+            [cand("XAUUSD",1)],positions=positions,day_key="2026-10-11",
+            returns={"XAUUSD":[1,0,-1]},
+        )
+        self.assertEqual(len(unavailable.accepted),0)
+        self.assertEqual(unavailable.rejected[0].reason,"adaptive_capital_unverified")
+        self.assertAlmostEqual(state.reservations.total_fraction,0)
+        checked=o.build_plan(
+            [cand("XAUUSD",1)],positions=positions,day_key="2026-10-11",
+            returns={"XAUUSD":[1,0,-1]},account_currency="USC",
+        )
+        self.assertEqual(len(checked.accepted),1)
+        self.assertAlmostEqual(checked.accepted[0].approved_risk_fraction,.02)
+        self.assertAlmostEqual(checked.accepted[0].intent.volume,.04)
+
+    def test_unknown_currency_fails_closed_in_multi_symbol_router(self):
+        state=AccountRiskStateEngine()
+        coord=AccountRiskCoordinator.with_adaptive_risk(state)
+        o=MultiSymbolExecutionOrchestrator(risk=coord)
+        positions=SharedAccountRiskEngine().assess([],equity=10000)
+        plan=o.build_plan(
+            [cand("XAUUSD",1)],positions=positions,day_key="2026-10-11",
+            returns={"XAUUSD":[1,0,-1]},account_currency="EUR",
+        )
+        self.assertEqual(len(plan.accepted),0)
+        self.assertEqual(plan.rejected[0].reason,"adaptive_capital_unverified")
+        self.assertAlmostEqual(state.reservations.total_fraction,0)
+
+    def test_strict_portfolio_rejects_missing_correlation_history(self):
+        state=AccountRiskStateEngine()
+        coord=AccountRiskCoordinator(state,RiskGovernor())
+        engine=MultiSymbolExecutionOrchestrator(
+            risk=coord,require_correlation_evidence=True,
+            min_correlation_observations=20)
+        positions=SharedAccountRiskEngine().assess([],equity=10000)
+        out=engine.build_plan(
+            [cand("EURUSD",1)],positions=positions,day_key="2026-10-11",
+            returns={"EURUSD":[1,0,-1]},
+        )
+        self.assertEqual(len(out.accepted),0)
+        self.assertEqual(out.rejected[0].reason,"correlation_data_unverified")
+        self.assertAlmostEqual(state.reservations.total_fraction,0)
+
+    def test_strict_portfolio_blocks_second_aligned_market(self):
+        state=AccountRiskStateEngine()
+        coord=AccountRiskCoordinator(state,RiskGovernor())
+        engine=MultiSymbolExecutionOrchestrator(
+            risk=coord,require_correlation_evidence=True,
+            min_correlation_observations=20)
+        positions=SharedAccountRiskEngine().assess([],equity=10000)
+        series=list(range(25))
+        out=engine.build_plan(
+            [cand("EURUSD",1,.95),cand("GBPUSD",2,.9)],
+            positions=positions,day_key="2026-10-11",
+            returns={"EURUSD":series,"GBPUSD":series},
+        )
+        self.assertEqual([x.symbol for x in out.accepted],["EURUSD"])
+        self.assertEqual(out.rejected[0].reason,"correlation_exposure_cap")
+        self.assertAlmostEqual(state.reservations.total_fraction,.05)
+
+    def test_strict_portfolio_rejects_non_finite_and_unaligned_returns(self):
+        state=AccountRiskStateEngine()
+        coord=AccountRiskCoordinator(state,RiskGovernor())
+        engine=MultiSymbolExecutionOrchestrator(
+            risk=coord,require_correlation_evidence=True)
+        positions=SharedAccountRiskEngine().assess([],equity=10000)
+        out=engine.build_plan(
+            [cand("EURUSD",1)],positions=positions,day_key="2026-10-11",
+            returns={"EURUSD":[float("nan")]*25},
+        )
+        self.assertEqual(len(out.accepted),0)
+        self.assertEqual(out.rejected[0].reason,"correlation_data_unverified")
+
 
 if __name__=="__main__": unittest.main()
