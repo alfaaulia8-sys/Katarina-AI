@@ -167,7 +167,9 @@ class MultiSymbolExecutionOrchestrator:
                 evidence=(evidence_decisions or {}).get((symbol,c.strategy_id))
                 if (not c.strategy_id or not isinstance(evidence,StrategyEvidenceDecision)
                         or not evidence.eligible_for_risk_review
-                        or evidence.live_authorized):
+                        or evidence.live_authorized
+                        or not isfinite(evidence.risk_multiplier)
+                        or not 0 < evidence.risk_multiplier <= .75):
                     rejected.append(RejectedExecution(symbol,"strategy_forward_evidence_missing"))
                     continue
 
