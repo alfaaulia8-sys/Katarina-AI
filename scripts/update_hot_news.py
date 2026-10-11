@@ -61,6 +61,9 @@ def collect():
     except (ValueError,TypeError,OverflowError):continue
     age=(NOW-published).total_seconds()
     if age< -30*60 or age > 72*3600:continue
+    # CNBC article URL should match the year/month of RSS publication;
+    # prevents resurfaced old stories from being presented as current hot news.
+    if host=="www.cnbc.com" and not re.search(r"/"+str(published.year)+r"/"+str(published.month).zfill(2)+r"/",urllib.parse.urlsplit(link).path):continue
     canon=link.split("#")[0].split("?")[0]
     if canon in found:continue
     found[canon]={"title":title,"source":source,"url":canon,"publishedAt":published.isoformat(timespec="seconds").replace("+00:00","Z"),"category":topic(title),"language":"en"}
