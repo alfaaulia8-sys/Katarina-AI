@@ -182,6 +182,8 @@ class MT5ShadowReadOnly:
         budget=self._finite_positive(risk_budget_account)
         if holding_minutes < 1:
             raise ValueError("invalid_shadow_holding_period")
+        if self._account().currency != snapshot.account_currency:
+            raise ValueError("broker_account_currency_changed")
         entry=snapshot.ask if signal.side=="BUY" else snapshot.bid
         stop=entry-distance if signal.side=="BUY" else entry+distance
         target=entry+distance*rr if signal.side=="BUY" else entry-distance*rr
