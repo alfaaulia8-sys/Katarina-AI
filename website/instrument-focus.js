@@ -21,13 +21,80 @@ const ct=$("#focus-kpi-news");if(ct){const num=publishedNews.filter(n=>(n.symbol
 }
 function setFocus(value,opts={}){if(!Object.hasOwn(map,value))return;selected=value;window.katarinaInstrument=value;window.katarinaMarketFocus=value;save(value);
 for(const select of selectors)select.value=value;
+for(const urlLink of document.querySelectorAll('a[href^="/analisa.html"],a[href^="/research.html"]')){
+ try{const destination=new URL(urlLink.href,location.origin);
+     if(destination.origin!==location.origin)continue;
+     destination.searchParams.set('symbol',value);
+     urlLink.href=destination.pathname+destination.search+destination.hash;
+ }catch(e){}
+}
+if(opts.history!==false && location.pathname.endsWith('.html')){
+  const destination=new URL(location.href);destination.searchParams.set('symbol',value);
+  if(destination.search!==location.search)history.replaceState(history.state,'',destination.pathname+destination.search+destination.hash);
+}
 const allFilter=document.querySelector('.pulse-tags [data-filter="all"]');if(allFilter&&allFilter.getAttribute('aria-pressed')!=='true')allFilter.click();
-if(!opts.fromButton){const control=[...document.querySelectorAll("[data-tv-symbol]")].find(b=>b.dataset.tvSymbol===map[value].symbol);if(control)control.click();else window.dispatchEvent(new CustomEvent("katarina-select-symbol",{detail:{symbol:map[value].symbol}}));}
+window.dispatchEvent(new CustomEvent("katarina-select-symbol",{detail:{symbol:map[value].symbol,pair:value}}));
 renderContext();
 const link=$("#focus-research-link");if(link)link.href="/research.html?symbol="+encodeURIComponent(value);
 const open=$("#research-open-analysis");if(open)open.href="/analisa.html?symbol="+encodeURIComponent(value);
 window.dispatchEvent(new CustomEvent("katarina-instrument",{detail:{symbol:value}}));
 }
+
+// Searchable pair list in both Research and Analisa; native optgroup select remains
+// available as the accessible fallback, and the chart dropdown shares its value.
+const searchScopes=[...document.querySelectorAll('[data-instrument-lookup]')];
+const groupTitle={major:'Forex Major',minor:'Forex Minor / Cross',metal:'Metals',index:'Indices',crypto:'Crypto'};
+for(const scope of searchScopes){
+const toggle=scope.querySelector('[data-pair-search-toggle]');
+const panel=scope.querySelector('[data-pair-search-panel]');
+const input=scope.querySelector('[data-pair-search-query]');
+const results=scope.querySelector('[data-pair-search-results]');
+const closer=scope.querySelector('[data-pair-search-close]');
+if(!toggle||!panel||!input||!results||!closer)continue;
+let matches=[],activeIndex=0;
+function renderMatches(){
+  const needle=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const related=needle==='GOLD'?'XAUUSD':needle==='SILVER'?'XAGUSD':needle==='DOW'?'US30':needle==='BITCOIN'?'BTCUSD':needle==='SP500'?'US500':needle;
+  matches=defs.filter(([id,,name])=>!related||id.includes(related)||name.toUpperCase().replace(/[^A-Z0-9]/g,'').includes(related)).slice(0,34);
+  activeIndex=0;results.replaceChildren();
+  if(matches.length===0){results.append(el('p','pair-no-result','Pair tidak ditemukan. Periksa ejaan atau gunakan dropdown.'));input.removeAttribute('aria-activedescendant');return}
+  let last='';
+  matches.forEach(([id,,name,type],i)=>{
+   if(type!==last){results.append(el('div','pair-search-group',groupTitle[type]||type));last=type}
+   const button=el('button','pair-search-choice');button.type='button';button.setAttribute('role','option');button.dataset.pair=id;button.id=results.id+'-opt-'+i;
+   button.setAttribute('aria-selected',String(i===activeIndex));
+   const namePart=el('strong','',id);const labelPart=el('span','',name.replace(id,'').replace(/^[\\s·]+/,'').trim()||groupTitle[type]||'');
+   button.append(namePart,labelPart);
+   button.addEventListener('click',()=>choose(id));results.append(button);
+  });
+  updateActive();
+}
+function updateActive(){
+  const buttons=[...results.querySelectorAll('[role=option]')];
+  buttons.forEach((b,i)=>b.setAttribute('aria-selected',String(i===activeIndex)));
+  const active=buttons[activeIndex];
+  if(active){input.setAttribute('aria-activedescendant',active.id);active.scrollIntoView({block:'nearest'});}
+}
+function open(){panel.hidden=false;toggle.setAttribute('aria-expanded','true');input.value='';renderMatches();input.focus();}
+function close(){panel.hidden=true;toggle.setAttribute('aria-expanded','false');input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
+function choose(value){setFocus(value);close();toggle.focus();}
+toggle.addEventListener('click',()=>panel.hidden?open():close());
+closer.addEventListener('click',()=>{close();toggle.focus()});
+input.addEventListener('input',renderMatches);
+input.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();close();toggle.focus();return}
+  if(!matches.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();activeIndex=(activeIndex+1)%matches.length;updateActive()}
+  else if(e.key==='ArrowUp'){e.preventDefault();activeIndex=(activeIndex+matches.length-1)%matches.length;updateActive()}
+  else if(e.key==='Enter'){e.preventDefault();choose(matches[activeIndex][0])}
+});
+document.addEventListener('pointerdown',e=>{if(!panel.hidden&&!scope.contains(e.target))close()});
+}
+window.addEventListener('popstate',()=>{
+  const pair=new URLSearchParams(location.search).get('symbol');
+  if(pair&&Object.hasOwn(map,pair))setFocus(pair,{history:false});
+});
+
 for(const select of selectors){select.replaceChildren();for(const [group,label] of [["major","Forex · Major"],["minor","Forex · Minor / Cross"],["metal","Metals"],["index","Indices"],["crypto","Crypto"]]){const optgroup=el("optgroup");optgroup.label=label;for(const [id,,name,type] of defs.filter(x=>x[3]===group)){const opt=el("option",null,name);opt.value=id;optgroup.append(opt)}select.append(optgroup)}
 select.addEventListener("change",()=>setFocus(select.value));}
 const urlParam=new URLSearchParams(location.search).get("symbol");
