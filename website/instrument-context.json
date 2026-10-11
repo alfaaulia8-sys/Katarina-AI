@@ -122,6 +122,396 @@
       ],
       "monitor": "Yield riil, DXY, manufaktur China, gold/silver ratio",
       "theme": "silver"
+    },
+    {
+      "id": "USDJPY",
+      "symbol": "FX:USDJPY",
+      "chart": "usdjpy",
+      "label": "USDJPY · Forex",
+      "asset": "USD/JPY",
+      "headline": "USDJPY: Federal Reserve vs Bank of Japan",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Federal Reserve dibandingkan Bank of Japan",
+        "Bandingkan data CPI AS, PPI, NFP, Treasury dengan BoJ, CPI Jepang, JGB",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "CPI AS, PPI, NFP, Treasury · BoJ, CPI Jepang, JGB",
+      "theme": "forex"
+    },
+    {
+      "id": "USDCHF",
+      "symbol": "FX:USDCHF",
+      "chart": "usdchf",
+      "label": "USDCHF · Forex",
+      "asset": "USD/CHF",
+      "headline": "USDCHF: Federal Reserve vs Swiss National Bank",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Federal Reserve dibandingkan Swiss National Bank",
+        "Bandingkan data CPI AS, PPI, NFP, Treasury dengan SNB, CPI Swiss, safe haven",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "CPI AS, PPI, NFP, Treasury · SNB, CPI Swiss, safe haven",
+      "theme": "forex"
+    },
+    {
+      "id": "USDCAD",
+      "symbol": "FX:USDCAD",
+      "chart": "usdcad",
+      "label": "USDCAD · Forex",
+      "asset": "USD/CAD",
+      "headline": "USDCAD: Federal Reserve vs Bank of Canada",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Federal Reserve dibandingkan Bank of Canada",
+        "Bandingkan data CPI AS, PPI, NFP, Treasury dengan BoC, CPI Kanada, minyak WTI",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "CPI AS, PPI, NFP, Treasury · BoC, CPI Kanada, minyak WTI",
+      "theme": "forex"
+    },
+    {
+      "id": "AUDUSD",
+      "symbol": "FX:AUDUSD",
+      "chart": "audusd",
+      "label": "AUDUSD · Forex",
+      "asset": "AUD/USD",
+      "headline": "AUDUSD: Reserve Bank of Australia vs Federal Reserve",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of Australia dibandingkan Federal Reserve",
+        "Bandingkan data RBA, CPI Australia, PMI China dengan CPI AS, PPI, NFP, Treasury",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBA, CPI Australia, PMI China · CPI AS, PPI, NFP, Treasury",
+      "theme": "forex"
+    },
+    {
+      "id": "NZDUSD",
+      "symbol": "FX:NZDUSD",
+      "chart": "nzdusd",
+      "label": "NZDUSD · Forex",
+      "asset": "NZD/USD",
+      "headline": "NZDUSD: Reserve Bank of New Zealand vs Federal Reserve",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of New Zealand dibandingkan Federal Reserve",
+        "Bandingkan data RBNZ, CPI NZ, harga susu dengan CPI AS, PPI, NFP, Treasury",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBNZ, CPI NZ, harga susu · CPI AS, PPI, NFP, Treasury",
+      "theme": "forex"
+    },
+    {
+      "id": "EURGBP",
+      "symbol": "FX:EURGBP",
+      "chart": "eurgbp",
+      "label": "EURGBP · Forex",
+      "asset": "EUR/GBP",
+      "headline": "EURGBP: European Central Bank vs Bank of England",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan European Central Bank dibandingkan Bank of England",
+        "Bandingkan data ECB, HICP zona euro, PMI dengan BoE, CPI UK, gilt Inggris",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "ECB, HICP zona euro, PMI · BoE, CPI UK, gilt Inggris",
+      "theme": "forex"
+    },
+    {
+      "id": "EURJPY",
+      "symbol": "FX:EURJPY",
+      "chart": "eurjpy",
+      "label": "EURJPY · Forex",
+      "asset": "EUR/JPY",
+      "headline": "EURJPY: European Central Bank vs Bank of Japan",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan European Central Bank dibandingkan Bank of Japan",
+        "Bandingkan data ECB, HICP zona euro, PMI dengan BoJ, CPI Jepang, JGB",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "ECB, HICP zona euro, PMI · BoJ, CPI Jepang, JGB",
+      "theme": "forex"
+    },
+    {
+      "id": "EURCHF",
+      "symbol": "FX:EURCHF",
+      "chart": "eurchf",
+      "label": "EURCHF · Forex",
+      "asset": "EUR/CHF",
+      "headline": "EURCHF: European Central Bank vs Swiss National Bank",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan European Central Bank dibandingkan Swiss National Bank",
+        "Bandingkan data ECB, HICP zona euro, PMI dengan SNB, CPI Swiss, safe haven",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "ECB, HICP zona euro, PMI · SNB, CPI Swiss, safe haven",
+      "theme": "forex"
+    },
+    {
+      "id": "EURCAD",
+      "symbol": "FX:EURCAD",
+      "chart": "eurcad",
+      "label": "EURCAD · Forex",
+      "asset": "EUR/CAD",
+      "headline": "EURCAD: European Central Bank vs Bank of Canada",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan European Central Bank dibandingkan Bank of Canada",
+        "Bandingkan data ECB, HICP zona euro, PMI dengan BoC, CPI Kanada, minyak WTI",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "ECB, HICP zona euro, PMI · BoC, CPI Kanada, minyak WTI",
+      "theme": "forex"
+    },
+    {
+      "id": "EURAUD",
+      "symbol": "FX:EURAUD",
+      "chart": "euraud",
+      "label": "EURAUD · Forex",
+      "asset": "EUR/AUD",
+      "headline": "EURAUD: European Central Bank vs Reserve Bank of Australia",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan European Central Bank dibandingkan Reserve Bank of Australia",
+        "Bandingkan data ECB, HICP zona euro, PMI dengan RBA, CPI Australia, PMI China",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "ECB, HICP zona euro, PMI · RBA, CPI Australia, PMI China",
+      "theme": "forex"
+    },
+    {
+      "id": "EURNZD",
+      "symbol": "FX:EURNZD",
+      "chart": "eurnzd",
+      "label": "EURNZD · Forex",
+      "asset": "EUR/NZD",
+      "headline": "EURNZD: European Central Bank vs Reserve Bank of New Zealand",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan European Central Bank dibandingkan Reserve Bank of New Zealand",
+        "Bandingkan data ECB, HICP zona euro, PMI dengan RBNZ, CPI NZ, harga susu",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "ECB, HICP zona euro, PMI · RBNZ, CPI NZ, harga susu",
+      "theme": "forex"
+    },
+    {
+      "id": "GBPJPY",
+      "symbol": "FX:GBPJPY",
+      "chart": "gbpjpy",
+      "label": "GBPJPY · Forex",
+      "asset": "GBP/JPY",
+      "headline": "GBPJPY: Bank of England vs Bank of Japan",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Bank of England dibandingkan Bank of Japan",
+        "Bandingkan data BoE, CPI UK, gilt Inggris dengan BoJ, CPI Jepang, JGB",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "BoE, CPI UK, gilt Inggris · BoJ, CPI Jepang, JGB",
+      "theme": "forex"
+    },
+    {
+      "id": "GBPCHF",
+      "symbol": "FX:GBPCHF",
+      "chart": "gbpchf",
+      "label": "GBPCHF · Forex",
+      "asset": "GBP/CHF",
+      "headline": "GBPCHF: Bank of England vs Swiss National Bank",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Bank of England dibandingkan Swiss National Bank",
+        "Bandingkan data BoE, CPI UK, gilt Inggris dengan SNB, CPI Swiss, safe haven",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "BoE, CPI UK, gilt Inggris · SNB, CPI Swiss, safe haven",
+      "theme": "forex"
+    },
+    {
+      "id": "GBPCAD",
+      "symbol": "FX:GBPCAD",
+      "chart": "gbpcad",
+      "label": "GBPCAD · Forex",
+      "asset": "GBP/CAD",
+      "headline": "GBPCAD: Bank of England vs Bank of Canada",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Bank of England dibandingkan Bank of Canada",
+        "Bandingkan data BoE, CPI UK, gilt Inggris dengan BoC, CPI Kanada, minyak WTI",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "BoE, CPI UK, gilt Inggris · BoC, CPI Kanada, minyak WTI",
+      "theme": "forex"
+    },
+    {
+      "id": "GBPAUD",
+      "symbol": "FX:GBPAUD",
+      "chart": "gbpaud",
+      "label": "GBPAUD · Forex",
+      "asset": "GBP/AUD",
+      "headline": "GBPAUD: Bank of England vs Reserve Bank of Australia",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Bank of England dibandingkan Reserve Bank of Australia",
+        "Bandingkan data BoE, CPI UK, gilt Inggris dengan RBA, CPI Australia, PMI China",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "BoE, CPI UK, gilt Inggris · RBA, CPI Australia, PMI China",
+      "theme": "forex"
+    },
+    {
+      "id": "GBPNZD",
+      "symbol": "FX:GBPNZD",
+      "chart": "gbpnzd",
+      "label": "GBPNZD · Forex",
+      "asset": "GBP/NZD",
+      "headline": "GBPNZD: Bank of England vs Reserve Bank of New Zealand",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Bank of England dibandingkan Reserve Bank of New Zealand",
+        "Bandingkan data BoE, CPI UK, gilt Inggris dengan RBNZ, CPI NZ, harga susu",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "BoE, CPI UK, gilt Inggris · RBNZ, CPI NZ, harga susu",
+      "theme": "forex"
+    },
+    {
+      "id": "AUDJPY",
+      "symbol": "FX:AUDJPY",
+      "chart": "audjpy",
+      "label": "AUDJPY · Forex",
+      "asset": "AUD/JPY",
+      "headline": "AUDJPY: Reserve Bank of Australia vs Bank of Japan",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of Australia dibandingkan Bank of Japan",
+        "Bandingkan data RBA, CPI Australia, PMI China dengan BoJ, CPI Jepang, JGB",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBA, CPI Australia, PMI China · BoJ, CPI Jepang, JGB",
+      "theme": "forex"
+    },
+    {
+      "id": "AUDCAD",
+      "symbol": "FX:AUDCAD",
+      "chart": "audcad",
+      "label": "AUDCAD · Forex",
+      "asset": "AUD/CAD",
+      "headline": "AUDCAD: Reserve Bank of Australia vs Bank of Canada",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of Australia dibandingkan Bank of Canada",
+        "Bandingkan data RBA, CPI Australia, PMI China dengan BoC, CPI Kanada, minyak WTI",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBA, CPI Australia, PMI China · BoC, CPI Kanada, minyak WTI",
+      "theme": "forex"
+    },
+    {
+      "id": "AUDCHF",
+      "symbol": "FX:AUDCHF",
+      "chart": "audchf",
+      "label": "AUDCHF · Forex",
+      "asset": "AUD/CHF",
+      "headline": "AUDCHF: Reserve Bank of Australia vs Swiss National Bank",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of Australia dibandingkan Swiss National Bank",
+        "Bandingkan data RBA, CPI Australia, PMI China dengan SNB, CPI Swiss, safe haven",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBA, CPI Australia, PMI China · SNB, CPI Swiss, safe haven",
+      "theme": "forex"
+    },
+    {
+      "id": "AUDNZD",
+      "symbol": "FX:AUDNZD",
+      "chart": "audnzd",
+      "label": "AUDNZD · Forex",
+      "asset": "AUD/NZD",
+      "headline": "AUDNZD: Reserve Bank of Australia vs Reserve Bank of New Zealand",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of Australia dibandingkan Reserve Bank of New Zealand",
+        "Bandingkan data RBA, CPI Australia, PMI China dengan RBNZ, CPI NZ, harga susu",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBA, CPI Australia, PMI China · RBNZ, CPI NZ, harga susu",
+      "theme": "forex"
+    },
+    {
+      "id": "CADJPY",
+      "symbol": "FX:CADJPY",
+      "chart": "cadjpy",
+      "label": "CADJPY · Forex",
+      "asset": "CAD/JPY",
+      "headline": "CADJPY: Bank of Canada vs Bank of Japan",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Bank of Canada dibandingkan Bank of Japan",
+        "Bandingkan data BoC, CPI Kanada, minyak WTI dengan BoJ, CPI Jepang, JGB",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "BoC, CPI Kanada, minyak WTI · BoJ, CPI Jepang, JGB",
+      "theme": "forex"
+    },
+    {
+      "id": "CADCHF",
+      "symbol": "FX:CADCHF",
+      "chart": "cadchf",
+      "label": "CADCHF · Forex",
+      "asset": "CAD/CHF",
+      "headline": "CADCHF: Bank of Canada vs Swiss National Bank",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Bank of Canada dibandingkan Swiss National Bank",
+        "Bandingkan data BoC, CPI Kanada, minyak WTI dengan SNB, CPI Swiss, safe haven",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "BoC, CPI Kanada, minyak WTI · SNB, CPI Swiss, safe haven",
+      "theme": "forex"
+    },
+    {
+      "id": "CHFJPY",
+      "symbol": "FX:CHFJPY",
+      "chart": "chfjpy",
+      "label": "CHFJPY · Forex",
+      "asset": "CHF/JPY",
+      "headline": "CHFJPY: Swiss National Bank vs Bank of Japan",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Swiss National Bank dibandingkan Bank of Japan",
+        "Bandingkan data SNB, CPI Swiss, safe haven dengan BoJ, CPI Jepang, JGB",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "SNB, CPI Swiss, safe haven · BoJ, CPI Jepang, JGB",
+      "theme": "forex"
+    },
+    {
+      "id": "NZDJPY",
+      "symbol": "FX:NZDJPY",
+      "chart": "nzdjpy",
+      "label": "NZDJPY · Forex",
+      "asset": "NZD/JPY",
+      "headline": "NZDJPY: Reserve Bank of New Zealand vs Bank of Japan",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of New Zealand dibandingkan Bank of Japan",
+        "Bandingkan data RBNZ, CPI NZ, harga susu dengan BoJ, CPI Jepang, JGB",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBNZ, CPI NZ, harga susu · BoJ, CPI Jepang, JGB",
+      "theme": "forex"
+    },
+    {
+      "id": "NZDCAD",
+      "symbol": "FX:NZDCAD",
+      "chart": "nzdcad",
+      "label": "NZDCAD · Forex",
+      "asset": "NZD/CAD",
+      "headline": "NZDCAD: Reserve Bank of New Zealand vs Bank of Canada",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of New Zealand dibandingkan Bank of Canada",
+        "Bandingkan data RBNZ, CPI NZ, harga susu dengan BoC, CPI Kanada, minyak WTI",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBNZ, CPI NZ, harga susu · BoC, CPI Kanada, minyak WTI",
+      "theme": "forex"
+    },
+    {
+      "id": "NZDCHF",
+      "symbol": "FX:NZDCHF",
+      "chart": "nzdchf",
+      "label": "NZDCHF · Forex",
+      "asset": "NZD/CHF",
+      "headline": "NZDCHF: Reserve Bank of New Zealand vs Swiss National Bank",
+      "drivers": [
+        "Pantau diferensial suku bunga dan ekspektasi kebijakan Reserve Bank of New Zealand dibandingkan Swiss National Bank",
+        "Bandingkan data RBNZ, CPI NZ, harga susu dengan SNB, CPI Swiss, safe haven",
+        "Amati volatilitas, arah risk sentiment global, spread broker dan likuiditas saat sesi utama"
+      ],
+      "monitor": "RBNZ, CPI NZ, harga susu · SNB, CPI Swiss, safe haven",
+      "theme": "forex"
     }
   ]
 }
