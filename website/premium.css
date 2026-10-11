@@ -150,3 +150,31 @@ header.shell .lang{font-size:11px;max-width:140px;padding:9px;border-radius:8px}
  .pulse-page .p-verified-note{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.pulse-page .panel{transition:none}.navlinks a{transition:none}}
+
+
+/* Brand correction: use only the original KATARINA emblem; never enlarge an
+   invented approximation and imply it is the official logo. */
+.pulse-page .pulse-hero:after{background:none!important;display:none!important}
+.pulse-page .pulse-hero{background:radial-gradient(ellipse at 83% 38%,rgba(1,125,232,.22),transparent 48%),linear-gradient(108deg,#020c20,#062044 77%,#030b19);position:relative}
+.pulse-page .pulse-hero .copy{max-width:86%}
+.pulse-page .pulse-hero .copy:before{content:"";position:absolute;pointer-events:none;inset:-18px -35px -18px -20px;z-index:-1;background:linear-gradient(90deg,transparent 62%,#0e89ff10)}
+.pulse-page .pulse-hero .copy:after{content:"";position:absolute;pointer-events:none;right:-10%;top:10%;width:210px;height:175px;opacity:.17;border:1px solid #47bfff;border-radius:48%;transform:rotate(-25deg);box-shadow:0 0 0 22px #009aff12,0 0 0 50px #009aff09}
+.pulse-page .pulse-hero h1{font-weight:750;letter-spacing:-.045em}
+.pulse-page .identity .mark{background:var(--katarina-brand,linear-gradient(#063b77,#020a1d)) center/cover no-repeat!important}
+.pulse-page .news-scroll{max-height:440px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#258bc2 #06162d;padding-right:7px}
+.pulse-page .news-scroll:focus-visible{outline:2px solid #35d2ff;outline-offset:4px}
+.pulse-page .news-scroll::-webkit-scrollbar{width:7px}.pulse-page .news-scroll::-webkit-scrollbar-thumb{background:#2084bd;border-radius:20px}
+.pulse-page .econ-entry{display:block;padding:16px 5px;border-bottom:1px solid #174c75}
+.pulse-page .econ-entry .econ-when{font-size:11px;color:#85cce8;margin-bottom:9px}
+.pulse-page .econ-entry strong{display:block;font-size:14px;margin-bottom:10px}
+.pulse-page .econ-badge{display:inline-block;text-decoration:none;margin-top:12px}
+.pulse-page .econ-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+.pulse-page .econ-metric{background:#071f3a;border:1px solid #20597e;padding:10px 11px;border-radius:9px}
+.pulse-page .econ-metric small{display:block;color:#82afcc;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+.pulse-page .econ-metric b{display:block;font-size:16px;color:#c7efff;margin-top:5px}
+.pulse-page .econ-comment{line-height:1.65;font-size:12px;color:#a0c8dd}
+.pulse-page .econ-label{color:#50d4ff;font-weight:750}
+.pulse-page .news-scroll .feed article{padding:13px 4px}
+.pulse-page .news-section-notice{font-size:11px;color:#9abbd2;margin:7px 0 14px}
+@media(max-width:900px){.pulse-page .pulse-hero .copy{max-width:100%}.pulse-page .pulse-hero .copy:after{display:none}}
+@media(max-width:570px){.pulse-page .news-scroll{max-height:340px}.pulse-page .econ-metrics{gap:6px}.pulse-page .econ-metric{padding:10px 7px}}
