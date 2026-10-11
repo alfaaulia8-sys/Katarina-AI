@@ -68,5 +68,14 @@ if ($Mode -eq 'existing') {
     Set-Content $Args.ParametersPath 'InpEnableBuy=true'
 }
 $global:LASTEXITCODE = 0
-& $Runner @Args
-exit $LASTEXITCODE
+try {
+    & $Runner @Args
+    $RunnerSucceeded = $?
+    $RunnerExitCode = $LASTEXITCODE
+    if ($RunnerExitCode -ne 0) { exit $RunnerExitCode }
+    if (-not $RunnerSucceeded) { exit 1 }  # Windows PowerShell 4 may suppress failed script exit.
+    exit 0
+} catch {
+    [Console]::Error.WriteLine([string]$_)
+    exit 1
+}
