@@ -293,6 +293,38 @@ class AdapterAndCycleTests(unittest.TestCase):
             recovered=ShadowPaperBook(root/"paper",ShadowJournal(root/"journal"))
             self.assertEqual(len(recovered.pending()),0)
 
+    def test_intraday_drawdown_is_latched_after_paper_recovery(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            journal=ShadowJournal(root/"journal")
+            book=ShadowPaperBook(root/"paper",journal)
+            # Synthetic closed ledger is sufficient to isolate the
+            # drawdown calculation (order/fill tests are separate).
+            book._opened.update({"loss":object(),"recovery":object()})
+            for key,when,pnl in (
+                ("loss",datetime(2026,10,12,9,tzinfo=UTC),-120.),
+                ("recovery",datetime(2026,10,12,10,tzinfo=UTC),200.),
+            ):
+                journal._closes["close-"+key]=SimpleNamespace(
+                    signal_id=key,final_close=True,closed_at_utc=when,
+                    gross_pnl_account=pnl,commission_account=0.,
+                    swap_account=0.,slippage_cost_account=0.)
+            obj=MT5ShadowCycle(
+                broker=FakeSnapshotBroker(FakeMT5(),snapshot()),
+                journal=journal,paper_book=book,
+                risk_governor=RiskGovernor(),strategy_version="test-only",
+                frozen_at_utc=FREEZE,initial_paper_balance_account=1000.,
+                analyst=FixedAnalyzer())
+            balance,peak,daily,total=obj._balance(
+                datetime(2026,10,12,12,tzinfo=UTC))
+            self.assertAlmostEqual(balance,1080.)
+            self.assertAlmostEqual(peak,1080.)
+            self.assertAlmostEqual(daily,.12)
+            self.assertAlmostEqual(total,.12)
+            _,_,next_day,_=obj._balance(
+                datetime(2026,10,13,8,tzinfo=UTC))
+            self.assertEqual(next_day,0.)
+
     def test_virtual_paper_margin_not_subsidized_by_large_real_mt5_balance(self):
         class ExcessiveMarginMT5(FakeMT5):
             def order_calc_margin(self,kind,symbol,volume,price):
