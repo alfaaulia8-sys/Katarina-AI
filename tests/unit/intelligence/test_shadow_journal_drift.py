@@ -170,7 +170,7 @@ class ShadowJournalTests(unittest.TestCase):
         self.assertEqual(ForwardStrategyEvidenceGate(bootstrap_draws=300).assess(
             symbol="XAUUSD",strategy_id="GOLD_OR",frozen_at_utc=FREEZE,
             as_of_utc=AS_OF,trades=(outcome,)
-        ).reason,"insufficient_forward_trades")
+        ).reason,"unverified_forward_provenance_or_costs")
 
 
 class StrategyDriftJournalTests(unittest.TestCase):
