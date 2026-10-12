@@ -93,6 +93,7 @@ class ContextDecision:
     directional_observations: tuple[str, ...] = ()
     directional_h1_momentum_atr: float | None = None
     directional_m15_momentum_atr: float | None = None
+    pre_entry_spread_fraction_of_stop_risk: float | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -321,6 +322,8 @@ class ContextualDecisionIntelligence:
             directional_observations=card.directional_observations,
             directional_h1_momentum_atr=card.directional_h1_momentum_atr,
             directional_m15_momentum_atr=card.directional_m15_momentum_atr,
+            pre_entry_spread_fraction_of_stop_risk=(
+                card.pre_entry_spread_fraction_of_stop_risk),
             selected_method=card.strategy,technical_setup=technical,
             action=action,conditional_side=technical if technical in ("BUY","SELL") else "WAIT",
             reference_entry_kind="CLOSED_BAR_CONFIRMATION_NEXT_BAR_PAPER_ONLY",

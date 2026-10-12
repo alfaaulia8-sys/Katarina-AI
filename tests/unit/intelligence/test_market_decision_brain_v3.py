@@ -50,6 +50,30 @@ class TestMarketDecisionBrainV3(unittest.TestCase):
         x=self.brain.evaluate(**{**self.params,"actual_spread":.4},news_context_verified=True)
         self.assertIn("spread_too_high_for_volatility",x.blockers)
         self.assertEqual(x.decision,"WAIT")
+    def test_predeclared_spread_to_stop_budget_only_vetoes_entries(self):
+        # An expensive setup cannot be promoted even if the user supplies
+        # synthetic strategy approval and no news blackout.
+        for direction in ("up","down"):
+            bars=market(direction)
+            baseline=self.brain.evaluate(
+                **{**self.params,"candles":bars,"actual_spread":.000001})
+            price=bars["M5"][-1].close
+            dist=abs(price-baseline.invalidation_level)
+            high_spread=dist*.40
+            assert high_spread>0
+            expensive=self.brain.evaluate(
+                **{**self.params,"candles":bars,"actual_spread":high_spread},
+                news_context_verified=True,risk_approved_for_paper=True)
+            self.assertIn(
+                "broker_spread_consumes_excess_structural_risk",
+                expensive.blockers)
+            self.assertEqual(expensive.technical_signal,"WAIT")
+            self.assertEqual(expensive.decision,"WAIT")
+            self.assertGreater(expensive.pre_entry_spread_fraction_of_stop_risk,.2)
+            self.assertFalse(expensive.live_execution_authorized)
+        with self.assertRaises(ValueError):
+            MarketDecisionBrain(max_spread_initial_risk_fraction=.4)
+
     def test_stale_or_future_data_fails_closed(self):
         x=self.brain.evaluate(**{**self.params,"as_of_utc":NOW+timedelta(hours=2)})
         self.assertEqual(x.decision,"WAIT")

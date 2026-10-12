@@ -43,6 +43,7 @@ class DecisionCard:
     directional_observations: tuple[str, ...] = ()
     directional_h1_momentum_atr: float | None = None
     directional_m15_momentum_atr: float | None = None
+    pre_entry_spread_fraction_of_stop_risk: float | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -58,13 +59,20 @@ class MarketDecisionBrain:
     """
 
     def __init__(self, minimum_evidence_score: float = .62,
-                 max_spread_atr: float = .34, minimum_rr: float = 1.25):
-        if not 0 < minimum_evidence_score < 1 or not 0 < max_spread_atr < 1 or minimum_rr <= 0:
+                 max_spread_atr: float = .34, minimum_rr: float = 1.25,
+                 max_spread_initial_risk_fraction: float = .20):
+        if (not 0 < minimum_evidence_score < 1 or
+            not 0 < max_spread_atr < 1 or minimum_rr <= 0 or
+            not 0 < max_spread_initial_risk_fraction <= .25):
             raise ValueError("invalid_market_decision_parameters")
         self.observer = MarketDecisionPipeline()
         self.min_score = minimum_evidence_score
         self.max_spread_atr = max_spread_atr
         self.min_rr = minimum_rr
+        # Engineering safety budget, NOT an optimized profitable parameter.
+        # Spread at the last closed M5 candle may be stale at next entry;
+        # actual next-tick costs are separately checked when available.
+        self.max_spread_initial_risk_fraction=max_spread_initial_risk_fraction
 
     @staticmethod
     def _atr(rows: Sequence[SensorCandle], n: int = 14) -> float:
@@ -185,10 +193,15 @@ class MarketDecisionBrain:
         if sign==-1 and invalid<=price:
             invalid=price+1.2*atr
         rr=None
+        provisional_cost_risk=None
         if sign and isfinite(actual_spread) and actual_spread>=0:
             distance=abs(price-invalid)
             reward=(target-price)*sign-actual_spread
             rr=round(max(0.,reward)/max(distance+actual_spread,1e-10),3)
+            provisional_cost_risk=actual_spread/max(
+                distance+actual_spread,1e-10)
+            evidence.append("spread_to_structural_risk_ratio:"+
+                            f"{provisional_cost_risk:.3f}")
         # Soft, interpretable evidence; no false conversion to win probability.
         score=.22
         if sign:score+=.16
@@ -239,6 +252,9 @@ class MarketDecisionBrain:
             blockers.append("market_closed_or_data_stale")
         if not isfinite(actual_spread) or actual_spread<0 or actual_spread/atr>self.max_spread_atr:
             blockers.append("spread_too_high_for_volatility")
+        if (provisional_cost_risk is not None and
+            provisional_cost_risk>self.max_spread_initial_risk_fraction):
+            blockers.append("broker_spread_consumes_excess_structural_risk")
         if news_blackout:
             blockers.append("high_impact_news_blackout")
         if not news_context_verified:
@@ -269,7 +285,10 @@ class MarketDecisionBrain:
             next_trigger="Perbarui setelah candle M5 tertutup berikutnya dan seluruh hard gate diverifikasi."
         # Strong directional opposition can only REDUCE permission:
         # never create an extra BUY/SELL from this assessment.
-        if direction_failure or (direction and direction.veto_strong_contradiction):
+        if (direction_failure or
+            (direction and direction.veto_strong_contradiction) or
+            (provisional_cost_risk is not None and
+             provisional_cost_risk>self.max_spread_initial_risk_fraction)):
             signal="WAIT"
         decision=signal if signal!="WAIT" and not blockers else "WAIT"
         description=(f"{phase}; harga terakhir {price:.6f}; posisi pada channel M15 "
@@ -287,7 +306,10 @@ class MarketDecisionBrain:
                             directional_h1_momentum_atr=(
                                 direction.h1_momentum_atr if direction else None),
                             directional_m15_momentum_atr=(
-                                direction.m15_momentum_atr if direction else None))
+                                direction.m15_momentum_atr if direction else None),
+                            pre_entry_spread_fraction_of_stop_risk=(
+                                round(provisional_cost_risk,5)
+                                if provisional_cost_risk is not None else None))
 
     def evaluate_contextually(
         self, *, symbol: str, candles: Mapping[str,Sequence[SensorCandle]],

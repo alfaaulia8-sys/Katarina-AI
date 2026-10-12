@@ -187,6 +187,12 @@ class TestContextualDecisionIntelligence(unittest.TestCase):
         self.assertEqual(dumped["directional_h1_momentum_atr"],-2.1)
         self.assertFalse(dumped["live_execution_authorized"])
 
+    def test_spread_risk_budget_is_visible_in_existing_context_card(self):
+        expensive=replace(card(),pre_entry_spread_fraction_of_stop_risk=.315)
+        x=self.assess(card=expensive)
+        self.assertEqual(x.to_dict()["pre_entry_spread_fraction_of_stop_risk"],.315)
+        self.assertFalse(x.live_execution_authorized)
+
     def test_additive_native_brain_gateway_does_not_activate_orders(self):
         brain=MarketDecisionBrain()
         result=brain.evaluate_contextually(
