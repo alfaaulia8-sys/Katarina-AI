@@ -181,3 +181,21 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Simulasi risiko +0,10R biaya tambahan: 0,10% risk 1 posisi -4.0915%, 0,25% risk 1 posisi -7.1036%, 0,50% risk 1 posisi -8.1869%. Risk Governor produksi TIDAK DIUBAH.
 - Laporan: `docs/research/BROKER_MULTITF_RISK_V10_20261012.md`. Agregasi mesin tanpa raw broker bars `docs/research/outputs/20261012/broker_multitf_risk_v10_aggregate_sanitized.json`.
 - Tetap WAIT/RESEARCH-ONLY, no live orders, no broker data privat upload, no VPS write, tidak mengubah struktur utama KATARINA.
+
+
+### Final single-study tick verdict, 12 Oktober 2026
+
+- Repo audit: `scripts/research/frozen_xau_sell_tick_verdict.py`; records immutable pinned V9 entry logic.
+- XAUUSD SELL Sep15–Oct09 broker BID/ASK ticks:
+  TREND_EXPANSION_V9 = 19/21 tick-complete, after-cost +0,310727R,
+  PF 1,63904, **PAPER-OBSERVE ONLY** (small, historical, no unseen OOS).
+  SWEEP_2C_CONFIRM_V9 = 28/31 complete, -0,403243R,
+  PF 0,49123, **REJECT from live-candidate consideration**.
+- June–August MT5 historical tick returns empty on sampled dates;
+  they were not falsely declared tick-validated.
+- Document: `docs/research/FROZEN_XAU_SELL_TICK_VERDICT_20261012.md`.
+  Machine result: `docs/research/outputs/20261012/frozen_xau_sell_tick_verdict_aggregate.json`.
+- Final project action: **STOP parameter churn, NO LIVE, freeze candidate.
+  Collect truly prospective independent paper results before any
+  further deployment discussion**. No change to core, VPS files,
+  production Risk Governor, orders, MT5 settings.
