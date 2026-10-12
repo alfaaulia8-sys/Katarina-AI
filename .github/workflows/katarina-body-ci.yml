@@ -3,39 +3,17 @@ name: KATARINA Body CI
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/katarina-body-ci.yml'
-      - 'src/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'config/**'
-      - 'mt5/**'
-      - 'protocol/**'
-      - 'ops/**'
-      - 'functions/**'
-      - 'oauth_gateway/**'
-      - 'vps_bridge/**'
-      - 'research/**'
-      - 'models/**'
-      - 'requirements*.txt'
-      - 'KATARINA_CONSTITUTION.md'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'website/hot-news.json'
+      - 'website/**'
   pull_request:
-    paths:
-      - '.github/workflows/katarina-body-ci.yml'
-      - 'src/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'config/**'
-      - 'mt5/**'
-      - 'protocol/**'
-      - 'ops/**'
-      - 'functions/**'
-      - 'oauth_gateway/**'
-      - 'vps_bridge/**'
-      - 'research/**'
-      - 'models/**'
-      - 'requirements*.txt'
-      - 'KATARINA_CONSTITUTION.md'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'website/hot-news.json'
+      - 'website/**'
   workflow_dispatch:
 
 permissions:
