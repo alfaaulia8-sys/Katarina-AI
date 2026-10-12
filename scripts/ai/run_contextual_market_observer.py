@@ -263,7 +263,15 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 quote_at=tick.time-offset*3600
                 quote_age=now.timestamp()-quote_at
                 quote_fresh=(-15<=quote_age<=180)
-                bars=bars_for(symbol,correction)
+                raw_bars=bars_for(symbol,correction)
+                # Broker timestamps currently lead system UTC by ~13s even
+                # after integer-hour offset correction. Discard ANY candle
+                # that has not closed at the actual observation UTC; never
+                # accept a future bar just because the terminal returned it.
+                bars={tf:[b for b in rows if b.closed_at_utc<=now]
+                      for tf,rows in raw_bars.items()}
+                if any(len(bars[tf])<55 for tf in TF):
+                    raise ValueError("insufficient_past_only_closed_bars")
                 recent=all(0<=(now-bars[k][-1].closed_at_utc).total_seconds()<=mins*120
                            for k,(_,mins) in TF.items())
                 quote_ok=bool(quote_fresh and recent and info.trade_mode in (1,2,4))
