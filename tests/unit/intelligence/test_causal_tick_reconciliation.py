@@ -68,6 +68,13 @@ class CausalTickReconciliationTests(unittest.TestCase):
         self.assertEqual(result["status"],"TICK_PATH_GAP")
         self.assertNotIn("net_assumed_cost_r",result)
 
+    def test_numpy_mt5_structured_array_is_supported(self):
+        import numpy as np
+        data=np.array(quotes(),dtype=[("time_msc","i8"),("bid","f8"),("ask","f8")])
+        value=self.run_quote(ticks=data)
+        self.assertEqual(value["status"],"CLOSED_QUOTE_SIMULATION_ONLY")
+        self.assertTrue(value["entry_m5_tick_bid_match"])
+
     def test_empty_quote_and_nonmonotonic_fail(self):
         self.assertEqual(self.run_quote(ticks=[])["status"],"NO_TICK_HISTORY")
         v=quotes()

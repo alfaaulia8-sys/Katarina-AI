@@ -57,7 +57,7 @@ def tick_reconcile(signal, tick_rows, bid_candle, *,raw_offset_hours,
         return _bad("BROKER_CLOCK_NOT_INTEGER_HOURS")
     if len(tick_rows)>MAX_TICKS:
         return _bad("TICK_PATH_TOO_LARGE",tick_count=len(tick_rows))
-    if not tick_rows:
+    if len(tick_rows)==0:
         return _bad("NO_TICK_HISTORY")
     raw_start=float(signal["signal_at"])+raw_offset_hours*3600
     raw_end=raw_start+HOLD_SECONDS+EXIT_GRACE
