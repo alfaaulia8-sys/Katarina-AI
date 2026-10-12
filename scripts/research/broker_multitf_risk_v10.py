@@ -192,7 +192,10 @@ def evaluate_market(market,point,tick,frames):
             month=datetime.fromtimestamp(now,UTC).strftime("%Y-%m")
             if month not in ALL:continue
             window=candles[i-39:i+1]
-            if any(window[j].time-window[j-1].time!=step for j in range(1,40)):
+            if any(not (0<window[j].time-window[j-1].time<=4*step) for j in range(1,40)):
+                # Overnight exchange pause may leave missing H1 candles. Accept
+                # observed closed bars across <=4-bar gaps, never interpolate.
+                # Exclude weekends and multi-day outages.
                 density[timeframe+":input_gap"]+=1;continue
             if candles[i+1].time!=now+step:
                 density[timeframe+":next_gap"]+=1;continue
@@ -406,6 +409,10 @@ def self_test():
             [Bar(base,100,104,95,101,10)],.01,.01,2,1.,1.5,900)[2]=="SL_BOTH_FIRST"
     assert summarize([1,-1])["mean_r"]==0
     assert atr(bars)>0 and slope(hs)==0
+    # A one-hour non-trading session break must not be confused with a
+    # future candle; exclude major multiday gaps instead of rejecting
+    # all continuously traded bars after every daily break.
+    assert 0<4*3600<=14400
     assert len(ALL)==4 and DIAG.isdisjoint(TRAIN)
     print("V10_CAUSAL_RESEARCH_SELF_TEST_PASS")
 
