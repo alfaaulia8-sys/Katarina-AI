@@ -36,15 +36,18 @@ def requested_history_depth(now_utc,window_end_utc,max_cuts):
     if now_utc.tzinfo is None or window_end_utc.tzinfo is None:
         raise ValueError("timezone_aware_utc_broker_history_required")
     delta=(now_utc-window_end_utc).total_seconds()
-    if delta<0 or delta>31*86400:
-        raise ValueError("historical_window_must_be_past_within_31_days")
+    if delta<0 or delta>80*86400:
+        raise ValueError("historical_window_must_be_past_within_80_days")
     if not 120<=max_cuts<=2300:
         raise ValueError("historical_window_unbounded_cuts")
-    return {
+    depths={
         "M5":(max(1500,max_cuts+250+ceil(delta/300)+80),300),
         "M15":(max(900,(max_cuts+250)//3+150+ceil(delta/900)+40),900),
         "H1":(max(280,(max_cuts+250)//12+80+ceil(delta/3600)+25),3600),
     }
+    if depths["M5"][0]>25000 or depths["M15"][0]>9000 or depths["H1"][0]>3000:
+        raise ValueError("historical_window_exceeds_bounded_MT5_bar_memory")
+    return depths
 
 
 def load_from_live_terminal(symbols,*,max_cuts,include_spreads=False,

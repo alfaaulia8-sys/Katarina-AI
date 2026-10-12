@@ -22,7 +22,7 @@ class TestHistoricalWindowDepth(unittest.TestCase):
         self.assertGreater(a["M5"][0],current["M5"][0])
 
     def test_future_naive_ancient_and_unbounded_rejected(self):
-        values=(NOW+timedelta(minutes=1),NOW-timedelta(days=32),
+        values=(NOW+timedelta(minutes=1),NOW-timedelta(days=81),
                 NOW.replace(tzinfo=None))
         for end in values:
             with self.assertRaises(ValueError):
