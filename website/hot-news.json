@@ -1,16 +1,80 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-12T07:08:09Z",
+  "updatedAt": "2026-10-12T13:17:19Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "Oil falls after Trump declares 'energy ceasefire' between Russia and Ukraine",
+      "title": "Jim Cramer's top 10 things to watch in the stock market Monday",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/investingclub/2026/10/12/jim-cramers-top-10-things-to-watch-in-the-stock-market-monday.html",
+      "publishedAt": "2026-10-12T13:06:04Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Saudi Arabia says drones and missiles still targeting kingdom as Iran-backed Houthis step up attacks",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/us-iran-war-trump-hormuz-saudi.html",
+      "publishedAt": "2026-10-12T13:01:49Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Brent tops $106 after deadly Saudi airport attack, Ukraine says Russia violated energy ceasefire",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/12/oil-prics-today-iran-us-saudi-arabia-crude-.html",
-      "publishedAt": "2026-10-12T05:57:29Z",
+      "publishedAt": "2026-10-12T12:54:58Z",
       "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Nobel prize in economics awarded to Robert E. Hall and Michael Woodford",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/nobel-economics-prize-winner-woodford-hall.html",
+      "publishedAt": "2026-10-12T12:38:25Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Zelenskyy accuses Russia of violating Trump’s energy ceasefire as drone attacks continue",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/russia-ukraine-energy-ceasefire-trump.html",
+      "publishedAt": "2026-10-12T12:36:21Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "FAA warns U.S. airlines of safety risks over Saudi Arabia after attacks",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/12/faa-saudi-arabia-flight-risks.html",
+      "publishedAt": "2026-10-12T12:31:05Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Plenty is working against this market. Here's why I'm staying invested anyway",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/investingclub/2026/10/11/plenty-is-working-against-this-market-why-im-staying-invested-anyway.html",
+      "publishedAt": "2026-10-12T12:18:10Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "India’s retail inflation jumps to 5.54% in September, above estimates",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/india-inflation-oil-energy-iran-war.html",
+      "publishedAt": "2026-10-12T10:49:24Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "World Bank jobs council urges 'crisis-era' employment support measures as IMF warns of AI ‘tsunami’",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/imf-world-bank-ai-jobs-inflation-.html",
+      "publishedAt": "2026-10-12T08:58:54Z",
+      "category": "Pasar Global",
       "language": "en"
     },
     {
@@ -19,14 +83,6 @@
       "url": "https://www.cnbc.com/2026/10/12/china-gold-buying-interest-rate-.html",
       "publishedAt": "2026-10-12T00:51:10Z",
       "category": "Emas / Logam",
-      "language": "en"
-    },
-    {
-      "title": "Plenty is working against this market. Here's why I'm staying invested anyway",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/investingclub/2026/10/11/plenty-is-working-against-this-market-why-im-staying-invested-anyway.html",
-      "publishedAt": "2026-10-12T00:23:07Z",
-      "category": "Pasar Global",
       "language": "en"
     },
     {
@@ -43,62 +99,6 @@
       "url": "https://www.cnbc.com/2026/10/11/trump-energy-ceasefire-russia-ukraine-zelenskyy.html",
       "publishedAt": "2026-10-11T19:33:51Z",
       "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "After France, is Italy next? Goldman Sachs flags bond risks as Rome's deficit widens",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/11/italy-government-bonds-sovereign-debt-giorgia-meloni.html",
-      "publishedAt": "2026-10-11T05:00:01Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "JPMorgan makes bullish call in fixed income space, suggests it's a once in a generation opportunity",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/10/jpmorgan-sees-once-in-a-generation-opportunity-in-fixed-income-space.html",
-      "publishedAt": "2026-10-10T15:00:01Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Putin relayed Iran war proposal to Trump, Kremlin says",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/10/putin-trump-iran-war-russia-diesel.html",
-      "publishedAt": "2026-10-10T13:42:36Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Trump strikes deal with Putin to supply Russian diesel to U.S. and global markets",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/09/trump-putin-russian-diesel-us-global-markets.html",
-      "publishedAt": "2026-10-09T20:20:57Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Trump created a committee to dig into the Fed's Lisa Cook. What is it and what comes next?",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/09/trump-lisa-cook-fed-firing-committee-explained.html",
-      "publishedAt": "2026-10-09T19:19:00Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Living with Mom and trading on margin. The regular investor gets in on Wall Street's record stock borrowing binge",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/09/margin-debt-stock-market-risk.html",
-      "publishedAt": "2026-10-09T13:03:19Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Blockchain.com seeks U.S. approval for prediction markets, crypto derivatives trading",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/09/blockchain-com-cftc-prediction-markets.html",
-      "publishedAt": "2026-10-09T12:01:26Z",
-      "category": "Kripto",
       "language": "en"
     }
   ]
