@@ -146,7 +146,7 @@ class ProspectiveShadowBook:
                     reason="SIMULATED_TARGET_QUOTE"
                     # capped favourable take profit; cannot claim a better fill.
                     filled=min(price,target) if side=="BUY" else max(price,target)
-                elif quote_at>=observed+MAX_HORIZON_SEC:
+                elif quote_at>=tick_at+MAX_HORIZON_SEC:
                     reason="SIMULATED_TIMED_EXIT_QUOTE"
                     filled=price
                 else:

@@ -7,6 +7,7 @@ from datetime import datetime,timezone,timedelta
 
 from katarina.intelligence.causal_broker_quotes import (
     last_past_quote,due_window_quote,MAX_TICKS_PER_QUERY,
+    market_event_clock,closed_bars_as_of_market_tick,
 )
 
 NOW=datetime(2026,10,12,16,30,12,tzinfo=timezone.utc)
@@ -62,6 +63,34 @@ class CausalBrokerQuotesTests(unittest.TestCase):
         self.assertIsNone(last_past_quote(
             FakeMT5([row(NOW.timestamp())]*(MAX_TICKS_PER_QUERY+1)),
             "XAUUSD.vx",NOW))
+
+    def test_mt5_tick_is_decision_clock_even_when_vps_ahead(self):
+        from types import SimpleNamespace
+        t=NOW.timestamp()
+        broker=market_event_clock(t-12,NOW)
+        self.assertAlmostEqual(broker.market_utc.timestamp(),t-12)
+        self.assertEqual(broker.quote_age_seconds,12)
+        bars=[SimpleNamespace(closed_at_utc=NOW-timedelta(minutes=15)),
+              SimpleNamespace(closed_at_utc=NOW-timedelta(seconds=13)),
+              SimpleNamespace(closed_at_utc=NOW-timedelta(seconds=3))]
+        safe=closed_bars_as_of_market_tick(bars,broker.market_utc,minimum=2)
+        self.assertEqual(len(safe),2)
+        self.assertLessEqual(safe[-1].closed_at_utc,broker.market_utc)
+
+    def test_market_event_clock_fails_closed_for_future_stale_or_naive(self):
+        t=NOW.timestamp()
+        for ts in (t+0.001,t-91,float("nan")):
+            with self.assertRaises(ValueError):
+                market_event_clock(ts,NOW)
+        with self.assertRaises(ValueError):
+            market_event_clock(t,NOW.replace(tzinfo=None))
+
+    def test_future_bar_not_counted_even_if_vps_time_has_advanced(self):
+        from types import SimpleNamespace
+        bar=SimpleNamespace(closed_at_utc=NOW-timedelta(seconds=5))
+        broker=market_event_clock(NOW.timestamp()-10,NOW)
+        with self.assertRaisesRegex(ValueError,"insufficient_completed_bars"):
+            closed_bars_as_of_market_tick([bar],broker.market_utc,minimum=1)
 
     def test_bad_bid_ask_does_not_become_evidence(self):
         t=NOW.timestamp()

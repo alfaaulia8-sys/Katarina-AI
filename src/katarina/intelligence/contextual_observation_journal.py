@@ -47,9 +47,12 @@ class ContextDecisionJournal:
             raise ValueError("stale_or_future_signal_bar")
         if side in ("BUY","SELL"):
             if (not all(isinstance(v,(int,float)) and isfinite(v) for v in (bid,ask,tick_epoch))
-                    or bid<=0 or ask<bid or abs(now-tick_epoch)>180):
+                    or bid<=0 or ask<bid or not close<=tick_epoch<=now
+                    or now-tick_epoch>180):
                 raise ValueError("invalid_bid_ask_or_tick_clock")
-            status="PENDING"; due=now+HORIZON
+            # Measurement begins at MT5 quote's own tick timestamp,
+            # never at the Windows scheduled-task wall time.
+            status="PENDING"; due=tick_epoch+HORIZON
         else:
             status="NO_SIGNAL";due=None;bid=ask=tick_epoch=None
         with self.db:

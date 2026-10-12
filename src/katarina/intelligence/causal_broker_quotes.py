@@ -16,6 +16,63 @@ from math import isfinite
 MAX_TICKS_PER_QUERY=25000
 
 
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class BrokerEventClock:
+    """Two separate clocks; MT5 tick is the ONLY market decision time."""
+    market_utc:datetime
+    observed_vps_utc:datetime
+    quote_age_seconds:float
+    source:str="MT5_HISTORICAL_TICK_TIME_MSC_UTC"
+
+
+def market_event_clock(tick_epoch,observed_vps_utc,*,max_age_seconds=90):
+    """Use the actual last historical broker tick as event clock.
+
+    VPS UTC is only a causal upper bound, not the candle/signal timestamp.
+    No conversion to or from the broker's display timezone is allowed.
+    """
+    observed=aware_utc(observed_vps_utc)
+    if (not isinstance(tick_epoch,(int,float)) or
+        not isfinite(tick_epoch) or tick_epoch<=0 or
+        not 0<max_age_seconds<=180):
+        raise ValueError("invalid_market_clock_inputs")
+    age=observed.timestamp()-float(tick_epoch)
+    if age<0:
+        raise ValueError("broker_tick_from_future")
+    if age>max_age_seconds:
+        raise ValueError("stale_market_tick")
+    return BrokerEventClock(
+        market_utc=datetime.fromtimestamp(float(tick_epoch),timezone.utc),
+        observed_vps_utc=observed,
+        quote_age_seconds=age,
+    )
+
+
+def closed_bars_as_of_market_tick(rows,market_utc,*,minimum=55):
+    """Exclude all candles newer than MT5 event time, never VPS time.
+
+    A candle ending AFTER the current broker tick must not enter analysis
+    even if the VPS clock has already advanced to the next minute.
+    """
+    cutoff=aware_utc(market_utc)
+    out=[]
+    previous=None
+    for bar in rows:
+        end=aware_utc(bar.closed_at_utc)
+        if previous is not None and end<=previous:
+            raise ValueError("broker_bars_not_monotonic")
+        previous=end
+        if end<=cutoff:
+            out.append(bar)
+    if len(out)<minimum:
+        raise ValueError("insufficient_completed_bars_as_of_mt5_tick")
+    return out
+
+
+
 def aware_utc(timestamp):
     if not isinstance(timestamp,datetime) or timestamp.tzinfo is None:
         raise ValueError("quote_clock_must_have_timezone")

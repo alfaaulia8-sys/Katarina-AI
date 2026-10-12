@@ -183,6 +183,24 @@ class TestContextualJournal(unittest.TestCase):
         self.assertEqual(self.ledger.reconcile_missing(lambda s,d,w:
             (4200.,4200.4,d+130.),n),0)
 
+    def test_due_time_uses_mt5_entry_tick_not_vps_wall(self):
+        args={**self.args,"tick_epoch":NOW.timestamp()-12}
+        self.assertTrue(self.ledger.record(**args))
+        due=self.db.execute(
+            "SELECT due_epoch FROM contextual_decisions").fetchone()[0]
+        self.assertAlmostEqual(due,NOW.timestamp()-12+900)
+        resolution_at=NOW+timedelta(minutes=15)
+        self.assertEqual(self.ledger.resolve({},resolution_at,
+            quote_lookup=lambda symbol,due,now:
+                (4200.,4200.4,due+1)),1)
+        self.assertEqual(self.ledger.summary()["counts"],
+                         {"BROKER_TICK_RECONCILED":1})
+
+    def test_future_mt5_entry_tick_cannot_be_logged(self):
+        with self.assertRaises(ValueError):
+            self.ledger.record(**{**self.args,
+                "tick_epoch":NOW.timestamp()+1})
+
     def test_observed_ask_bid_markout_is_not_trade_pnl(self):
         self.ledger.record(**self.args)
         due=NOW+timedelta(minutes=15)

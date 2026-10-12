@@ -35,7 +35,8 @@ from katarina.intelligence.verified_policy_context import (
 )
 from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
 from katarina.intelligence.causal_broker_quotes import (
-    last_past_quote,due_window_quote,
+    last_past_quote,due_window_quote,market_event_clock,
+    closed_bars_as_of_market_tick,
 )
 from katarina.intelligence.market_article_context import collect_market_articles
 from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
@@ -268,6 +269,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 "production_execution":False,
                 "live_execution_authorized":False,"orders_submitted":0,"symbols":{}}
         latest_quotes={}
+        market_clock_epochs=[]
         paper_hypotheses=[]
         for symbol in symbols:
             tick=ticks.get(symbol)
@@ -285,22 +287,25 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 if past is None:
                     raise ValueError("no_past_broker_bidask_quote")
                 quote_bid,quote_ask,quote_at=past
-                quote_age=now.timestamp()-quote_at
-                quote_fresh=(0<=quote_age<=90)
+                broker_clock=market_event_clock(quote_at,now)
+                market_at=broker_clock.market_utc
+                quote_age=broker_clock.quote_age_seconds
+                quote_fresh=True
                 raw_bars=bars_for(symbol,correction)
-                # Broker timestamps currently lead system UTC by ~13s even
-                # after integer-hour offset correction. Discard ANY candle
-                # that has not closed at the actual observation UTC; never
-                # accept a future bar just because the terminal returned it.
-                bars={tf:[b for b in rows if b.closed_at_utc<=now]
+                # MT5 historical time_msc is the canonical market clock:
+                # never let VPS wall time admit a bar not closed by tick time.
+                bars={tf:closed_bars_as_of_market_tick(rows,market_at)
                       for tf,rows in raw_bars.items()}
                 if any(len(bars[tf])<55 for tf in TF):
                     raise ValueError("insufficient_past_only_closed_bars")
-                recent=all(0<=(now-bars[k][-1].closed_at_utc).total_seconds()<=mins*120
+                recent=all(0<=(market_at-bars[k][-1].closed_at_utc).total_seconds()<=mins*120
                            for k,(_,mins) in TF.items())
                 quote_ok=bool(quote_fresh and recent and info.trade_mode in (1,2,4))
                 observed_spread=float(quote_ask-quote_bid)
-                news,macro,sources,calendar=prepare_news(articles,symbol,now,store)
+                # Policy/calendar may only use what was available as of
+                # the MT5 tick; otherwise a future article could leak in.
+                news,macro,sources,calendar=prepare_news(
+                    articles,symbol,market_at,store)
                 # Real account position book/capital-risk telemetry NOT
                 # retrieved. Mark system_healthy FALSE so even a future
                 # statistically good paper history cannot start execution.
@@ -310,12 +315,15 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                     realized_daily_loss_r=0,open_positions=0,
                     gross_exposure_fraction=0)
                 decision=brain.evaluate_contextually(
-                    symbol=symbol,candles=bars,as_of_utc=now,
+                    symbol=symbol,candles=bars,as_of_utc=market_at,
                     actual_spread=observed_spread,news_context=news,
                     macro_evidence=macro,resolved_experience=[],
                     risk_situation=risk)
                 card=decision.to_dict()
                 card["broker_quote_age_seconds"]=round(quote_age,2)
+                card["market_timestamp_utc"]=market_at.isoformat()
+                card["timestamp_authority"]=broker_clock.source
+                card["observed_vps_timestamp_utc"]=now.isoformat()
                 card["broker_spread_price"]=round(observed_spread,8)
                 card["closed_bar_times_utc"]={
                     tf:bars[tf][-1].closed_at_utc.isoformat() for tf in TF}
@@ -353,6 +361,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                     card["research_shadow_hypothesis"]="QUEUED_FOR_DETERMINISTIC_RANKING"
                 report["symbols"][symbol]=card
                 latest_quotes[symbol]=past
+                market_clock_epochs.append(quote_at)
                 if quote_ok:
                     try:
                         journal.record(
@@ -375,6 +384,11 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         # Ex-post status is explicitly distinct from genuine forward fills.
         def due_lookup(symbol,due,as_of):
             return due_window_quote(mt5,symbol,due,as_of)
+        report["market_timestamp_authority"]="MT5_HISTORICAL_TICK_TIME_MSC_UTC"
+        report["market_snapshot_tick_utc"]=(
+            datetime.fromtimestamp(max(market_clock_epochs),timezone.utc).isoformat()
+            if market_clock_epochs else None)
+        report["vps_timestamp_usage"]="SAFETY_FRESHNESS_AND_SCHEDULING_ONLY"
         report["quote_markouts_resolved_this_cycle"]=journal.resolve(
             latest_quotes,now,quote_lookup=due_lookup)
         report["quote_markouts_use_past_only_broker_tick_history"]=True
