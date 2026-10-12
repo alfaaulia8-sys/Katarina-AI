@@ -19,6 +19,9 @@ from katarina.intelligence.closed_swing_structure import ClosedBar
 from katarina.intelligence.structural_entry_quality import (
     EntryEvidence, StructuralEntryQuality,
 )
+from katarina.intelligence.structure_exit_plan import (
+    StructuralExitPlan, StructuralExitPlanner,
+)
 from katarina.intelligence.explainable_market_decision import (
     AdaptiveMarketDecisionAdvisor, MarketDecision,
 )
@@ -56,6 +59,7 @@ class DecisionObservation:
     setup_ready: bool = False
     decision_detail: MarketDecision | None = None
     entry_quality: EntryEvidence | None = None
+    experimental_exit_plan: StructuralExitPlan | None = None
 
 
 def _frame(candles: Sequence[SensorCandle]):
@@ -130,6 +134,7 @@ class MarketDecisionPipeline:
         self.brain = KatarinaAdaptiveBrainV2()
         self.advisor = AdaptiveMarketDecisionAdvisor()
         self.entry_advisor = StructuralEntryQuality()
+        self.exit_planner = StructuralExitPlanner()
 
     @staticmethod
     def _wait(symbol: str, reason: str) -> DecisionObservation:
@@ -144,6 +149,7 @@ class MarketDecisionPipeline:
         active_capital_native: float | None = None,
         account_currency: str = "USD",
         use_structural_entry_gate: bool = False,
+        instrument_point: float | None = None,
     ) -> DecisionObservation:
         if not symbol or as_of_utc.tzinfo is None:
             return self._wait(symbol, "missing_symbol_or_aware_time")
@@ -205,12 +211,28 @@ class MarketDecisionPipeline:
             # reveal poor geometry or mismatched playbook confirmation.
             action = decision_detail.signal
             entry_quality = None
+            experimental_exit_plan = None
             if plan.side.value in ("BUY", "SELL") and plan.ready_for_research:
                 entry_quality = self.entry_advisor.assess(
                     side=plan.side.value, playbook=plan.strategy.value,
                     m5=candles["M5"], m15=candles["M15"], h1=candles["H1"],
                     spread=actual_spread, as_of_utc=as_of_utc,
                 )
+                # Experimental SL/TP only: multi-pair retrospectives have NOT
+                # established profitability; do not change the authoritative
+                # research direction or live permission with this plan.
+                if entry_quality.eligible and instrument_point is not None:
+                    signal_close = candles["M5"][-1].close
+                    shadow_entry = signal_close + (
+                        actual_spread if plan.side.value == "BUY" else 0.0
+                    )
+                    experimental_exit_plan = self.exit_planner.plan(
+                        side=plan.side.value, m5=candles["M5"],
+                        m15=candles["M15"], h1=candles["H1"],
+                        expected_entry=shadow_entry,
+                        spread=actual_spread, point=instrument_point,
+                        as_of_utc=as_of_utc,
+                    )
                 if use_structural_entry_gate and not entry_quality.eligible:
                     action = "WAIT"
                     decision_detail = replace(
@@ -230,6 +252,7 @@ class MarketDecisionPipeline:
                 potential_action=plan.side.value if plan.ready_for_research else "WAIT",
                 setup_ready=bool(plan.ready_for_research),
                 decision_detail=decision_detail,
-                entry_quality=entry_quality)
+                entry_quality=entry_quality,
+                experimental_exit_plan=experimental_exit_plan)
         except (ValueError, KeyError, TypeError, ArithmeticError, OverflowError) as e:
             return self._wait(symbol, "sensor_or_risk_rejected:" + type(e).__name__)
