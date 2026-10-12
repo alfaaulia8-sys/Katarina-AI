@@ -250,3 +250,13 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Report: `docs/operations/AUTONOMY_READINESS_20261012.md`.
 - Still NOT full autonomous live trader; missing independent forward
   evidence, verified costs and explicit governed live authorization.
+
+### 12 October 2026 — native Market Brain replay and VPS cleanup
+- Reused existing MarketDecisionBrain V3 and adaptive_walkforward with point-in-time M5/M15/H1 broker replay. No duplicate brain, cron, execution gateway or live order.
+- Five broker markets Oct 5–12 historical: 2,926 reviewed signal instants, 194 hypothetical price-path candidates; 109/40/39 train/validation/test, 6 purged/embargoed; adaptive selected 1 (-0.371R modeled), WAIT 193.
+- Actual historical BID/ASK, fees, fills, historical DST and contemporaneous news not verified; all research only, not independent OOS or real PnL.
+- Cost stress of 0.05/0.15/0.30R on all candidates, grouped per method / symbol / regime. See private VPS JSON native-market-brain-replay-private.json.
+- CI Body PASS run 38265389941. Report: docs/research/NATIVE_MARKET_BRAIN_REPLAY_20261012.md.
+- Closed orphan dedicated headless Chrome QA only, removed 69.17MB temp profile + 33 Python cache dirs 2.2MB; free RAM ~441MB -> ~505MB sampled. Interactive browsers, MT5, DC, services untouched.
+- Single existing observer temporarily paused only for replay and re-enabled afterward; other observer jobs disabled.
+- Profitability not established; no live activation.
