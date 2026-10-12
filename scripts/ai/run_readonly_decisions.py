@@ -86,6 +86,7 @@ def main():
                     data_fresh=fresh, news_blackout=False,
                     news_context_verified=False,
                     use_structural_entry_gate=True,
+                    use_semantic_setup_gate=True,
                     instrument_point=float(info.point))
                 report["symbols"][symbol] = {
                     "closed_M5_utc": bars["M5"][-1].closed_at_utc.isoformat(),
@@ -100,6 +101,7 @@ def main():
                         asdict(read.entry_quality)
                         if read.entry_quality is not None else None
                     ),
+                    "semantic_setup": asdict(read.semantic_setup) if read.semantic_setup else None,
                     "experimental_exit_plan": (
                         asdict(read.experimental_exit_plan)
                         if read.experimental_exit_plan is not None else None

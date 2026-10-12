@@ -68,6 +68,16 @@ class TestMarketDecisionPipeline(unittest.TestCase):
         self.assertIn("structural_entry_quality_rejected",
                       filtered.decision_detail.blockers)
 
+    def test_semantic_playbook_gate_rejects_fake_pullback(self):
+        result = self.evaluate(use_semantic_setup_gate=True)
+        self.assertEqual(result.playbook, "TREND_PULLBACK")
+        self.assertEqual(result.action, "WAIT")
+        self.assertIsNotNone(result.semantic_setup)
+        self.assertFalse(result.semantic_setup.pattern_confirmed)
+        self.assertIn("playbook_semantics_not_confirmed",
+                      result.decision_detail.blockers)
+        self.assertFalse(result.live_execution_authorized)
+
     def test_downtrend_routes_sell(self):
         result = self.evaluate(market("down"))
         self.assertEqual(result.action, "SELL", result)

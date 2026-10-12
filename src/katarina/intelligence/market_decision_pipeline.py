@@ -22,6 +22,9 @@ from katarina.intelligence.structural_entry_quality import (
 from katarina.intelligence.structure_exit_plan import (
     StructuralExitPlan, StructuralExitPlanner,
 )
+from katarina.intelligence.semantic_setup_truth import (
+    SemanticSetup, CausalSetupValidator,
+)
 from katarina.intelligence.explainable_market_decision import (
     AdaptiveMarketDecisionAdvisor, MarketDecision,
 )
@@ -60,6 +63,7 @@ class DecisionObservation:
     decision_detail: MarketDecision | None = None
     entry_quality: EntryEvidence | None = None
     experimental_exit_plan: StructuralExitPlan | None = None
+    semantic_setup: SemanticSetup | None = None
 
 
 def _frame(candles: Sequence[SensorCandle]):
@@ -135,6 +139,7 @@ class MarketDecisionPipeline:
         self.advisor = AdaptiveMarketDecisionAdvisor()
         self.entry_advisor = StructuralEntryQuality()
         self.exit_planner = StructuralExitPlanner()
+        self.semantic_validator = CausalSetupValidator()
 
     @staticmethod
     def _wait(symbol: str, reason: str) -> DecisionObservation:
@@ -149,6 +154,7 @@ class MarketDecisionPipeline:
         active_capital_native: float | None = None,
         account_currency: str = "USD",
         use_structural_entry_gate: bool = False,
+        use_semantic_setup_gate: bool = False,
         instrument_point: float | None = None,
     ) -> DecisionObservation:
         if not symbol or as_of_utc.tzinfo is None:
@@ -212,7 +218,13 @@ class MarketDecisionPipeline:
             action = decision_detail.signal
             entry_quality = None
             experimental_exit_plan = None
+            semantic_setup = None
             if plan.side.value in ("BUY", "SELL") and plan.ready_for_research:
+                semantic_setup = self.semantic_validator.assess(
+                    side=plan.side.value, playbook=plan.strategy.value,
+                    m5=candles["M5"], m15=candles["M15"], h1=candles["H1"],
+                    spread=actual_spread, as_of_utc=as_of_utc,
+                )
                 entry_quality = self.entry_advisor.assess(
                     side=plan.side.value, playbook=plan.strategy.value,
                     m5=candles["M5"], m15=candles["M15"], h1=candles["H1"],
@@ -232,6 +244,18 @@ class MarketDecisionPipeline:
                         expected_entry=shadow_entry,
                         spread=actual_spread, point=instrument_point,
                         as_of_utc=as_of_utc,
+                    )
+                if use_semantic_setup_gate and not semantic_setup.pattern_confirmed:
+                    action = "WAIT"
+                    decision_detail = replace(
+                        decision_detail, signal="WAIT", decision="WAIT",
+                        entry_ready_for_research=False,
+                        blockers=tuple(dict.fromkeys(
+                            decision_detail.blockers +
+                            ("playbook_semantics_not_confirmed",) +
+                            semantic_setup.blockers)),
+                        next_check=tuple(dict.fromkeys(
+                            decision_detail.next_check + (semantic_setup.next_trigger,))),
                     )
                 if use_structural_entry_gate and not entry_quality.eligible:
                     action = "WAIT"
@@ -253,6 +277,7 @@ class MarketDecisionPipeline:
                 setup_ready=bool(plan.ready_for_research),
                 decision_detail=decision_detail,
                 entry_quality=entry_quality,
-                experimental_exit_plan=experimental_exit_plan)
+                experimental_exit_plan=experimental_exit_plan,
+                semantic_setup=semantic_setup)
         except (ValueError, KeyError, TypeError, ArithmeticError, OverflowError) as e:
             return self._wait(symbol, "sensor_or_risk_rejected:" + type(e).__name__)
