@@ -98,6 +98,13 @@ class CausalTickReconciliationTests(unittest.TestCase):
         self.assertEqual(report["reason_counts"]["NO_TICK_HISTORY"],1)
         self.assertEqual(report["cohorts"][0]["valid_quote_fraction"],.5)
         self.assertFalse(report["live_execution_authorized"])
+        self.assertEqual(report["method_scorecard"][0]["sampled"],2)
+        self.assertEqual(report["method_scorecard"][0]["verified_bidask_quote_paths"],1)
+        self.assertEqual(report["method_scorecard"][0]["not_replayable"],1)
+        self.assertEqual(report["monthly_scorecard"][0]["sampled"],2)
+        self.assertEqual(report["monthly_symbol_method_scorecard"][0]["sampled"],2)
+        self.assertTrue(report["this_is_ex_post_diagnosis_not_auto_strategy_training"])
+        self.assertFalse(report["method_scorecard"][0]["authorizes_live_or_paper_promotion"])
 
 
 if __name__=="__main__":

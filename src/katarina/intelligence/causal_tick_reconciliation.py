@@ -179,6 +179,51 @@ def summarize_tick_reconciliation(rows):
             "valid_quote_fraction":round(len(valid)/len(xs),4),
             "validated_live_edge":False,
         })
+    # Ex-post diagnosis only; never feed these retrospective labels back
+    # into the prospective observer as "independent forward" experience.
+    from datetime import datetime,timezone
+    methods=defaultdict(list);months=defaultdict(list);monthly_by_method=defaultdict(list)
+    for row in rows:
+        s=row["signal"];o=row["outcome"]
+        methods[(s["method"],s["side"])].append(o)
+        month=datetime.fromtimestamp(s["signal_at"],timezone.utc).strftime("%Y-%m")
+        months[month].append(o)
+        monthly_by_method[(month,s["symbol"],s["method"],s["side"])].append(o)
+
+    def describe(cases):
+        values=[x["net_assumed_cost_r"] for x in cases
+                if x["status"]=="CLOSED_QUOTE_SIMULATION_ONLY"]
+        profits=sum(max(0.,v) for v in values)
+        losses=-sum(min(0.,v) for v in values)
+        closed=[x for x in cases if x["status"]=="CLOSED_QUOTE_SIMULATION_ONLY"]
+        return {
+            "sampled":len(cases),"verified_bidask_quote_paths":len(values),
+            "not_replayable":len(cases)-len(values),
+            "failure_breakdown":dict(Counter(x["status"] for x in cases)),
+            "exit_breakdown":dict(Counter(x["exit_reason"] for x in closed)),
+            "mean_assumed_net_r":round(mean(values),6) if values else None,
+            "profit_factor_assumed":round(profits/losses,5) if losses else None,
+            "negative_results":sum(v<0 for v in values),
+            "positive_results":sum(v>0 for v in values),
+            "quote_coverage":round(len(values)/len(cases),4) if cases else 0.,
+            # Diagnostic caution, NOT an adaptive production rule.
+            "research_caution":(len(values)>=6 and
+                                mean(values)<-.10) if values else False,
+            "authorizes_live_or_paper_promotion":False,
+        }
+    method_scorecard=[
+        {"method":method,"side":side,**describe(cases)}
+        for (method,side),cases in sorted(methods.items())
+    ]
+    monthly_scorecard=[
+        {"month":month,**describe(cases)}
+        for month,cases in sorted(months.items())
+    ]
+    monthly_symbol_method_scorecard=[
+        {"month":month,"symbol":symbol,"method":method,"side":side,
+         **describe(cases)}
+        for (month,symbol,method,side),cases in sorted(monthly_by_method.items())
+    ]
     return {
         "kind":"NONEXECUTED_BROKER_BID_ASK_TICK_PATH_RECONCILIATION",
         "n_sampled":len(rows),
@@ -186,6 +231,10 @@ def summarize_tick_reconciliation(rows):
                               for x in rows),
         "reason_counts":dict(Counter(x["outcome"]["status"] for x in rows)),
         "cohorts":cohorts,
+        "method_scorecard":method_scorecard,
+        "monthly_scorecard":monthly_scorecard,
+        "monthly_symbol_method_scorecard":monthly_symbol_method_scorecard,
+        "this_is_ex_post_diagnosis_not_auto_strategy_training":True,
         "full_broker_commission_verified":False,
         "historical_DST_multi_months_verified":False,
         "live_execution_authorized":False
