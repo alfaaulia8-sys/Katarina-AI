@@ -1,0 +1,108 @@
+"""Causal replay checks: real MarketDecisionBrain, no future bar leakage."""
+import unittest
+from datetime import datetime,timedelta,timezone
+from dataclasses import replace
+
+from katarina.intelligence.market_decision_pipeline import SensorCandle
+from katarina.intelligence.causal_market_replay import (
+    validate_bars,simulate_ohlc_proxy,replay_native_brain,purged_chronological_splits
+)
+from katarina.intelligence.adaptive_walkforward import PaperEvent
+
+UTC=timezone.utc
+END=datetime(2026,10,9,12,tzinfo=UTC)
+
+
+def series(tf,number,step):
+    """Multi-timeframe synthetic candles; never claim broker-derived results."""
+    return tuple(SensorCandle(
+        END-timedelta(seconds=(number-i-1)*step),
+        100+i*.03,100+i*.03+.4,100+i*.03-.4,
+        100+i*.03+(.04 if i%2 else -.03),200+i)
+        for i in range(number))
+
+
+class NativeMarketReplayTests(unittest.TestCase):
+    def setUp(self):
+        self.frames=dict(M5=series("M5",192,300),
+                         M15=series("M15",160,900),
+                         H1=series("H1",160,3600))
+
+    def test_uses_native_brain_and_no_live_permission(self):
+        result=replay_native_brain({"TEST.vx":self.frames},
+            max_m5_cuts_per_symbol=150)
+        self.assertEqual(result["market_brain_reused"],"MarketDecisionBrain.evaluate")
+        self.assertEqual(result["memory_engine_reused"],"adaptive_walkforward.replay_walk_forward")
+        self.assertGreater(result["counters"]["evaluated"],0)
+        self.assertEqual(result["orders_sent"],0)
+        self.assertFalse(result["historical_spread_factual"])
+        self.assertFalse(result["independent_unseen_holdout"])
+        self.assertFalse(result["live_execution_authorized"])
+
+    def test_poison_future_candle_does_not_change_prior_signal(self):
+        first=tuple(self.frames["M5"])
+        extended=first+tuple(replace(c,open=100000.,high=100002.,low=99998.,close=100001.)
+            for c in series("M5",8,300))
+        # Need strictly future times, so explicitly build future bars.
+        future=[]
+        for i in range(8):
+            future.append(SensorCandle(END+timedelta(minutes=5*(i+1)),
+                100000.,100002.,99998.,100001.))
+        original=replay_native_brain({"XAUUSD.vx":self.frames},
+                                     max_m5_cuts_per_symbol=190)
+        with_future=replay_native_brain({"XAUUSD.vx":{
+            **self.frames,"M5":first+tuple(future)}},
+            max_m5_cuts_per_symbol=198)
+        # Candidates completed before the poisoned tail must be identical.
+        before=END-timedelta(hours=2,minutes=30)
+        def history(result):
+            return [(x["signal_at"],x["method"],x["side"],x["proxy_gross_r"])
+                for x in result["signals"] if x["signal_at"]<=before.timestamp()]
+        self.assertEqual(history(original),history(with_future))
+
+    def test_noncausal_duplicate_and_bad_ohlc_fail_closed(self):
+        with self.assertRaises(ValueError):
+            validate_bars({**self.frames,"M5":self.frames["M5"]+
+                           (self.frames["M5"][-1],)})
+        with self.assertRaises(ValueError):
+            validate_bars({**self.frames,"M5":(
+                replace(self.frames["M5"][0],low=300.),)+
+                self.frames["M5"][1:]})
+
+    def test_stop_first_on_same_ohlc_and_cost_survival(self):
+        now=END
+        candle=SensorCandle(now,100.,101.,99.,100.)
+        next_bar=SensorCandle(now+timedelta(minutes=5),100.,105.,95.,100.)
+        later=SensorCandle(now+timedelta(minutes=10),100.,101.,99.,100.)
+        result=simulate_ohlc_proxy((candle,next_bar,later),0,
+                                   "BUY",98.,104.,.1)
+        self.assertEqual(result[2],"STOP_FIRST_BID_OHLC_PROXY")
+        self.assertLess(result[0],0)
+
+    def test_missing_bar_gap_is_never_painted_as_win(self):
+        n=END
+        signal=SensorCandle(n,100.,101.,99.,100.)
+        far=SensorCandle(n+timedelta(minutes=15),100.,105.,99.,103.)
+        last=SensorCandle(n+timedelta(minutes=20),103.,106.,103.,105.)
+        self.assertIsNone(simulate_ohlc_proxy((signal,far,last),0,
+                                               "BUY",99.,103.,.1))
+
+    def test_purged_train_validation_test_and_holdout(self):
+        base=int(END.timestamp())
+        rows=[PaperEvent("XAUUSD.vx","TREND_PULLBACK","BUY",
+                         base+900*i,base+900*i+7200,
+                         0.5,.8,.04,market_regime="TREND_UP") for i in range(50)]
+        split=purged_chronological_splits(rows)
+        self.assertTrue(split["train"] and split["validation"] and split["test"])
+        b1=split["validation"][0].cut
+        b2=split["test"][0].cut
+        self.assertTrue(all(v.exit_time< b1-7200 for v in split["train"]))
+        self.assertTrue(all(v.exit_time< b2-7200 for v in split["validation"]))
+        self.assertGreater(split["purged"],0)
+
+    def test_purged_split_rejects_too_short_embargo(self):
+        with self.assertRaises(ValueError):
+            purged_chronological_splits([],embargo_seconds=60)
+
+
+if __name__=="__main__": unittest.main()
