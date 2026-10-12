@@ -103,6 +103,10 @@ def simulate_ohlc_proxy(m5,signal_index,side,stop,target,spread):
         if stopped or reached:
             gross=(exit_price-entry)/risk if side=="BUY" else (entry-exit_price)/risk
             return round(gross,7),t,why
+    # A terminal/history cutoff before the full 2h holding window is
+    # CENSORED, never invent an earlier profitable or losing time exit.
+    if end<signal_index+HORIZON_M5:
+        return None
     c=m5[end]
     exit_price=c.close if side=="BUY" else c.close+spread
     gross=(exit_price-entry)/risk if side=="BUY" else (entry-exit_price)/risk
@@ -209,6 +213,7 @@ def replay_native_brain(
                 "known_from_closed_bars_only":True,
                 "observed_spread_price":round(spread,10),
                 "spread_to_m15_atr":round(ratio,8),
+                "m15_atr_price":round(atr,10),
                 "spread_source":source,
                 "directional_alignment":getattr(card,"directional_alignment",
                                                  "UNASSESSED"),
@@ -241,6 +246,7 @@ def replay_native_brain(
                 "proxy_gross_r":gross_r,"proxy_exit_reason":exit_reason,
                 "observed_spread_price":round(spread,10),
                 "spread_to_m15_atr":round(ratio,8),
+                "m15_atr_price":round(atr,10),
                 "spread_source":source,
                 "directional_alignment":getattr(card,"directional_alignment",
                                                  "UNASSESSED"),

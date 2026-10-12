@@ -23,6 +23,9 @@ from katarina.intelligence.causal_market_replay import (
 )
 from katarina.intelligence.adaptive_walkforward import PaperEvent
 from katarina.intelligence.replay_cost_diagnostics import describe_candidates
+from katarina.intelligence.closed_bar_failure_forensics import (
+    diagnose_frozen_replay,
+)
 
 # Dynamically verify the 17 broker-supported canonical names, not hardcode five.
 from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
@@ -156,6 +159,7 @@ def main():
     splits=purged_chronological_splits(events)
     summary=result["adaptive_summary"]
     cost_review=describe_candidates(result["signals"],splits)
+    forensic=diagnose_frozen_replay(result,frames)
     info={
         "generated_utc":datetime.now(timezone.utc).isoformat(),
         "historical_window_end_utc":(window_end.isoformat() if window_end
@@ -197,6 +201,7 @@ def main():
         "by_method_and_side":dict(Counter(
             x["method"]+":"+x["side"] for x in result["all_technical_proposals"])),
         "full_cost_sensitivity":cost_review,
+        "entry_failure_diagnostics":forensic,
         "no_qualified_live_strategy":True,
         "live_execution_authorized":False,
     }
@@ -211,6 +216,11 @@ def main():
         "paper_labels":result["counters"]["proxy_completed"],
         "train_val_test":info["purged_calendar_split_counts"],
         "candidate_methods":info["candidate_methods"],
+        "failure_causes":{k:forensic["totals"][k] for k in (
+            "exit_causes","loss_exit_causes",
+            "ambiguous_intrabar_stop_vs_target_count",
+            "early_stop_within_15m_count","censored_or_gap_proxy_labels",
+            "mean_net_proxy_r")},
         "adaptive_research":summary.get("adaptive",{}),
         "orders":0,"live":False},allow_nan=False))
 
