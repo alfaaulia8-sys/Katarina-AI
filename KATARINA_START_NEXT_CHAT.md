@@ -295,3 +295,13 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - 17-symbol one-pass contextual observer smoke after code changes: 0 errors, 17 WAIT, 0 orders; directional_alignment populated in same JSON context. Existing one observer restored, two legacy observers disabled.
 - Latest code SHA d621ea685512a7a4072426776a5aacd9c17a8773, GitHub Body CI PASS run 38290257969. Audit `docs/research/17_MARKET_DIRECTION_EVIDENCE_SEP_OCT_20261013.md`.
 - VPS free RAM sampled ~138MB after historic tests; keep historical tests sequential, do not kill active Chrome/MT5/DC. No live permission, no new cron.
+
+### 2026-10-13 — Historical root-cause forensic audit completed (17 pairs)
+- Source code e21e0e96d60549e7656b28f46cc93e5445564fda, GitHub Body CI PASS 38293407912. Single MT5 observer smoke 17/17 instruments, 17 WAIT, 0 real orders, canonical MT5 timestamp.
+- Fixed first M5 bar SL/TP omission and premature 2-hour time-exit censoring in causal_market_replay. These change baseline counts; old and new figures are not comparable as an improvement claim.
+- 8 bounded sequential brokers M5 retrospective Sep/Oct: 36,736 as-of closed candle decisions, 2,567 pre-outcome technical candidates, 1,964 resolved OHLC-proxy labels, 603 censored (no fabricated outcome).
+- Among 1,964: 1,098 SL (520 first 15m), 813 TIME, only 53 TP, 1,513 losing post assumed +0.15R cost, mean -0.46436R PF 0.36227 for all hypothetical candidates not portfolio. Both inspected windows negative for every of 8 playbook+BUY/SELL groups.
+- 1,083/1,964 have signal-bar-spread >=20% simulated next-open stop-risk; median 23.584%; 815 >=30%. RANGE_FADE SELL: 703 n, mean -0.620R, 527 STOP and median spread/risk 40%. EURGBP worst by aggregate proxy, XAUUSD negative even with median spread/risk 3.6%. Fullbar unsequenced median favorable 0.23R vs adverse 1.026R; do not interpret as chronologically observed fills.
+- Added DEFAULT conservative spread/risk budget 20% in MarketDecisionBrain V3 as WAIT veto ONLY, exposed in contextual card. Not tuned to optimal alpha; no live promotion.
+- Reproducible code closed_bar_failure_forensics.py + aggregate_closed_bar_forensics.py; private reports C:\KatarinaDev\artifacts\contextual-observer\katarina-verified-forensic-17-market-sep-oct.json plus batch1..4 sept/oct. Public audit docs/research/KATARINA_ENTRY_FAILURE_AUDIT_20261013.md.
+- Next: predeclare substantive alternate entry/exit hypotheses (range sweep+reclaim, shorter breakout invalidation, pullback confirmation, time-horizon alternatives) and validate ONLY on new untouched periods and actual broker tick/fees. Historical policy/news cannot be hallucinated. Risk Governor stays locked; no second brain, no new cron.
