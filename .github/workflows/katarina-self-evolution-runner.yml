@@ -1,0 +1,106 @@
+name: KATARINA Self-Evolution Lab (GitHub-hosted)
+
+# Explicitly run only the GitHub-hosted research harness; no self-hosted VPS.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/katarina-self-evolution-runner.yml'
+      - 'scripts/ai/audit_self_evolution_runner.py'
+      - 'src/katarina/intelligence/self_evolution_lab.py'
+      - 'src/katarina/governance/multi_model_evolution_review.py'
+      - 'src/katarina/intelligence/evidence_risk.py'
+      - 'tests/unit/intelligence/test_self_evolution_lab.py'
+      - 'tests/unit/governance/test_multi_model_evolution_review.py'
+  pull_request:
+    paths:
+      - '.github/workflows/katarina-self-evolution-runner.yml'
+      - 'scripts/ai/audit_self_evolution_runner.py'
+      - 'src/katarina/intelligence/self_evolution_lab.py'
+      - 'src/katarina/governance/multi_model_evolution_review.py'
+      - 'src/katarina/intelligence/evidence_risk.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: katarina-self-evolution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-research:
+    if: github.repository == 'alfaauliau-katarinaAI/Katarina-AI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: src
+      PYTHONDONTWRITEBYTECODE: '1'
+      KATARINA_RESEARCH_ONLY: '1'
+    steps:
+      - name: Checkout source (no retained token)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile self-evolution engine
+        run: |
+          python -m py_compile src/katarina/intelligence/self_evolution_lab.py
+          python -m py_compile src/katarina/governance/multi_model_evolution_review.py
+          python -m py_compile scripts/ai/audit_self_evolution_runner.py
+
+      - name: Verify independently testable learning + reviewer policies
+        run: |
+          python -m unittest discover -s tests/unit/intelligence -p 'test_self_evolution_lab.py' -v
+          python -m unittest discover -s tests/unit/governance -p 'test_multi_model_evolution_review.py' -v
+          python -m unittest discover -s tests/unit/intelligence -p 'test_evidence_risk.py' -v
+
+      - name: Execute safe four-scenario research audit
+        run: |
+          python scripts/ai/audit_self_evolution_runner.py \
+            --output build/validation/github-self-evolution.json \
+            --summary build/validation/github-self-evolution.md
+
+      - name: Confirm no live trading, external model access, or real alpha claims
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x = json.loads(Path("build/validation/github-self-evolution.json").read_text())
+          assert x["result"] == "PASS_SYNTHETIC_ONLY_NO_LIVE_PROMOTION"
+          assert x["evidence_origin"] == "FABRICATED_OFFLINE_SQLITE_FIXTURES_NOT_MARKET_DATA"
+          assert x["total_scenarios"] == 4
+          assert x["external_ai_models_connected"] is False
+          assert x["independent_forward_edge_proven"] is False
+          assert x["trading_orders_permitted"] is False
+          assert x["self_rewrite_or_merge_permitted"] is False
+          assert x["vps_access_or_change"] is False
+          assert x["risk_gate"]["research_risk_cap_fraction"] == 0
+          assert all(not x["live_execution_authorized"] for x in x["scenarios"])
+          print("PASS_ISOLATED_SELF_EVOLUTION_SAFETY_CONTRACT")
+          PY
+
+      - name: GitHub Actions summary
+        if: always()
+        run: |
+          if [ -f build/validation/github-self-evolution.md ]; then
+            cat build/validation/github-self-evolution.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Self-evolution lab audit did not complete.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload synthetic-only research evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katarina-self-evolution-${{ github.run_id }}
+          path: |
+            build/validation/github-self-evolution.json
+            build/validation/github-self-evolution.md
+          if-no-files-found: warn
+          retention-days: 7
