@@ -195,6 +195,9 @@ def collect_market_articles(db,now):
         with db:
             db.execute("""DELETE FROM contextual_market_rss WHERE id NOT IN(
                 SELECT id FROM contextual_market_rss ORDER BY id DESC LIMIT 48)""")
+    # Old cached RSS snapshots may predate the relevance filter.
+    # Never download a cached off-topic world headline either.
+    stories=[s for s in stories if market_headline_relevant(s.get("title",""))]
     for story in stories[:8]:
         row=db.execute("SELECT 1 FROM contextual_market_articles WHERE url=?",
                        (story["url"],)).fetchone()
