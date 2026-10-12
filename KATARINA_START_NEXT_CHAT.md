@@ -286,3 +286,12 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - VPS smoke 17 symbols, 0 sensor failures, 17 WAIT, zero broker orders; example XAU tick 16:46:51.800Z vs VPS wall 16:46:52.111Z, M5 closed 16:45Z.
 - Single observer enabled, prior Decision and Analog observers disabled; no production Risk Governor or order authorization changed.
 - Full operational note in docs/operations/SINGLE_CONTEXTUAL_OBSERVER_20261012.md.
+
+### 13 Oct 2026 — 17-instrument two-window native Brain research
+- Codes: `directional_consensus.py` added side-specific closed M5/M15/H1 support vs counterevidence; existing Brain V3 suppresses strongly contradictory trend/pullback technical signals as WAIT only, never permits a new broker order. ContextualDecision exports fields to existing `latest.json`.
+- Broker `copy_rates_from_pos` historical M5 signal bar spread points multiplied by symbol point, replaces default 0.04 ATR assumed spread in causal backtest (still NOT real next-open BID/ASK fill).
+- 4 sequential Oct broker batches + 4 Sep historical window batches, each 3–5 symbols bounded to protect VPS memory, all 17 distinct symbols per window.
+- **Sept 17,669 conditions, 908 modeled labels, zero adaptive selections. Oct 18,970 conditions, 1,065 labels, 3 adaptive selections total -1.284R (modeled). Combined 36,639 evaluations and 1,973 labels. All 8 method+BUY/SELL groups negative in BOTH retrospectively inspected windows after 0.15R extra cost assumption.** Do not fit a winner on these dates; no valid profitable strategy identified.
+- 17-symbol one-pass contextual observer smoke after code changes: 0 errors, 17 WAIT, 0 orders; directional_alignment populated in same JSON context. Existing one observer restored, two legacy observers disabled.
+- Latest code SHA d621ea685512a7a4072426776a5aacd9c17a8773, GitHub Body CI PASS run 38290257969. Audit `docs/research/17_MARKET_DIRECTION_EVIDENCE_SEP_OCT_20261013.md`.
+- VPS free RAM sampled ~138MB after historic tests; keep historical tests sequential, do not kill active Chrome/MT5/DC. No live permission, no new cron.
