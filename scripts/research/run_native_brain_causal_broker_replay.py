@@ -21,6 +21,7 @@ from katarina.intelligence.causal_market_replay import (
     replay_native_brain,purged_chronological_splits
 )
 from katarina.intelligence.adaptive_walkforward import PaperEvent
+from katarina.intelligence.replay_cost_diagnostics import describe_candidates
 
 ALLOWED=("XAUUSD.vx","EURUSD.vx","NAS100.vx","GBPUSD.vx","USDJPY.vx")
 
@@ -104,6 +105,7 @@ def main():
             for x in result["signals"]]
     splits=purged_chronological_splits(events)
     summary=result["adaptive_summary"]
+    cost_review=describe_candidates(result["signals"],splits)
     info={
         "generated_utc":datetime.now(timezone.utc).isoformat(),
         "purpose":"CLOSED_BAR_REAL_MT5_HISTORICAL_SIGNAL_REPLAY",
@@ -134,6 +136,7 @@ def main():
             "replay_conditions":summary.get("replay_conditions"),
         },
         "candidate_methods":dict(Counter(x["method"] for x in result["signals"])),
+        "full_cost_sensitivity":cost_review,
         "no_qualified_live_strategy":True,
         "live_execution_authorized":False,
     }
