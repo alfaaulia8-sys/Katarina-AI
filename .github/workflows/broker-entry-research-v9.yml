@@ -1,0 +1,36 @@
+name: KATARINA V9 Broker Entry Research Safety
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/research/broker_entry_diagnostics_v9.py'
+      - '.github/workflows/broker-entry-research-v9.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  brokerless-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile standalone research program
+        run: python -m py_compile scripts/research/broker_entry_diagnostics_v9.py
+      - name: Causal signal and worst-case fill smoke test
+        run: python scripts/research/broker_entry_diagnostics_v9.py --self-test
+      - name: Read-only contract check
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path("scripts/research/broker_entry_diagnostics_v9.py").read_text()
+          for forbidden in ("order_send(", "order_check(", "account_info(", "history_deals_get("):
+              assert forbidden not in src, forbidden
+          assert 'terminal.trade_allowed' in src
+          print("BROKER_RESEARCH_NO_ORDER_PATH_PASS")
+          PY
