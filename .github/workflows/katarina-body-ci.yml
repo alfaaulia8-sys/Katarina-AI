@@ -236,3 +236,52 @@ jobs:
           path: build/validation/github-external-ai-synthetic.json
           if-no-files-found: warn
           retention-days: 7
+
+  discovery-one-time-smoke:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[strategy-discovery-smoke]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Causal evolution unit regressions
+        run: |
+          python -m unittest discover -s tests/unit/intelligence -p test_autonomous_strategy_discovery.py -v
+      - name: Search invented rules on synthetic offline OHLC
+        run: |
+          python scripts/research/run_autonomous_strategy_discovery.py --synthetic \
+            --population 16 --generations 3 --seed 77 \
+            --output build/discovery/candidates.json \
+            --summary build/discovery/SUMMARY.md
+      - name: Verify research-only evidence and untouched holdout
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('build/discovery/candidates.json').read_text())
+          assert d['data_origin']=='SYNTHETIC_FABRICATED_HOURLY_FIXTURE'
+          assert d['candidate_trials']>0
+          assert d['held_out_was_used_in_selection'] is False
+          assert d['model_promotion_permitted'] is False
+          assert d['code_rewrite_permitted'] is False
+          assert d['live_execution_authorized'] is False
+          assert d['production_action']=='WAIT' and d['orders_sent']==0
+          print('PASS_EVOLUTIONARY_STRATEGY_DISCOVERY_GITHUB_RUNNER')
+          PY
+      - name: Save strategy research report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strategy-discovery-${{ github.run_id }}
+          path: build/discovery/
+          if-no-files-found: warn
+          retention-days: 7
