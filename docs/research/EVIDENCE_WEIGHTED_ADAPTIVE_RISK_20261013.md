@@ -54,3 +54,19 @@ permission remains disabled.
   real-life return or broker execution quality.
 - Need newly collected independent prospective proof **before** allowing
   any paper-to-real risk promotion.
+
+## Evidence-qualified broker sizing integration
+
+`EvidenceQualifiedResearchSizing` combines independent forward evidence,
+existing capital governance, broker spread/slippage/fees, and margin/minimum
+lot limits. It chooses the lower of the two risk limits. Account drawdown
+and committed exposure must match the evidence snapshot.
+
+The research wrapper remains read-only: every qualification has
+`live_execution_authorized=false`. Existing legacy research sizing is not
+automatically promoted to real trading. Forward broker fills and verified
+trading costs are still unavailable for the August 17-market research.
+
+VPS synthetic regression: six cross-gate tests and nine legacy sizing tests
+passed. GitHub CI must pass after integration before this code is considered
+deployed.

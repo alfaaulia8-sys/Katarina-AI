@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from decimal import Decimal, ROUND_FLOOR
 from math import isfinite
 from katarina.engines.risk import RiskAction, RiskGovernor, RiskRequest
+from katarina.intelligence.evidence_risk import (
+    EvidenceRiskGate, StrategyEvidence, VerifiedRiskState,
+)
 
 
 @dataclass(frozen=True)
@@ -63,7 +66,8 @@ class ResearchCostMarginGate:
         self.governor = governor
 
     def qualify(self, *, account: AccountFacts, broker: BrokerFacts,
-                costs: TradingCosts, side: str, entry: float, stop: float) -> Qualification:
+                costs: TradingCosts, side: str, entry: float, stop: float,
+                evidence_cap_fraction: float | None = None) -> Qualification:
         reject = lambda reason: Qualification(False, reason)
         if not (account.verified and broker.verified and costs.verified):
             return reject("unverified_account_contract_or_cost")
@@ -107,7 +111,14 @@ class ResearchCostMarginGate:
             account.native_currency))
         if risk.action not in (RiskAction.APPROVE, RiskAction.REDUCE):
             return reject("governor_" + risk.reason)
-        budget = capital*risk.approved_fraction
+        # Evidence is a ceiling, never a multiplier or order permission.
+        cap = risk.approved_fraction
+        if evidence_cap_fraction is not None:
+            if (not isfinite(evidence_cap_fraction) or
+                    not 0 < evidence_cap_fraction <= .01):
+                return reject("invalid_evidence_cap")
+            cap = min(cap, evidence_cap_fraction)
+        budget = capital*cap
         usable_margin = account.available_margin*.90
         affordable = min(broker.max_volume, budget/per_lot,
                          usable_margin/broker.margin_per_lot)
@@ -122,4 +133,42 @@ class ResearchCostMarginGate:
             buffered_loss > budget+1e-9 or margin > usable_margin+1e-9):
             return reject("cost_or_margin_exceeds_budget")
         return Qualification(True, "qualified_for_research_only", volume,
-                             risk.approved_fraction, budget, buffered_loss, margin)
+                             cap, budget, buffered_loss, margin)
+
+class EvidenceQualifiedResearchSizing:
+    """Apply verified evidence AND legacy capital/broker governor jointly.
+
+    Explicit research-only path: missing proof, broker facts or reconciled
+    risk telemetry always blocks the sizing quote.
+    """
+    def __init__(self, governor: RiskGovernor):
+        self._sizing = ResearchCostMarginGate(governor)
+        self._evidence = EvidenceRiskGate()
+
+    def qualify(self, *, evidence: StrategyEvidence | None,
+                risk_state: VerifiedRiskState | None,
+                account: AccountFacts, broker: BrokerFacts,
+                costs: TradingCosts, side: str, entry: float,
+                stop: float) -> Qualification:
+        if evidence is not None and evidence.side != side:
+            return Qualification(False, "strategy_side_evidence_mismatch")
+        gate = self._evidence.assess(evidence, risk_state)
+        if gate.research_risk_cap_fraction <= 0:
+            return Qualification(False, "evidence_" + gate.reasons[0])
+        if (risk_state is None or not account.verified
+                or not risk_state.telemetry_verified
+                or not risk_state.market_health_verified
+                or not risk_state.broker_execution_health_verified):
+            return Qualification(False, "reconciled_risk_state_missing")
+        pairs = ((account.daily_drawdown, risk_state.day_drawdown),
+                 (account.total_drawdown, risk_state.peak_drawdown),
+                 (account.committed_risk_fraction,
+                  risk_state.committed_open_risk))
+        if any(b is None or not isfinite(a) or not isfinite(b)
+               or abs(a-b) > 1e-9 for a,b in pairs):
+            return Qualification(False, "account_evidence_snapshot_mismatch")
+        return self._sizing.qualify(
+            account=account, broker=broker, costs=costs,
+            side=side, entry=entry, stop=stop,
+            evidence_cap_fraction=gate.research_risk_cap_fraction,
+        )
