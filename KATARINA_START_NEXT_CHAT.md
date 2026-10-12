@@ -277,3 +277,12 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - All 53 old missing samples recovered from actual broker quote history with distinct BROKER_TICK_RECOVERED status and private SQLite backup; never label these as forward broker trades or profits.
 - GitHub Body CI success run 38278103654, code SHA cea5b2925ada1aae4844fa6e666bea7951b15138; 35 VPS unit tests pass; XAUUSD actual historical tick in-memory journal test passed.
 - Original one observer running and legacy two observer tasks disabled. 17-sym snapshot healthy, past-only quote ages 0.01–11.85s, order count 0. Full doc docs/operations/SINGLE_CONTEXTUAL_OBSERVER_20261012.md.
+
+### 12 Okt 2026 — canonical MT5 UTC event time implemented
+- Code source SHA `b70d9a09d5a2d419f333c84115dbba01124df745`, Body CI PASS run `38279655126`, 58 local unit tests pass.
+- MT5 historical tick `time_msc` UTC is canonical per-symbol decision clock; VPS UTC only audit, scheduling and causal freshness ceiling.
+- Closed M5/M15/H1 bars filtered strictly by the verified MT5 tick time, not Windows wall clock; policy/news/Brain as_of uses event time.
+- 15-minute markout deadline and virtual 2-hour quote holding horizon anchored to original broker tick timestamp (no invented fills).
+- VPS smoke 17 symbols, 0 sensor failures, 17 WAIT, zero broker orders; example XAU tick 16:46:51.800Z vs VPS wall 16:46:52.111Z, M5 closed 16:45Z.
+- Single observer enabled, prior Decision and Analog observers disabled; no production Risk Governor or order authorization changed.
+- Full operational note in docs/operations/SINGLE_CONTEXTUAL_OBSERVER_20261012.md.

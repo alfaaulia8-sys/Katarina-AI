@@ -147,3 +147,28 @@ Fix source SHA cea5b2925ada1aae4844fa6e666bea7951b15138:
 Confirmed actual VPS repair: 53/53 historical MISSING_EXIT records recovered using real broker BID/ASK due-window ticks; distinct recovered status preserved. In-memory end-to-end regression using actual XAUUSD.vx broker ticks reconciled a 20-minute-old decision and did not write production orders/journal. Post-fix snapshot scanned 17 symbols and current UTC quote ages were all past-only (0.01–11.85 seconds).
 
 35 VPS unit tests passed and GitHub Body CI passed at https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38278103654 . Canonical scheduled task was re-enabled and returned exit 0; two prior duplicate observer tasks remain disabled. 0 live MT5 orders submitted. This is a research accounting repair, not validation of broker commissions, DST history, or profitable trading.
+
+## 12 October 2026: MT5 market-event timestamp is canonical
+
+Source commit `b70d9a09d5a2d419f333c84115dbba01124df745`.
+MarketDecisionBrain V3 now uses the broker's verified `copy_ticks_range.time_msc` timestamp converted directly to timezone-aware UTC as **the canonical market event clock** for each symbol.
+The VPS UTC wall clock remains only the observed log timestamp, a strict causal upper bound, safety/freshness timeout and Windows Task Scheduler clock.
+Never reinterpret raw `symbol_info_tick.time` (observed with +3h server lead plus seconds skew) as the decision timestamp.
+
+Implementation changes:
+- `src/katarina/intelligence/causal_broker_quotes.py` now includes `market_event_clock` and `closed_bars_as_of_market_tick`. Future/stale tick timestamps fail closed; a candle closed after the last verifiable MT5 tick cannot influence the Brain.
+- The existing single `scripts/ai/run_contextual_market_observer.py` passes MT5 event time into market Brain V3, market-news relevance/calendar evaluation and the candle cutoff. Output explicitly includes separate market timestamp, wall timestamp and tick-time authority.
+- `contextual_observation_journal.py` now anchors the 15-minute quote observation deadline to the original MT5 entry-tick epoch, not Windows process startup time. Future tick timestamps are rejected.
+- `prospective_shadow_book.py` uses the entry tick timestamp to anchor the two-hour hypothetical holding horizon. This remains non-executed research.
+- The verified server integer-hour offset is retained ONLY for normalizing broker candle timestamps (with fail-closed current consensus). Historical DST and real-broker execution costs are not assumed proven.
+
+Verification:
+- 58 local unit tests PASSED, including the new future/stale MT5 event-time, candle cutoff and 15-minute tick-clock tests.
+- GitHub Body CI PASS, run https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38279655126.
+- VPS live-market **read-only** smoke passed: 17 of 17 instruments, zero sensor failures, 17 WAIT, and zero broker orders.
+- Example broker verified XAUUSD event tick: 2026-10-12T16:46:51.800Z; VPS wall: 2026-10-12T16:46:52.111450Z; closed M5 bar 2026-10-12T16:45:00Z, strictly causal.
+- One 5-minute `Katarina-MarketBrain-Observer` task restored and running, with IgnoreNew / restart protection; the two old observer tasks remain disabled.
+
+MT5 official Python timestamp reference: https://www.mql5.com/en/docs/python_metatrader5/mt5copyticksrange_py and https://www.mql5.com/en/docs/python_metatrader5/mt5copyratesfrom_py.
+
+**NO LIVE AUTHORIZATION:** all changes are event-time accuracy/safety engineering. Verified profitable expectancy, cross-DST broker historical prices and actual deal commissions remain separate unmet gates.
