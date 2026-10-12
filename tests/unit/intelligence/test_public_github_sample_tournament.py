@@ -1,5 +1,7 @@
 """Tests for public M5 source model; all network access mocked."""
 import unittest
+from unittest.mock import patch
+import public_github_sample_tournament as tournament_module
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -10,6 +12,7 @@ sys.path.insert(0,str(ROOT/"scripts"/"research"))
 from public_github_sample_tournament import (
     load_public_sample,h1_from_m5,tournament,PUBLIC_SAMPLES)
 from public_market_tournament import QuoteCandle
+from katarina.intelligence.adaptive_strategy_library import StrategyHypothesis
 
 
 class Response:
@@ -66,6 +69,20 @@ class PublicSampleTournamentTests(unittest.TestCase):
         trades,report=tournament("EURUSD",[])
         self.assertEqual(trades,[])
         self.assertEqual(report["status"],"INSUFFICIENT_HISTORY")
+
+    def test_oil_and_indices_price_scale_in_fill_model(self):
+        base=(1_760_000_000//3600)*3600
+        bars=[QuoteCandle(base+(i+1)*300,100.,100.4,99.6,100.,
+                          100.05,100.45,99.65,100.05) for i in range(260)]
+        hypothesis=StrategyHypothesis(
+            "USOIL","TREND_PULLBACK","BUY","TREND_UP",
+            base+240*300,99.,101.,100.,.8)
+        with patch.object(tournament_module,"propose_closed_candle_strategies",
+                          return_value=(hypothesis,)):
+            for symbol in ("USOIL","US30","NAS100"):
+                trades,detail=tournament_module.tournament(symbol,bars)
+                self.assertEqual(detail["status"],"OK")
+                self.assertGreater(len(trades),0)
 
     def test_only_verified_samples_accepted(self):
         self.assertEqual(set(PUBLIC_SAMPLES),{

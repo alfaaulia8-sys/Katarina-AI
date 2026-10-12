@@ -155,7 +155,7 @@ def tournament(symbol: str,m5: list[QuoteCandle],*,fee=.03,slip_points=1):
                 continue
             t=calculate_fill(
                 s,m5[idx+1],future,
-                assumed_fee_r=fee,slippage_point=slip_points/SCALE[symbol])
+                assumed_fee_r=fee,slippage_point=slip_points/POINT_SCALE[symbol])
             if t is not None:
                 open_until[key]=t["exit_at"]
                 trades.append(t)
