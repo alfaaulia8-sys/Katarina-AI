@@ -4,10 +4,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
 import numpy as np
-from pathlib import Path
-import sys
-sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'scripts'/'research'))
-from backtest_unified_intraday_brain_v6 import check_candidate,min_capital_for_broker
+from katarina.intelligence.unified_intraday_gate import check_candidate,min_capital_for_broker
 from katarina.intelligence.intraday_scalp_research import Candidate
 
 class TestIntegratedResearchGate(unittest.TestCase):

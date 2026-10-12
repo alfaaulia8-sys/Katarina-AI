@@ -32,63 +32,7 @@ DEST=OUT/"intraday_brain_integrated_v6"
 DEST.mkdir(parents=True,exist_ok=True)
 RISK=.0025
 
-def check_candidate(
-    x:Candidate, m5, m15, h1, clocks, point:float,
-    semantic:CausalSetupValidator,
-    quality:StructuralEntryQuality,
-    brain:MarketDecisionPipeline,
-):
-    """All gates depend only on bars with closed_at <= selected cut."""
-    cut=x.cut
-    frames={}
-    for k,a,sec in (("M5",m5,300),("M15",m15,900),("H1",h1,3600)):
-        end=bisected_indices(clocks[k],cut,sec)
-        if end<90 or end>len(a):
-            return None,"missing_history"
-        lastclose=int(clocks[k][end-1])+sec
-        if lastclose>cut or cut-lastclose>sec*2:
-            return None,"stale_or_future_context"
-        frames[k]=sensors(a[end-90:end],sec)
-    at=datetime.fromtimestamp(cut,timezone.utc)
-    spread=float(m5["spread"][x.idx])*point
-    if spread<=0 or not math.isfinite(spread):
-        return None,"missing_signal_spread"
-    intended="TREND_PULLBACK" if x.mode=="INTRADAY" else "REVERSAL_RECLAIM"
-    check=semantic.assess(side=x.side,playbook=intended,
-        m5=frames["M5"],m15=frames["M15"],h1=frames["H1"],
-        spread=spread,as_of_utc=at)
-    if not check.pattern_confirmed:
-        return None,"semantic_false_" + (check.blockers[0] if check.blockers else "unknown")
-    entry=quality.assess(side=x.side,playbook=intended,
-        m5=frames["M5"],m15=frames["M15"],h1=frames["H1"],
-        spread=spread,as_of_utc=at)
-    if not entry.eligible:
-        return None,"quality_false_" + (entry.blockers[0] if entry.blockers else "unknown")
-    obs=brain.evaluate(symbol=x.symbol,candles=frames,
-        as_of_utc=at,actual_spread=spread,
-        broker_session_open=True,data_fresh=True,
-        news_blackout=False,news_context_verified=True, # counterfactual only
-        use_structural_entry_gate=True,
-        use_semantic_setup_gate=True,
-        instrument_point=point)
-    if obs.action!=x.side:
-        return None,"brain_no_matching_direction"
-    if obs.playbook!=intended:
-        return None,"brain_different_playbook"
-    if (obs.entry_quality is None or not obs.entry_quality.eligible
-          or obs.semantic_setup is None or not obs.semantic_setup.pattern_confirmed):
-        return None,"brain_gate_rejected"
-    return x,"pass"
-
-def min_capital_for_broker(info, stop_distance,mode):
-    """Current symbol spec, account ccy tick_value_loss; historical unknown."""
-    step=float(info.trade_tick_size)
-    value=float(info.trade_tick_value_loss)
-    volume=float(info.volume_min)
-    risk=.0025 if mode=="INTRADAY" else .001
-    if not (0<step and 0<value and 0<volume and 0<risk):
-        return None
-    return (stop_distance/step*value*volume)/risk
+from katarina.intelligence.unified_intraday_gate import (check_candidate, min_capital_for_broker)
 
 def main():
     ap=argparse.ArgumentParser()
