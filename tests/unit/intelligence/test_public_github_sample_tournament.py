@@ -68,9 +68,15 @@ class PublicSampleTournamentTests(unittest.TestCase):
         self.assertEqual(report["status"],"INSUFFICIENT_HISTORY")
 
     def test_only_verified_samples_accepted(self):
-        self.assertEqual(set(PUBLIC_SAMPLES),{"EURUSD","XAUUSD"})
+        self.assertEqual(set(PUBLIC_SAMPLES),{
+            "EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","EURGBP",
+            "EURJPY","XAUUSD","USOIL","US30","NAS100"})
+        from public_github_sample_tournament import POINT_SCALE,UNVERIFIED_SCOPE
+        self.assertEqual(POINT_SCALE["NAS100"],1)
+        self.assertEqual(POINT_SCALE["USOIL"],100)
+        self.assertIn("BTCUSD",UNVERIFIED_SCOPE)
         with self.assertRaisesRegex(ValueError,"unverified_public_github_sample"):
-            load_public_sample("US30",date(2026,8,17),date(2026,8,18))
+            load_public_sample("BTCUSD",date(2026,8,17),date(2026,8,18))
 
 
 if __name__=="__main__":

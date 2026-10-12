@@ -144,3 +144,12 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Empat metode, BUY/SELL terpisah: 674 transaksi simulasi yang **boleh overlap**, semua 8 kelompok method/side mean R negatif. Pool -0,163411 R, PF 0,73002 — **bukan return portofolio investable**.
 - Dukascopy BID/ASK asli tidak berhasil diambil via runner karena TLS timeout. Sumber alternatif M5 berhasil, dengan asumsi spread model yang harus dipisah dari evidence broker. VPS tidak ditulis.
 - Belum ada strategi profitable yang tervalidasi; 15 instrumen lain belum diuji pada pipeline baru. Tetap RESEARCH-ONLY/WAIT, live trading disabled.
+
+
+### Ekspansi uji V8-B (GitHub-only)
+
+- 11 sumber M5 publik terverifikasi: EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, EURGBP, EURJPY, XAUUSD, USOIL, US30, NAS100. Enam belum ada sampel M5 cocok: USDCHF, NZDUSD, GBPJPY, AUDJPY, EURAUD, BTCUSD (bukan berarti broker tidak punya).
+- Runner GitHub Actions dipecah 4 kelompok, peristiwa Juni–Agustus 2026, dengan ringkasan per strategi/BUY-SELL per bulan dan +0,10/+0,20 R biaya asumsi.
+- Model tetap menggunakan OHLC referensi publik, **ASK/spread hanya asumsi**; belum broker-tick-validated maupun independent unseen holdout.
+- Ada agregator hasil sementara; research-triage gate mensyaratkan minimal 20 trade/bulan dan PF >=1,20 serta rata-rata R >=+0,10 pada ketiga bulan setelah +0,10R biaya tambahan. Lulus triase BUKAN izin live.
+- VPS tidak diubah. Angka baru harus diisi setelah runner benar-benar PASS.

@@ -126,3 +126,50 @@ on this independent-source pipeline yet. No files were written to VPS.
 The data-source-specific BID/ASK workflow failed solely on an external
 TLS handshake timeout. That failed job produced **no valid BID/ASK data**;
 do not conflate it with the successful lower-fidelity M5 study.
+
+
+## V8-B: 11-market / 3-calendar-month extension — 12 October 2026
+
+On GitHub, 11 verified public 5-minute reference data repositories
+were available (sample coverage according to provider README through
+September 25, 2026): EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD,
+EURGBP, EURJPY, XAUUSD, USOIL (WTI reference), US30, NAS100 (US100 proxy).
+These are **public market samples, not VPS broker prices**.
+
+The six priority instruments without a verified like-for-like public
+M5 sample in this selected feed are USDCHF, NZDUSD, GBPJPY, AUDJPY,
+EURAUD, BTCUSD. They are **NOT assumed to be unavailable in the broker**;
+broker availability is separate from research data availability.
+Missing instruments are explicitly reported, not filled with other
+asset returns.
+
+Default public hypothesis tournament now covers **June 1 through
+August 31, 2026**, as three disjoint *calendar months*.
+GitHub-hosted jobs run four independent market groups:
+
+- major FX: EURUSD, GBPUSD, USDJPY, AUDUSD
+- additional FX: USDCAD, EURGBP, EURJPY
+- commodity reference: XAUUSD, USOIL
+- indices: US30, NAS100
+
+Each job performs closed-M5/H1 research with **modeled fixed spreads**
+by asset. Prices use public reference OHLC; the synthetic ask side is
+only an assumption. Explicit costs and +0.10R/+0.20R stress are
+modeled, with conservative stop-first intrabar ambiguity.
+Cross-instrument net P/L is **not a valid tradable portfolio** because
+several experimental strategies may overlap.
+
+An evidence-conservative, predeclared RESEARCH TRIAGE gate asks each
+method/BUY-SELL/market to have >=20 trades EACH calendar month and
+profit factor >=1.20 and average R >=+0.10 EACH month after additional
++0.10R modeled cost. Even if this exploratory screen passes, the
+strategy **must remain research-only, not promoted**. Further
+independently unseen data, true broker spread/commission/tick path,
+exposure allocation and cost reconciliation are required.
+
+- Aggregation: scripts/research/summarize_public_tournament.py
+- Tests: tests/unit/intelligence/test_public_tournament_summary.py
+- Artifacts: one research summary per group plus a consolidated
+  11-market summary from a GitHub-hosted aggregation job.
+- VPS file system, services, research sources, MT5 and Risk Governor
+  are left **unmodified**. No MT5 connection or live orders.

@@ -27,11 +27,20 @@ from public_market_tournament import (
 
 # Verified public sample repositories: 5m reference OHLC, NOT paired bid/ask.
 PUBLIC_SAMPLES={
-    "EURUSD": ("getdata-finance/eurusd-5m-ohlcv-forex-historical-data",
-               "EURUSD_5m.csv",0.00002),
-    "XAUUSD": ("getdata-finance/xauusd-5m-ohlcv-metals-historical-data",
-               "XAUUSD_5m.csv",0.40),
+    "EURUSD": ("getdata-finance/eurusd-5m-ohlcv-forex-historical-data","EURUSD_5m.csv",.00020),
+    "GBPUSD": ("getdata-finance/gbpusd-5m-ohlcv-forex-historical-data","GBPUSD_5m.csv",.00025),
+    "USDJPY": ("getdata-finance/usdjpy-5m-ohlcv-forex-historical-data","USDJPY_5m.csv",.025),
+    "AUDUSD": ("getdata-finance/audusd-5m-ohlcv-forex-historical-data","AUDUSD_5m.csv",.00020),
+    "USDCAD": ("getdata-finance/usdcad-5m-ohlcv-forex-historical-data","USDCAD_5m.csv",.00022),
+    "EURGBP": ("getdata-finance/eurgbp-5m-ohlcv-forex-historical-data","EURGBP_5m.csv",.00016),
+    "EURJPY": ("getdata-finance/eurjpy-5m-ohlcv-forex-historical-data","EURJPY_5m.csv",.030),
+    "XAUUSD": ("getdata-finance/xauusd-5m-ohlcv-metals-historical-data","XAUUSD_5m.csv",.40),
+    "USOIL": ("getdata-finance/usoil-5m-ohlcv-commodities-historical-data","USOIL_5m.csv",.05),
+    "US30": ("getdata-finance/us30-5m-ohlcv-index-historical-data","US30_5m.csv",4.0),
+    "NAS100": ("getdata-finance/nas100-5m-ohlcv-index-historical-data","NAS100_5m.csv",3.0),
 }
+POINT_SCALE=dict(SCALE, USOIL=100, US30=1, NAS100=1)
+UNVERIFIED_SCOPE=("USDCHF","NZDUSD","GBPJPY","AUDJPY","EURAUD","BTCUSD")
 MAX_CSV_BYTES=7_500_000
 
 
@@ -132,7 +141,7 @@ def tournament(symbol: str,m5: list[QuoteCandle],*,fee=.03,slip_points=1):
         signals=propose_closed_candle_strategies(
             symbol,tuple(x.bid() for x in prior),
             tuple(x.bid() for x in hwindow),now=now,
-            point=1/SCALE[symbol],
+            point=1/POINT_SCALE[symbol],
             spread=m5[idx].spread_close())
         stats["signals"]+=len(signals)
         for s in signals:
@@ -155,8 +164,8 @@ def tournament(symbol: str,m5: list[QuoteCandle],*,fee=.03,slip_points=1):
 
 
 def run(symbols,begin,end,destination: Path,*,opener=urlopen):
-    if len(symbols)<1 or len(symbols)>2 or len(set(symbols))!=len(symbols):
-        raise ValueError("pilot_max_2_symbols")
+    if len(symbols)<1 or len(symbols)>4 or len(set(symbols))!=len(symbols):
+        raise ValueError("pilot_max_4_symbols")
     destination.mkdir(parents=True,exist_ok=True)
     summary={
         "scope":"EXPLORATORY_4_STRATEGY_FAMILY_PILOT",
@@ -214,7 +223,50 @@ def run(symbols,begin,end,destination: Path,*,opener=urlopen):
             "confidence":"EXPLORATORY_ONLY",
             "broker_validated":False,"live_promotion_approved":False}
         print("METHOD_GROUP",key,summary["method_groups"][key],flush=True)
+    # Pre-declared calendar-month screen. Research priority only;
+    # no tuning or live promotion based on the same inspected data.
+    summary["missing_6_priority_symbols"]=list(UNVERIFIED_SCOPE)
+    summary["monthly_strategy_screen"]={}
+    months=("2026-06","2026-07","2026-08")
+    for symbol in symbols:
+        for strategy in (
+            "TREND_PULLBACK","BREAKOUT_RETEST",
+            "LIQUIDITY_SWEEP_RECLAIM","RANGE_MEAN_REVERSION"):
+            for side in ("BUY","SELL"):
+                subset=[t for t in trades_all if (
+                    t["symbol"]==symbol and t["strategy"]==strategy
+                    and t["side"]==side)]
+                monthly={}
+                for month in months:
+                    selected=[t for t in subset if datetime.fromtimestamp(
+                        t["signal_at"],timezone.utc).strftime("%Y-%m")==month]
+                    monthly[month]={
+                        "base":metrics(selected),
+                        "extra_0_10R":metrics(selected,.1),
+                        "extra_0_20R":metrics(selected,.2)}
+                # The pass flag is a RESEARCH triage indicator, not an edge
+                # validation; exploratory data were previously exposed.
+                pass_screen=all(
+                    monthly[m]["extra_0_10R"]["n"]>=20 and
+                    (monthly[m]["extra_0_10R"]["profit_factor"] or 0)>=1.2 and
+                    (monthly[m]["extra_0_10R"]["avg_r"] or -99)>=.1
+                    for m in months)
+                summary["monthly_strategy_screen"][
+                    "|".join((symbol,strategy,side))]={
+                    "all_3_months":metrics(subset,.1),
+                    "months":monthly,
+                    "passed_exploratory_screen":pass_screen,
+                    "evidence":"PREVIOUSLY_INSPECTED_EXPLORATORY",
+                    "live_promotion_authorized":False}
+    summary["screen_contract"]={
+        "months":list(months),"min_trades_each_month":20,
+        "min_after_stress_pf_each_month":1.2,
+        "min_after_stress_mean_r_each_month":0.1,
+        "real_bid_ask_verified":False,
+        "independent_out_of_sample":False,
+        "production_action":"WAIT"}
     summary["all_symbols"]=metrics(trades_all)
+    summary["pooled_overlap_not_an_executable_portfolio"]=True
     summary["all_symbols_is_investable_portfolio"]=False
     summary["scientific_limitations"].append(
         "Hypothetical methods overlap and pooled compounding is NOT a feasible portfolio return")
@@ -235,8 +287,8 @@ def run(symbols,begin,end,destination: Path,*,opener=urlopen):
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--symbols",default="EURUSD,XAUUSD")
-    ap.add_argument("--start",default="2026-08-17")
-    ap.add_argument("--end",default="2026-09-09")
+    ap.add_argument("--start",default="2026-06-01")
+    ap.add_argument("--end",default="2026-09-01")
     ap.add_argument("--output",type=Path,default=Path("artifacts/public_tournament"))
     a=ap.parse_args()
     run([s.strip().upper() for s in a.symbols.split(",")],
