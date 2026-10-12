@@ -1,0 +1,39 @@
+name: KATARINA Frozen XAU SELL Tick Verdict Safety
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/research/frozen_xau_sell_tick_verdict.py'
+      - '.github/workflows/frozen-xau-tick-verdict.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile frozen research reader
+        run: python -m py_compile scripts/research/frozen_xau_sell_tick_verdict.py
+      - name: Verify worst-case path and missing-data rejection
+        run: python scripts/research/frozen_xau_sell_tick_verdict.py --self-test
+      - name: Fail closed for broker order and account access
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          code=Path('scripts/research/frozen_xau_sell_tick_verdict.py').read_text()
+          forbidden=['order_send(', 'order_check(', 'account_info(', 'history_deals_get(', '.write_text(', 'open(']
+          for term in forbidden:
+              assert term not in code,term
+          assert "terminal.trade_allowed" in code
+          assert "copy_ticks_range(" in code
+          assert "FROZEN_CODE=" in code
+          print('NO_LIVE_TRADING_OR_PERSISTENT_WRITE_PATH_PASS')
+          PY
