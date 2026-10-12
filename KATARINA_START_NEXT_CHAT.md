@@ -271,3 +271,9 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - RANGE_FADE especially negative and often spread-blocked. TREND_PULLBACK SELL/ BREAKOUT_RETEST SELL superficially positive but only 8/4 quote-completed samples: no promotion.
 - Actual broker deal history 2026 found 1 account record with no symbol, insufficient to calibrate realized commissions. No live trading, no production Risk Governor changes.
 - 5-minute canonical observer restored after temporary pause; two redundant observers remain disabled.
+
+### 12 October 2026 — UTC quote clock and 15min journal repaired
+- Latest MT5 server tick had +3h and 10–15s extra lead; 15min quote journal previously marked 53 missing. New causal_broker_quotes uses real broker historical UTC prices up to decision time and due-window [due,due+120s] first BID/ASK to reconcile.
+- All 53 old missing samples recovered from actual broker quote history with distinct BROKER_TICK_RECOVERED status and private SQLite backup; never label these as forward broker trades or profits.
+- GitHub Body CI success run 38278103654, code SHA cea5b2925ada1aae4844fa6e666bea7951b15138; 35 VPS unit tests pass; XAUUSD actual historical tick in-memory journal test passed.
+- Original one observer running and legacy two observer tasks disabled. 17-sym snapshot healthy, past-only quote ages 0.01–11.85s, order count 0. Full doc docs/operations/SINGLE_CONTEXTUAL_OBSERVER_20261012.md.

@@ -133,3 +133,17 @@ telemetry and independently verified forward trade outcomes are
 not connected. The observer cannot authorize a real or paper order.
 No promotion of historical optimizations or changes to KATARINA's
 production risk governor.
+
+## 12 October 2026 — fixed broker UTC quote-clock mismatch
+
+Verified root cause: latest MT5 symbol_info_tick on the active broker used a +3-hour broker server clock plus a further 10–15-second lead. Previously, after integer-hour correction, directional 15-minute decisions had quotes timestamped in the future of the VPS observation. The journal also checked only the most recent 5-minute snapshot with a 120-second markout tolerance. Result: 53 MISSING_EXIT, no successfully QUOTED observations.
+
+Fix source SHA cea5b2925ada1aae4844fa6e666bea7951b15138:
+- src/katarina/intelligence/causal_broker_quotes.py now takes BID/ASK from broker copy_ticks_range constrained to real UTC <= decision time, without invented fractional time offsets.
+- Existing single run_contextual_market_observer.py is reused; no new observer. For each due 15-minute markout it queries a strictly bounded broker historical tick window [due,due+120s]. Reconciliation may occur on the following 5-minute observer run.
+- contextual_observation_journal.py distinguishes BROKER_TICK_RECONCILED (retrospective quote) and BROKER_TICK_RECOVERED (older failed records). Neither is an executed trade, reliable net P&L or promotion-eligible forward sample.
+- A private SQLite backup was created before recovery at C:\KatarinaDev\artifacts\contextual-observer\context.pre-broker-utc-quote-repair.20261012.sqlite3.
+
+Confirmed actual VPS repair: 53/53 historical MISSING_EXIT records recovered using real broker BID/ASK due-window ticks; distinct recovered status preserved. In-memory end-to-end regression using actual XAUUSD.vx broker ticks reconciled a 20-minute-old decision and did not write production orders/journal. Post-fix snapshot scanned 17 symbols and current UTC quote ages were all past-only (0.01–11.85 seconds).
+
+35 VPS unit tests passed and GitHub Body CI passed at https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38278103654 . Canonical scheduled task was re-enabled and returned exit 0; two prior duplicate observer tasks remain disabled. 0 live MT5 orders submitted. This is a research accounting repair, not validation of broker commissions, DST history, or profitable trading.
