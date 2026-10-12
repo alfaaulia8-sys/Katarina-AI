@@ -108,3 +108,13 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Pada audit read-only VPS, **17/17 tersedia dari katalog 74**; oil = `XTIUSD.vx`, US100 = `NAS100.vx`. Tidak ada order dikirim.
 - Resolver dan tes ada di `src/katarina/intelligence/broker_scan_universe.py` dan `tests/unit/intelligence/test_broker_scan_universe.py`; rincian di `docs/operations/BROKER_ADAPTIVE_SCAN_SCOPE_20261012.md`.
 - Data hasil V1–V6 tetap arsip 55 pair dan **tidak boleh dipresentasikan sebagai performa 17 instrumen**. Risk Governor, permission live, dan hasil forward independen tidak berubah.
+
+
+## 10. ADAPTIVE RESEARCH DI GITHUB ACTIONS (12 Oktober 2026)
+
+- Jalur adaptif baru: src/katarina/intelligence/adaptive_walkforward.py dan adaptive_strategy_library.py, plus tes dan workflow .github/workflows/adaptive-brain-research.yml. Detail di docs/research/KATARINA_ADAPTIVE_RESEARCH_V7_20261012.md.
+- Komputasi dan test di runner GitHub, bukan VPS. Dataset GitHub dari paper trade V6 digunakan untuk diagnosis retrospektif subset simbol, bukan backtest profit metode baru.
+- Memori performa belajar hanya setelah exit paper dan memisahkan BUY/SELL, instrumen/keluarga dan kondisi biaya. Risiko hanya simulasi; Risk Governor produksi tetap.
+- TREND_PULLBACK, BREAKOUT_RETEST, LIQUIDITY_SWEEP_RECLAIM dan RANGE_MEAN_REVERSION adalah prototipe *hipotesis*, tidak boleh diberi P/L milik trade V6.
+- Data 2025–2026 telah diteliti sebelumnya; walk-forward kronologis ini bukan bukti holdout independen. Privat data broker tetap di luar GitHub.
+- Output produksi tetap WAIT. Tidak ada pengaktifan LIVE atau penulisan file pada VPS.

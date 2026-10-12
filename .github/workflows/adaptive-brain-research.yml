@@ -1,0 +1,74 @@
+name: KATARINA Adaptive Research (Historical Only)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/katarina/intelligence/adaptive_*.py'
+      - 'scripts/research/run_adaptive_walkforward.py'
+      - 'tests/unit/intelligence/test_adaptive_walkforward.py'
+      - '.github/workflows/adaptive-brain-research.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: katarina-adaptive-research-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: src
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout repository-safe research only
+        uses: actions/checkout@v4
+      - name: Python research runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile read-only selector and replay
+        run: |
+          python -m compileall -q src/katarina/intelligence/adaptive_walkforward.py
+          python -m compileall -q src/katarina/intelligence/adaptive_strategy_library.py
+          python -m compileall -q scripts/research/run_adaptive_walkforward.py
+      - name: Verify no lookahead, bounded risk and strategy isolation
+        run: python -m unittest discover -s tests/unit/intelligence -p 'test_adaptive_walkforward.py' -v
+      - name: Historical V6 adaptive diagnostic (17-market scope)
+        run: |
+          python scripts/research/run_adaptive_walkforward.py \
+            --output artifacts/adaptive_walkforward
+      - name: Enforce research-only result contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          summary=json.loads(Path("artifacts/adaptive_walkforward/summary.json").read_text())
+          assert summary["orders_sent"]==0
+          assert summary["production_action"]=="WAIT"
+          assert summary["live_execution_authorized"] is False
+          assert summary["cases"]["extra_0.00R"]["event_count"]>0
+          assert summary["implementation"]["multiple_strategies_with_matched_outcomes_in_archive"] is False
+          print("PAPER_ONLY_RESEARCH_CONTRACT_PASS")
+          PY
+      - name: GitHub run summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/adaptive_walkforward/SUMMARY.md ]; then
+            cat artifacts/adaptive_walkforward/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Adaptive research failed before producing a report." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload bounded research results (no broker-private data)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katarina-adaptive-v6-historical-${{ github.run_number }}
+          path: artifacts/adaptive_walkforward/
+          if-no-files-found: warn
+          retention-days: 7
