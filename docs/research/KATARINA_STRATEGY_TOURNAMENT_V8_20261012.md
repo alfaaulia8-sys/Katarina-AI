@@ -64,3 +64,23 @@ public feed scope gradually to other verified market identifiers and
 chronological disjoint windows, run sensitivity and multiple-comparison
 checks, then validate broker-specific costs using read-only evidence.
 Do not promote a winning-looking historical configuration to live.
+
+
+## First runner outcome and controlled fallback
+
+- First genuine Dukascopy daily BID/ASK import attempt reached the GitHub
+  Actions runner and passed all its local tests, but the remote server TLS
+  handshake timed out. **No historical BID/ASK-based strategy result was
+  produced from that failed run.**
+- A second, deliberately LOWER-EVIDENCE path downloads a publicly posted
+  third-party **M5 OHLCV sample** from getdata-finance GitHub repositories
+  (EURUSD, XAUUSD), not from the VPS. It uses one explicit static model
+  spread per instrument rather than pretending to have actual bid/ask.
+- This fallback is implemented by
+  scripts/research/public_github_sample_tournament.py. Neither it nor its
+  summaries can support live execution, profitability claims, exact broker
+  transaction costs, or uninspected OOS status.
+- Estimated ask is built by adding the declared model spread to reference
+  OHLC. This is NOT the same quality as archived broker bid/ask ticks.
+  Keep outputs labeled PUBLIC_REFERENCE_M5_MODELED_BID_ASK, separately from
+  the planned BID/ASK-native higher-quality replay.

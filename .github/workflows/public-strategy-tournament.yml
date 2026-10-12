@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - 'scripts/research/public_market_tournament.py'
+      - 'scripts/research/public_github_sample_tournament.py'
       - 'tests/unit/intelligence/test_public_market_tournament.py'
+      - 'tests/unit/intelligence/test_public_github_sample_tournament.py'
       - 'src/katarina/intelligence/adaptive_strategy_library.py'
       - '.github/workflows/public-strategy-tournament.yml'
   workflow_dispatch:
@@ -17,11 +19,11 @@ on:
       start:
         description: 'Start date inclusive (UTC), YYYY-MM-DD'
         required: false
-        default: '2026-09-01'
+        default: '2026-08-17'
       end:
         description: 'End date exclusive (UTC), YYYY-MM-DD'
         required: false
-        default: '2026-09-12'
+        default: '2026-09-09'
 
 permissions:
   contents: read
@@ -47,14 +49,16 @@ jobs:
       - name: Compile and test model and decoder without network
         run: |
           python -m compileall -q scripts/research/public_market_tournament.py
+          python -m compileall -q scripts/research/public_github_sample_tournament.py
           python -m unittest discover -s tests/unit/intelligence -p 'test_public_market_tournament.py' -v
-      - name: Download publicly served historical BID/ASK bars and test four strategies
+          python -m unittest discover -s tests/unit/intelligence -p 'test_public_github_sample_tournament.py' -v
+      - name: Download public M5 reference OHLC and test four strategies with modeled spread
         env:
           KAT_SYMBOLS: ${{ inputs.symbols || 'EURUSD,XAUUSD' }}
-          KAT_START: ${{ inputs.start || '2026-09-01' }}
-          KAT_END: ${{ inputs.end || '2026-09-12' }}
+          KAT_START: ${{ inputs.start || '2026-08-17' }}
+          KAT_END: ${{ inputs.end || '2026-09-09' }}
         run: |
-          python scripts/research/public_market_tournament.py \
+          python scripts/research/public_github_sample_tournament.py \
             --symbols "$KAT_SYMBOLS" --start "$KAT_START" \
             --end "$KAT_END" --output artifacts/public_tournament
       - name: Verify genuine data and no live trades
@@ -65,9 +69,10 @@ jobs:
           report=json.loads(Path("artifacts/public_tournament/summary.json").read_text())
           assert report["orders_sent"]==0 and report["trade_allowed"] is False
           assert report["independent_holdout"] is False
+          assert report["actual_bid_ask_verified"] is False
           for symbol,entry in report["symbols"].items():
-              assert entry["coverage"]["minutes"]>=2000, (symbol,"missing_real_public_data")
-              assert entry["bars"]["status"]=="OK", (symbol,"missing_H1_M5")
+              assert entry["public_sample"]["m5_reference_bars"]>=800, (symbol,"missing_real_public_data")
+              assert entry["scanner"]["status"]=="OK", (symbol,"missing_H1_M5")
           print("PUBLIC_DATA_AND_RESEARCH_ONLY_CONTRACT_PASS")
           PY
       - name: Summarize audited public-data pilot
@@ -79,11 +84,11 @@ jobs:
           from pathlib import Path
           r=json.loads(Path("artifacts/public_tournament/summary.json").read_text())
           print("# KATARINA OHLC strategy research pilot")
-          print("Historical exploratory analysis; no verified profitable strategy.")
+          print("Historical exploratory analysis with modeled spreads (NO true ASK/BID source); no verified profitable strategy.")
           for s,x in r["symbols"].items():
-              print(f"- {s}: {x['coverage']['minutes']} public BID/ASK minutes; "
-                    f"{x['bars'].get('signals',0)} candidates; "
-                    f"{x['all_trades']['n']} modeled paper trades.")
+              print(f"- {s}: {x['public_sample']['m5_reference_bars']} public reference M5 bars; "
+                    f"{x['scanner'].get('signals',0)} candidates; "
+                    f"{x['all_paper_trades']['n']} modeled paper trades.")
           print("No broker/VPS data were written to GitHub.")
           PY
           else
