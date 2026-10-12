@@ -71,7 +71,7 @@ def simulate_ohlc_proxy(m5,signal_index,side,stop,target,spread):
     if risk<=max(spread,1e-8) or reward/risk<1.0:
         return None
     end=min(len(m5)-1,signal_index+HORIZON_M5)
-    if end<=signal_index+1:return None
+    if end<signal_index+1:return None  # first future bar may hit SL or TP
     # The replay cannot know whether a missing series contains
     # unobserved intrabar spikes or broker gaps. Reject time gaps.
     prev_time=stamp(m5[signal_index].closed_at_utc)
