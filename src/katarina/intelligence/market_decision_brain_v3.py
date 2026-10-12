@@ -44,6 +44,8 @@ class DecisionCard:
     directional_h1_momentum_atr: float | None = None
     directional_m15_momentum_atr: float | None = None
     pre_entry_spread_fraction_of_stop_risk: float | None = None
+    pattern_semantically_confirmed: bool = False
+    pattern_semantic_blockers: tuple[str, ...] = ()
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -239,11 +241,43 @@ class MarketDecisionBrain:
             except (ValueError,TypeError,OverflowError):
                 direction_failure=True
                 evidence.append("directional_evidence_unavailable_fail_closed")
+        # A playbook name must correspond to a real CLOSED-BAR event.
+        # Reuse the already computed native semantic setup if matching
+        # the current side; otherwise ask the same native validator.
+        # This is a VETO ONLY, not a second policy or new entry model.
+        semantic=None
+        semantic_unverifiable=False
+        strategy=observation.playbook
+        if sign and strategy!="OBSERVE":
+            try:
+                proposed_side="BUY" if sign>0 else "SELL"
+                semantic=observation.semantic_setup
+                if semantic is None or semantic.side!=proposed_side:
+                    semantic=self.observer.semantic_validator.assess(
+                        side=proposed_side,playbook=strategy,
+                        m5=m5,m15=m15,h1=h1,spread=actual_spread,
+                        as_of_utc=as_of_utc,
+                    )
+                if semantic.pattern_confirmed:
+                    evidence.append("native_playbook_price_action_verified")
+                    evidence.extend("semantic_support:"+x for x in semantic.evidence)
+                else:
+                    evidence.append("native_playbook_pattern_unconfirmed")
+                    evidence.extend("semantic_missing:"+x for x in semantic.blockers)
+            except (ValueError,TypeError,OverflowError):
+                semantic_unverifiable=True
+                evidence.append("semantic_setup_unverifiable_fail_closed")
         # Distinguish directional *bias* from a technically actionable setup.
         # Soft evidence is weighted, but minimum net geometry is non-negotiable.
         signal=("BUY" if sign>0 else "SELL" if sign<0 else "WAIT") if (
             score>=self.min_score and rr is not None and rr>=self.min_rr) else "WAIT"
         blockers=[]
+        if sign and strategy!="OBSERVE" and (
+                semantic_unverifiable or semantic is None or
+                not semantic.pattern_confirmed):
+            blockers.append("playbook_semantics_not_confirmed")
+            if semantic is not None:
+                blockers.extend("semantic:"+x for x in semantic.blockers)
         if direction_failure:
             blockers.append("directional_evidence_invalid_or_future")
         if direction is not None and direction.veto_strong_contradiction:
@@ -265,7 +299,6 @@ class MarketDecisionBrain:
             blockers.append("direction_or_range_edge_unclear")
         if rr is None or rr<self.min_rr:
             blockers.append("not_enough_room_for_risk_reward")
-        strategy=observation.playbook
         if strategy=="OBSERVE":
             blockers.append("no_supported_strategy_for_regime")
         verified=bool((strategy_evidence or {}).get((symbol,strategy,signal),False))
@@ -287,6 +320,9 @@ class MarketDecisionBrain:
         # never create an extra BUY/SELL from this assessment.
         if (direction_failure or
             (direction and direction.veto_strong_contradiction) or
+            (sign and strategy!="OBSERVE" and
+             (semantic_unverifiable or semantic is None or
+              not semantic.pattern_confirmed)) or
             (provisional_cost_risk is not None and
              provisional_cost_risk>self.max_spread_initial_risk_fraction)):
             signal="WAIT"
@@ -309,7 +345,13 @@ class MarketDecisionBrain:
                                 direction.m15_momentum_atr if direction else None),
                             pre_entry_spread_fraction_of_stop_risk=(
                                 round(provisional_cost_risk,5)
-                                if provisional_cost_risk is not None else None))
+                                if provisional_cost_risk is not None else None),
+                            pattern_semantically_confirmed=bool(
+                                semantic and semantic.pattern_confirmed),
+                            pattern_semantic_blockers=(
+                                semantic.blockers if semantic else (
+                                ("native_semantic_evidence_unavailable",)
+                                if semantic_unverifiable else ())))
 
     def evaluate_contextually(
         self, *, symbol: str, candles: Mapping[str,Sequence[SensorCandle]],

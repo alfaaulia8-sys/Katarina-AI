@@ -193,6 +193,17 @@ class TestContextualDecisionIntelligence(unittest.TestCase):
         self.assertEqual(x.to_dict()["pre_entry_spread_fraction_of_stop_risk"],.315)
         self.assertFalse(x.live_execution_authorized)
 
+    def test_existing_context_includes_real_pattern_evidence_and_rejection(self):
+        false_pattern=replace(card(),
+            pattern_semantically_confirmed=False,
+            pattern_semantic_blockers=(
+                "prior_countertrend_closed_candles",
+                "closed_candle_resumption"))
+        result=self.assess(card=false_pattern).to_dict()
+        self.assertFalse(result["pattern_semantically_confirmed"])
+        self.assertEqual(len(result["pattern_semantic_blockers"]),2)
+        self.assertFalse(result["live_execution_authorized"])
+
     def test_additive_native_brain_gateway_does_not_activate_orders(self):
         brain=MarketDecisionBrain()
         result=brain.evaluate_contextually(

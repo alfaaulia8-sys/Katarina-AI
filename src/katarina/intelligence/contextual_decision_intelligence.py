@@ -94,6 +94,8 @@ class ContextDecision:
     directional_h1_momentum_atr: float | None = None
     directional_m15_momentum_atr: float | None = None
     pre_entry_spread_fraction_of_stop_risk: float | None = None
+    pattern_semantically_confirmed: bool = False
+    pattern_semantic_blockers: tuple[str, ...] = ()
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -324,6 +326,8 @@ class ContextualDecisionIntelligence:
             directional_m15_momentum_atr=card.directional_m15_momentum_atr,
             pre_entry_spread_fraction_of_stop_risk=(
                 card.pre_entry_spread_fraction_of_stop_risk),
+            pattern_semantically_confirmed=card.pattern_semantically_confirmed,
+            pattern_semantic_blockers=card.pattern_semantic_blockers,
             selected_method=card.strategy,technical_setup=technical,
             action=action,conditional_side=technical if technical in ("BUY","SELL") else "WAIT",
             reference_entry_kind="CLOSED_BAR_CONFIRMATION_NEXT_BAR_PAPER_ONLY",

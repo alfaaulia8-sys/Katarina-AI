@@ -87,10 +87,50 @@ class TestMarketDecisionBrainV3(unittest.TestCase):
         evidence={("XAUUSD.vx","TREND_PULLBACK","BUY"):True}
         x=b.evaluate(**self.params,news_context_verified=True,
                      strategy_evidence=evidence,risk_approved_for_paper=True)
+        # The historical synthetic trend has NO true pullback. Even
+        # synthetic risk approval cannot turn its false playbook into BUY.
+        self.assertEqual(x.technical_signal,"WAIT")
+        self.assertEqual(x.decision,"WAIT")
+        self.assertFalse(x.pattern_semantically_confirmed)
+        self.assertIn("playbook_semantics_not_confirmed",x.blockers)
+        self.assertIn("prior_countertrend_closed_candles",
+                      x.pattern_semantic_blockers)
+        self.assertFalse(x.live_execution_authorized)
+        self.assertTrue(x.research_only)
+    def test_actual_confirmed_semantic_pattern_can_only_pass_preexisting_gates(self):
+        # This test mocks a validator response; it is NOT evidence of
+        # profitable setups or approval to trade.
+        from unittest.mock import patch
+        b=MarketDecisionBrain(minimum_evidence_score=.4,minimum_rr=.0001)
+        original=b.observer.evaluate(
+            **self.params,news_context_verified=True)
+        self.assertIsNotNone(original.semantic_setup)
+        accepted=replace(original,semantic_setup=replace(
+            original.semantic_setup,pattern_confirmed=True,blockers=()))
+        with patch.object(b.observer,"evaluate",return_value=accepted):
+            x=b.evaluate(**self.params,news_context_verified=True,
+                strategy_evidence={("XAUUSD.vx","TREND_PULLBACK","BUY"):True},
+                risk_approved_for_paper=True)
+        self.assertTrue(x.pattern_semantically_confirmed)
+        self.assertNotIn("playbook_semantics_not_confirmed",x.blockers)
         self.assertEqual(x.technical_signal,"BUY")
         self.assertEqual(x.decision,"BUY")
         self.assertFalse(x.live_execution_authorized)
-        self.assertTrue(x.research_only)
+
+    def test_missing_unreadable_semantic_pattern_fails_closed(self):
+        from unittest.mock import patch
+        b=MarketDecisionBrain(minimum_evidence_score=.4,minimum_rr=.0001)
+        o=b.observer.evaluate(**self.params,news_context_verified=True)
+        with patch.object(b.observer,"evaluate",return_value=replace(
+                o,semantic_setup=None)),patch.object(
+                b.observer.semantic_validator,"assess",side_effect=ValueError(
+                "future_or_invalid_bar")):
+            x=b.evaluate(**self.params,news_context_verified=True)
+        self.assertEqual(x.technical_signal,"WAIT")
+        self.assertIn("playbook_semantics_not_confirmed",x.blockers)
+        self.assertIn("semantic_setup_unverifiable_fail_closed",x.evidence)
+        self.assertFalse(x.live_execution_authorized)
+
     def test_wrong_pair_edge_does_not_leak(self):
         b=MarketDecisionBrain(minimum_evidence_score=.4,minimum_rr=.0001)
         x=b.evaluate(**self.params,news_context_verified=True,
