@@ -224,3 +224,29 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
   Report: `docs/research/CONTEXTUAL_DECISION_INTELLIGENCE_20261012.md`.
 - No VPS writes and no live orders. No claim of profitable model or
   LLM-only forecast. More historic parameter churn is not authorized.
+
+
+### 12 Oktober 2026 — single autonomy research pipeline
+- Current routine source checkpoint `c1c608ba1641b82f0e46567d04437cafab45bfcd`.
+- One active VPS task `Katarina-MarketBrain-Observer`,
+  invoking `scripts/ai/run_contextual_market_observer.py` every 5 min;
+  legacy Decision/Analog observer tasks remain disabled.
+  Retry 2 times after failure, IgnoreNew/worker.lock.
+- 17 broker instruments scanned; current output 17 WAIT,
+  open virtual shadow 1, resolved sampled virtual 1,
+  no actual MT5 orders. This is **research only**.
+- Fed/ECB/BoE full-article policy provenance and CNBC full-body
+  financially relevant media context share one private SQLite DB.
+  Unverified secondary stories can never authorize execution.
+- New virtual shadow positions: symbol/method/side/regime, spread,
+  structural stop/target, after-cost **modeled 0.15R penalty**;
+  one virtual exposure at a time, 8-minute observation-gap invalidation,
+  5-loss 24h reversible virtual pause, and descriptive memory.
+  **Cannot promote virtual to broker-verified ResolvedExperience.**
+- Broker read-only native lot/margin/profit calculators usable
+  on 17/17 symbols; real commission/slippage/cent risk not proven.
+- GitHub Body CI successful, run 38258819050 (includes
+  autonomy synthetic-safety artifact). No new automatic CI fanout.
+- Report: `docs/operations/AUTONOMY_READINESS_20261012.md`.
+- Still NOT full autonomous live trader; missing independent forward
+  evidence, verified costs and explicit governed live authorization.

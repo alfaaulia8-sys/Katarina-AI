@@ -83,3 +83,41 @@ unsupported.
 until those hard prerequisites are met. Our success so far is
 operational independence of an evidence-collecting research loop,
 not profitable autonomous execution.
+
+## Measured operational checkpoint — 2026-10-12 13:53 UTC
+
+Source SHA `c1c608ba1641b82f0e46567d04437cafab45bfcd`.
+
+**GitHub-hosted validation**: [Body CI run 38258819050](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38258819050)
+**SUCCESS**. Job uploads artifact
+`katarina-body-gate-38258819050`, including the offline
+`autonomous-shadow-safety.json` audit. The audit uses fixed
+synthetic fixtures for gate safety; it is not a live backtest.
+GitHub REST reported **0 queued jobs** at this checkpoint.
+
+**Windows VPS read-only broker preflight**:
+`verify_virtual_broker_specs.py` checked **17/17 symbols** using
+MT5 native `order_calc_profit` and `order_calc_margin` calculators,
+with **17 calculator paths available, 0 actual orders**. PRIVATE
+aggregate detail stays at
+`C:\KatarinaDev\artifacts\contextual-observer\native-broker-specs-private.json`.
+This does **not** verify real commissions, swaps, actual broker fills,
+slippage, USD-vs-USC classification, or safe capital allocation.
+
+**The one scheduled observer** retained 5-minute cadence with
+Task Scheduler `IgnoreNew` plus worker.lock,
+`StartWhenAvailable=true`, two retry attempts separated by 1 min,
+and a 4-minute time limit. No other observer task was enabled.
+Snapshot (2026-10-12 13:53:15 UTC) scanned **17 instruments**,
+returned **17 WAIT**, recorded **1 OPEN + 1 VIRTUAL_QUOTED**
+research position and two memory cohorts; **0 broker orders**.
+Quote-only virtual results are **NOT verified broker trade outcomes**.
+Windows Task Scheduler reported `LastTaskResult=0`,
+RAM free ~500 MB and disk free ~9.33 GB at this checkpoint.
+The task runs in the existing interactive Windows user context;
+do not assume proven unattended login/reboot recovery.
+
+There is **still no proof of net profitable live trading**:
+fresh prospective, cost-reconciled, multi-month evidence must be
+accumulated and audited in the future. Do not relabel historical
+reused prices or sampled virtual fills as independent live data.
