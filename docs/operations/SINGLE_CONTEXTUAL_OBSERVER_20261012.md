@@ -93,3 +93,43 @@ for explicit monetary policy context, and those too remain conditional.
 
 No additional observer, cron, GitHub Action, credentials or broker
 order path is introduced.
+
+
+## VERIFIED ACTIVATION — 12 Oktober 2026 (20:20 WIB)
+
+The single canonical Windows task `Katarina-MarketBrain-Observer`
+is now **ENABLED**, running the reviewed GitHub checkout:
+`13bb427e1dd6f571a722b7e9fcdeb265461be2d5`
+at `C:\KatarinaDev\ci-research-fresh-20261012`.
+Its action launches **one 5-minute single-run Python process**, with
+Task Scheduler `IgnoreNew` and a separate file lock.
+It writes only under
+`C:\KatarinaDev\artifacts\contextual-observer`.
+
+The legacy tasks `Katarina-DecisionObserver-ReadOnly` and
+`Katarina-AnalogMemory-Observer` were independently verified
+**DISABLED** (no parallel decisions/identical data writers).
+Other preexisting non-observer VPS tasks were not changed.
+MT5 terminals and live execution controls remain unmodified.
+
+After enabling the scheduler, Task Scheduler reported
+`LastTaskResult=0`; the observed snapshot timestamp was
+`2026-10-12T13:20:35.613726+00:00`, with **17/17 instruments
+scanned**, output decision distribution **17 WAIT**,
+**2 CNBC financial articles read from their actual bodies**
+(not headline-only), and **0 MT5 orders**.
+Full-article media inference is descriptive only. New releases from
+the official Fed/ECB/BoE feed were not present in the six-hour
+observation window, so the official policy direction was NOT
+fabricated.
+
+Source safety checks: 35 tests for the new native context engine
+and journal on the previous source revision, plus market article
+relevance tests locally on Windows. Current GitHub Body CI:
+[PASS for source SHA `13bb427`](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38254866412).
+
+Remaining blockers are legitimate: account-level exposure/commission
+telemetry and independently verified forward trade outcomes are
+not connected. The observer cannot authorize a real or paper order.
+No promotion of historical optimizations or changes to KATARINA's
+production risk governor.
