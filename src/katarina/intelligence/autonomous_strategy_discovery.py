@@ -307,7 +307,7 @@ def discover(bars: tuple[Candle, ...], *, seed: int = 42,
         parents=[x[1] for x in leaders[:min(6,len(leaders))]]
         pool=parents[:]
         while len(pool)<population:
-            pool.append(_mutate(rng,rng.choice(parents))
+            pool.append(_mutate(rng.choice(parents),rng)
                         if rng.random()<.8 else _new_genome(rng))
     eligible=sorted((v for v in evaluated.values() if v[0]>-1e5),
                     key=lambda x:(-x[0],x[1].fingerprint))
