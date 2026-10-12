@@ -3,6 +3,7 @@ import unittest
 from datetime import datetime,timezone,timedelta
 from katarina.intelligence.market_article_context import (
     official_url_is_not_implicit,parse_feed,parse_article,interpret_story,
+    market_headline_relevant,
 )
 NOW=datetime(2026,10,12,13,0,tzinfo=timezone.utc)
 STORY={"url":"https://www.cnbc.com/2026/10/12/china-gold-buying-interest-rate-.html",
@@ -18,6 +19,12 @@ class MarketArticleBodyTests(unittest.TestCase):
                     "https://www.federalreserve.gov/x"):
             self.assertFalse(official_url_is_not_implicit(url))
         self.assertTrue(official_url_is_not_implicit(STORY["url"]))
+
+    def test_offtopic_story_is_rejected(self):
+        self.assertFalse(market_headline_relevant(
+            "Authorities searched a politician over immigration paperwork"))
+        self.assertTrue(market_headline_relevant(
+            "China gold demand and central bank imports surge"))
 
     def test_only_dated_real_rss_items_accepted(self):
         ts=(NOW-timedelta(hours=2)).strftime("%a, %d %b %Y %H:%M:%S GMT")

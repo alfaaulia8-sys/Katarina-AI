@@ -27,6 +27,17 @@ MAX_ARTICLE=1_500_000
 AGE_SECONDS=24*3600
 TTL_SECONDS=1800
 USER_AGENT="KatarinaMarketObserver/1.0"
+MARKET_TITLE_KEYWORDS=re.compile(
+    r"\b(gold|silver|oil|crude|energy|fed|fomc|interest\s+rates?|"
+    r"inflation|cpi|ppi|payroll|employment|recession|central\s+bank|"
+    r"tariffs?|forex|currency|currencies|dollar|euro|yen|yuan|"
+    r"bond|yield|treasury|nasdaq|dow\s+jones|stocks?|equities|"
+    r"bitcoin|crypto|opec|financial\s+markets?|economy|economic)\b",
+    re.IGNORECASE,
+)
+
+def market_headline_relevant(title):
+    return bool(MARKET_TITLE_KEYWORDS.search(title))
 
 
 def official_url_is_not_implicit(url):
@@ -72,7 +83,8 @@ def parse_feed(raw,now):
         url=(item.findtext("link") or "").split("?")[0].split("#")[0].strip()
         title=" ".join(unescape(item.findtext("title") or "").split())
         date=item.findtext("pubDate") or ""
-        if not official_url_is_not_implicit(url) or len(title)<24 or url in seen:
+        if (not official_url_is_not_implicit(url) or len(title)<24
+                or not market_headline_relevant(title) or url in seen):
             continue
         try:
             published=parsedate_to_datetime(date)
@@ -217,7 +229,8 @@ def collect_market_articles(db,now):
             if not (p<=f<=now and 0<=(now-p).total_seconds()<=AGE_SECONDS):
                 continue
             story=next((x for x in stories if x["url"]==url),None)
-            if story is None:story={"url":url,"title":"","published_utc":published}
+            if story is None or not market_headline_relevant(story["title"]):
+                continue
             output.append(interpret_story(story,body.split("\n"),f))
         except (ValueError,TypeError,KeyError):
             continue
