@@ -153,3 +153,12 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Model tetap menggunakan OHLC referensi publik, **ASK/spread hanya asumsi**; belum broker-tick-validated maupun independent unseen holdout.
 - Ada agregator hasil sementara; research-triage gate mensyaratkan minimal 20 trade/bulan dan PF >=1,20 serta rata-rata R >=+0,10 pada ketiga bulan setelah +0,10R biaya tambahan. Lulus triase BUKAN izin live.
 - VPS tidak diubah. Angka baru harus diisi setelah runner benar-benar PASS.
+
+
+### VERIFIKASI AKHIR V8-B — 11 pasar / Juni–Agustus 2026
+
+- RUNNER PASS 5/5: https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38204091035 . Body CI + Operational Hardening + Stage 10-40 Baseline commit sama juga PASS.
+- 11 sumber M5 publik = 3995 paper event **overlap**; 88 grup strategi/instrumen/BUY-SELL di-screen, **0 lulus** kriteria konsistensi 3 bulan setelah biaya tambahan +0,10R.
+- Positif tetapi **tidak signifikan**: AUDUSD 4 trade +0,386R, USDCAD 3 trade +0,087R, EURJPY 19 trade +0,126R. XAUUSD 1331 trade -0,1729R, Oil 390 -0,2204R, US30 934 -0,2428R, NAS100 1267 -0,2298R.
+- Detail angka dan batas interpretasi di docs/research/KATARINA_STRATEGY_TOURNAMENT_V8_20261012.md. Data tersebut **bukan** BID/ASK broker, spread simulasi dan tidak lolos holdout baru. Enam simbol lain belum punya sampel M5 publik setara.
+- Status resmi: RESEARCH-ONLY / WAIT. Tidak ada promosi strategi, order live, write VPS, atau perubahan Risk Governor.

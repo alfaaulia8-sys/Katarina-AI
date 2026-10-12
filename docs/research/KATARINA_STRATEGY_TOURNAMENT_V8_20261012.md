@@ -173,3 +173,55 @@ exposure allocation and cost reconciliation are required.
   11-market summary from a GitHub-hosted aggregation job.
 - VPS file system, services, research sources, MT5 and Risk Governor
   are left **unmodified**. No MT5 connection or live orders.
+
+
+## V8-B VERIFIED RESULTS — 11 markets, June–August 2026
+
+GitHub Actions final successful run:
+https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38204091035
+Code commit tested: 89ab73c87c89c3d6e5f6b967ae588df01ba296a0.
+
+- Four research matrix jobs **SUCCESS**, final 11-market aggregator
+  **SUCCESS** (5/5). Body CI, Operational Hardening and Stage 10-40
+  Baseline on the same commit also **SUCCESS**.
+- 11 market sources were fetched. 88 prespecified asset/method/direction
+  combinations screened; **0 passed** the exploratory 3-calendar-month
+  criterion (>=20 paper trades EACH month and PF >=1.2 and mean R >=+0.10
+  AFTER +0.10 R cost stress, all three months).
+- **3,995 overlapping hypothetical trade events** were modeled.
+  This is neither 3,995 executable distinct portfolio orders nor a
+  reliable equity curve.
+- The observations are research, not out-of-sample and not broker
+  validated. 11 sources are public reference M5 OHLC with *assumed*
+  spreads, not genuine bid/ask or verified broker fees.
+
+| Priority source | M5 closed bars | Paper events | Avg modeled R | PF |
+|---|---:|---:|---:|---:|
+| EURUSD | 19,008 | 7 | -0.115357 | 0.80575 |
+| GBPUSD | 19,008 | 8 | -0.589469 | 0.22716 |
+| USDJPY | 19,003 | 32 | -0.067931 | 0.85310 |
+| AUDUSD | 19,006 | 4 | +0.386014 | 2.47009 |
+| USDCAD | 19,006 | 3 | +0.087005 | 1.25136 |
+| EURGBP | 19,008 | 0 | n/a | n/a |
+| EURJPY | 19,008 | 19 | +0.126244 | 1.32704 |
+| XAUUSD | 18,123 | 1,331 | -0.172909 | 0.71840 |
+| USOIL | 18,082 | 390 | -0.220409 | 0.62807 |
+| US30 | 18,153 | 934 | -0.242821 | 0.61755 |
+| NAS100 | 18,159 | 1,267 | -0.229829 | 0.64031 |
+
+**No strategy can be promoted.** AUDUSD, USDCAD and EURJPY modeled
+positives have 4, 3 and 19 events respectively and do not meet the
+three-month evidence gate, so treating them as demonstrated alpha is
+statistically indefensible. The majority of asset models remain
+negative. Fixed 0.25% hypothetical risk per paper trade is NOT a
+credible portfolio P/L when multiple variants overlap.
+
+BID/ASK actual broker validation, costs/commission reconciliation,
+non-overlapping portfolio sizing and genuinely new holdouts are
+outstanding. Six missing public M5 sources are separate from broker
+availability; do not report them as not traded by broker.
+
+The 11-market consolidated analysis and separate monthly strategy
+results remain downloadable temporarily as GitHub Actions artifacts
+(retention: 7 days). **No VPS writes, live orders, broker execution
+changes or Risk Governor changes** were performed.
