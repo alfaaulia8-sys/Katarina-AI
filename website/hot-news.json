@@ -1,10 +1,18 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-12T01:05:19Z",
+  "updatedAt": "2026-10-12T07:08:09Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
+    {
+      "title": "Oil falls after Trump declares 'energy ceasefire' between Russia and Ukraine",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/oil-prics-today-iran-us-saudi-arabia-crude-.html",
+      "publishedAt": "2026-10-12T05:57:29Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
     {
       "title": "Why China is importing a record amount of gold — and what it means for prices",
       "source": "CNBC Dunia",
@@ -70,14 +78,6 @@
       "language": "en"
     },
     {
-      "title": "Verizon posts worst day since 2002 as SpaceX U.S. network plans whack cell provider stocks",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/09/verizon-att-tmobile-stocks-spacex-network.html",
-      "publishedAt": "2026-10-09T20:16:58Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
       "title": "Trump created a committee to dig into the Fed's Lisa Cook. What is it and what comes next?",
       "source": "CNBC Utama",
       "url": "https://www.cnbc.com/2026/10/09/trump-lisa-cook-fed-firing-committee-explained.html",
@@ -86,19 +86,19 @@
       "language": "en"
     },
     {
-      "title": "Americans' debt problems are flashing a warning not seen since the Great Recession",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/09/american-debt-delinquency.html",
-      "publishedAt": "2026-10-09T19:18:24Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
       "title": "Living with Mom and trading on margin. The regular investor gets in on Wall Street's record stock borrowing binge",
       "source": "CNBC Utama",
       "url": "https://www.cnbc.com/2026/10/09/margin-debt-stock-market-risk.html",
       "publishedAt": "2026-10-09T13:03:19Z",
       "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Blockchain.com seeks U.S. approval for prediction markets, crypto derivatives trading",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/09/blockchain-com-cftc-prediction-markets.html",
+      "publishedAt": "2026-10-09T12:01:26Z",
+      "category": "Kripto",
       "language": "en"
     }
   ]
