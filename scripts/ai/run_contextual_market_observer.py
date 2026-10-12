@@ -213,12 +213,16 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         raise RuntimeError("FAIL_CLOSED_TRADING_MUST_BE_DISABLED")
     store=None
     try:
-        now=datetime.now(timezone.utc)
+        feed_started_at=datetime.now(timezone.utc)
         store=ContextStore(root/"context.sqlite3")
         journal=ContextDecisionJournal(store.db)
-        feed_status=store.refresh(now) if fetch_news else {
+        feed_status=store.refresh(feed_started_at) if fetch_news else {
             s:"OFFLINE_TEST_DISABLED" for s in ("fed","ecb","boe","calendar")}
-        articles,article_diag=load_articles(store,now)
+        # ContextStore.record timestamps are captured AFTER a network request;
+        # the original feed_started_at is before those snapshots, so using it
+        # to query the cache would silently hide every newly fetched article.
+        articles,article_diag=load_articles(store,datetime.now(timezone.utc))
+        now=datetime.now(timezone.utc)
         catalog=mt5.symbols_get()
         if catalog is None:raise RuntimeError("BROKER_CATALOG_NOT_FOUND")
         selection=resolve_broker_symbols(catalog)
