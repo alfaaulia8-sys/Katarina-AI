@@ -16,6 +16,7 @@ sys.path.insert(0,str(ROOT/"scripts"/"research"))
 from backtest_explainable_55_pairs import OUT,get_bars,TIMEFRAME
 from backtest_unified_intraday_brain_v6 import check_candidate
 from katarina.intelligence.broker_clock_alignment import infer_clock_shift
+from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 from katarina.intelligence.intraday_scalp_research import vector_prefilter
 from katarina.intelligence.market_decision_pipeline import MarketDecisionPipeline
 from katarina.intelligence.structural_entry_quality import StructuralEntryQuality
@@ -42,9 +43,11 @@ def main():
     term=mt5.terminal_info()
     if term is None or term.trade_allowed:
         mt5.shutdown();raise RuntimeError("refuse_trading_enabled")
-    source=sorted(OUT.glob("*_vx.json"))
-    symbols=[json.loads(p.read_text(encoding="utf-8"))["symbol"] for p in source
-             if json.loads(p.read_text(encoding="utf-8")).get("status")=="OK"]
+    catalog=mt5.symbols_get()
+    if catalog is None:
+        mt5.shutdown();raise RuntimeError("broker_catalog_unavailable")
+    selection=resolve_broker_symbols(catalog)
+    symbols=list(selection.symbols)
     ticks={}
     for s in symbols:
         mt5.symbol_select(s,True)
@@ -101,6 +104,8 @@ def main():
     # No unverifiable historical P/L is appended as forward performance.
     report=dict(as_of_utc=now.isoformat(),freeze_utc=freeze["created_utc"],
         symbol_count=len(symbols),scanned=dict(checked),
+        broker_symbol_matches=selection.matches,
+        unavailable_broker_symbols=list(selection.unavailable),
         broker_current_clock_hours=clock.observed_hours_shift,
         tick_consensus=clock.confirming_symbols,
         technical_candidates_at_latest_m5=candidate_rows,

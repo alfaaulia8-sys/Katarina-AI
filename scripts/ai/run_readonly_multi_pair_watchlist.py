@@ -1,4 +1,4 @@
-"""One-off live-market *read-only* 55-pair technical watchlist.
+"""One-off, broker-adaptive, read-only priority-market watchlist.
 
 A plausible technical setup is NEVER an executable signal without verified
 news + account-specific risk/quote checks. No orders or risk governor edits.
@@ -13,6 +13,7 @@ sys.path.insert(0,str(ROOT/"src"))
 from katarina.intelligence.market_decision_pipeline import MarketDecisionPipeline,SensorCandle
 from katarina.intelligence.structural_entry_quality import _atr
 from katarina.intelligence.broker_clock_alignment import infer_clock_shift
+from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 from katarina.intelligence.multi_pair_arbitrator import (
     Opportunity,select_at_checkpoint,candidate_rank)
 OUT=Path(r"C:\KatarinaDev\decision-backtest-20261012\synchronous_multi_pair_daily_v4")
@@ -25,8 +26,11 @@ def main():
         mt5.shutdown();raise RuntimeError("refuse_live_enabled")
     now=datetime.now(timezone.utc)
     brain=MarketDecisionPipeline()
-    symbols=[x.name for x in mt5.symbols_get()
-             if x.trade_mode!=mt5.SYMBOL_TRADE_MODE_DISABLED]
+    catalog=mt5.symbols_get()
+    if catalog is None:
+        mt5.shutdown();raise RuntimeError("broker_catalog_unavailable")
+    selection=resolve_broker_symbols(catalog)
+    symbols=list(selection.symbols)
     # Broker in this VPS currently encodes market ticks around UTC+3.
     # Infer CURRENT displacement from a majority of independent fresh ticks;
     # never silently assume the historical DST schedule or enable execution.
@@ -94,6 +98,8 @@ def main():
     hypo=select_at_checkpoint(opportunities,cut_utc=now,hypothesis_news_clear=True)
     report=dict(kind="KATARINA_LIVE_READONLY_MULTI_PAIR_WATCHLIST",
         as_of_utc=now.isoformat(),symbols_scanned=len(symbols),
+        broker_symbol_matches=selection.matches,
+        unavailable_broker_symbols=list(selection.unavailable),
         broker_raw_clock_shift_hours=clock.observed_hours_shift,
         broker_clock_alignment_confirming_symbols=clock.confirming_symbols,
         broker_clock_historical_dst_verified=False,

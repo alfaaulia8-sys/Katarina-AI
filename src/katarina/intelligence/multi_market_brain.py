@@ -6,6 +6,7 @@ from statistics import mean
 import json
 from hashlib import sha256
 from katarina.intelligence.market_universe import MarketTaxonomy
+from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 from katarina.intelligence.technical_regime import wilder_adx, classify_market_regime
 
 
@@ -206,7 +207,8 @@ def collect(mt5, terminal_path):
             raise RuntimeError("broker_catalog_unavailable")
         rows=[]
         from katarina.intelligence.market_regime_intelligence import PROFILES
-        for info in sorted(symbols,key=lambda x:x.name):
+        selection=resolve_broker_symbols(symbols)
+        for info in selection.instruments:
             row=dict(symbol=info.name,base=info.currency_base,profit=info.currency_profit,
                      trade_mode=info.trade_mode,connected=bool(terminal.connected),
                      asset_class=MarketTaxonomy.infer(info.name,info.currency_base,info.currency_profit).value,

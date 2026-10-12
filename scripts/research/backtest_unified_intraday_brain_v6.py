@@ -3,8 +3,8 @@
 Every available closed M5 bar is scanned. A trend-pullback V5 technical
 candidate must meet an actual closed-candle semantic pullback and entry-quality
 gate *before* full Explainable Market Brain evaluation. The production
-Brain must agree on side, playbook and eligibility. Only then is the rank
-calculated simultaneously across all 55 symbols.
+Brain must agree on side, playbook and eligibility. Only then is the rank calculated across the selected broker-supported
+priority markets (the original 55-symbol V6 output remains historical).
 
 No future trade R is examined by selector; the outcome is filled separately.
 Historical macro-news is ASSUMED verified only for paper counterfactual.
@@ -24,6 +24,7 @@ sys.path.insert(0,str(ROOT/"scripts"/"research"))
 from backtest_explainable_55_pairs import OUT,get_bars,TIMEFRAME,sensors,bisected_indices
 from backtest_full_m5_intraday_scalp_v5 import replay
 from katarina.intelligence.market_decision_pipeline import MarketDecisionPipeline
+from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 from katarina.intelligence.semantic_setup_truth import CausalSetupValidator
 from katarina.intelligence.structural_entry_quality import StructuralEntryQuality
 from katarina.intelligence.intraday_scalp_research import vector_prefilter,fill_next_open,Candidate
@@ -48,11 +49,19 @@ def main():
     symbols=[json.loads(p.read_text(encoding="utf-8"))["symbol"] for p in paths
              if json.loads(p.read_text(encoding="utf-8")).get("status")=="OK"]
     if args.symbols:
-        wanted=args.symbols.split(",")
-        if any(k not in symbols for k in wanted):raise ValueError("unknown_symbol")
+        wanted=[x.strip() for x in args.symbols.split(",") if x.strip()]
+        if any(k not in symbols for k in wanted):raise ValueError("unknown_archived_symbol")
+        # Explicit research replay override; never a live-trading approval.
         symbols=wanted
-    if not args.symbols and len(symbols)!=55:
-        raise RuntimeError("Expected 55 pairs, got "+str(len(symbols)))
+    else:
+        catalog=mt5.symbols_get()
+        if catalog is None:
+            mt5.shutdown();raise RuntimeError("broker_catalog_unavailable")
+        selection=resolve_broker_symbols(catalog)
+        archive=set(symbols)
+        symbols=[s for s in selection.symbols if s in archive]
+        if not symbols:
+            mt5.shutdown();raise RuntimeError("no_priority_symbol_with_archived_data")
     sem=CausalSetupValidator()
     quality=StructuralEntryQuality()
     brain=MarketDecisionPipeline()

@@ -6,7 +6,7 @@ Dokumen ini adalah sumber utama untuk memulai chat baru. Jangan menganggap strat
 
 ## Tujuan yang telah ditetapkan
 
-- Pemilihan opportunity terbaik secara simultan dari **55 pair**, tidak mengandalkan satu market; tidak memaksakan transaksi setiap hari.
+- Pemilihan opportunity terbaik secara simultan dari **maksimum 17 instrumen pilihan yang tersedia di broker** (7 major, 5 cross, XAUUSD, BTCUSD, OIL, US30, US100), tidak mengandalkan satu market; tidak memaksakan transaksi setiap hari. **Riset historis lama** tetap pada 55 pair.
 - **Intraday first** sebagai strategi utama. **Scalping hanya opsi ekstrem** yang harus diuji mandiri, dan **default DISABLED** karena hasilnya masih negatif.
 - Risk-aware, tidak ada otorisasi pengiriman trading live; ketika data, news, risiko, eksekusi atau evidence tidak cukup: **WAIT**.
 - Preferensi komunikasi: bahasa Indonesia, langsung hasil dan status, tanpa penjabaran proses panjang.
@@ -101,3 +101,10 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - **VPS status:** RAM tersedia **220 MB dari 2.047 MB**, ruang disk tersedia **9,32 GB**; **tidak ada backtest aktif**, MT5 tetap berjalan. RAM tetap rendah terutama karena aplikasi MT5 dan Chrome yang sengaja tidak dimatikan.
 - **GitHub Body CI** pada commit checkpoint **0e643838** sukses. Lihat laporan cleanup privat **C:\KatarinaDev\state\handoff_cleanup_20261012.json** untuk daftar cache.
 - Ini **bukan** janji semua VPS menjadi ringan sepenuhnya: RAM tidak akan meningkat signifikan tanpa menutup aplikasi atau menambah RAM. Aplikasi aktif tidak disentuh untuk menghindari gangguan.
+
+## 9. BATAS SCANNER BARU (12 Oktober 2026)
+
+- Scanner operasional dan default replay V6 berikutnya memakai **maksimum 17 instrumen**: 7 major FX, 5 cross FX, XAUUSD, BTCUSD, oil, US30, US100. Semua simbol tetap diperiksa terhadap katalog broker aktif; yang tidak ada/disabled otomatis dilewati, tanpa membuat simbol palsu.
+- Pada audit read-only VPS, **17/17 tersedia dari katalog 74**; oil = `XTIUSD.vx`, US100 = `NAS100.vx`. Tidak ada order dikirim.
+- Resolver dan tes ada di `src/katarina/intelligence/broker_scan_universe.py` dan `tests/unit/intelligence/test_broker_scan_universe.py`; rincian di `docs/operations/BROKER_ADAPTIVE_SCAN_SCOPE_20261012.md`.
+- Data hasil V1–V6 tetap arsip 55 pair dan **tidak boleh dipresentasikan sebagai performa 17 instrumen**. Risk Governor, permission live, dan hasil forward independen tidak berubah.

@@ -1,4 +1,4 @@
-"""Inspect every available MT5 symbol using Market Decision Brain V3.
+"""Inspect broker-supported priority markets using Market Decision Brain V3.
 
 Read-only evidence collection. No order_send, broker credentials, account
 modifications, approved strategy-edge claim or live-trading activation.
@@ -10,6 +10,8 @@ from datetime import datetime,timezone,timedelta
 from pathlib import Path
 import MetaTrader5 as mt5
 from katarina.intelligence.market_decision_brain_v3 import MarketDecisionBrain
+from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
+from katarina.intelligence.broker_clock_alignment import infer_clock_shift
 from katarina.intelligence.market_decision_pipeline import SensorCandle
 
 TF={"M5":(mt5.TIMEFRAME_M5,5),"M15":(mt5.TIMEFRAME_M15,15),
@@ -36,24 +38,23 @@ def run():
     if term.trade_allowed:
         mt5.shutdown()
         raise RuntimeError("live MT5 session enabled: refusing automatic research scan")
-    symbols=[s.name for s in mt5.symbols_get() if s.trade_mode!=mt5.SYMBOL_TRADE_MODE_DISABLED]
-    # Infer one VERIFIED offset for this single broker terminal using
-    # several current liquid-symbol quotes; reject disagreements. The broker
-    # encodes server-local wall time into MT5 seconds (observed UTC+3h).
-    offset_candidates=[]
-    for ref in ("EURUSD.vx","XAUUSD.vx","BTCUSD.vx","DXY.vx"):
+    catalog=mt5.symbols_get()
+    if catalog is None:
+        mt5.shutdown();raise RuntimeError("broker_catalog_unavailable")
+    selection=resolve_broker_symbols(catalog)
+    symbols=list(selection.symbols)
+    # Only current broker-advertised, selected markets may vote on the
+    # read-only clock consensus; no fixed .vx reference is required.
+    tick_clocks={}
+    for ref in symbols:
         tick=mt5.symbol_info_tick(ref)
-        if tick is None or tick.bid<=0 or tick.ask<tick.bid:
-            continue
-        raw=float(tick.time)-now.timestamp()
-        candidate=int(round(raw/3600))
-        residual=candidate*3600-raw
-        if -30<=residual<=120 and -12<=candidate<=14:
-            offset_candidates.append(candidate)
-    if len(offset_candidates)<2 or len(set(offset_candidates))!=1:
+        if tick is not None and tick.bid>0 and tick.ask>=tick.bid:
+            tick_clocks[ref]=int(tick.time)
+    clock=infer_clock_shift(tick_clocks,now.timestamp())
+    if not clock.suitable_for_readonly_snapshot:
         mt5.shutdown()
         raise RuntimeError("broker_server_utc_offset_cannot_be_verified")
-    verified_hours=offset_candidates[0]
+    verified_hours=clock.observed_hours_shift
     brain=MarketDecisionBrain()
     output={"mode":"READ_ONLY_ADVISORY","as_of_utc":now.isoformat(),
             "source":"MT5 broker closed candles / current quote",
@@ -61,6 +62,9 @@ def run():
             "strategy_edge_registry":"EMPTY_UNTIL_INDEPENDENT_EVIDENCE",
             "live_execution_authorized":False,
             "orders_submitted":0,"verified_server_offset_hours":verified_hours,
+            "broker_symbol_matches":selection.matches,
+            "unavailable_broker_symbols":list(selection.unavailable),
+            "broker_clock_confirming_symbols":clock.confirming_symbols,
             "symbols":{}}
     try:
         for symbol in symbols:
