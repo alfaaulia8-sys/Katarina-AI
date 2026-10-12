@@ -248,3 +248,39 @@ class MarketDecisionBrain:
                             round(invalid,8) if invalid is not None else None,target_kind,
                             strategy,signal,decision,verified,rr,tuple(evidence),
                             tuple(blockers),next_trigger)
+
+    def evaluate_contextually(
+        self, *, symbol: str, candles: Mapping[str,Sequence[SensorCandle]],
+        as_of_utc: datetime, actual_spread: float,
+        news_context: "NewsContext",
+        macro_evidence: Sequence["MacroEvidence"],
+        resolved_experience: Sequence["ResolvedExperience"],
+        risk_situation: "RiskSituation",
+    ) -> "ContextDecision":
+        """Native data-based reasoning: market + macro + execution + memory.
+
+        Additive research-only interface. Existing evaluate(), trading engine
+        and Risk Governor behavior remain unchanged. No model/LLM order path.
+        """
+        from katarina.intelligence.contextual_decision_intelligence import (
+            ContextualDecisionIntelligence,
+        )
+        news_verified=(news_context.ready and news_context.matched_items>0
+                       and news_context.source_count>0)
+        card=self.evaluate(
+            symbol=symbol,candles=candles,as_of_utc=as_of_utc,
+            actual_spread=actual_spread,
+            broker_session_open=risk_situation.broker_session_open,
+            data_fresh=risk_situation.quote_fresh,
+            news_blackout=news_context.blackout,
+            news_context_verified=news_verified,
+            # Do not inject self-reported strategy profitability or bypass
+            # the existing production-independent readiness restrictions.
+            strategy_evidence=None,risk_approved_for_paper=False,
+        )
+        atr=self._atr(candles.get("M15",()))
+        return ContextualDecisionIntelligence().evaluate(
+            card=card,as_of_utc=as_of_utc,news=news_context,
+            macro=macro_evidence,experience=resolved_experience,
+            risk=risk_situation,observed_spread=actual_spread,m15_atr=atr,
+        )
