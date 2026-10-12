@@ -41,9 +41,7 @@ class NativeMarketReplayTests(unittest.TestCase):
 
     def test_poison_future_candle_does_not_change_prior_signal(self):
         first=tuple(self.frames["M5"])
-        extended=first+tuple(replace(c,open=100000.,high=100002.,low=99998.,close=100001.)
-            for c in series("M5",8,300))
-        # Need strictly future times, so explicitly build future bars.
+        # Add only future timestamps; a poison price must not rewrite past cards.
         future=[]
         for i in range(8):
             future.append(SensorCandle(END+timedelta(minutes=5*(i+1)),
@@ -91,7 +89,7 @@ class NativeMarketReplayTests(unittest.TestCase):
         base=int(END.timestamp())
         rows=[PaperEvent("XAUUSD.vx","TREND_PULLBACK","BUY",
                          base+900*i,base+900*i+7200,
-                         0.5,.8,.04,market_regime="TREND_UP") for i in range(50)]
+                         0.5,.8,.04,market_regime="TREND_UP") for i in range(100)]
         split=purged_chronological_splits(rows)
         self.assertTrue(split["train"] and split["validation"] and split["test"])
         b1=split["validation"][0].cut
