@@ -69,7 +69,7 @@ def classify_closed_regime(m5: tuple[ClosedBar, ...],
                            h1: tuple[ClosedBar, ...],
                            *, now: int) -> str:
     """H1 slope / range diagnostic, never a calibrated market forecast."""
-    if not _validate(m5, now, 30) or not _validate(h1, now, 12):
+    if not _validate(m5, now, 30) or not _validate(h1, now, 16):
         return "UNKNOWN"
     volatility = _atr(h1)
     if not volatility or volatility <= 0:
@@ -92,7 +92,7 @@ def propose_closed_candle_strategies(symbol: str,
         raise ValueError("invalid_broker_symbol_point")
     if not isfinite(spread) or spread < 0:
         raise ValueError("invalid_broker_spread")
-    if not _validate(m5, now, 30) or not _validate(h1, now, 12):
+    if not _validate(m5, now, 30) or not _validate(h1, now, 16):
         return ()
     atr = _atr(m5)
     if not atr or atr <= 0 or spread / atr > .20:

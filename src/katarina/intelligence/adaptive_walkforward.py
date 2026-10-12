@@ -125,7 +125,7 @@ class StrategyPerformanceMemory:
             avg = mean(data)
             wins = sum(v for v in data if v > 0)
             losses = -sum(v for v in data if v < 0)
-            pf = wins / losses if losses > 0 else (float("inf") if wins else None)
+            pf = wins / losses if losses > 0 else (99.0 if wins else None)
             uncertainty = .5 * pstdev(data) / sqrt(n)
             conservative = avg - uncertainty
             drift = None

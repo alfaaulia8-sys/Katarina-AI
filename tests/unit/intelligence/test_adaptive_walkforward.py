@@ -156,8 +156,8 @@ class ClosedCandleLibraryTests(unittest.TestCase):
 
     def test_regime_is_deterministic_from_closed_prices(self):
         m5=tuple(bar(i,100,102,99,101) for i in range(40))
-        h1=tuple(bar(i,100+i*.5,102+i*.5,99+i*.5,
-                     101+i*.5) for i in range(40))
+        h1=tuple(bar(i,100+i*.9,102+i*.9,99+i*.9,
+                     101+i*.9) for i in range(40))
         state=classify_closed_regime(m5,h1,now=h1[-1].time)
         self.assertEqual(state,"TREND_UP")
 
