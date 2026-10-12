@@ -1,7 +1,6 @@
 """Tests for public M5 source model; all network access mocked."""
 import unittest
 from unittest.mock import patch
-import public_github_sample_tournament as tournament_module
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -9,6 +8,7 @@ import sys
 
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/"scripts"/"research"))
+import public_github_sample_tournament as tournament_module
 from public_github_sample_tournament import (
     load_public_sample,h1_from_m5,tournament,PUBLIC_SAMPLES)
 from public_market_tournament import QuoteCandle
