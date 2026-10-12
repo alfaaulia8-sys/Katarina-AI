@@ -34,6 +34,7 @@ from katarina.intelligence.verified_policy_context import (
     instrument_currencies,FRESH_SECONDS,
 )
 from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
+from katarina.intelligence.market_article_context import collect_market_articles
 
 # Single source for broker closed bars; no parallel V1/V2 feed workers.
 from run_decision_brain_v3 import bars_for,TF
@@ -222,6 +223,10 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         # the original feed_started_at is before those snapshots, so using it
         # to query the cache would silently hide every newly fetched article.
         articles,article_diag=load_articles(store,datetime.now(timezone.utc))
+        # Media article body provides contextual interpretation only.
+        # NEVER convert it into an official monetary-policy trade signal.
+        media_analysis,media_status=collect_market_articles(
+            store.db,datetime.now(timezone.utc)) if fetch_news else ([],("disabled",))
         now=datetime.now(timezone.utc)
         catalog=mt5.symbols_get()
         if catalog is None:raise RuntimeError("BROKER_CATALOG_NOT_FOUND")
@@ -243,6 +248,9 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 "historical_clock_shift_verified":False,
                 "broker_clock_confirming_symbols":clock.confirming_symbols,
                 "news_feed_status":feed_status,"full_article_checks":article_diag,
+                "media_article_status":list(media_status),
+                "media_articles_analyzed_from_body":media_analysis[:8],
+                "media_alone_never_authorizes_entry":True,
                 "news_policy_method":"OFFICIAL_PUBLISHER_FULL_ARTICLE_CONDITIONAL_ONLY",
                 "broker_symbol_matches":selection.matches,
                 "unavailable_symbols":list(selection.unavailable),

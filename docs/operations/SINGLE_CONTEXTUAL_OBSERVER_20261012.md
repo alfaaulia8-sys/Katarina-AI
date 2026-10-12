@@ -70,3 +70,26 @@ One pass prints only aggregated counts.
 - Forward quote markouts are only diagnostic; independent verified
   bid/ask + commissions + broker fills remain missing.
 - No live trading and no changes to production.
+
+## One additional secondary full-article news source (same observer, no duplicate cron)
+
+The canonical observer also uses
+`src/katarina/intelligence/market_article_context.py` to query **one
+existing CNBC World RSS**, throttled to one RSS fetch every 30 minutes
+and one article body fetch per observer pass. Full text is cached in
+the **same private context.sqlite3** and never written to GitHub.
+Cached articles require real publisher paragraphs, a SHA256 body digest,
+a dated feed item within 24 hours and the verified CNBC HTTPS origin.
+
+Its report includes `media_articles_analyzed_from_body` with a short
+fact-focused excerpt drawn **from the actual article paragraphs**,
+a conditional asset-transmission mechanism, explicit
+`bias_harga_terverifikasi=UNCERTAIN`, the non-primary-source caveat,
+and the article provenance and read-time. These descriptive media
+summaries can help KATARINA understand market events but **never**
+become `MacroEvidence.source_verified` or a permission to open a
+position. Only the official Fed/ECB/BoE full articles are candidates
+for explicit monetary policy context, and those too remain conditional.
+
+No additional observer, cron, GitHub Action, credentials or broker
+order path is introduced.
