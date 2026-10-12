@@ -89,3 +89,59 @@ contextual output is `WAIT`.
 This is the reasoning and abstention layer the project lacked, not
 another parameter-optimization tournament. Preserve all core
 production modules and safety boundaries.
+
+
+## Broker-read observation, 12 October 2026 — verified on VPS
+
+The *actual* optional `MarketDecisionBrain.evaluate_contextually` interface
+ran against demo broker data through the **in-memory, read-only**
+`scripts/research/probe_contextual_decision_broker.py`. It received
+90 completed broker candles each from M5/M15/H1 for 3 instruments.
+No private candles, account information, credentials, historical
+tick rows, brokerage trades or VPS files were exported or written.
+
+Market observation clock: **2026-10-12 05:50:31 UTC**.
+
+**Critical timestamp discovery:** broker tick *and* bar raw epochs
+appear displaced **+3 hours** from system UTC right now. Three
+independent contemporaneous instrument ticks confirmed the same
+integer-hour offset using existing
+`katarina.intelligence.broker_clock_alignment.infer_clock_shift`.
+Raw tick epochs apparently ~08:50 when system UTC was ~05:50.
+The research snapshot alone normalizes them by -3h. Quote stamps
+remained ~12.6 seconds ahead of system UTC after integer-hour
+adjustment, within the explicitly narrow skew budget. The historical
+offset and DST schedule have **NOT** been verified. Do **not**
+blindly apply this +3h to past 2026 tick/bar data or any production
+execution. Previous V9/V10 reports using raw broker epochs as UTC
+must not be interpreted as verified historical UTC session timing.
+
+| Broker market | Market state | Technical plan | Observed quote spread | Real decision |
+|---|---|---|---:|---|
+| XAUUSD.vx | TRANSITION | OBSERVE | 0.33 price | WAIT |
+| EURUSD.vx | SIDEWAYS | RANGE_FADE hypothesis | 0.00016 price | WAIT |
+| NAS100.vx | SIDEWAYS | RANGE_FADE hypothesis | 3.6 price | WAIT |
+
+- XAUUSD: no confirmed directional entry and transition regime,
+  so a past positive SELL test does **not** override current WAIT.
+- EURUSD: spread is too high relative to current M15 ATR under
+  predeclared research threshold; range conditions do **not**
+  justify opening a BUY or SELL by themselves.
+- NAS100: cost looks acceptable relative to ATR but no directional
+  entry or validated statistical advantage; WAIT.
+- All three: external point-in-time policy/newscalendar connector
+  not yet linked to this probe, and the verified **prospective**
+  trade-outcome memory is empty. There are **no invented policy
+  summaries or outcome records**. All decisions WAIT, orders=0.
+
+This is concrete market-conditional behavior and blocking reasons,
+not proof of profit. The opt-in entrypoint is callable from a research
+consumer today but is deliberately **not automatically invoked by
+the live trader**. Live order authorization remains false, production
+risk=0. No structural main KATARINA changes.
+
+Safety/unit workflow, Body CI, Operational Hardening, Stage baseline
+on the initial native reasoning code commit **all PASS**:
+`cb9a1f2a55c88fe4173230a64fb4d8f3c6717472`.
+Subsequent read-only probe corrections did not modify the entry
+framework.

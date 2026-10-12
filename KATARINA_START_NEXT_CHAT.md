@@ -199,3 +199,28 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
   Collect truly prospective independent paper results before any
   further deployment discussion**. No change to core, VPS files,
   production Risk Governor, orders, MT5 settings.
+
+
+### Context-based decision intelligence, 12 October 2026 (actual implementation)
+
+- Native module `src/katarina/intelligence/contextual_decision_intelligence.py`
+  with resolved prospective outcome memory, news-policy provenance,
+  market regime and friction, causal clock, risk veto and reasons for WAIT.
+- Existing `MarketDecisionBrain.evaluate_contextually` is an
+  **opt-in native research method**. Old `evaluate`, production
+  Brain, scanner, risk governor, MT5 trade gateway, dashboard
+  **unchanged**. No live auto activation.
+- 17 deterministic unit tests passed with safety workflow, full
+  Body CI and operational baseline PASS on code SHA `cb9a1f2`.
+- Actual broker-read 3-symbol contextual snapshot at 05:50 UTC
+  (2026-10-12) returned XAUUSD=TRANSITION/WAIT,
+  EURUSD=SIDEWAYS/WAIT, NAS100=SIDEWAYS/WAIT.
+  News connector NOT CONNECTED and prospective outcome ledger EMPTY.
+  Broker raw epochs appear UTC+3 **now** (confirmed across 3
+  symbol ticks), historical DST alignment not verified. Probe aligned
+  current read-only snapshot only; never use offset for live/historical
+  backfill without separate verification.
+- Probe: `scripts/research/probe_contextual_decision_broker.py`.
+  Report: `docs/research/CONTEXTUAL_DECISION_INTELLIGENCE_20261012.md`.
+- No VPS writes and no live orders. No claim of profitable model or
+  LLM-only forecast. More historic parameter churn is not authorized.
