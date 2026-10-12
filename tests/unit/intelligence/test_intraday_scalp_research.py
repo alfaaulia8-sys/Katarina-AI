@@ -44,6 +44,14 @@ class TestIntradayScalpFullBar(unittest.TestCase):
         prior=lambda xs:[(x.cut,x.side,x.mode) for x in xs if x.idx<190]
         self.assertEqual(prior(s1),prior(s2))
 
+    def test_prospective_scanner_can_include_newest_closed_bar_without_future_exit(self):
+        m5=bars(300,300);m15=bars(150,900);h1=bars(110,3600)
+        _,backtest=vector_prefilter("US30.vx",m5,m15,h1,.01)
+        _,forward=vector_prefilter("US30.vx",m5,m15,h1,.01,
+                                  allow_unresolved_latest=True)
+        self.assertGreater(forward["closed_bars_considered"],
+                           backtest["closed_bars_considered"])
+
     def test_large_spread_rejects_all_setups(self):
         m5=bars(260,300);m15=bars(150,900);h1=bars(110,3600)
         m5["spread"]=999999

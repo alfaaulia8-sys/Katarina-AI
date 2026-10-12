@@ -39,7 +39,8 @@ def previous_extremes(a,n=20):
     return hi,lo
 
 def vector_prefilter(symbol,m5,m15,h1,point,
-                     *,min_bars=90,max_candidates=None):
+                     *,min_bars=90,max_candidates=None,
+                     allow_unresolved_latest=False):
     """Return ALL prequalified events; no stride, no future-label access."""
     if not point>0 or not isfinite(point):
         raise ValueError("invalid_broker_point")
@@ -69,7 +70,10 @@ def vector_prefilter(symbol,m5,m15,h1,point,
     h1t=h1["time"].astype(np.int64)
     i15=np.searchsorted(m15t,cut-900,side="right")-1
     ih1=np.searchsorted(h1t,cut-3600,side="right")-1
-    valid=(np.arange(n)>=min_bars)&(np.arange(n)<n-49)
+    # Offline historical fills require subsequent bars; prospective observation
+    # must be able to inspect the latest FULLY CLOSED bar without any future bars.
+    horizon_end=n if allow_unresolved_latest else n-49
+    valid=(np.arange(n)>=min_bars)&(np.arange(n)<horizon_end)
     valid&=(i15>=10)&(ih1>=10)&np.isfinite(atr)&(atr>0)
     ix15=np.clip(i15,10,len(m15)-1);ixh1=np.clip(ih1,10,len(h1)-1)
     valid&=((cut-(m15t[ix15]+900))<=1800)
