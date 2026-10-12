@@ -16,8 +16,10 @@ import os
 from pathlib import Path
 import py_compile
 from statistics import mean
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))  # script execution must import local research helpers
 ROLES = ("ideas", "coding", "math", "logic")
 VERSION = "KATARINA_PARALLEL_TEAM_V1"
 BASELINE = "2026-10-13"
