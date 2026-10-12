@@ -76,7 +76,7 @@ class PublicSampleTournamentTests(unittest.TestCase):
                           100.05,100.45,99.65,100.05) for i in range(260)]
         hypothesis=StrategyHypothesis(
             "USOIL","TREND_PULLBACK","BUY","TREND_UP",
-            base+240*300,99.,101.,100.,.8)
+            base+240*300,90.,120.,100.,.8)
         with patch.object(tournament_module,"propose_closed_candle_strategies",
                           return_value=(hypothesis,)):
             for symbol in ("USOIL","US30","NAS100"):
