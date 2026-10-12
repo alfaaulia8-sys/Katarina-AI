@@ -59,8 +59,13 @@ def research(args):
     selected=[]
     for sym,xs in sorted(by_symbol.items()):
         xs.sort(key=lambda x:(x["signal_epoch"],x["method"],x["side"]))
-        n=min(MAX_TICK_SAMPLES_PER_SYMBOL,len(xs))
-        chosen=[xs[i*(len(xs)-1)//max(1,n-1)] for i in range(n)]
+        # Exhaustive audit is independent of profit/exit labels; it
+        # extends (not replaces) the already published time-only sample.
+        if args.audit_all and len(xs)>120:
+            raise ValueError("tick_audit_per_symbol_resource_bound_120")
+        n=len(xs) if args.audit_all else min(MAX_TICK_SAMPLES_PER_SYMBOL,len(xs))
+        chosen=(list(xs) if args.audit_all else
+                [xs[i*(len(xs)-1)//max(1,n-1)] for i in range(n)])
         selected.extend(chosen)
     selected.sort(key=lambda x:(x["signal_epoch"],x["symbol"]))
     if not mt.initialize():raise RuntimeError("MT5_TICK_RECHECK_FAILED")
@@ -113,7 +118,9 @@ def research(args):
         "broker_historical_DST_transition_verified":False,
         "broker_data_coverage":status,
         "tick_audit":tick_summary,
-        "tick_audit_selection":"TIME_BALANCED_BEFORE_OUTCOME_BY_SYMBOL",
+        "tick_audit_selection":("EXHAUSTIVE_FROZEN_PROPOSALS_NO_OUTCOME_RANK"
+                                if args.audit_all else
+                                "TIME_BALANCED_BEFORE_OUTCOME_BY_SYMBOL"),
         "tick_audit_records":records,
         "actual_account_commission_schedule_verified":False,
         "actual_order_fills_verified":False,
@@ -150,6 +157,8 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument("--symbols",required=True)
     p.add_argument("--output",required=True)
+    p.add_argument("--audit-all",action="store_true",
+                   help="Read full real broker BID/ASK tick paths for EVERY frozen proposal")
     args=p.parse_args()
     research(args)
 
