@@ -88,6 +88,7 @@ class ContextDecision:
     research_only: bool = True
     live_execution_authorized: bool = False
     production_risk_fraction: float = 0.0
+    technical_evidence_score: float = 0.0
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -305,6 +306,7 @@ class ContextualDecisionIntelligence:
         return ContextDecision(
             symbol=symbol,analyzed_at_utc=now.isoformat(),
             market_state=card.market_state,direction_bias=card.directional_bias,
+            technical_evidence_score=card.evidence_score,
             selected_method=card.strategy,technical_setup=technical,
             action=action,conditional_side=technical if technical in ("BUY","SELL") else "WAIT",
             reference_entry_kind="CLOSED_BAR_CONFIRMATION_NEXT_BAR_PAPER_ONLY",

@@ -35,6 +35,9 @@ from katarina.intelligence.verified_policy_context import (
 )
 from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
 from katarina.intelligence.market_article_context import collect_market_articles
+from katarina.intelligence.prospective_shadow_book import (
+    ProspectiveShadowBook,ResearchHypothesis,
+)
 
 # Single source for broker closed bars; no parallel V1/V2 feed workers.
 from run_decision_brain_v3 import bars_for,TF
@@ -217,6 +220,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         feed_started_at=datetime.now(timezone.utc)
         store=ContextStore(root/"context.sqlite3")
         journal=ContextDecisionJournal(store.db)
+        virtual_book=ProspectiveShadowBook(store.db)
         feed_status=store.refresh(feed_started_at) if fetch_news else {
             s:"OFFLINE_TEST_DISABLED" for s in ("fed","ecb","boe","calendar")}
         # ContextStore.record timestamps are captured AFTER a network request;
@@ -260,6 +264,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 "production_execution":False,
                 "live_execution_authorized":False,"orders_submitted":0,"symbols":{}}
         latest_quotes={}
+        paper_hypotheses=[]
         for symbol in symbols:
             tick=ticks.get(symbol)
             try:
@@ -308,6 +313,33 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 card["costs_reconciled"]=False
                 card["news_economic_feed_ready"]=news.ready and calendar["ready"]
                 card["quote_markout_is_real_trade"]=False
+                card["hypothesis_is_trade_authorization"]=False
+                # Market Brain + conditional context is ONE evaluation.
+                # ShadowBook only samples what that engine already proposed;
+                # we do not create a duplicate strategy-selector service.
+                if (quote_ok and calendar["ready"] and
+                    not calendar["blackout"] and
+                    decision.conditional_side in ("BUY","SELL") and
+                    decision.conditional_invalidation is not None and
+                    decision.conditional_target is not None):
+                    paper_hypotheses.append(ResearchHypothesis(
+                        symbol=symbol,method=decision.selected_method,
+                        regime=decision.market_state,
+                        side=decision.conditional_side,
+                        closed_bar_at=bars["M5"][-1].closed_at_utc,
+                        observed_at=now,
+                        bid=float(tick.bid),ask=float(tick.ask),
+                        tick_at=quote_at,
+                        stop=decision.conditional_invalidation,
+                        target=decision.conditional_target,
+                        evidence_score=decision.technical_evidence_score,
+                        blockers=decision.blocking_reasons,
+                        official_news_verified=bool(
+                            news.ready and sources and calendar["ready"]),
+                        spread_atr=(observed_spread/max(
+                            brain._atr(bars["M15"]),1e-12)),
+                    ))
+                    card["research_shadow_hypothesis"]="QUEUED_FOR_DETERMINISTIC_RANKING"
                 report["symbols"][symbol]=card
                 latest_quotes[symbol]=(float(tick.bid),float(tick.ask),quote_at)
                 if quote_ok:
@@ -328,6 +360,13 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 }
         report["quote_markouts_resolved_this_cycle"]=journal.resolve(latest_quotes,now)
         report["quote_journal"]=journal.summary()
+        # Price path gaps => invalid virtual observations, NOT assumed fills.
+        report["virtual_shadow_settled"]=virtual_book.settle(
+            now=now,quotes=latest_quotes)
+        report["virtual_shadow_selection"]=virtual_book.propose(
+            paper_hypotheses,now)
+        report["virtual_shadow_summary"]=virtual_book.summary()
+        report["virtual_shadow_not_executed"]=True
         report["market_states"]=dict(Counter(
             x["market_state"] for x in report["symbols"].values()))
         report["final_actions"]=dict(Counter(
@@ -337,7 +376,10 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         return {"observed_symbols":report["observed_symbols"],
                 "market_states":report["market_states"],"final_actions":report["final_actions"],
                 "full_articles":len(articles),"clock_hours":offset,
-                "journal":report["quote_journal"]["counts"],"orders":0}
+                "journal":report["quote_journal"]["counts"],
+                "paper_virtual":report["virtual_shadow_summary"]["counts"],
+                "hypotheses":len(paper_hypotheses),
+                "orders":0}
     finally:
         if store is not None:store.db.close()
         mt5.shutdown()
