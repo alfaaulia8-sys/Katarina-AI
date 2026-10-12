@@ -127,6 +127,7 @@ def replay_native_brain(
     brain=MarketDecisionBrain()
     events=[]
     details=[]
+    all_technical_proposals=[]
     counters={"evaluated":0,"technical_wait":0,"no_causal_timeframe":0,
               "stale_regime_bars":0,"quote_path_unavailable":0,
               "invalid_rr_or_stop":0,"proxy_completed":0,
@@ -182,6 +183,18 @@ def replay_native_brain(
                 card.strategy=="OBSERVE"):
                 counters["invalid_rr_or_stop"]+=1
                 continue
+            # Freeze every technically admissible setup BEFORE inspecting
+            # future bars. Tick auditing must NOT sample only candidates
+            # whose future OHLC proxy happened to resolve cleanly.
+            all_technical_proposals.append({
+                "symbol":symbol,"signal_at":now,
+                "method":card.strategy,"side":card.technical_signal,
+                "regime":card.market_state,
+                "technical_score":card.evidence_score,
+                "rr_estimate":card.rr_after_spread_estimate,
+                "sl":card.invalidation_level,"tp":card.primary_target,
+                "known_from_closed_bars_only":True,
+            })
             outcome=simulate_ohlc_proxy(
                 m5,idx,card.technical_signal,
                 card.invalidation_level,card.primary_target,spread,
@@ -229,6 +242,8 @@ def replay_native_brain(
         "independent_unseen_holdout":False,
         "chronological_completed_only_memory":True,
         "signals":details,
+        "all_technical_proposals":all_technical_proposals,
+        "proposals_are_selected_before_future_outcomes":True,
         "adaptive_summary":historical,
         "orders_sent":0,
         "live_execution_authorized":False,

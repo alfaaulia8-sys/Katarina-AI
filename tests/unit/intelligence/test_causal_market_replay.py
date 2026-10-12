@@ -58,6 +58,25 @@ class NativeMarketReplayTests(unittest.TestCase):
                 for x in result["signals"] if x["signal_at"]<=before.timestamp()]
         self.assertEqual(history(original),history(with_future))
 
+    def test_unlabeled_technical_proposals_are_preserved(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        fake=SimpleNamespace(technical_signal="BUY",
+            rr_after_spread_estimate=2.,invalidation_level=90.,
+            primary_target=130.,strategy="TREND_PULLBACK",
+            evidence_score=.8,market_state="TREND_UP")
+        with patch("katarina.intelligence.causal_market_replay.MarketDecisionBrain.evaluate",
+                   return_value=fake), patch(
+            "katarina.intelligence.causal_market_replay.simulate_ohlc_proxy",
+            return_value=None):
+            result=replay_native_brain({"TEST.vx":self.frames},
+                max_m5_cuts_per_symbol=150)
+        self.assertEqual(result["signals"],[])
+        self.assertGreater(len(result["all_technical_proposals"]),0)
+        self.assertTrue(result["proposals_are_selected_before_future_outcomes"])
+        self.assertEqual(result["counters"]["quote_path_unavailable"],
+                         len(result["all_technical_proposals"]))
+
     def test_noncausal_duplicate_and_bad_ohlc_fail_closed(self):
         with self.assertRaises(ValueError):
             validate_bars({**self.frames,"M5":self.frames["M5"]+

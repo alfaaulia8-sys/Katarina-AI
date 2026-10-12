@@ -61,7 +61,7 @@ def run(args):
         frames,assumed_spread_to_m15_atr=args.assumed_spread_atr,
         additional_cost_r=args.extra_cost_r,
         max_m5_cuts_per_symbol=args.max_cuts)
-    selected=preselect(retrospective["signals"],args.max_per_symbol)
+    selected=preselect(retrospective["all_technical_proposals"],args.max_per_symbol)
     if not mt5.initialize():
         raise RuntimeError("MT5_TICKS_UNAVAILABLE")
     try:
@@ -98,7 +98,7 @@ def run(args):
                          tick_size=ticksize,extra_cost_r=args.extra_cost_r)
             records.append({"signal":{k:s[k] for k in (
                 "symbol","method","side","regime","signal_at",
-                "label_known_at","technical_score")},
+                "technical_score")},
                 "outcome":outcome})
             if index%10==0:
                 print("TICK_RESEARCH_PROGRESS",json.dumps({
@@ -112,8 +112,10 @@ def run(args):
         "generated_utc":datetime.now(timezone.utc).isoformat(),
         "source":"actual broker tick BID/ASK history with next M5 BID validation",
         "reused_market_decision_engine":"MarketDecisionBrain.evaluate",
-        "source_replay_candidates_total":len(retrospective["signals"]),
+        "source_replay_candidates_total":len(retrospective["all_technical_proposals"]),
+        "source_proxy_labeled_count":len(retrospective["signals"]),
         "sample_selection":"BALANCED_CHRONOLOGICAL_BY_SYMBOL_NO_OUTCOME_RANK",
+        "sample_source":"ALL_PRE_OUTCOME_NATIVE_BRAIN_TECHNICAL_PROPOSALS",
         "max_per_symbol":args.max_per_symbol,
         "broker_clock_offset_now_hours":offset,
         "historical_DST_multi_months_verified":False,
