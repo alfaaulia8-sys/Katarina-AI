@@ -1,15 +1,71 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-12T13:17:19Z",
+  "updatedAt": "2026-10-12T19:00:27Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "Jim Cramer's top 10 things to watch in the stock market Monday",
+      "title": "The bull market turned 4 years old on Monday. Investors say reaching a fifth birthday could be challenging",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/12/the-bull-market-just-turned-four-after-climbing-a-wall-of-worry.html",
+      "publishedAt": "2026-10-12T18:18:39Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "IonQ to acquire cybersecurity firm Elisity in an all-stock deal for up to $1.3 billion",
       "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/investingclub/2026/10/12/jim-cramers-top-10-things-to-watch-in-the-stock-market-monday.html",
-      "publishedAt": "2026-10-12T13:06:04Z",
+      "url": "https://www.cnbc.com/2026/10/12/ionq-elisity-acquisition-cybersecurity.html",
+      "publishedAt": "2026-10-12T18:14:45Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Higher rates could be needed to avoid 'inflationary mindset' taking hold, says Fed's Hammack",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/12/beth-hammack-fed-inflation-policy.html",
+      "publishedAt": "2026-10-12T17:15:21Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "FAA warns U.S. airlines of safety risks over Saudi Arabia after attacks",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/faa-saudi-arabia-flight-risks.html",
+      "publishedAt": "2026-10-12T16:50:44Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Delta delays debut of Saudi Arabia service until March after Riyadh airport attacks",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/delta-riyadh-nonstop-service-delay.html",
+      "publishedAt": "2026-10-12T15:48:28Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Inflation likely peaked for 2026 but will remain sticky, according to prediction markets",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/12/inflation-will-remain-sticky-in-2026-according-to-prediction-markets.html",
+      "publishedAt": "2026-10-12T15:37:26Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Nobel prize in economics awarded to Robert E. Hall and Michael Woodford",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/nobel-economics-prize-winner-woodford-hall.html",
+      "publishedAt": "2026-10-12T14:09:02Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Banks are set to report this week. Here's what the options market expects",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/banks-are-set-to-report-this-week-heres-what-the-options-market-expects.html",
+      "publishedAt": "2026-10-12T13:27:20Z",
       "category": "Pasar Global",
       "language": "en"
     },
@@ -19,46 +75,6 @@
       "url": "https://www.cnbc.com/2026/10/12/us-iran-war-trump-hormuz-saudi.html",
       "publishedAt": "2026-10-12T13:01:49Z",
       "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Brent tops $106 after deadly Saudi airport attack, Ukraine says Russia violated energy ceasefire",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/oil-prics-today-iran-us-saudi-arabia-crude-.html",
-      "publishedAt": "2026-10-12T12:54:58Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Nobel prize in economics awarded to Robert E. Hall and Michael Woodford",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/nobel-economics-prize-winner-woodford-hall.html",
-      "publishedAt": "2026-10-12T12:38:25Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Zelenskyy accuses Russia of violating Trump’s energy ceasefire as drone attacks continue",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/russia-ukraine-energy-ceasefire-trump.html",
-      "publishedAt": "2026-10-12T12:36:21Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "FAA warns U.S. airlines of safety risks over Saudi Arabia after attacks",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/12/faa-saudi-arabia-flight-risks.html",
-      "publishedAt": "2026-10-12T12:31:05Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Plenty is working against this market. Here's why I'm staying invested anyway",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/investingclub/2026/10/11/plenty-is-working-against-this-market-why-im-staying-invested-anyway.html",
-      "publishedAt": "2026-10-12T12:18:10Z",
-      "category": "Pasar Global",
       "language": "en"
     },
     {
@@ -83,22 +99,6 @@
       "url": "https://www.cnbc.com/2026/10/12/china-gold-buying-interest-rate-.html",
       "publishedAt": "2026-10-12T00:51:10Z",
       "category": "Emas / Logam",
-      "language": "en"
-    },
-    {
-      "title": "Trump says he is 'going to look at' joining Saudi Arabia in the fight against Iran-backed Houthis after deadly airport strike",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/11/trump-saudi-arabia-iran-houthis.html",
-      "publishedAt": "2026-10-11T21:30:45Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Trump declares 'energy ceasefire' between Russia and Ukraine; Zelenskyy is waiting for details",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/11/trump-energy-ceasefire-russia-ukraine-zelenskyy.html",
-      "publishedAt": "2026-10-11T19:33:51Z",
-      "category": "Energi / Geopolitik",
       "language": "en"
     }
   ]
