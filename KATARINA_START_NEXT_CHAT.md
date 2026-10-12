@@ -118,3 +118,12 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - TREND_PULLBACK, BREAKOUT_RETEST, LIQUIDITY_SWEEP_RECLAIM dan RANGE_MEAN_REVERSION adalah prototipe *hipotesis*, tidak boleh diberi P/L milik trade V6.
 - Data 2025–2026 telah diteliti sebelumnya; walk-forward kronologis ini bukan bukti holdout independen. Privat data broker tetap di luar GitHub.
 - Output produksi tetap WAIT. Tidak ada pengaktifan LIVE atau penulisan file pada VPS.
+
+
+### Verifikasi hasil V7 oleh runner GitHub
+
+- Commit kode: f1aa89aefe7f5c1b54d8e777156d10a8faa3f997. **Keempat workflow GitHub PASS**, termasuk Adaptive Research (#38200671468).
+- Subset arsip V6: 334 paper trade historis pada 14 instrumen yang pernah tereksekusi dalam model V6; bukan keseluruhan histori kandidat 17 instrumen.
+- Adaptive model pada biaya dasar: 70 trade, return **-2,7752%** (pembanding V6 subset kondisional: **-0,3066%**). Biaya tambahan +0,10R: 44 trade, return **-4,1422%**. Belum profitable.
+- Prototipe metode alternatif belum punya evaluasi P/L dari candlestick historisnya masing-masing. Jangan menyatakan strategi V7 lolos atau mengaktifkan live.
+- Artifact riset tersimpan dalam run Actions (retensi 7 hari). VPS tidak diubah atau ditulis.
