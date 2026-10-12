@@ -84,3 +84,45 @@ Do not promote a winning-looking historical configuration to live.
   OHLC. This is NOT the same quality as archived broker bid/ask ticks.
   Keep outputs labeled PUBLIC_REFERENCE_M5_MODELED_BID_ASK, separately from
   the planned BID/ASK-native higher-quality replay.
+
+
+## Verified results — second GitHub-runner pilot
+
+Workflow: https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38202938538
+
+**Status: SUCCESS** — initial test suite: 12 standard-library BID/ASK importer
+safety tests + 7 fallback public-M5 unit tests passed; runner downloaded
+actual public vendor M5 sample data from GitHub, and the research-only
+contract passed.
+
+Period: 2026-08-17 to 2026-09-08, UTC source sample, public 5m reference
+candles, and a **hypothetical fixed spread**, NOT historical broker
+bid/ask ticks or private VPS candle data.
+
+- EURUSD: 4,894 M5 bars, 406 complete H1 bars, 660 raw hypotheses,
+  362 model trades; average net modeled R -0.215297; PF 0.6540.
+- XAUUSD: 4,683 M5 bars, 388 complete H1 bars, 600 raw hypotheses,
+  312 model trades; average modeled R -0.103210; PF 0.82375.
+- Pooled strategy hypotheses: 674 hypothetical overlapping model trades;
+  average R -0.163411, PF 0.73002. Pooled compounded return must NOT be
+  treated as an investable portfolio return.
+
+**By method and direction (NOT broker-validated):**
+
+| Hypothesis | BUY n | BUY mean R | BUY PF | SELL n | SELL mean R | SELL PF |
+|---|---:|---:|---:|---:|---:|---:|
+| TREND_PULLBACK | 127 | -0.149358 | 0.74162 | 129 | -0.143591 | 0.74529 |
+| BREAKOUT_RETEST | 16 | -0.165721 | 0.73315 | 8 | -0.182092 | 0.71798 |
+| LIQUIDITY_SWEEP_RECLAIM | 107 | -0.167472 | 0.73257 | 75 | -0.150684 | 0.75248 |
+| RANGE_MEAN_REVERSION | 118 | -0.186339 | 0.70832 | 94 | -0.184365 | 0.70462 |
+
+**No candidate achieved positive modeled expectancy in this pilot.**
+Multiple-test and overlapping-trade concerns remain. The historical
+sample is short and previously researched; source ASK, broker transaction
+costs, true tick fills, DST alignment and point-in-time news remain
+unverified. No live promotion. 15 other instruments have not been tested
+on this independent-source pipeline yet. No files were written to VPS.
+
+The data-source-specific BID/ASK workflow failed solely on an external
+TLS handshake timeout. That failed job produced **no valid BID/ASK data**;
+do not conflate it with the successful lower-fidelity M5 study.

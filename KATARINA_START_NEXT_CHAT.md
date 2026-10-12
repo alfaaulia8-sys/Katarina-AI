@@ -135,3 +135,12 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Pengujian diarahkan untuk keluarga Trend Pullback, Breakout Retest, Liquidity Sweep, Range Mean Reversion; BUY dan SELL dipisah. Pilot pertama EURUSD + XAUUSD menggunakan M1 BID/ASK **publik** dari Dukascopy, bukan file privat broker VPS, dengan agregasi M5/H1 tertutup dan entry candle berikutnya.
 - Broker live, Risk Governor, penulisan dan restart VPS semuanya tidak disentuh. GitHub runner menggunakan permission contents:read. Arsip M1 mentah tidak ditulis ke GitHub, hanya diagnostic summary dan modeled paper events sementara.
 - Status edge/profit harus mengikuti hasil runner, bukan klaim sebelum tes. Semua historical paper tetap RESEARCH-ONLY / WAIT.
+
+
+### Uji pertama Strategy Tournament V8 — diverifikasi GitHub (12 Oktober 2026)
+
+- GitHub Actions PASS: https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38202938538
+- Data publik M5 referensi (bukan BID/ASK nyata broker), rentang 2026-08-17 s.d. 2026-09-08: EURUSD 4894 M5, XAUUSD 4683 M5.
+- Empat metode, BUY/SELL terpisah: 674 transaksi simulasi yang **boleh overlap**, semua 8 kelompok method/side mean R negatif. Pool -0,163411 R, PF 0,73002 — **bukan return portofolio investable**.
+- Dukascopy BID/ASK asli tidak berhasil diambil via runner karena TLS timeout. Sumber alternatif M5 berhasil, dengan asumsi spread model yang harus dipisah dari evidence broker. VPS tidak ditulis.
+- Belum ada strategi profitable yang tervalidasi; 15 instrumen lain belum diuji pada pipeline baru. Tetap RESEARCH-ONLY/WAIT, live trading disabled.
