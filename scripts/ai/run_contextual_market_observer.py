@@ -35,6 +35,7 @@ from katarina.intelligence.verified_policy_context import (
 )
 from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
 from katarina.intelligence.market_article_context import collect_market_articles
+from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
 from katarina.intelligence.prospective_shadow_book import (
     ProspectiveShadowBook,ResearchHypothesis,
 )
@@ -366,6 +367,11 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         report["virtual_shadow_selection"]=virtual_book.propose(
             paper_hypotheses,now)
         report["virtual_shadow_summary"]=virtual_book.summary()
+        retrospective=shadow_review(store.db,now)
+        report["virtual_memory_cohorts"]=sorted(
+            retrospective["groups"],key=lambda g:-g["complete"])[:12]
+        report["virtual_memory_total_cohorts"]=len(retrospective["groups"])
+        report["virtual_memory_cannot_authorize_real_trading"]=True
         report["virtual_shadow_not_executed"]=True
         report["market_states"]=dict(Counter(
             x["market_state"] for x in report["symbols"].values()))

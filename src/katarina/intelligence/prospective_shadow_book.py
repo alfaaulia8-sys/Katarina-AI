@@ -174,8 +174,14 @@ class ProspectiveShadowBook:
         for h in hypotheses:
             if abs(epoch(h.observed_at)-t)>3:
                 raise ValueError("hypothesis_timestamp_mismatch")
+        from katarina.intelligence.prospective_shadow_review import pause_due_to_losses
         eligible=[]
+        drift_paused=0
         for h in hypotheses:
+            if pause_due_to_losses(self.db,symbol=h.symbol,method=h.method,
+                                   side=h.side,regime=h.regime,at_utc=now):
+                drift_paused+=1
+                continue
             dims=h.geometry()
             if dims is None:continue
             bt=epoch(h.closed_bar_at)
@@ -191,7 +197,7 @@ class ProspectiveShadowBook:
             eligible.append((rank,h.symbol,h,risk,rr))
         if not eligible:
             return {"accepted":False,"reason":"NO_CLOSED_BAR_VALID_HYPOTHESIS",
-                    "candidates":0}
+                    "candidates":0,"drift_paused":drift_paused}
         # Always select by score, NEVER whichever symbol the input listed first.
         ranked=sorted(eligible,key=lambda x:(-x[0][0],-x[0][1],-x[0][2],x[1]))
         with self.db:
