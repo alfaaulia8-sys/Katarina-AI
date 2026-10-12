@@ -1,24 +1,8 @@
 name: KATARINA Self-Evolution Lab (GitHub-hosted)
 
-# Explicitly run only the GitHub-hosted research harness; no self-hosted VPS.
+# Research is deliberately manual-only, per tests/static/test_github_action_fanout.py.
+# No auto-push fanout, self-hosted runners, VPS actions, broker credentials, or orders.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/katarina-self-evolution-runner.yml'
-      - 'scripts/ai/audit_self_evolution_runner.py'
-      - 'src/katarina/intelligence/self_evolution_lab.py'
-      - 'src/katarina/governance/multi_model_evolution_review.py'
-      - 'src/katarina/intelligence/evidence_risk.py'
-      - 'tests/unit/intelligence/test_self_evolution_lab.py'
-      - 'tests/unit/governance/test_multi_model_evolution_review.py'
-  pull_request:
-    paths:
-      - '.github/workflows/katarina-self-evolution-runner.yml'
-      - 'scripts/ai/audit_self_evolution_runner.py'
-      - 'src/katarina/intelligence/self_evolution_lab.py'
-      - 'src/katarina/governance/multi_model_evolution_review.py'
-      - 'src/katarina/intelligence/evidence_risk.py'
   workflow_dispatch:
 
 permissions:
