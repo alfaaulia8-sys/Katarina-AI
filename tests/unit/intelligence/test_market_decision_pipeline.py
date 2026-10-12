@@ -57,6 +57,17 @@ class TestMarketDecisionPipeline(unittest.TestCase):
         self.assertEqual(result.tools["vwap_source"],
                          "ROLLING20_M5_BROKER_TICK_VOLUME_PROXY_NOT_EXCHANGE_VOLUME")
 
+    def test_optional_structural_entry_gate_vetoes_and_explains(self):
+        original = self.evaluate()
+        filtered = self.evaluate(use_structural_entry_gate=True)
+        self.assertEqual(original.action, "BUY")
+        self.assertIsNotNone(filtered.entry_quality)
+        self.assertFalse(filtered.entry_quality.live_execution_authorized)
+        self.assertEqual(filtered.action, "WAIT")
+        self.assertEqual(filtered.decision_detail.decision, "WAIT")
+        self.assertIn("structural_entry_quality_rejected",
+                      filtered.decision_detail.blockers)
+
     def test_downtrend_routes_sell(self):
         result = self.evaluate(market("down"))
         self.assertEqual(result.action, "SELL", result)

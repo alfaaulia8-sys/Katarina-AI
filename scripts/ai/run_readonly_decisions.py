@@ -84,7 +84,8 @@ def main():
                     symbol=symbol, candles=bars, as_of_utc=now,
                     actual_spread=spread, broker_session_open=open_for_research,
                     data_fresh=fresh, news_blackout=False,
-                    news_context_verified=False)
+                    news_context_verified=False,
+                    use_structural_entry_gate=True)
                 report["symbols"][symbol] = {
                     "closed_M5_utc": bars["M5"][-1].closed_at_utc.isoformat(),
                     "regime": read.market_state, "playbook": read.playbook,
@@ -93,6 +94,10 @@ def main():
                     "decision_detail": (
                         asdict(read.decision_detail)
                         if read.decision_detail is not None else None
+                    ),
+                    "entry_quality": (
+                        asdict(read.entry_quality)
+                        if read.entry_quality is not None else None
                     ),
                     "market_data_fresh": fresh,
                     "quote_fresh": quote_fresh,

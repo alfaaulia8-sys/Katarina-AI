@@ -7,7 +7,7 @@ No MT5 trading API or execution module is imported here.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from math import isfinite
 from typing import Mapping, Sequence
@@ -16,6 +16,9 @@ from katarina.engines.adaptive_scalper import ScalpSide
 from katarina.engines.adaptive_risk import AdaptiveRiskProfile
 from katarina.intelligence.adaptive_brain_v2 import KatarinaAdaptiveBrainV2
 from katarina.intelligence.closed_swing_structure import ClosedBar
+from katarina.intelligence.structural_entry_quality import (
+    EntryEvidence, StructuralEntryQuality,
+)
 from katarina.intelligence.explainable_market_decision import (
     AdaptiveMarketDecisionAdvisor, MarketDecision,
 )
@@ -52,6 +55,7 @@ class DecisionObservation:
     potential_action: str = "WAIT"
     setup_ready: bool = False
     decision_detail: MarketDecision | None = None
+    entry_quality: EntryEvidence | None = None
 
 
 def _frame(candles: Sequence[SensorCandle]):
@@ -125,6 +129,7 @@ class MarketDecisionPipeline:
     def __init__(self):
         self.brain = KatarinaAdaptiveBrainV2()
         self.advisor = AdaptiveMarketDecisionAdvisor()
+        self.entry_advisor = StructuralEntryQuality()
 
     @staticmethod
     def _wait(symbol: str, reason: str) -> DecisionObservation:
@@ -138,6 +143,7 @@ class MarketDecisionPipeline:
         news_context_verified: bool = False,
         active_capital_native: float | None = None,
         account_currency: str = "USD",
+        use_structural_entry_gate: bool = False,
     ) -> DecisionObservation:
         if not symbol or as_of_utc.tzinfo is None:
             return self._wait(symbol, "missing_symbol_or_aware_time")
@@ -198,12 +204,32 @@ class MarketDecisionPipeline:
             # an earlier direction-only candidate when scenario/entry checks
             # reveal poor geometry or mismatched playbook confirmation.
             action = decision_detail.signal
+            entry_quality = None
+            if plan.side.value in ("BUY", "SELL") and plan.ready_for_research:
+                entry_quality = self.entry_advisor.assess(
+                    side=plan.side.value, playbook=plan.strategy.value,
+                    m5=candles["M5"], m15=candles["M15"], h1=candles["H1"],
+                    spread=actual_spread, as_of_utc=as_of_utc,
+                )
+                if use_structural_entry_gate and not entry_quality.eligible:
+                    action = "WAIT"
+                    decision_detail = replace(
+                        decision_detail, signal="WAIT", decision="WAIT",
+                        entry_ready_for_research=False,
+                        blockers=tuple(dict.fromkeys(
+                            decision_detail.blockers +
+                            ("structural_entry_quality_rejected",) +
+                            entry_quality.blockers)),
+                        next_check=tuple(dict.fromkeys(
+                            decision_detail.next_check + (entry_quality.next_trigger,))),
+                    )
             return DecisionObservation(
                 symbol, action, observations.regime.state.value,
                 plan.strategy.value, reasons,
                 tool_context, risk,
                 potential_action=plan.side.value if plan.ready_for_research else "WAIT",
                 setup_ready=bool(plan.ready_for_research),
-                decision_detail=decision_detail)
+                decision_detail=decision_detail,
+                entry_quality=entry_quality)
         except (ValueError, KeyError, TypeError, ArithmeticError, OverflowError) as e:
             return self._wait(symbol, "sensor_or_risk_rejected:" + type(e).__name__)
