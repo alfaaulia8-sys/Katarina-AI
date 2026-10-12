@@ -23,10 +23,11 @@ from katarina.intelligence.causal_market_replay import (
 from katarina.intelligence.adaptive_walkforward import PaperEvent
 from katarina.intelligence.replay_cost_diagnostics import describe_candidates
 
-ALLOWED=("XAUUSD.vx","EURUSD.vx","NAS100.vx","GBPUSD.vx","USDJPY.vx")
+# Dynamically verify the 17 broker-supported canonical names, not hardcode five.
+from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 
 
-def load_from_live_terminal(symbols,*,max_cuts):
+def load_from_live_terminal(symbols,*,max_cuts,include_spreads=False):
     import MetaTrader5 as mt5
     if not mt5.initialize():
         raise RuntimeError("MT5_TERMINAL_NOT_AVAILABLE")
@@ -44,14 +45,18 @@ def load_from_live_terminal(symbols,*,max_cuts):
             raise RuntimeError("CURRENT_BROKER_CLOCK_CONSENSUS_NOT_VERIFIED")
         frames={}
         status={}
+        market_spreads={}
         offset=shift.observed_hours_shift
         req={
             "M5":(mt5.TIMEFRAME_M5,max(1500,max_cuts+250),300),
-            "M15":(mt5.TIMEFRAME_M15,900,900),
-            "H1":(mt5.TIMEFRAME_H1,280,3600),
+            "M15":(mt5.TIMEFRAME_M15,max(900,(max_cuts+250)//3+150),900),
+            "H1":(mt5.TIMEFRAME_H1,max(280,(max_cuts+250)//12+80),3600),
         }
         for symbol in symbols:
             bars={}
+            spreads={}
+            broker_spec=mt5.symbol_info(symbol)
+            point=float(getattr(broker_spec,"point",0) or 0)
             for tf,(period,count,length) in req.items():
                 rates=mt5.copy_rates_from_pos(symbol,period,1,count)
                 if rates is None or len(rates)<60:
@@ -64,6 +69,10 @@ def load_from_live_terminal(symbols,*,max_cuts):
                     closed=datetime.fromtimestamp(int(r["time"])-offset*3600+length,
                                                   timezone.utc)
                     if closed>now:continue
+                    if tf=="M5" and include_spreads:
+                        raw_spread=int(r["spread"])
+                        if (point>0 and 0<raw_spread<100000):
+                            spreads[int(closed.timestamp())]=point*raw_spread
                     rows.append(SensorCandle(
                         closed,float(r["open"]),float(r["high"]),
                         float(r["low"]),float(r["close"]),
@@ -71,11 +80,13 @@ def load_from_live_terminal(symbols,*,max_cuts):
                 bars[tf]=tuple(rows)
             if bars and all(len(v)>=60 for v in bars.values()):
                 frames[symbol]=bars
+                if include_spreads:
+                    market_spreads[symbol]=spreads
                 status[symbol]={"result":"AVAILABLE",
                                 "counts":{k:len(v) for k,v in bars.items()},
                                 "range_m5":[bars["M5"][0].closed_at_utc.isoformat(),
                                             bars["M5"][-1].closed_at_utc.isoformat()]}
-        return frames,status,offset
+        return (frames,status,offset,market_spreads) if include_spreads else (frames,status,offset)
     finally:
         mt5.shutdown()
 
@@ -89,19 +100,31 @@ def main():
     p.add_argument("--private-report",required=True)
     a=p.parse_args()
     symbols=[s.strip() for s in a.symbols.split(",") if s.strip()]
-    if len(symbols)<3 or len(symbols)>5 or len(set(symbols))!=len(symbols) or any(s not in ALLOWED for s in symbols):
-        p.error("3-5 supported symbols required for reliable broker clock vote")
-    if not 120<=a.max_cuts<=1400:p.error("maximum 1400 retrospective cuts per symbol")
-    frames,status,offset=load_from_live_terminal(symbols,max_cuts=a.max_cuts)
+    if len(symbols)<3 or len(symbols)>5 or len(set(symbols))!=len(symbols):
+        p.error("3-5 unique symbols per VPS memory-capped batch required")
+    import MetaTrader5 as mt5
+    if not mt5.initialize():raise RuntimeError("BROKER_CATALOG_UNAVAILABLE")
+    try:
+        approved=set(resolve_broker_symbols(mt5.symbols_get()).symbols)
+    finally:
+        mt5.shutdown()
+    if any(s not in approved for s in symbols):
+        p.error("unknown or noncanonical broker research symbol")
+    if not 120<=a.max_cuts<=2300:
+        p.error("120-2300 retrospective M5 cuts per symbol")
+    frames,status,offset,spreads=load_from_live_terminal(
+        symbols,max_cuts=a.max_cuts,include_spreads=True)
     if not frames:raise RuntimeError("NO_HISTORICAL_MARKET_BARS")
     result=replay_native_brain(
         frames,assumed_spread_to_m15_atr=a.spread_to_atr,
         additional_cost_r=a.extra_cost_r,
-        max_m5_cuts_per_symbol=a.max_cuts)
+        max_m5_cuts_per_symbol=a.max_cuts,
+        historical_m5_spread_by_symbol=spreads)
     events=[PaperEvent(x["symbol"],x["method"],x["side"],
                        x["signal_at"],x["label_known_at"],
                        x["proxy_gross_r"],x["technical_score"],
-                       a.spread_to_atr,market_regime=x["regime"])
+                       x.get("spread_to_m15_atr",a.spread_to_atr),
+                       market_regime=x["regime"])
             for x in result["signals"]]
     splits=purged_chronological_splits(events)
     summary=result["adaptive_summary"]
@@ -112,6 +135,9 @@ def main():
         "read_only":True,"orders_sent":0,
         "broker_current_clock_offset_hours":offset,
         "broker_historical_clock_dst_verified":False,
+        "historical_m5_signal_close_spread_snapshot_available":True,
+        "actual_historical_entry_bidask_verified":False,
+        "next_bar_entry_spread_assumed_equal_signal_close":True,
         "actual_historical_spread_verified":False,
         "historical_news_contents_available":False,
         "retrospective_data_already_inspected_not_independent_holdout":True,
@@ -120,7 +146,8 @@ def main():
         "symbols_requested":symbols,
         "broker_data_availability":status,
         "counters":result["counters"],
-        "assumed_spread_to_m15_atr":a.spread_to_atr,
+        "assumed_spread_to_m15_atr_FALLBACK_NOT_USED":a.spread_to_atr,
+        "spread_source":"BROKER_M5_CLOSED_BAR_SPREAD_POINTS",
         "additional_cost_r":a.extra_cost_r,
         "purged_calendar_split_counts":{
             "train":len(splits["train"]),
@@ -136,6 +163,9 @@ def main():
             "replay_conditions":summary.get("replay_conditions"),
         },
         "candidate_methods":dict(Counter(x["method"] for x in result["signals"])),
+        "unlabeled_technical_proposals":len(result["all_technical_proposals"]),
+        "by_method_and_side":dict(Counter(
+            x["method"]+":"+x["side"] for x in result["all_technical_proposals"])),
         "full_cost_sensitivity":cost_review,
         "no_qualified_live_strategy":True,
         "live_execution_authorized":False,

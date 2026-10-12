@@ -114,11 +114,14 @@ def replay_native_brain(
     *, assumed_spread_to_m15_atr:float=.04,
     additional_cost_r:float=.15,
     max_m5_cuts_per_symbol:int=1300,
+    historical_m5_spread_by_symbol:Mapping[str,Mapping[int,float]]|None=None,
 ):
     """Produces native-brain causal candidate events and historical diagnostics.
 
-    Spread is fixed ex ante as M15 ATR ratio in the absence of historical
-    broker bid/ask, explicitly making prices SIMULATED. No optimizer.
+    If verified M5 closed-bar spread snapshots exist, use the spread
+    observed at the signal time instead of a guessed ATR fraction.
+    This is NOT the executable ASK at the *next bar open*. Never use a
+    future candle's spread for the current Brain decision. No optimizer.
     """
     if not 0<=assumed_spread_to_m15_atr<=.25 or not 0<=additional_cost_r<=.5:
         raise ValueError("invalid_predeclared_proxy_cost_assumption")
@@ -131,7 +134,7 @@ def replay_native_brain(
     counters={"evaluated":0,"technical_wait":0,"no_causal_timeframe":0,
               "stale_regime_bars":0,"quote_path_unavailable":0,
               "invalid_rr_or_stop":0,"proxy_completed":0,
-              "missing_data":0}
+              "missing_data":0,"spread_unavailable":0}
     for symbol,frames in sorted(symbol_frames.items()):
         valid=validate_bars(frames)
         m5=valid["M5"];m15=valid["M15"];h1=valid["H1"]
@@ -162,7 +165,17 @@ def replay_native_brain(
             if not isfinite(atr) or atr<=0:
                 counters["missing_data"]+=1
                 continue
-            spread=atr*assumed_spread_to_m15_atr
+            if historical_m5_spread_by_symbol is not None:
+                spread=historical_m5_spread_by_symbol.get(symbol,{}).get(now)
+                if (spread is None or not isinstance(spread,(float,int)) or
+                    not isfinite(spread) or spread<=0):
+                    counters["spread_unavailable"]+=1
+                    continue
+                source="BROKER_M5_CLOSED_BAR_SPREAD_POINTS"
+            else:
+                spread=atr*assumed_spread_to_m15_atr
+                source="ASSUMED_M15_ATR_SPREAD"
+            ratio=spread/atr
             card=brain.evaluate(
                 symbol=symbol,candles=view,
                 as_of_utc=datetime.fromtimestamp(now,UTC),
@@ -194,6 +207,9 @@ def replay_native_brain(
                 "rr_estimate":card.rr_after_spread_estimate,
                 "sl":card.invalidation_level,"tp":card.primary_target,
                 "known_from_closed_bars_only":True,
+                "observed_spread_price":round(spread,10),
+                "spread_to_m15_atr":round(ratio,8),
+                "spread_source":source,
             })
             outcome=simulate_ohlc_proxy(
                 m5,idx,card.technical_signal,
@@ -210,7 +226,7 @@ def replay_native_brain(
                 symbol=symbol,strategy_id=card.strategy,
                 side=card.technical_signal,cut=now,exit_time=exit_time,
                 modeled_r=gross_r,score=card.evidence_score,
-                spread_atr=assumed_spread_to_m15_atr,
+                spread_atr=ratio,
                 market_regime=card.market_state))
             details.append({
                 "symbol":symbol,"signal_at":now,"label_known_at":exit_time,
@@ -219,6 +235,9 @@ def replay_native_brain(
                 "rr_estimate":card.rr_after_spread_estimate,
                 "sl":card.invalidation_level,"tp":card.primary_target,
                 "proxy_gross_r":gross_r,"proxy_exit_reason":exit_reason,
+                "observed_spread_price":round(spread,10),
+                "spread_to_m15_atr":round(ratio,8),
+                "spread_source":source,
                 "current_news_context_known":False,
                 "live_execution_authorized":False,
             })
@@ -235,8 +254,11 @@ def replay_native_brain(
         "memory_engine_reused":"adaptive_walkforward.replay_walk_forward",
         "symbol_count":len(symbol_frames),
         "counters":counters,
-        "data_type":"M5_BID_OHLC_WITH_ASSUMED_M15_ATR_SPREAD_NOT_TICKS",
-        "historical_spread_factual":False,
+        "data_type":("MT5_M5_BID_OHLC_AND_SIGNAL_BAR_BROKER_SPREAD_PROXY_NOT_TICKS"
+                     if historical_m5_spread_by_symbol is not None else
+                     "M5_BID_OHLC_WITH_ASSUMED_M15_ATR_SPREAD_NOT_TICKS"),
+        "historical_spread_factual":historical_m5_spread_by_symbol is not None,
+        "next_entry_actual_bidask_verified":False,
         "historical_news_point_in_time_coverage":False,
         "broker_commission_and_slippage_reconciled":False,
         "independent_unseen_holdout":False,

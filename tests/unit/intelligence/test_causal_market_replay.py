@@ -77,6 +77,42 @@ class NativeMarketReplayTests(unittest.TestCase):
         self.assertEqual(result["counters"]["quote_path_unavailable"],
                          len(result["all_technical_proposals"]))
 
+    def test_closed_m5_broker_spread_drives_brain_not_assumed_atr(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        snapshots={int(c.closed_at_utc.timestamp()):.075
+                   for c in self.frames["M5"]}
+        snapshots[int((END+timedelta(minutes=5)).timestamp())]=900.0
+        fake=SimpleNamespace(technical_signal="WAIT")
+        with patch(
+                "katarina.intelligence.causal_market_replay.MarketDecisionBrain.evaluate",
+                return_value=fake) as calc:
+            result=replay_native_brain(
+                {"TEST.vx":self.frames},
+                historical_m5_spread_by_symbol={"TEST.vx":snapshots},
+                assumed_spread_to_m15_atr=.04,max_m5_cuts_per_symbol=150)
+        self.assertGreater(calc.call_count,0)
+        self.assertEqual(result["counters"]["spread_unavailable"],0)
+        self.assertTrue(result["historical_spread_factual"])
+        self.assertFalse(result["next_entry_actual_bidask_verified"])
+        self.assertEqual(result["signals"],[])
+        self.assertTrue(all(abs(x.kwargs["actual_spread"]-.075)<1e-9
+                            for x in calc.call_args_list))
+
+    def test_missing_historical_spread_skips_not_fabricates(self):
+        from unittest.mock import patch
+        with patch(
+                "katarina.intelligence.causal_market_replay.MarketDecisionBrain.evaluate"
+                ) as calc:
+            result=replay_native_brain(
+                {"TEST.vx":self.frames},
+                historical_m5_spread_by_symbol={"TEST.vx":{}},
+                max_m5_cuts_per_symbol=150)
+        calc.assert_not_called()
+        self.assertGreater(result["counters"]["spread_unavailable"],0)
+        self.assertEqual(result["counters"]["evaluated"],0)
+        self.assertEqual(result["orders_sent"],0)
+
     def test_noncausal_duplicate_and_bad_ohlc_fail_closed(self):
         with self.assertRaises(ValueError):
             validate_bars({**self.frames,"M5":self.frames["M5"]+
