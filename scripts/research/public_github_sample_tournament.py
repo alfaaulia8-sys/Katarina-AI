@@ -194,7 +194,30 @@ def run(symbols,begin,end,destination: Path,*,opener=urlopen):
             "method_counts":dict(Counter(x["strategy"] for x in trades))}
         trades_all.extend(trades)
         print("RESEARCH_SAMPLE",symbol,scan,metrics(trades),flush=True)
+    # Compare fixed candidate families independently; these experiments can
+    # overlap in time, so a cross-method compounded equity is NOT investable.
+    method_buckets=defaultdict(list)
+    for row in trades_all:
+        method_buckets[(row["strategy"],row["side"])].append(row)
+    split_time=int(datetime(
+        begin.year,begin.month,begin.day,tzinfo=timezone.utc).timestamp()) + (
+        (end-begin).days//2)*86400
+    summary["method_groups"]={}
+    for (method,side),rows in sorted(method_buckets.items()):
+        first=[r for r in rows if r["signal_at"]<split_time]
+        last=[r for r in rows if r["signal_at"]>=split_time]
+        key=f"{method}/{side}"
+        summary["method_groups"][key]={
+            "base":metrics(rows),"extra_0_10R":metrics(rows,.1),
+            "extra_0_20R":metrics(rows,.2),
+            "early_window":metrics(first),"late_window":metrics(last),
+            "confidence":"EXPLORATORY_ONLY",
+            "broker_validated":False,"live_promotion_approved":False}
+        print("METHOD_GROUP",key,summary["method_groups"][key],flush=True)
     summary["all_symbols"]=metrics(trades_all)
+    summary["all_symbols_is_investable_portfolio"]=False
+    summary["scientific_limitations"].append(
+        "Hypothetical methods overlap and pooled compounding is NOT a feasible portfolio return")
     (destination/"summary.json").write_text(
         json.dumps(summary,indent=2,ensure_ascii=False,allow_nan=False)+"\n",
         encoding="utf-8")

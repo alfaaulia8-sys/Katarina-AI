@@ -67,7 +67,7 @@ jobs:
           import json
           from pathlib import Path
           report=json.loads(Path("artifacts/public_tournament/summary.json").read_text())
-          assert report["orders_sent"]==0 and report["trade_allowed"] is False
+          assert report["orders_sent"]==0 and report["production"]=="WAIT" and report["risk_governor_changed"] is False
           assert report["independent_holdout"] is False
           assert report["actual_bid_ask_verified"] is False
           for symbol,entry in report["symbols"].items():
