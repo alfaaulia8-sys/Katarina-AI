@@ -39,6 +39,10 @@ class DecisionCard:
     next_trigger: str
     research_only: bool = True
     live_execution_authorized: bool = False
+    directional_alignment: str = "UNASSESSED"
+    directional_observations: tuple[str, ...] = ()
+    directional_h1_momentum_atr: float | None = None
+    directional_m15_momentum_atr: float | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -203,11 +207,34 @@ class MarketDecisionBrain:
         if rr is not None and rr>=self.min_rr:
             score+=.10;evidence.append("room_to_structural_target_after_spread")
         score=round(min(1.,score),3)
+        # Independent two-sided closed-bar assessment. Explicitly expose
+        # evidence AGAINST BUY and AGAINST SELL; this is NOT a predicted
+        # success probability or independent model that places orders.
+        direction=None
+        direction_failure=False
+        if sign:
+            from katarina.intelligence.directional_consensus import (
+                assess_direction,
+            )
+            try:
+                direction=assess_direction(
+                    candles=candles,as_of_utc=as_of_utc,
+                    side=("BUY" if sign>0 else "SELL"),regime=state)
+                evidence.append("directional_alignment:"+direction.verdict)
+                evidence.extend(direction.supports)
+                evidence.extend("counter_evidence:"+x for x in direction.challenges)
+            except (ValueError,TypeError,OverflowError):
+                direction_failure=True
+                evidence.append("directional_evidence_unavailable_fail_closed")
         # Distinguish directional *bias* from a technically actionable setup.
         # Soft evidence is weighted, but minimum net geometry is non-negotiable.
         signal=("BUY" if sign>0 else "SELL" if sign<0 else "WAIT") if (
             score>=self.min_score and rr is not None and rr>=self.min_rr) else "WAIT"
         blockers=[]
+        if direction_failure:
+            blockers.append("directional_evidence_invalid_or_future")
+        if direction is not None and direction.veto_strong_contradiction:
+            blockers.append("H1_M15_strongly_contradict_candidate_side")
         if not data_fresh or not broker_session_open:
             blockers.append("market_closed_or_data_stale")
         if not isfinite(actual_spread) or actual_spread<0 or actual_spread/atr>self.max_spread_atr:
@@ -240,6 +267,10 @@ class MarketDecisionBrain:
             next_trigger="Validasi playbook khusus pair ini menggunakan sampel baru, spread riil, dan forward-demo."
         else:
             next_trigger="Perbarui setelah candle M5 tertutup berikutnya dan seluruh hard gate diverifikasi."
+        # Strong directional opposition can only REDUCE permission:
+        # never create an extra BUY/SELL from this assessment.
+        if direction_failure or (direction and direction.veto_strong_contradiction):
+            signal="WAIT"
         decision=signal if signal!="WAIT" and not blockers else "WAIT"
         description=(f"{phase}; harga terakhir {price:.6f}; posisi pada channel M15 "
                      f"{channel_position:.0%}. Bukti teknikal {score:.2f}, bukan probabilitas profit.")
@@ -247,7 +278,16 @@ class MarketDecisionBrain:
                             description,primary,alternative,round(target,8) if target is not None else None,
                             round(invalid,8) if invalid is not None else None,target_kind,
                             strategy,signal,decision,verified,rr,tuple(evidence),
-                            tuple(blockers),next_trigger)
+                            tuple(blockers),next_trigger,
+                            directional_alignment=(direction.verdict if direction
+                                                   else "UNASSESSED"),
+                            directional_observations=(direction.supports+
+                                                       direction.challenges if direction
+                                                       else ()),
+                            directional_h1_momentum_atr=(
+                                direction.h1_momentum_atr if direction else None),
+                            directional_m15_momentum_atr=(
+                                direction.m15_momentum_atr if direction else None))
 
     def evaluate_contextually(
         self, *, symbol: str, candles: Mapping[str,Sequence[SensorCandle]],

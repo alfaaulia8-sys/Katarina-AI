@@ -210,6 +210,10 @@ def replay_native_brain(
                 "observed_spread_price":round(spread,10),
                 "spread_to_m15_atr":round(ratio,8),
                 "spread_source":source,
+                "directional_alignment":getattr(card,"directional_alignment",
+                                                 "UNASSESSED"),
+                "directional_observations":list(
+                    getattr(card,"directional_observations",())),
             })
             outcome=simulate_ohlc_proxy(
                 m5,idx,card.technical_signal,
@@ -238,6 +242,8 @@ def replay_native_brain(
                 "observed_spread_price":round(spread,10),
                 "spread_to_m15_atr":round(ratio,8),
                 "spread_source":source,
+                "directional_alignment":getattr(card,"directional_alignment",
+                                                 "UNASSESSED"),
                 "current_news_context_known":False,
                 "live_execution_authorized":False,
             })
