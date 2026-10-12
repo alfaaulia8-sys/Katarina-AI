@@ -39,6 +39,7 @@ from katarina.intelligence.causal_broker_quotes import (
     closed_bars_as_of_market_tick,
 )
 from katarina.intelligence.market_article_context import collect_market_articles
+from katarina.intelligence.evidence_risk import assess_legacy_august_audit
 from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
 from katarina.intelligence.prospective_shadow_book import (
     ProspectiveShadowBook,ResearchHypothesis,
@@ -268,6 +269,16 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 "forward_trade_outcomes_not_verified":True,
                 "production_execution":False,
                 "live_execution_authorized":False,"orders_submitted":0,"symbols":{}}
+        # Historical quote-only simulations NEVER count as independently
+        # settled forward broker fills. Missing/corrupt files fail closed.
+        try:
+            audit_path=root/"precommitted-Aug2026-17market-exhaustive-ticks.json"
+            august_audit=json.loads(audit_path.read_text(encoding="utf-8"))
+        except (OSError,UnicodeError,ValueError,TypeError):
+            august_audit={}
+        report["adaptive_evidence_risk"]=assess_legacy_august_audit(
+            august_audit).to_dict()
+        report["adaptive_evidence_risk"]["real_forward_evidence_available"]=False
         latest_quotes={}
         market_clock_epochs=[]
         paper_hypotheses=[]
