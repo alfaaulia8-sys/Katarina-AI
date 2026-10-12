@@ -151,3 +151,88 @@ jobs:
             build/validation/stage16-17-synthetic.json
           if-no-files-found: warn
           retention-days: 30
+
+  ai-model-connection-smoke:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[ai-smoke]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      models: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: External author A
+        id: ai_a
+        uses: actions/ai-inference@v2.0.8
+        with:
+          model: openai/gpt-4.1-mini
+          max-tokens: 250
+          system-prompt: 'You are a cautious quant critic. Output only valid JSON. Never authorize code changes or trading.'
+          prompt: |
+            This is a FABRICATED offline example: 240 fictional observations
+            on 30 dates and 36 later fictional holdout observations with
+            positive simulated expectancy. No real broker fills.
+            Is it worth more offline study? Return only JSON with
+            verdict (APPROVE_RESEARCH, REJECT or ABSTAIN),
+            rationale (short string), and
+            evidence_references (list with cohorts.0.holdout).
+      - name: External author B
+        id: ai_b
+        uses: actions/ai-inference@v2.0.8
+        with:
+          model: meta/Meta-Llama-3.1-8B-Instruct
+          max-tokens: 250
+          system-prompt: 'You are a cautious quant critic. Output only valid JSON. Never authorize code changes or trading.'
+          prompt: |
+            This is a FABRICATED offline example: 240 fictional observations
+            on 30 dates and 36 later fictional holdout observations with
+            positive simulated expectancy. No real broker fills.
+            Is it worth more offline study? Return only JSON with
+            verdict (APPROVE_RESEARCH, REJECT or ABSTAIN),
+            rationale (short string), and
+            evidence_references (list with cohorts.0.holdout).
+      - name: Verify independent model responses with immutable Katarina research gate
+        env:
+          AI_A_FILE: ${{ steps.ai_a.outputs.response-file }}
+          AI_B_FILE: ${{ steps.ai_b.outputs.response-file }}
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from scripts.ai.audit_self_evolution_runner import AS_OF,simulated_history
+          from katarina.intelligence.self_evolution_lab import evaluate_shadow_self_evolution
+          from katarina.governance.external_model_bridge import verdict_from_text
+          from katarina.governance.multi_model_evolution_review import review_candidate
+          db=simulated_history(days=30,strong_net_r=2.,weak_net_r=-1.)
+          try:
+              report=evaluate_shadow_self_evolution(db,as_of_utc=AS_OF)
+          finally:
+              db.close()
+          receipt=report['review_receipt_sha256']
+          a=verdict_from_text(Path(os.environ['AI_A_FILE']).read_text(),model='openai/gpt-4.1-mini',receipt=receipt)
+          b=verdict_from_text(Path(os.environ['AI_B_FILE']).read_text(),model='meta/Meta-Llama-3.1-8B-Instruct',receipt=receipt)
+          x=review_candidate(report,(a,b))
+          assert x.independent_providers==2
+          assert not x.real_execution_authorized
+          assert not x.code_mutation_authorized
+          data={'models_called':2,'authors':['openai','meta'],'verdicts':[a.verdict,b.verdict],
+                'research_decision':x.status,'live_trading_authorized':False,
+                'self_modification_authorized':False,'synthetic_only':True}
+          out=Path('build/validation/github-external-ai-synthetic.json')
+          out.parent.mkdir(parents=True,exist_ok=True)
+          out.write_text(json.dumps(data,indent=2)+'\n')
+          print('PASS_EXTERNAL_AI_CONNECTED_RESEARCH_ONLY')
+          PY
+      - name: Save safe model connection evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-ai-smoke-${{ github.run_id }}
+          path: build/validation/github-external-ai-synthetic.json
+          if-no-files-found: warn
+          retention-days: 7

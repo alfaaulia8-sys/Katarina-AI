@@ -4,9 +4,16 @@ name: KATARINA Self-Evolution Lab (GitHub-hosted)
 # No auto-push fanout, self-hosted runners, VPS actions, broker credentials, or orders.
 on:
   workflow_dispatch:
+    inputs:
+      external_models:
+        description: 'Review synthetic research with two external AI models'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
+  models: read
 
 concurrency:
   group: katarina-self-evolution-${{ github.ref }}
@@ -69,6 +76,76 @@ jobs:
           print("PASS_ISOLATED_SELF_EVOLUTION_SAFETY_CONTRACT")
           PY
 
+      - name: External model critic OpenAI (GitHub Models)
+        if: inputs.external_models
+        id: critic_a
+        uses: actions/ai-inference@v2.0.8
+        with:
+          model: openai/gpt-4.1-mini
+          max-tokens: 250
+          system-prompt: 'Return only JSON. Simulated trading outcomes never authorize live orders or code deployment.'
+          prompt: |
+            All results here are FABRICATED. We tested 240 fictional signals on
+            30 dates. A threshold selected on earlier dates yields 36 later
+            simulated holdout observations with a positive modeled mean.
+            There are NO real broker fills or independently verified costs.
+            Should we investigate this hypothesis further OFFLINE?
+            Reply with JSON object fields verdict (APPROVE_RESEARCH, REJECT,
+            or ABSTAIN), rationale (short string), and evidence_references
+            (list containing cohorts.0.holdout).
+
+      - name: External model critic Meta (GitHub Models)
+        if: inputs.external_models
+        id: critic_b
+        uses: actions/ai-inference@v2.0.8
+        with:
+          model: meta/Meta-Llama-3.1-8B-Instruct
+          max-tokens: 250
+          system-prompt: 'Return only JSON. Simulated trading outcomes never authorize live orders or code deployment.'
+          prompt: |
+            All results here are FABRICATED. We tested 240 fictional signals on
+            30 dates. A threshold selected on earlier dates yields 36 later
+            simulated holdout observations with a positive modeled mean.
+            There are NO real broker fills or independently verified costs.
+            Should we investigate this hypothesis further OFFLINE?
+            Reply with JSON object fields verdict (APPROVE_RESEARCH, REJECT,
+            or ABSTAIN), rationale (short string), and evidence_references
+            (list containing cohorts.0.holdout).
+
+      - name: Validate external model verdicts against Katarina evidence gate
+        if: inputs.external_models
+        env:
+          CRITIC_A: ${{ steps.critic_a.outputs.response-file }}
+          CRITIC_B: ${{ steps.critic_b.outputs.response-file }}
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from scripts.ai.audit_self_evolution_runner import AS_OF,simulated_history
+          from katarina.intelligence.self_evolution_lab import evaluate_shadow_self_evolution
+          from katarina.governance.external_model_bridge import verdict_from_text
+          from katarina.governance.multi_model_evolution_review import review_candidate
+          db=simulated_history(days=30,strong_net_r=2.,weak_net_r=-1.)
+          try:
+              report=evaluate_shadow_self_evolution(db,as_of_utc=AS_OF)
+          finally:
+              db.close()
+          assert report['decision']=='RESEARCH_PROPOSAL_ONLY'
+          receipt=report['review_receipt_sha256']
+          a=verdict_from_text(Path(os.environ['CRITIC_A']).read_text(),model='openai/gpt-4.1-mini',receipt=receipt)
+          b=verdict_from_text(Path(os.environ['CRITIC_B']).read_text(),model='meta/Meta-Llama-3.1-8B-Instruct',receipt=receipt)
+          decision=review_candidate(report,(a,b))
+          assert not decision.real_execution_authorized
+          assert not decision.code_mutation_authorized
+          result={'status':'TWO_EXTERNAL_AI_MODELS_CONNECTED','gateway':'GITHUB_MODELS',
+                  'authors':['openai','meta'],'verdicts':[a.verdict,b.verdict],
+                  'research_review':decision.status,'live_authorized':False,
+                  'synthetic_only':True,'code_mutation_authorized':False}
+          dest=Path('build/validation/github-external-ai-synthetic.json')
+          dest.parent.mkdir(parents=True,exist_ok=True)
+          dest.write_text(json.dumps(result,indent=2)+'\n')
+          print('PASS_REAL_EXTERNAL_MODELS_CONNECTED_SAFELY')
+          PY
       - name: GitHub Actions summary
         if: always()
         run: |
@@ -86,5 +163,6 @@ jobs:
           path: |
             build/validation/github-self-evolution.json
             build/validation/github-self-evolution.md
+            build/validation/github-external-ai-synthetic.json
           if-no-files-found: warn
           retention-days: 7
