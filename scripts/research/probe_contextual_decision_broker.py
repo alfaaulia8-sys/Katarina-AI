@@ -19,6 +19,7 @@ def run(symbols):
     from katarina.intelligence.market_decision_pipeline import SensorCandle
     from katarina.intelligence.news_intelligence import NewsContext
     from katarina.intelligence.contextual_decision_intelligence import RiskSituation
+    from katarina.intelligence.broker_clock_alignment import infer_clock_shift
 
     if not mt5.initialize():raise RuntimeError("MT5_TERMINAL_UNAVAILABLE")
     try:
@@ -28,9 +29,25 @@ def run(symbols):
         now=datetime.now(timezone.utc)
         brain=MarketDecisionBrain()
         results=[]
+        # The broker's raw rate AND tick epochs can be displaced from UTC.
+        # Infer a current common offset across THREE independent live quotes.
+        # This is NOT verified historical DST nor authorization for live use.
+        quotes={sym:mt5.symbol_info_tick(sym) for sym in symbols}
+        shift=infer_clock_shift(
+            {sym:int(t.time) for sym,t in quotes.items() if t is not None},
+            now.timestamp(),min_symbols=3)
+        if not shift.suitable_for_readonly_snapshot:
+            print("CONTEXTUAL_BROKER_OBSERVATION",json.dumps({
+                "status":"CLOCK_ALIGNMENT_UNVERIFIED",
+                "research_only":True,"orders_sent":0,
+                "shift_hrs":None,
+                "market_snapshots":[{"symbol":s,"decision":"WAIT",
+                    "blockers":["broker_clock_alignment_unverified"]} for s in symbols]}))
+            return
+        seconds_shift=shift.observed_hours_shift*3600
         for sym in symbols:
             spec=mt5.symbol_info(sym)
-            tick=mt5.symbol_info_tick(sym)
+            tick=quotes.get(sym)
             if spec is None or tick is None:
                 results.append({"symbol":sym,"decision":"WAIT",
                                 "reasons":["symbol_or_quote_unavailable"]})
@@ -46,22 +63,22 @@ def run(symbols):
                     frames[name]=[]
                 else:
                     frames[name]=[SensorCandle(
-                        datetime.fromtimestamp(int(x["time"])+seconds,timezone.utc),
+                        datetime.fromtimestamp(int(x["time"])-seconds_shift+seconds,timezone.utc),
                         float(x["open"]),float(x["high"]),
                         float(x["low"]),float(x["close"]),
                         float(x["tick_volume"])) for x in raw]
                 coverage[name]=len(frames[name])
             spread=max(0.,float(tick.ask)-float(tick.bid))
-            quote_age=max(0.,now.timestamp()-int(tick.time))
+            quote_age=now.timestamp()-(int(tick.time)-seconds_shift)
             snapshot=RiskSituation(
                 system_healthy=True,broker_session_open=bool(spec.trade_mode==4
-                  and quote_age<=300),
-                quote_fresh=bool(quote_age<=300),drawdown_fraction=0.0,
+                  and -15<=quote_age<=300),
+                quote_fresh=bool(-15<=quote_age<=300),drawdown_fraction=0.0,
                 realized_daily_loss_r=0.0,open_positions=0,
                 gross_exposure_fraction=0.0)
             # Neither news nor paper-position risk is verified here.
             # No inventing fresh macro headlines or real trading history.
-            news=NewsContext(False,True,1.0,0.0,0,0,
+            news=NewsContext(False,False,0.0,0.0,0,0,
                 ("NO_VERIFIED_LIVE_NEWS_OR_ECONOMIC_CALENDAR",))
             result=brain.evaluate_contextually(
                 symbol=sym,candles=frames,as_of_utc=now,
@@ -86,7 +103,11 @@ def run(symbols):
                 news_feed_verified=False,live_authorized=False))
         result={"status":"LIVE_BROKER_MARKET_SNAPSHOT_READ_ONLY",
                 "observed_at_utc":now.isoformat(),
-                "research_only":True,"orders_sent":0,"news_context":"NOT_CONNECTED",
+                "research_only":True,"orders_sent":0,
+                "broker_clock_shift_hours_snapshot_only":shift.observed_hours_shift,
+                "clock_confirming_symbols":shift.confirming_symbols,
+                "historical_dst_verified":False,
+                "news_context":"NOT_CONNECTED",
                 "forward_outcome_memory":"NOT_CONNECTED",
                 "market_snapshots":results}
         print("CONTEXTUAL_BROKER_OBSERVATION",json.dumps(result,separators=(",",":"),
