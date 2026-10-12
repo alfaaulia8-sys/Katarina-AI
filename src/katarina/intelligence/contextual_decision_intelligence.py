@@ -89,6 +89,10 @@ class ContextDecision:
     live_execution_authorized: bool = False
     production_risk_fraction: float = 0.0
     technical_evidence_score: float = 0.0
+    directional_alignment: str = "UNASSESSED"
+    directional_observations: tuple[str, ...] = ()
+    directional_h1_momentum_atr: float | None = None
+    directional_m15_momentum_atr: float | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -183,6 +187,12 @@ class ContextualDecisionIntelligence:
                 reasons.append("paper_exposure_cap")
 
         # Separate chart direction hypothesis from actual permission to entry.
+        # Show opposing evidence as well as confirmation in the SAME existing
+        # ContextDecision API, rather than hiding it in a second Brain.
+        if card.directional_alignment!="UNASSESSED":
+            support.append("directional_alignment:"+card.directional_alignment)
+        if card.directional_alignment=="H1_M15_STRONG_OPPOSITION_WAIT":
+            reasons.append("H1_M15_directional_contradiction")
         technical=card.technical_signal
         if technical not in ("BUY","SELL"):
             reasons.append("no_confirmed_closed_candle_entry")
@@ -307,6 +317,10 @@ class ContextualDecisionIntelligence:
             symbol=symbol,analyzed_at_utc=now.isoformat(),
             market_state=card.market_state,direction_bias=card.directional_bias,
             technical_evidence_score=card.evidence_score,
+            directional_alignment=card.directional_alignment,
+            directional_observations=card.directional_observations,
+            directional_h1_momentum_atr=card.directional_h1_momentum_atr,
+            directional_m15_momentum_atr=card.directional_m15_momentum_atr,
             selected_method=card.strategy,technical_setup=technical,
             action=action,conditional_side=technical if technical in ("BUY","SELL") else "WAIT",
             reference_entry_kind="CLOSED_BAR_CONFIRMATION_NEXT_BAR_PAPER_ONLY",

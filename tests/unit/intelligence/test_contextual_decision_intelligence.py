@@ -169,6 +169,24 @@ class TestContextualDecisionIntelligence(unittest.TestCase):
         self.assertIn("risk_reward_geometry_not_favorable",x.blocking_reasons)
         self.assertEqual(x.conditional_side,"WAIT")
 
+    def test_opposing_directional_evidence_survives_contextual_pipeline(self):
+        opposing=replace(
+            card(),directional_alignment="H1_M15_STRONG_OPPOSITION_WAIT",
+            directional_observations=("H1_closed_structure_opposes_BUY",
+                                      "M15_closed_momentum_opposes_BUY"),
+            directional_h1_momentum_atr=-2.1,
+            directional_m15_momentum_atr=-1.2)
+        result=self.assess(card=opposing)
+        self.assertEqual(result.action,"WAIT")
+        self.assertIn("H1_M15_directional_contradiction",
+                      result.blocking_reasons)
+        dumped=result.to_dict()
+        self.assertEqual(dumped["directional_alignment"],
+                         "H1_M15_STRONG_OPPOSITION_WAIT")
+        self.assertEqual(len(dumped["directional_observations"]),2)
+        self.assertEqual(dumped["directional_h1_momentum_atr"],-2.1)
+        self.assertFalse(dumped["live_execution_authorized"])
+
     def test_additive_native_brain_gateway_does_not_activate_orders(self):
         brain=MarketDecisionBrain()
         result=brain.evaluate_contextually(
