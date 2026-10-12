@@ -1,0 +1,38 @@
+name: KATARINA V10 Higher-TF Broker Research Safety
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/research/broker_multitf_risk_v10.py'
+      - '.github/workflows/broker-multitf-research-v10.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile isolated higher-TF research
+        run: python -m py_compile scripts/research/broker_multitf_risk_v10.py
+      - name: Verify isolated research causality and pessimistic fill
+        run: python scripts/research/broker_multitf_risk_v10.py --self-test
+      - name: Ensure no broker order/write/account execution path
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path("scripts/research/broker_multitf_risk_v10.py").read_text()
+          for prohibited in ("order_send(", "order_check(", "account_info(", "history_deals_get(", "write_text(", "open("):
+              assert prohibited not in src, prohibited
+          assert 'terminal.trade_allowed' not in src or "FAIL_CLOSED_MT5_TRADING_ENABLED" in src
+          assert "info.trade_allowed" in src
+          assert "independently_unseen" in src
+          print("V10_NO_LIVE_WRITE_PATH_PASS")
+          PY
