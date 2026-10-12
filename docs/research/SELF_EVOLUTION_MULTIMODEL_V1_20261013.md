@@ -73,5 +73,3 @@ therefore NOT justified. No promises of higher winrate or profit.
 Body CI must pass, then compare GitHub commit SHA, VPS observer schedule,
 read-only MT5 status and actual observer report. Do not overwrite a working
 production environment if the verification fails.
-
-[executed on device: WIN-4TTT19K3CL8 (06bb71fa-caee-4271-a9ca-1e9cb7db4c2a)]

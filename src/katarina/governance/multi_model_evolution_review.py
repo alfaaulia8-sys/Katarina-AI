@@ -118,5 +118,3 @@ def review_candidate(report: dict,
         blockers=tuple(sorted(set(blockers))),
         review_fingerprint_sha256=fingerprint,
     )
-
-[executed on device: WIN-4TTT19K3CL8 (06bb71fa-caee-4271-a9ca-1e9cb7db4c2a)]

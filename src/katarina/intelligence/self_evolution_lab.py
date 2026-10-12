@@ -245,5 +245,3 @@ def evaluate_shadow_self_evolution(
         "reviewers":report["reviewers"], "version":VERSION,
     })
     return report
-
-[executed on device: WIN-4TTT19K3CL8 (06bb71fa-caee-4271-a9ca-1e9cb7db4c2a)]

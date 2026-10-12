@@ -463,5 +463,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
-[executed on device: WIN-4TTT19K3CL8 (06bb71fa-caee-4271-a9ca-1e9cb7db4c2a)]
