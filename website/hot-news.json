@@ -1,15 +1,39 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-11T16:55:08Z",
+  "updatedAt": "2026-10-12T01:05:19Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
+      "title": "Why China is importing a record amount of gold — and what it means for prices",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/china-gold-buying-interest-rate-.html",
+      "publishedAt": "2026-10-12T00:51:10Z",
+      "category": "Emas / Logam",
+      "language": "en"
+    },
+    {
+      "title": "Plenty is working against this market. Here's why I'm staying invested anyway",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/investingclub/2026/10/11/plenty-is-working-against-this-market-why-im-staying-invested-anyway.html",
+      "publishedAt": "2026-10-12T00:23:07Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
       "title": "Trump says he is 'going to look at' joining Saudi Arabia in the fight against Iran-backed Houthis after deadly airport strike",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/11/trump-saudi-arabia-iran-houthis.html",
-      "publishedAt": "2026-10-11T16:29:55Z",
+      "publishedAt": "2026-10-11T21:30:45Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Trump declares 'energy ceasefire' between Russia and Ukraine; Zelenskyy is waiting for details",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/11/trump-energy-ceasefire-russia-ukraine-zelenskyy.html",
+      "publishedAt": "2026-10-11T19:33:51Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
@@ -35,14 +59,6 @@
       "url": "https://www.cnbc.com/2026/10/10/putin-trump-iran-war-russia-diesel.html",
       "publishedAt": "2026-10-10T13:42:36Z",
       "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Junk bonds are 'flashing yellow.' Watch these warning signs",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/09/junk-bonds-are-flashing-yellow-watch-these-warning-signs.html",
-      "publishedAt": "2026-10-09T20:51:25Z",
-      "category": "Pasar Global",
       "language": "en"
     },
     {
@@ -78,27 +94,11 @@
       "language": "en"
     },
     {
-      "title": "What's behind the recovery rally in tech stocks — plus, Elon Musk's very good week",
+      "title": "Living with Mom and trading on margin. The regular investor gets in on Wall Street's record stock borrowing binge",
       "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/investingclub/2026/10/09/whats-behind-the-recovery-rally-in-tech-stocks-plus-musks-good-week.html",
-      "publishedAt": "2026-10-09T19:02:29Z",
+      "url": "https://www.cnbc.com/2026/10/09/margin-debt-stock-market-risk.html",
+      "publishedAt": "2026-10-09T13:03:19Z",
       "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Trump appoints committee to investigate statements by the Fed's Lisa Cook",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/09/fed-lisa-cook-trump.html",
-      "publishedAt": "2026-10-09T17:56:24Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Hurricane Isaias disrupts U.S. oil production in Gulf of Mexico, threatens refineries",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/09/hurricane-isaias-gulf-mexico-oil-refinery.html",
-      "publishedAt": "2026-10-09T17:12:17Z",
-      "category": "Energi / Geopolitik",
       "language": "en"
     }
   ]
