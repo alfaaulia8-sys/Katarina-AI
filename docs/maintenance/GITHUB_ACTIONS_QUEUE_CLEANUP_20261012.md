@@ -78,3 +78,38 @@ issue trackers with cross-references, not unresolved safety work.
   **not proof of a current GitHub API rate-limit error**.
 - Latest job/status verification is required after the cleanup
   commit. Do not claim the CI green until the run finishes.
+
+
+## Final verified outcome
+
+Cleanup implementation: [commit `1d385ff`](https://github.com/alfaauliau-katarinaAI/Katarina-AI/commit/1d385ff4ee53774900580f15177c6b166a382e6b).
+
+- **26 previously automatic workflows** converted to on-demand only;
+  stage-specific Windows/MT5 integration tests remain available
+  explicitly via GitHub Actions when that subsystem actually changes.
+- **3 retained unattended workflows** out of 31:
+  primary `KATARINA Body CI` (source/PR), path-limited Stage 35 native
+  tester safety, and six-hour scheduled verified-hotnews backup.
+  Two separate self-hosted VPS jobs remain manual-only.
+- **2 draft PRs closed unmerged**: [#30](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/30)
+  (experimental Brain V3 paper journal) and
+  [#32](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/32)
+  (experimental multi-asset portfolio). The source branches still
+  exist; no experimental trade code was merged under the guise of
+  cleanup. Both PRs have explicit archival explanations.
+- **1 confirmed duplicate issue closed**: [#27](https://github.com/alfaauliau-katarinaAI/Katarina-AI/issues/27)
+  in favor of more complete [#29](https://github.com/alfaauliau-katarinaAI/Katarina-AI/issues/29).
+  Four genuine open issues (#21/#24/#29/#31) are retained because
+  merchant, release and forward broker evidence is still outstanding.
+- Final GitHub REST validation: **0 queued, 0 waiting,
+  0 in-progress runs; 0 open PRs**.
+- Latest relevant workflow runs on commit `1d385ff`:
+  [KATARINA Body CI: SUCCESS](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38212804784)
+  and [Stage35 Tester Safety: SUCCESS](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38212804762).
+- The repository-wide static fanout regression is covered in Body CI;
+  no need to erase historical CI failures, rewrite main history or
+  delete safety-critical research and MQL5 artifacts.
+- This reduces excessive GitHub Actions executions, but **does not
+  demonstrate that any independent GitHub API HTTP 429 has been
+  fixed**. If an API client itself exceeds request limits it still
+  needs separate rate-limit response/retry analysis.
