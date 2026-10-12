@@ -68,25 +68,3 @@ Governor was enabled by this research.
 
 The GitHub runner job is bounded to 25 minutes; provider quotas may apply.
 It writes only ephemeral Actions artifacts, not new tracked history files.
-
-
-## Verified runner results (GitHub Actions, 12 October 2026)
-
-- Research workflow: https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38200671468 — **SUCCESS**
-- Operational Hardening, Body CI and Stage 10-40 Baseline on the same code commit — **SUCCESS**
-- Retrospective V6 archive: 334 model trade rows across 14 priority symbols
-  observed in the existing V6 selected-trade CSV (NOT full new 17-symbol
-  strategy re-ranking).
-- Extra cost +0.00 R: adaptive gate selected 70 model trades, modeled
-  compounded return **-2.7752%**; unconditional V6-selected 334-event
-  conditional benchmark **-0.3066%**.
-- Extra cost +0.10 R: adaptive 44 model trades, modeled return **-4.1422%**,
-  matched conditional benchmark **-8.2940%**.
-- Extra cost +0.20 R: adaptive 15 model trades, modeled return **-2.1057%**,
-  matched conditional benchmark **-15.6432%**.
-- The results are **negative**, not a trading edge. Stress outcomes differ
-  in number of admitted trades because past after-cost shadow outcomes
-  influence later selector decisions. Do not claim profitable AI trading.
-- 18 adaptive unit tests passed; existing 4 GitHub workflows succeeded.
-  Runner artifacts contain per-event WAIT/PAPER_SELECT decisions and closed
-  model trades, retained temporarily by GitHub Actions.

@@ -127,3 +127,11 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Adaptive model pada biaya dasar: 70 trade, return **-2,7752%** (pembanding V6 subset kondisional: **-0,3066%**). Biaya tambahan +0,10R: 44 trade, return **-4,1422%**. Belum profitable.
 - Prototipe metode alternatif belum punya evaluasi P/L dari candlestick historisnya masing-masing. Jangan menyatakan strategi V7 lolos atau mengaktifkan live.
 - Artifact riset tersimpan dalam run Actions (retensi 7 hari). VPS tidak diubah atau ditulis.
+
+
+## 11. STRATEGY TOURNAMENT CANDLE ASLI — GITHUB RUNNER (12 Oktober 2026)
+
+- Runner baru .github/workflows/public-strategy-tournament.yml, kode scripts/research/public_market_tournament.py, tes tests/unit/intelligence/test_public_market_tournament.py, dokumentasi docs/research/KATARINA_STRATEGY_TOURNAMENT_V8_20261012.md.
+- Pengujian diarahkan untuk keluarga Trend Pullback, Breakout Retest, Liquidity Sweep, Range Mean Reversion; BUY dan SELL dipisah. Pilot pertama EURUSD + XAUUSD menggunakan M1 BID/ASK **publik** dari Dukascopy, bukan file privat broker VPS, dengan agregasi M5/H1 tertutup dan entry candle berikutnya.
+- Broker live, Risk Governor, penulisan dan restart VPS semuanya tidak disentuh. GitHub runner menggunakan permission contents:read. Arsip M1 mentah tidak ditulis ke GitHub, hanya diagnostic summary dan modeled paper events sementara.
+- Status edge/profit harus mengikuti hasil runner, bukan klaim sebelum tes. Semua historical paper tetap RESEARCH-ONLY / WAIT.

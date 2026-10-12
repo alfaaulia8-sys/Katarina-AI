@@ -1,0 +1,99 @@
+name: KATARINA Public OHLC Strategy Tournament
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/research/public_market_tournament.py'
+      - 'tests/unit/intelligence/test_public_market_tournament.py'
+      - 'src/katarina/intelligence/adaptive_strategy_library.py'
+      - '.github/workflows/public-strategy-tournament.yml'
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: 'Verified public Dukascopy symbols, max 4 per run'
+        required: false
+        default: 'EURUSD,XAUUSD'
+      start:
+        description: 'Start date inclusive (UTC), YYYY-MM-DD'
+        required: false
+        default: '2026-09-01'
+      end:
+        description: 'End date exclusive (UTC), YYYY-MM-DD'
+        required: false
+        default: '2026-09-12'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: katarina-public-tournament-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: src
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout repository (no private VPS data)
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and test model and decoder without network
+        run: |
+          python -m compileall -q scripts/research/public_market_tournament.py
+          python -m unittest discover -s tests/unit/intelligence -p 'test_public_market_tournament.py' -v
+      - name: Download publicly served historical BID/ASK bars and test four strategies
+        env:
+          KAT_SYMBOLS: ${{ inputs.symbols || 'EURUSD,XAUUSD' }}
+          KAT_START: ${{ inputs.start || '2026-09-01' }}
+          KAT_END: ${{ inputs.end || '2026-09-12' }}
+        run: |
+          python scripts/research/public_market_tournament.py \
+            --symbols "$KAT_SYMBOLS" --start "$KAT_START" \
+            --end "$KAT_END" --output artifacts/public_tournament
+      - name: Verify genuine data and no live trades
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("artifacts/public_tournament/summary.json").read_text())
+          assert report["orders_sent"]==0 and report["trade_allowed"] is False
+          assert report["independent_holdout"] is False
+          for symbol,entry in report["symbols"].items():
+              assert entry["coverage"]["minutes"]>=2000, (symbol,"missing_real_public_data")
+              assert entry["bars"]["status"]=="OK", (symbol,"missing_H1_M5")
+          print("PUBLIC_DATA_AND_RESEARCH_ONLY_CONTRACT_PASS")
+          PY
+      - name: Summarize audited public-data pilot
+        if: always()
+        run: |
+          if [ -f artifacts/public_tournament/summary.json ]; then
+            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/public_tournament/summary.json").read_text())
+          print("# KATARINA OHLC strategy research pilot")
+          print("Historical exploratory analysis; no verified profitable strategy.")
+          for s,x in r["symbols"].items():
+              print(f"- {s}: {x['coverage']['minutes']} public BID/ASK minutes; "
+                    f"{x['bars'].get('signals',0)} candidates; "
+                    f"{x['all_trades']['n']} modeled paper trades.")
+          print("No broker/VPS data were written to GitHub.")
+          PY
+          else
+            echo "Public-data test failed before producing valid outputs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload summary and modeled events only, no market raw candles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katarina-public-ohlc-tournament-${{ github.run_number }}
+          path: artifacts/public_tournament/
+          if-no-files-found: warn
+          retention-days: 7
