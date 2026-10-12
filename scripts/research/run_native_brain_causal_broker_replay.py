@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from datetime import datetime,timedelta,timezone
+from math import ceil
 import json
 from pathlib import Path
 import sys
@@ -27,7 +28,24 @@ from katarina.intelligence.replay_cost_diagnostics import describe_candidates
 from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 
 
-def load_from_live_terminal(symbols,*,max_cuts,include_spreads=False):
+def requested_history_depth(now_utc,window_end_utc,max_cuts):
+    """Bound the MT5 bar request; retain M15/H1 warmup on older windows."""
+    if now_utc.tzinfo is None or window_end_utc.tzinfo is None:
+        raise ValueError("timezone_aware_utc_broker_history_required")
+    delta=(now_utc-window_end_utc).total_seconds()
+    if delta<0 or delta>31*86400:
+        raise ValueError("historical_window_must_be_past_within_31_days")
+    if not 120<=max_cuts<=2300:
+        raise ValueError("historical_window_unbounded_cuts")
+    return {
+        "M5":(max(1500,max_cuts+250+ceil(delta/300)+80),300),
+        "M15":(max(900,(max_cuts+250)//3+150+ceil(delta/900)+40),900),
+        "H1":(max(280,(max_cuts+250)//12+80+ceil(delta/3600)+25),3600),
+    }
+
+
+def load_from_live_terminal(symbols,*,max_cuts,include_spreads=False,
+                            window_end_utc=None):
     import MetaTrader5 as mt5
     if not mt5.initialize():
         raise RuntimeError("MT5_TERMINAL_NOT_AVAILABLE")
@@ -36,6 +54,8 @@ def load_from_live_terminal(symbols,*,max_cuts,include_spreads=False):
         if terminal is None or terminal.trade_allowed:
             raise RuntimeError("HISTORICAL_REPLAY_REQUIRES_DISABLED_TRADE_PERMISSION")
         now=datetime.now(timezone.utc)
+        cutoff=window_end_utc or now
+        counts=requested_history_depth(now,cutoff,max_cuts)
         readings={s:mt5.symbol_info_tick(s) for s in symbols}
         shift=infer_clock_shift(
             {s:int(t.time) for s,t in readings.items()
@@ -48,9 +68,9 @@ def load_from_live_terminal(symbols,*,max_cuts,include_spreads=False):
         market_spreads={}
         offset=shift.observed_hours_shift
         req={
-            "M5":(mt5.TIMEFRAME_M5,max(1500,max_cuts+250),300),
-            "M15":(mt5.TIMEFRAME_M15,max(900,(max_cuts+250)//3+150),900),
-            "H1":(mt5.TIMEFRAME_H1,max(280,(max_cuts+250)//12+80),3600),
+            "M5":(mt5.TIMEFRAME_M5,*counts["M5"]),
+            "M15":(mt5.TIMEFRAME_M15,*counts["M15"]),
+            "H1":(mt5.TIMEFRAME_H1,*counts["H1"]),
         }
         for symbol in symbols:
             bars={}
@@ -68,7 +88,7 @@ def load_from_live_terminal(symbols,*,max_cuts,include_spreads=False):
                 for r in rates:
                     closed=datetime.fromtimestamp(int(r["time"])-offset*3600+length,
                                                   timezone.utc)
-                    if closed>now:continue
+                    if closed>cutoff:continue
                     if tf=="M5" and include_spreads:
                         raw_spread=int(r["spread"])
                         if (point>0 and 0<raw_spread<100000):
@@ -97,6 +117,8 @@ def main():
     p.add_argument("--max-cuts",type=int,default=700)
     p.add_argument("--spread-to-atr",type=float,default=.04)
     p.add_argument("--extra-cost-r",type=float,default=.15)
+    p.add_argument("--window-end-utc",default=None,
+                   help="Past UTC time; closed bars after this instant are hidden from Brain")
     p.add_argument("--private-report",required=True)
     a=p.parse_args()
     symbols=[s.strip() for s in a.symbols.split(",") if s.strip()]
@@ -112,8 +134,13 @@ def main():
         p.error("unknown or noncanonical broker research symbol")
     if not 120<=a.max_cuts<=2300:
         p.error("120-2300 retrospective M5 cuts per symbol")
+    window_end=(datetime.fromisoformat(a.window_end_utc.replace("Z","+00:00"))
+                if a.window_end_utc else None)
+    if window_end is not None and window_end.tzinfo is None:
+        p.error("window-end-utc must contain UTC offset")
     frames,status,offset,spreads=load_from_live_terminal(
-        symbols,max_cuts=a.max_cuts,include_spreads=True)
+        symbols,max_cuts=a.max_cuts,include_spreads=True,
+        window_end_utc=window_end)
     if not frames:raise RuntimeError("NO_HISTORICAL_MARKET_BARS")
     result=replay_native_brain(
         frames,assumed_spread_to_m15_atr=a.spread_to_atr,
@@ -131,6 +158,9 @@ def main():
     cost_review=describe_candidates(result["signals"],splits)
     info={
         "generated_utc":datetime.now(timezone.utc).isoformat(),
+        "historical_window_end_utc":(window_end.isoformat() if window_end
+                                     else "CURRENT_OBSERVED_PAST"),
+        "broker_replay_window_for_research_not_unseen_holdout":True,
         "purpose":"CLOSED_BAR_REAL_MT5_HISTORICAL_SIGNAL_REPLAY",
         "read_only":True,"orders_sent":0,
         "broker_current_clock_offset_hours":offset,
