@@ -41,6 +41,8 @@ from katarina.intelligence.causal_broker_quotes import (
 from katarina.intelligence.market_article_context import collect_market_articles
 from katarina.intelligence.evidence_risk import assess_legacy_august_audit
 from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
+from katarina.intelligence.self_evolution_lab import evaluate_shadow_self_evolution
+from katarina.governance.multi_model_evolution_review import review_candidate
 from katarina.intelligence.prospective_shadow_book import (
     ProspectiveShadowBook,ResearchHypothesis,
 )
@@ -412,6 +414,14 @@ def observe(root,*,max_symbols=17,fetch_news=True):
             paper_hypotheses,now)
         report["virtual_shadow_summary"]=virtual_book.summary()
         retrospective=shadow_review(store.db,now)
+        # Offline statistical learning, never modifies strategy, code, or orders.
+        # Reuses the existing SQLite observer: NO second daemon or model workers.
+        report["self_evolution_lab"]=evaluate_shadow_self_evolution(
+            store.db,as_of_utc=now)
+        # Future independent AI reviewers must bind verdicts to a current
+        # receipt; with no providers configured the review fails closed.
+        report["self_evolution_model_review"]=review_candidate(
+            report["self_evolution_lab"]).to_dict()
         report["virtual_memory_cohorts"]=sorted(
             retrospective["groups"],key=lambda g:-g["complete"])[:12]
         report["virtual_memory_total_cohorts"]=len(retrospective["groups"])
@@ -453,3 +463,5 @@ def main():
 
 if __name__=="__main__":
     main()
+
+[executed on device: WIN-4TTT19K3CL8 (06bb71fa-caee-4271-a9ca-1e9cb7db4c2a)]
