@@ -122,9 +122,9 @@ def _policy_signal(body,source):
             continue
         if re.search(r"\b(decided|announced|voted|agreed|will)\b",s) is None:
             continue
-        if re.search(r"\b(lower|cut|reduc|decreas)",s):
+        if re.search(r"\b(?:lower\w*|cut\w*|reduc\w*|decreas\w*)\b",s):
             found.add("EASING")
-        if re.search(r"\b(rais|increas|hike|lift)\b",s):
+        if re.search(r"\b(?:rais\w*|increas\w*|hike\w*|lift\w*)\b",s):
             found.add("TIGHTENING")
         if re.search(r"\b(maintain|unchanged|hold|keep)\b",s):
             found.add("HOLD")
