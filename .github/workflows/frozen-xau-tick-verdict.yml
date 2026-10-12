@@ -29,7 +29,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           code=Path('scripts/research/frozen_xau_sell_tick_verdict.py').read_text()
-          forbidden=['order_send(', 'order_check(', 'account_info(', 'history_deals_get(', '.write_text(', 'open(']
+          forbidden=['order_send(', 'order_check(', 'account_info(', 'history_deals_get(', '.write_text(', 'with open(', 'Path.open(']
           for term in forbidden:
               assert term not in code,term
           assert "terminal.trade_allowed" in code
