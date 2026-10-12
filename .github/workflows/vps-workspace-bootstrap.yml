@@ -1,17 +1,7 @@
 name: VPS Workspace Bootstrap
 
+# Optional manual validation; main push is verified by Body CI.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/vps-workspace-bootstrap.yml"
-      - "scripts/vps/Invoke-KatarinaRemoteTask.ps1"
-      - "scripts/vps/Invoke-KatarinaWorkspaceTask.ps1"
-      - "scripts/vps/Apply-KatarinaWorkspaceChangeset.ps1"
-      - "scripts/vps/Bootstrap-KatarinaPortablePython.ps1"
-      - "scripts/vps/legacy/KatarinaVpsAgent.ps1"
-      - "scripts/vps/legacy/KatarinaVpsAgentWatchdog.ps1"
-      - "scripts/vps/legacy/KatarinaControlGuardian.ps1"
   workflow_dispatch:
 
 permissions:

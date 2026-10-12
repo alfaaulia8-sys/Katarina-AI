@@ -1,13 +1,7 @@
 name: KATARINA Contextual Decision Intelligence Safety
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/katarina/intelligence/contextual_decision_intelligence.py'
-      - 'src/katarina/intelligence/market_decision_brain_v3.py'
-      - 'tests/unit/intelligence/test_contextual_decision_intelligence.py'
-      - '.github/workflows/contextual-decision-intelligence.yml'
   workflow_dispatch:
 
 permissions:

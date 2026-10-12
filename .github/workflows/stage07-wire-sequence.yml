@@ -1,13 +1,7 @@
 name: Stage 07 MT5 Wire Sequence Persistence
 
+# Optional manual validation; main push is verified by Body CI.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-wire-sequence.yml"
-      - "mt5/Include/Katarina/BridgeIdentity.mqh"
-      - "mt5/Include/Katarina/Stage07/WireSequence.mqh"
-      - "mt5/Tests/KatarinaStage07WireSequenceTest.mq5"
   workflow_dispatch:
 
 permissions:

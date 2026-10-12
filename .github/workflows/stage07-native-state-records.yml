@@ -1,14 +1,7 @@
 name: Stage 07 Native State Records
 
+# Manual native integration smoke only; Body CI owns push checks.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-native-state-records.yml"
-      - "mt5/Include/Katarina/Stage07/Kat1NativeRecords.mqh"
-      - "mt5/Tests/KatarinaStage07NativeStateRecordsTest.mq5"
-      - "protocol/kat1_message_schemas_v1.json"
-      - "src/katarina/adapters/transport/kat1_codec.py"
   workflow_dispatch:
 
 permissions:

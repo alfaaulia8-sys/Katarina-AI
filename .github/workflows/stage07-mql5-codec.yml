@@ -1,14 +1,7 @@
 name: Stage 07 MQL5 KAT1 Codec
 
+# Manual native integration smoke only; Body CI owns push checks.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-mql5-codec.yml"
-      - "mt5/Include/Katarina/Stage07/**"
-      - "mt5/Tests/KatarinaStage07Kat1CodecTest.mq5"
-      - "protocol/golden/kat1_v1_vectors.json"
-      - "protocol/kat1_message_schemas_v1.json"
   workflow_dispatch:
 
 permissions:

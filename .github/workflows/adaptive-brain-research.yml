@@ -1,13 +1,7 @@
 name: KATARINA Adaptive Research (Historical Only)
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/katarina/intelligence/adaptive_*.py'
-      - 'scripts/research/run_adaptive_walkforward.py'
-      - 'tests/unit/intelligence/test_adaptive_walkforward.py'
-      - '.github/workflows/adaptive-brain-research.yml'
   workflow_dispatch:
 
 permissions:

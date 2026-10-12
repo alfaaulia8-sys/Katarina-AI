@@ -1,27 +1,8 @@
 name: KATARINA Public OHLC Strategy Tournament
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/research/public_market_tournament.py'
-      - 'scripts/research/public_github_sample_tournament.py'
-      - 'scripts/research/summarize_public_tournament.py'
-      - 'tests/unit/intelligence/test_public_market_tournament.py'
-      - 'tests/unit/intelligence/test_public_github_sample_tournament.py'
-      - 'tests/unit/intelligence/test_public_tournament_summary.py'
-      - 'src/katarina/intelligence/adaptive_strategy_library.py'
-      - '.github/workflows/public-strategy-tournament.yml'
   workflow_dispatch:
-    inputs:
-      start:
-        description: 'Start date inclusive (UTC), YYYY-MM-DD'
-        required: false
-        default: '2026-06-01'
-      end:
-        description: 'End date exclusive (UTC), YYYY-MM-DD'
-        required: false
-        default: '2026-09-01'
 
 permissions:
   contents: read

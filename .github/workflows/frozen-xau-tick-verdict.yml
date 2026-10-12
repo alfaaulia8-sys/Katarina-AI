@@ -1,11 +1,7 @@
 name: KATARINA Frozen XAU SELL Tick Verdict Safety
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/research/frozen_xau_sell_tick_verdict.py'
-      - '.github/workflows/frozen-xau-tick-verdict.yml'
   workflow_dispatch:
 
 permissions:

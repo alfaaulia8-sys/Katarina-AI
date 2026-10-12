@@ -1,13 +1,7 @@
 name: Stage 07 ZeroMQ Capability
 
+# Optional manual validation; main push is verified by Body CI.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-zmq-capability.yml"
-      - "mt5/Tests/KatarinaStage07ZmqCapability.mq5"
-      - "mt5/Include/Katarina/Stage07/**"
-      - "protocol/golden/kat1_v1_vectors.json"
   workflow_dispatch:
 
 permissions:

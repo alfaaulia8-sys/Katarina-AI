@@ -1,11 +1,7 @@
 name: KATARINA V9 Broker Entry Research Safety
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/research/broker_entry_diagnostics_v9.py'
-      - '.github/workflows/broker-entry-research-v9.yml'
   workflow_dispatch:
 
 permissions:

@@ -1,18 +1,7 @@
 name: Stage 07 Cross-Language Recovery
 
+# Manual native integration smoke only; Body CI owns push checks.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-recovery-integration.yml"
-      - "requirements-stage07.txt"
-      - "src/katarina/adapters/transport/**"
-      - "src/katarina/ports/transport.py"
-      - "mt5/Include/Katarina/Stage07/**"
-      - "mt5/Tests/KatarinaStage07RecoveryIntegration.mq5"
-      - "protocol/kat1_message_schemas_v1.json"
-      - "docs/adr/0011-stage07-snapshot-recovery-integrity.md"
-      - "docs/adr/0012-stage07-bidirectional-sequence-lanes.md"
   workflow_dispatch:
 
 permissions:

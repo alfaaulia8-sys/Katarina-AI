@@ -1,16 +1,7 @@
 name: Stage 08 Data Validation
 
+# Optional manual validation; main push is verified by Body CI.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage08-validation.yml"
-      - "src/katarina/validation/**"
-      - "tests/unit/validation/**"
-      - "scripts/stage08/**"
-      - "config/data_validation_engine_draft.json"
-      - "docs/architecture/KATARINA_DATA_VALIDATION_ENGINE_DRAFT.md"
-      - "docs/reviews/STAGE_08_*"
   workflow_dispatch:
 
 permissions:

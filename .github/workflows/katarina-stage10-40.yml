@@ -1,22 +1,8 @@
 name: KATARINA Stage 10-40 Baseline
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - "src/katarina/**"
-      - "tests/**"
-      - "scripts/stage_all/**"
-      - "scripts/stage10/**"
-      - "docs/stages/**"
-      - ".github/workflows/katarina-stage10-40.yml"
-  pull_request:
-    paths:
-      - "src/katarina/**"
-      - "tests/**"
-      - "scripts/stage_all/**"
-      - "scripts/stage10/**"
-      - "docs/stages/**"
+  workflow_dispatch:
 
 jobs:
   python-baseline:

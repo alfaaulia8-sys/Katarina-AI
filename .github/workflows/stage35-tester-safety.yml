@@ -1,6 +1,11 @@
 name: Stage 35 Tester Safety
 on:
   pull_request:
+    paths:
+      - 'scripts/stage35/**'
+      - 'tests/static/test_stage35*'
+      - 'tests/fixtures/stage35/**'
+      - '.github/workflows/stage35-tester-safety.yml'
   push:
     branches: [main]
     paths:

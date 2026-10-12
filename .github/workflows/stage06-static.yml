@@ -1,14 +1,7 @@
 name: Stage 06 Static Evidence
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage06-static.yml"
-      - "mt5/**"
-      - "scripts/mt5/**"
-      - "tests/static/test_stage06_*.py"
-      - "config/windows_compatibility_stage06.json"
   workflow_dispatch:
 
 permissions:

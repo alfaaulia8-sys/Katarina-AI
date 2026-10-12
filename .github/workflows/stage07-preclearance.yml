@@ -1,17 +1,7 @@
 name: Stage 07 Pre-Clearance
 
+# Manual native integration smoke only; Body CI owns push checks.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-preclearance.yml"
-      - "scripts/stage07/profile_stage07_transport.py"
-      - "scripts/stage07/audit_stage07_preclearance.py"
-      - "src/katarina/adapters/transport/**"
-      - "tests/unit/transport/**"
-      - "mt5/Include/Katarina/Stage07/**"
-      - "mt5/Tests/KatarinaStage07TcpFallbackIntegration.mq5"
-      - "config/mt5_python_communication_draft.json"
   workflow_dispatch:
 
 permissions:

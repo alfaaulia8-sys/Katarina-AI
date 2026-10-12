@@ -1,16 +1,7 @@
 name: Stage 07 Final Clearance
 
+# Manual native integration smoke only; Body CI owns push checks.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-final-clearance.yml"
-      - "mt5/Include/Katarina/Stage07/NativeTcpTransport.mqh"
-      - "mt5/Tests/KatarinaStage07TcpFallbackIntegration.mq5"
-      - "scripts/stage07/profile_stage07_transport.py"
-      - "scripts/stage07/audit_stage07_final.py"
-      - "scripts/stage07/configure_mt5_network_allowlist.py"
-      - "scripts/stage07/configure_mt5_network_allowlist.py"
   workflow_dispatch:
 
 permissions:

@@ -1,6 +1,7 @@
 name: KATARINA Strategy Replay (GitHub)
 
 # GitHub-hosted only. No broker API, self-hosted VPS, or auto live trading.
+# Research replay is initiated manually to avoid CI storms.
 on:
   workflow_dispatch:
     inputs:
@@ -9,15 +10,6 @@ on:
         required: false
         default: "5"
         type: string
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/katarina-strategy-replay.yml"
-      - "scripts/research/github_replay.py"
-      - "scripts/research/mega_multi_asset_v2.py"
-      - "scripts/research/massive_risk_report.py"
-      - "tests/replay/**"
-      - "tests/fixtures/ohlc/**"
 
 permissions:
   contents: read

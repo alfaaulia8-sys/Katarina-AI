@@ -1,15 +1,7 @@
 name: Stage 09 Health Safety
 
+# Optional manual validation; main push is verified by Body CI.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage09-health-safety.yml"
-      - "src/katarina/health/**"
-      - "tests/unit/health/**"
-      - "scripts/stage09/**"
-      - "config/health_safety_engine_draft.json"
-      - "docs/architecture/KATARINA_HEALTH_SAFETY_ENGINE_DRAFT.md"
   workflow_dispatch:
 
 permissions:

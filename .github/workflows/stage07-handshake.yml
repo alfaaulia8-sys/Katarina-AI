@@ -1,16 +1,7 @@
 name: Stage 07 Cross-Language Handshake
 
+# Manual native integration smoke only; Body CI owns push checks.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-handshake.yml"
-      - "requirements-stage07.txt"
-      - "src/katarina/adapters/transport/**"
-      - "src/katarina/ports/transport.py"
-      - "mt5/Include/Katarina/Stage07/**"
-      - "mt5/Tests/KatarinaStage07HandshakeIntegration.mq5"
-      - "protocol/kat1_message_schemas_v1.json"
   workflow_dispatch:
 
 permissions:

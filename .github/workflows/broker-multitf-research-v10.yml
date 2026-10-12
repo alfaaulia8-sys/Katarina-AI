@@ -1,11 +1,7 @@
 name: KATARINA V10 Higher-TF Broker Research Safety
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/research/broker_multitf_risk_v10.py'
-      - '.github/workflows/broker-multitf-research-v10.yml'
   workflow_dispatch:
 
 permissions:

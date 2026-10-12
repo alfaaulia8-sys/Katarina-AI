@@ -1,17 +1,8 @@
 name: KATARINA Operational Hardening
 
+# On-demand only: avoid redundant GitHub Actions push/PR fanout.
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/katarina/**'
-      - 'tests/**'
-      - 'config/operational_hardening_v1.json'
-      - '.github/workflows/operational-hardening.yml'
-  pull_request:
-    paths:
-      - 'src/katarina/**'
-      - 'tests/**'
+  workflow_dispatch:
 
 jobs:
   hardening:

@@ -1,18 +1,7 @@
 name: Stage 07 Communication
 
+# Manual native integration smoke only; Body CI owns push checks.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stage07-communication.yml"
-      - "src/katarina/ports/transport.py"
-      - "src/katarina/adapters/transport/**"
-      - "tests/unit/transport/**"
-      - "requirements-stage07.txt"
-      - "protocol/**"
-      - "config/mt5_python_communication_draft.json"
-      - "docs/adr/0009-stage07-live-communication-topology.md"
-      - "docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md"
   workflow_dispatch:
 
 permissions:
