@@ -29,5 +29,22 @@
   "tests_static": 96,
   "tests_integration": 22,
   "handoff": "KATARINA_START_NEXT_CHAT.md",
-  "instructions": "Only do explicitly requested work."
+  "instructions": "Only do explicitly requested work.",
+  "current_working_checkout": "C:\\KatarinaDev\\ci-research-fresh-20261012",
+  "previous_checkout": "C:\\KatarinaDev\\ci-research",
+  "previous_checkout_clean": false,
+  "previous_checkout_problem": "Access denied to several files during reset and rename; retained for recovery",
+  "private_recovery_zip": "C:\\KatarinaDev\\handoff-backups\\ci-research-pre-github-sync-20261012.zip",
+  "private_recovery_zip_verified": true,
+  "cleanup_removed_cache_folders": 66,
+  "cleanup_removed_cache_mb": 4.465,
+  "cleanup_errors": 0,
+  "free_ram_mb": 220,
+  "free_disk_gb": 9.32,
+  "vps_research_backtests_active": 0,
+  "fresh_checkout_unit_tests": 752,
+  "fresh_checkout_static_tests": 96,
+  "fresh_checkout_integration_tests": 22,
+  "github_checkpoint_ci": "Body CI success",
+  "legacy_data_preserved": true
 }

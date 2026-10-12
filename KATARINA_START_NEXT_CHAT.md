@@ -71,7 +71,7 @@ Angka ini diperoleh dengan model risk 0,25%/entry dan asumsi spread/slippage/bar
 - scripts/research/backtest_unified_intraday_brain_v6.py
 - scripts/research/collect_forward_intraday_v6.py
 
-VPS: **C:\KatarinaDev\ci-research** (checkout kode), **C:\KatarinaDev\brain-runtime\Scripts\python.exe** (runtime dengan MT5), **C:\KatarinaDev\decision-backtest-20261012** (keluaran test), **C:\KatarinaDev\handoff-backups** (snapshot cadangan privat). Jangan upload kredensial, trade account ID, history broker pribadi, cache browser atau file privat ke GitHub.
+VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkron dengan GitHub main; gunakan ini untuk pekerjaan berikutnya). **C:\KatarinaDev\ci-research** adalah checkout LAMA yang tidak sepenuhnya dapat di-reset akibat akses beberapa file ditolak; jangan gunakan sebagai sumber kerja atau menghapusnya tanpa menyelesaikan masalah izin., **C:\KatarinaDev\brain-runtime\Scripts\python.exe** (runtime dengan MT5), **C:\KatarinaDev\decision-backtest-20261012** (keluaran test), **C:\KatarinaDev\handoff-backups** (snapshot cadangan privat). Jangan upload kredensial, trade account ID, history broker pribadi, cache browser atau file privat ke GitHub.
 
 ## Kondisi cleanup
 
@@ -91,3 +91,13 @@ VPS: **C:\KatarinaDev\ci-research** (checkout kode), **C:\KatarinaDev\brain-runt
 **Kalimat chat baru:** "Lanjutkan KATARINA dari KATARINA_START_NEXT_CHAT.md di main GitHub. Cek status saja dahulu; jangan mengerjakan apa pun selain yang saya perintahkan."
 
 **Tidak ada profit harian yang dijamin. Keputusan NO_TRADE dapat menjadi keputusan yang optimal.**
+
+## 8. HASIL CLEANUP TERAKHIR (VERIFIKASI 12 Oktober 2026)
+
+- **GitHub:** checkpoint V1–V6 di main; tidak ada tracked file >1 MB dan tidak ada cache build/test tracked. Ketiga branch lama dipertahankan karena commit unik belum merged. Tidak ada data riset atau commit dibuang.
+- **VPS kode:** bersih pada checkout baru **C:\KatarinaDev\ci-research-fresh-20261012**; main GitHub SHA **0e643838b3fe546ba68e0c9789ada814dd1b157a** saat clone. Git status clean dan handoff tersedia. Test pada fresh checkout: **752 unit, 96 static, 22 integration PASS**.
+- **VPS lama:** akses ditolak pada beberapa file checkout **C:\KatarinaDev\ci-research** sehingga reset/rename terhenti. Checkout lama sengaja tetap disimpan, bukan diam-diam dihapus atau dinyatakan bersih. Snapshot ZIP sebelum percobaan reset telah diuji integritas dan disimpan privat.
+- **Safe cleanup:** **66 cache Python/test regenerable, sekitar 4,465 MB**, dihapus dari enam direktori code workspace, tanpa error. Skrip helper sementara untuk perpindahan yang tidak lagi dibutuhkan dibersihkan. Data tick/historical broker, hasil penelitian dan website tetap utuh.
+- **VPS status:** RAM tersedia **220 MB dari 2.047 MB**, ruang disk tersedia **9,32 GB**; **tidak ada backtest aktif**, MT5 tetap berjalan. RAM tetap rendah terutama karena aplikasi MT5 dan Chrome yang sengaja tidak dimatikan.
+- **GitHub Body CI** pada commit checkpoint **0e643838** sukses. Lihat laporan cleanup privat **C:\KatarinaDev\state\handoff_cleanup_20261012.json** untuk daftar cache.
+- Ini **bukan** janji semua VPS menjadi ringan sepenuhnya: RAM tidak akan meningkat signifikan tanpa menutup aplikasi atau menambah RAM. Aplikasi aktif tidak disentuh untuk menghindari gangguan.
