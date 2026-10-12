@@ -260,3 +260,14 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Closed orphan dedicated headless Chrome QA only, removed 69.17MB temp profile + 33 Python cache dirs 2.2MB; free RAM ~441MB -> ~505MB sampled. Interactive browsers, MT5, DC, services untouched.
 - Single existing observer temporarily paused only for replay and re-enabled afterward; other observer jobs disabled.
 - Profitability not established; no live activation.
+
+### 2026-10-12 — native-brain BID/ASK tick validation
+- Current implementation: `src/katarina/intelligence/causal_tick_reconciliation.py` and `scripts/research/run_native_brain_tick_reconciliation.py`; no second brain or observer.
+- SOURCE BIAS FIX: `causal_market_replay.py` freezes `all_technical_proposals` BEFORE any later OHLC outcome, so samples are not preselected by future label completion. Dedicated unit test checks unlabeled candidates retained.
+- Source code SHA `c75dd8e23ab7a2ab8c5156348124fc27f8c64ba5`: GitHub Body CI PASS run 38274053823.
+- 5 live-available broker symbol archives: 228 pre-outcome native technical proposals, 193 historical OHLC proxy labels, 50 time-balanced pre-outcome tick-audited proposals, 31 BID/ASK complete, 16 excessive entry spread, 2 quote gaps, 1 incomplete exit.
+- 31 valid quote-simulated outcomes after EXTRA ASSUMED 0.15R stress: mean -0.166634R, PF 0.63424, 13 positive 18 negative; 10 SL/19 TIME/2 TP. Only October 2026; no independent OOS or broker fill evidence.
+- Regime/method root causes and per-month scorecards private file `C:\KatarinaDev\artifacts\contextual-observer\native-brain-tick-reconciliation-private.json`. Main docs `docs/research/NATIVE_BRAIN_TICK_RECONCILIATION_20261012.md`.
+- RANGE_FADE especially negative and often spread-blocked. TREND_PULLBACK SELL/ BREAKOUT_RETEST SELL superficially positive but only 8/4 quote-completed samples: no promotion.
+- Actual broker deal history 2026 found 1 account record with no symbol, insufficient to calibrate realized commissions. No live trading, no production Risk Governor changes.
+- 5-minute canonical observer restored after temporary pause; two redundant observers remain disabled.
