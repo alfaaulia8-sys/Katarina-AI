@@ -162,3 +162,13 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Positif tetapi **tidak signifikan**: AUDUSD 4 trade +0,386R, USDCAD 3 trade +0,087R, EURJPY 19 trade +0,126R. XAUUSD 1331 trade -0,1729R, Oil 390 -0,2204R, US30 934 -0,2428R, NAS100 1267 -0,2298R.
 - Detail angka dan batas interpretasi di docs/research/KATARINA_STRATEGY_TOURNAMENT_V8_20261012.md. Data tersebut **bukan** BID/ASK broker, spread simulasi dan tidak lolos holdout baru. Enam simbol lain belum punya sampel M5 publik setara.
 - Status resmi: RESEARCH-ONLY / WAIT. Tidak ada promosi strategi, order live, write VPS, atau perubahan Risk Governor.
+
+
+### V9 — broker-read actual M5 + spread, TWO new entry methods (12 October 2026)
+
+- Read-only broker diagnostic on **17 broker symbols**, period June–August 2026; run script `scripts/research/broker_entry_diagnostics_v9.py` (sha `0b300ca`), loaded directly in VPS Python memory, **no VPS files written**.
+- 6,557 overlapping modeled events: V8 4329, new V9 2228; mean baseline **-0.150738R**, extra cost +0.10R **-0.250738R**. 0 groups meet robust all-3-month screen, NOT profitable and NOT independent OOS.
+- FX M5 spread/ATR median often >0.50; EURGBP 1.57396, oil XTIUSD 0.81395. This calls for cost-aware higher timeframe research, not raising risk.
+- Two XAUUSD SELL methods positive only very weak after cost stress, fail monthly consistency, not production eligible.
+- Sanitized full aggregate: `docs/research/outputs/20261012/broker_entry_v9_aggregate_sanitized.json`. Report: `docs/research/BROKER_ENTRY_DIAGNOSTICS_V9_20261012.md`.
+- GitHub Actions V9 safety and Body CI PASS. No real orders, VPS file edits, private datasets, Risk Governor changes or live authorization. Continue RESEARCH-ONLY/WAIT.
