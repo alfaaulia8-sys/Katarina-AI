@@ -172,3 +172,12 @@ VPS: **C:\KatarinaDev\ci-research-fresh-20261012** (checkout BERSIH dan tersinkr
 - Two XAUUSD SELL methods positive only very weak after cost stress, fail monthly consistency, not production eligible.
 - Sanitized full aggregate: `docs/research/outputs/20261012/broker_entry_v9_aggregate_sanitized.json`. Report: `docs/research/BROKER_ENTRY_DIAGNOSTICS_V9_20261012.md`.
 - GitHub Actions V9 safety and Body CI PASS. No real orders, VPS file edits, private datasets, Risk Governor changes or live authorization. Continue RESEARCH-ONLY/WAIT.
+
+
+### V10 — Multi-timeframe M15/H1, RR SL risk, broker M15-H4 (12 Oktober 2026)
+
+- Kode riset terisolasi: `scripts/research/broker_multitf_risk_v10.py` at commit `8778c7d`. Menjalankan broker read-only via source in-memory VPS; VPS files/services tidak disentuh. Periode TRAIN Juni-Juli, DIAGNOSTIC Agustus-September 2026 (sudah pernah diteliti: BUKAN unseen holdout).
+- 1264 kombinasi asset/timeframe/entry/SL/TP, 9 lolos TRAIN, **0 lolos diagnostic**. Semua belum profitable robust. 13604 kandidat sinyal mentah.
+- Simulasi risiko +0,10R biaya tambahan: 0,10% risk 1 posisi -4.0915%, 0,25% risk 1 posisi -7.1036%, 0,50% risk 1 posisi -8.1869%. Risk Governor produksi TIDAK DIUBAH.
+- Laporan: `docs/research/BROKER_MULTITF_RISK_V10_20261012.md`. Agregasi mesin tanpa raw broker bars `docs/research/outputs/20261012/broker_multitf_risk_v10_aggregate_sanitized.json`.
+- Tetap WAIT/RESEARCH-ONLY, no live orders, no broker data privat upload, no VPS write, tidak mengubah struktur utama KATARINA.
