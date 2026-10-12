@@ -34,6 +34,9 @@ from katarina.intelligence.verified_policy_context import (
     instrument_currencies,FRESH_SECONDS,
 )
 from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
+from katarina.intelligence.causal_broker_quotes import (
+    last_past_quote,due_window_quote,
+)
 from katarina.intelligence.market_article_context import collect_market_articles
 from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
 from katarina.intelligence.prospective_shadow_book import (
@@ -274,9 +277,16 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 info=mt5.symbol_info(symbol)
                 if info is None or tick is None or tick.bid<=0 or tick.ask<tick.bid:
                     raise ValueError("invalid_symbol_or_quote")
-                quote_at=tick.time-offset*3600
+                # The latest MT5 server tick may lead VPS UTC by seconds
+                # AFTER whole-hour correction. Use actual historical UTC
+                # tick snapshots bounded at the observation clock instead.
+                # No synthetic fractional time shift or future quote.
+                past=last_past_quote(mt5,symbol,now)
+                if past is None:
+                    raise ValueError("no_past_broker_bidask_quote")
+                quote_bid,quote_ask,quote_at=past
                 quote_age=now.timestamp()-quote_at
-                quote_fresh=(-15<=quote_age<=180)
+                quote_fresh=(0<=quote_age<=90)
                 raw_bars=bars_for(symbol,correction)
                 # Broker timestamps currently lead system UTC by ~13s even
                 # after integer-hour offset correction. Discard ANY candle
@@ -289,7 +299,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 recent=all(0<=(now-bars[k][-1].closed_at_utc).total_seconds()<=mins*120
                            for k,(_,mins) in TF.items())
                 quote_ok=bool(quote_fresh and recent and info.trade_mode in (1,2,4))
-                observed_spread=float(tick.ask-tick.bid)
+                observed_spread=float(quote_ask-quote_bid)
                 news,macro,sources,calendar=prepare_news(articles,symbol,now,store)
                 # Real account position book/capital-risk telemetry NOT
                 # retrieved. Mark system_healthy FALSE so even a future
@@ -329,7 +339,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                         side=decision.conditional_side,
                         closed_bar_at=bars["M5"][-1].closed_at_utc,
                         observed_at=now,
-                        bid=float(tick.bid),ask=float(tick.ask),
+                        bid=quote_bid,ask=quote_ask,
                         tick_at=quote_at,
                         stop=decision.conditional_invalidation,
                         target=decision.conditional_target,
@@ -342,7 +352,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                     ))
                     card["research_shadow_hypothesis"]="QUEUED_FOR_DETERMINISTIC_RANKING"
                 report["symbols"][symbol]=card
-                latest_quotes[symbol]=(float(tick.bid),float(tick.ask),quote_at)
+                latest_quotes[symbol]=past
                 if quote_ok:
                     try:
                         journal.record(
@@ -350,7 +360,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                             observed_utc=now.isoformat(),side=decision.conditional_side,
                             method=decision.selected_method,decision=decision.action,
                             blockers=decision.blocking_reasons,
-                            bid=float(tick.bid),ask=float(tick.ask),tick_epoch=quote_at)
+                            bid=quote_bid,ask=quote_ask,tick_epoch=quote_at)
                     except (ValueError,TypeError):
                         card["journal_status"]="REJECTED_INVALID_TIMESTAMP_OR_QUOTE"
             except Exception as ex:
@@ -359,7 +369,16 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                     "market_state":"UNKNOWN","blocking_reasons":["sensor_error:"+type(ex).__name__],
                     "live_execution_authorized":False,
                 }
-        report["quote_markouts_resolved_this_cycle"]=journal.resolve(latest_quotes,now)
+        # Scheduled run may occur 1-5 minutes AFTER a 15-minute markout
+        # deadline. Read immutable broker UTC BID/ASK ticks precisely in
+        # its due-time window; do NOT use the future-leading latest tick.
+        # Ex-post status is explicitly distinct from genuine forward fills.
+        def due_lookup(symbol,due,as_of):
+            return due_window_quote(mt5,symbol,due,as_of)
+        report["quote_markouts_resolved_this_cycle"]=journal.resolve(
+            latest_quotes,now,quote_lookup=due_lookup)
+        report["quote_markouts_use_past_only_broker_tick_history"]=True
+        report["current_bidask_source"]="BROKER_UTC_TICK_HISTORY_AS_OF_CLOCK"
         report["quote_journal"]=journal.summary()
         # Price path gaps => invalid virtual observations, NOT assumed fills.
         report["virtual_shadow_settled"]=virtual_book.settle(

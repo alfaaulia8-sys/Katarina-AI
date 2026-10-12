@@ -62,12 +62,35 @@ class ContextDecisionJournal:
         return self.db.execute(
             "SELECT changes()").fetchone()[0]==1
 
-    def resolve(self,quotes,now):
-        """quotes[symbol]=(bid,ask,verified_quote_utc_epoch).
+    @staticmethod
+    def _markout(side,entry_bid,entry_ask,quote,due,now):
+        if quote is None:return None
+        try:
+            bid,ask,q=quote
+            if (not all(isfinite(float(v)) for v in
+                        (bid,ask,q,entry_bid,entry_ask,due,now)) or
+                not 0<float(bid)<=float(ask) or
+                not 0<float(entry_bid)<=float(entry_ask) or
+                not float(due)<=float(q)<=min(float(due)+MAX_EXIT_DELAY,float(now))):
+                return None
+            mid=(float(entry_bid)+float(entry_ask))/2
+            delta=(float(bid)-float(entry_ask) if side=="BUY"
+                   else float(entry_bid)-float(ask))
+            return float(q),delta/mid*10000
+        except (ValueError,TypeError,OverflowError):
+            return None
 
-        Only quotes within 120s of exact due time close a markout.
-        If sampling missed that window, result is MISSING_EXIT,
-        not a fabricated success.
+    def resolve(self,quotes,now,*,quote_lookup=None):
+        """Resolve causal 15-minute quote markouts.
+
+        If quote_lookup is supplied, fetch the *actual* broker BID/ASK
+        tick at/after each due_epoch, even if fetched on the NEXT 5-min
+        observer cycle. Store a distinct BROKER_TICK_RECONCILED status:
+        this retrospective price observation is NEVER an executed fill,
+        a forward simulated order, or validated broker net profit.
+
+        Without a callback retain the in-memory quote path for old
+        offline tests. An invalid, stale or future tick cannot resolve.
         """
         if now.tzinfo is None:raise ValueError("now_requires_timezone")
         when=now.timestamp()
@@ -75,26 +98,65 @@ class ContextDecisionJournal:
         with self.db:
             rows=self.db.execute("""SELECT id,symbol,side,entry_bid,entry_ask,
               due_epoch FROM contextual_decisions
-              WHERE status='PENDING' AND due_epoch<=?""",(when,)).fetchall()
+              WHERE status='PENDING' AND due_epoch<=?
+              ORDER BY due_epoch,id""",(when,)).fetchall()
             for iid,symbol,side,bid,ask,due in rows:
-                quote=quotes.get(symbol)
-                if quote is not None:
-                    b,a,q=quote
-                    valid=(all(isfinite(v) for v in (b,a,q))
-                           and 0<b<=a and due<=q<=min(due+MAX_EXIT_DELAY,when))
-                    if valid:
-                        mid=(bid+ask)/2
-                        raw=(b-ask if side=="BUY" else bid-a)
-                        self.db.execute("""UPDATE contextual_decisions
-                            SET status='QUOTED',exit_tick_epoch=?,markout_bps=?
-                            WHERE id=? AND status='PENDING'""",
-                            (q,raw/mid*10000,iid))
-                        n+=1
-                        continue
-                if when>due+MAX_EXIT_DELAY:
+                quote=None
+                status="QUOTED"
+                if quote_lookup is None:
+                    quote=quotes.get(symbol)
+                else:
+                    try:
+                        quote=quote_lookup(symbol,due,when)
+                    except Exception:
+                        quote=None  # fail-closed, not a guessed price
+                    status="BROKER_TICK_RECONCILED"
+                marked=self._markout(side,bid,ask,quote,due,when)
+                if marked is not None:
+                    q,markout=marked
                     self.db.execute("""UPDATE contextual_decisions
-                        SET status='MISSING_EXIT' WHERE id=? AND status='PENDING'""",(iid,))
+                        SET status=?,exit_tick_epoch=?,markout_bps=?
+                        WHERE id=? AND status='PENDING'""",
+                        (status,q,markout,iid))
+                    n+=1
+                elif when>due+MAX_EXIT_DELAY:
+                    self.db.execute("""UPDATE contextual_decisions
+                        SET status='MISSING_EXIT' WHERE id=? AND status='PENDING'""",
+                        (iid,))
         return n
+
+    def reconcile_missing(self,quote_lookup,now,*,max_records=80):
+        """Recover old MISSING_EXIT cases from broker history only.
+
+        Recovered records keep the distinct BROKER_TICK_RECOVERED status.
+        These are EX-POST data repairs, not newly observed forward alpha.
+        No unbounded replay and no outside of +/-120s tick interpolation.
+        """
+        if now.tzinfo is None:raise ValueError("now_requires_timezone")
+        if not 1<=max_records<=100:raise ValueError("bounded_recovery_required")
+        when=now.timestamp()
+        recovered=0
+        with self.db:
+            rows=self.db.execute("""SELECT id,symbol,side,entry_bid,entry_ask,
+              due_epoch FROM contextual_decisions
+              WHERE status='MISSING_EXIT' AND due_epoch<=?
+              ORDER BY id LIMIT ?""",
+              (when-MAX_EXIT_DELAY,max_records)).fetchall()
+            for iid,symbol,side,bid,ask,due in rows:
+                try:
+                    quote=quote_lookup(symbol,due,when)
+                except Exception:
+                    quote=None
+                marked=self._markout(side,bid,ask,quote,due,when)
+                if marked is not None:
+                    q,markout=marked
+                    self.db.execute("""UPDATE contextual_decisions
+                        SET status='BROKER_TICK_RECOVERED',
+                        exit_tick_epoch=?,markout_bps=?
+                        WHERE id=? AND status='MISSING_EXIT'""",
+                        (q,markout,iid))
+                    recovered+=1
+        return recovered
 
     def summary(self):
         counts=dict(self.db.execute(
@@ -104,6 +166,7 @@ class ContextDecisionJournal:
         return {"counts":counts,"last_observation_utc":latest,
                 "outcome_type":"15min_BID_ASK_QUOTE_MARKOUT_NOT_EXECUTED_TRADING_PNL",
                 "sample_overlap_possible":True,
+                "historically_reconciled_quotes_never_promoted":True,
                 "broker_commission_verified":False,
                 "usable_as_ResolvedExperience":False,
                 "live_execution_authorized":False}

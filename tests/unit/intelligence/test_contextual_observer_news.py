@@ -143,6 +143,46 @@ class TestContextualJournal(unittest.TestCase):
         self.assertEqual(quoted,0)
         self.assertEqual(self.ledger.summary()["counts"],{"MISSING_EXIT":1})
 
+    def test_resolve_late_with_real_broker_due_window(self):
+        self.ledger.record(**self.args)
+        due=(NOW+timedelta(minutes=15)).timestamp()
+        checked=[]
+        def lookup(symbol,due_epoch,when):
+            checked.append((symbol,due_epoch,when))
+            return (4200.,4200.4,due_epoch+.5)
+        n=NOW+timedelta(minutes=20)
+        count=self.ledger.resolve({},n,quote_lookup=lookup)
+        self.assertEqual(count,1)
+        self.assertEqual(self.ledger.summary()["counts"],
+                         {"BROKER_TICK_RECONCILED":1})
+        self.assertEqual(len(checked),1)
+        self.assertEqual(checked[0][0],"XAUUSD.vx")
+        self.assertAlmostEqual(checked[0][1],due)
+        self.assertFalse(self.ledger.summary()["usable_as_ResolvedExperience"])
+
+    def test_recover_old_missing_after_fix_distinct_status(self):
+        self.ledger.record(**self.args)
+        n=NOW+timedelta(minutes=20)
+        self.assertEqual(self.ledger.resolve({},n),0)
+        self.assertEqual(self.ledger.summary()["counts"],{"MISSING_EXIT":1})
+        def lookup(symbol,due,when):
+            return (4200.,4200.4,due+1.)
+        self.assertEqual(self.ledger.reconcile_missing(lookup,n),1)
+        self.assertEqual(self.ledger.reconcile_missing(lookup,n),0)
+        self.assertEqual(self.ledger.summary()["counts"],
+                         {"BROKER_TICK_RECOVERED":1})
+        self.assertFalse(self.ledger.summary()["usable_as_ResolvedExperience"])
+
+    def test_future_or_after_tolerance_quote_fails_closed(self):
+        self.ledger.record(**self.args)
+        n=NOW+timedelta(minutes=20)
+        count=self.ledger.resolve({},n,quote_lookup=lambda s,d,w:
+                                  (4200.,4200.4,w+5.))
+        self.assertEqual(count,0)
+        self.assertEqual(self.ledger.summary()["counts"],{"MISSING_EXIT":1})
+        self.assertEqual(self.ledger.reconcile_missing(lambda s,d,w:
+            (4200.,4200.4,d+130.),n),0)
+
     def test_observed_ask_bid_markout_is_not_trade_pnl(self):
         self.ledger.record(**self.args)
         due=NOW+timedelta(minutes=15)
