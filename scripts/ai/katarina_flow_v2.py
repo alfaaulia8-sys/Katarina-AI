@@ -18,6 +18,7 @@ import re
 import sys
 
 from scripts.ai.management_workplan import audit_role, load_plan, verify_role, management_summary
+from scripts.ai.management_resources import observe_workspace, safe_cache_inventory
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))  # script entrypoints need repository imports
@@ -295,11 +296,15 @@ def manager(folder: Path, commit: str) -> dict:
         for role in SPECIALISTS
     }
     verified_work = management_summary(ROOT, source_audits)
+    resources = observe_workspace(ROOT)
+    cache_report = safe_cache_inventory(ROOT, max_paths=100)
     if record.get("management_work_items_replayed") != len(SPECIALISTS):
         raise ValueError("management_work_items_not_replayed")
     return seal({
         "kind":"manager","version":VERSION,"commit":commit,
         "management_work_summary":verified_work,
+        "resource_safety_report": resources,
+        "cache_inventory": cache_report,
         "specialists_verified":len(SPECIALISTS),
         "qa_passed":True,
         "plan_priority":sched["current_priority"],
