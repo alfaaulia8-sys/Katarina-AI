@@ -32,7 +32,7 @@ jobs:
           python -m pip install --disable-pip-version-check -r requirements-stage07.txt
           python -m pip install --disable-pip-version-check numpy==2.5.3
       - name: Verify all management roles with genuine regression evidence
-        run: python scripts/ai/management_acceptance.py --commit "${{ github.sha }}" > management-evidence.json
+        run: python scripts/ai/management_acceptance.py --commit "${{ github.sha }}" > "${{ runner.temp }}/management-evidence.json"
       - name: Publish Manager evidence in GitHub job summary
         if: always()
         run: |
@@ -40,7 +40,7 @@ jobs:
           import json
           import os
           from pathlib import Path
-          p = Path("management-evidence.json")
+          p = Path(os.environ["RUNNER_TEMP"]) / "management-evidence.json"
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
               f.write("## Katarina Management Evidence\n\n")
               if not p.is_file():
@@ -57,7 +57,7 @@ jobs:
         if: always()
         with:
           name: management-evidence-${{ github.run_id }}
-          path: management-evidence.json
+          path: ${{ runner.temp }}/management-evidence.json
           if-no-files-found: warn
           retention-days: 14
       - name: Verify governance unit suite

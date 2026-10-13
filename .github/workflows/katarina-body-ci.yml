@@ -592,3 +592,51 @@ jobs:
           path: build/team-v2/
           if-no-files-found: warn
           retention-days: 7
+
+  management-pr-readiness:
+    name: Management verified acceptance (PR only)
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/management-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src:.
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded Python dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements-stage07.txt
+          python -m pip install --disable-pip-version-check numpy==2.5.3
+      - name: Verify pinned 15-stage Management chain and real regressions
+        run: python scripts/ai/management_acceptance.py --commit "${{ github.sha }}" > "${{ runner.temp }}/management-evidence.json"
+      - name: Show acceptance summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"management-evidence.json"
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fp:
+              fp.write("## Katarina Management: GitHub Runner Evidence\n\n")
+              if not p.is_file():
+                  fp.write("**BLOCKED:** no acceptance evidence.\n")
+              else:
+                  item=json.loads(p.read_text(encoding="utf-8"))
+                  fp.write("**Status:** {}. **Specialists:** {}. **Orders:** {}.\n\n".format(
+                      item["status"],item["specialists_verified"],item["orders_sent"]))
+                  fp.write("**Trading release:** {} (deliberate block).\n".format(item["release_status"]))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: management-pr-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/management-evidence.json
+          if-no-files-found: warn
+          retention-days: 14
