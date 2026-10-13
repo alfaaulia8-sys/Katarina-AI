@@ -31,6 +31,8 @@ class Mt5MarkedPosition:
 @dataclass(frozen=True, slots=True)
 class Mt5AccountMark:
     account_login: int
+    broker_server: str
+    account_currency: str
     equity: float
     captured_utc_ns: int
     positions: tuple[Mt5MarkedPosition, ...]
@@ -106,6 +108,12 @@ class Mt5ReadOnlyPnLAdapter:
         login = getattr(account, "login", None)
         if type(login) is not int or login <= 0:
             raise ValueError("invalid_mt5_login")
+        broker_server = getattr(account, "server", None)
+        account_currency = getattr(account, "currency", None)
+        if (not isinstance(broker_server, str) or not broker_server.strip()
+                or not isinstance(account_currency, str)
+                or not account_currency.strip()):
+            raise ValueError("unverified_mt5_broker_server_or_currency")
         equity = self._cash(getattr(account, "equity", None), "account_equity")
         if equity <= 0:
             raise ValueError("invalid_mt5_equity")
@@ -124,12 +132,16 @@ class Mt5ReadOnlyPnLAdapter:
                 position=True,
             )
             marks.append(Mt5MarkedPosition(pid, origin, floating + swap))
-        return Mt5AccountMark(login, equity, captured_utc_ns, tuple(marks))
+        return Mt5AccountMark(login, broker_server.strip(),
+                              account_currency.strip(), equity,
+                              captured_utc_ns, tuple(marks))
 
     def reconcile(self, before: Mt5AccountMark, after: Mt5AccountMark) -> Mt5PnLObservation:
         if (not isinstance(before, Mt5AccountMark)
                 or not isinstance(after, Mt5AccountMark)
                 or before.account_login != after.account_login
+                or before.broker_server != after.broker_server
+                or before.account_currency != after.account_currency
                 or before.captured_utc_ns >= after.captured_utc_ns):
             raise ValueError("account_or_capture_window_mismatch")
         for snapshot in (before, after):
@@ -143,7 +155,10 @@ class Mt5ReadOnlyPnLAdapter:
         # MT5 terminal accounts can be switched outside this Python process.
         # Reject history if it was fetched under a different broker login.
         rechecked = self._mt5.account_info()
-        if rechecked is None or getattr(rechecked, "login", None) != before.account_login:
+        if (rechecked is None
+                or getattr(rechecked, "login", None) != before.account_login
+                or getattr(rechecked, "server", None) != before.broker_server
+                or getattr(rechecked, "currency", None) != before.account_currency):
             raise RuntimeError("mt5_account_changed_during_history_read")
 
         old = {p.position_id: p for p in before.positions}

@@ -38,13 +38,16 @@ class FakeMt5:
     def __init__(self):
         self.login = 55
         self.equity = 10000.0
+        self.server = "Broker-Demo"
+        self.currency = "USD"
         self.positions = [position()]
         self.deals = []
         self.calls = []
 
     def account_info(self):
         self.calls.append("account_info")
-        return NS(login=self.login, equity=self.equity)
+        return NS(login=self.login, server=self.server,
+                  currency=self.currency, equity=self.equity)
 
     def positions_get(self):
         self.calls.append("positions_get")
@@ -166,6 +169,18 @@ class ReadOnlyMt5PnLTests(unittest.TestCase):
             return items
         self.broker.history_deals_get = switch_account
         with self.assertRaisesRegex(RuntimeError, "account_changed"):
+            self.adapter.reconcile(prior, after)
+
+    def test_same_login_other_broker_or_currency_is_rejected(self):
+        prior = self.adapter.capture(captured_utc_ns=BEFORE)
+        self.broker.server = "Other-Broker"
+        after = self.adapter.capture(captured_utc_ns=AFTER)
+        with self.assertRaisesRegex(ValueError, "account_or_capture"):
+            self.adapter.reconcile(prior, after)
+        self.broker.server = "Broker-Demo"
+        self.broker.currency = "USC"
+        after = self.adapter.capture(captured_utc_ns=AFTER)
+        with self.assertRaisesRegex(ValueError, "account_or_capture"):
             self.adapter.reconcile(prior, after)
 
     def test_absent_positions_or_invalid_ticks_rejected(self):
