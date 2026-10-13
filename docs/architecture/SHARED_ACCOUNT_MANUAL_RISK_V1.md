@@ -84,3 +84,29 @@ Manual positions are observed as account-wide risk; they are not modified by Kat
 `BrokerPnLReconciler` in the existing `manual_risk.py` checks realized+floating per-position P/L against **equity change minus external cash flow**. It rejects missing fee/commission deltas, duplicate position IDs, unknown/foreign origin, and nonfinite values. Owner/Katarina losses remain separate and include still-open floating losses. It is **arithmetic validation**, not independent authentication; broker deal history and floating snapshots are not yet connected to it.
 
 Current KAT1 account state carries aggregate profit, while position state does **not** carry per-position realized+floating P/L. Therefore the reconciler cannot legitimately prove Owner causation using KAT1 alone. In the account-wide `AccountRiskCoordinator`, requests tagged `EXTREME_RECOVERY` remain PAUSE / `broker_origin_pnl_adapter_not_authenticated`. That is intentional until a trustworthy broker P/L provenance path and end-to-end reconciliation have been tested. A directly constructed DrawdownAuthority is not broker evidence.
+
+
+## Offline MT5 native read-only P/L adapter (14 October 2026)
+
+The existing Katarina adapter package contains `mt5_account_pnl.py`. It reads only
+`account_info`, `positions_get`, and `history_deals_get` from an already initialized
+MT5 client and never logs in or transmits an order. For a pair of same-account
+snapshots it:
+
+- Tracks per-position floating profit and swap, recognized deal realized profit,
+  commission, fee and swap, closing trades, and explicit broker balance cash flows.
+- Uses broker-supplied reason codes and Katarina magic to separate Owner,
+  Katarina, and foreign/unknown positions; origin changes fail closed.
+- Reconciles the resulting broker account-equity change using the existing
+  `BrokerPnLReconciler`; duplicates, missing broker fields, stale account identity
+  and unsupported ledger operations are rejected.
+- Outputs `broker_history_complete_verified=False`,
+  `server_trading_day_authenticated=False`, and
+  `live_execution_authorized=False`. Python MT5 reads do NOT attest broker
+  completeness, trading date, network authenticity, or transaction atomicity.
+
+The adapter supports deterministic mocked testing without launching MT5. It is
+not wired to `AccountRiskCoordinator`'s Owner Extreme Recovery permission:
+**attribution must remain blocked** pending verified complete broker provenance
+and safe read-only forward validation. Do not log into, change, or trade an
+Owner account solely to test this adapter.
