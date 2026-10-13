@@ -18,6 +18,8 @@ import re
 import sys
 from zoneinfo import ZoneInfo
 
+from scripts.ai.management_workplan import audit_role, load_plan, verify_role, management_summary
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))  # script entrypoints need repository imports
 SPECIALISTS = (
@@ -86,8 +88,11 @@ def scheduler(commit: str, now: datetime) -> dict:
     else:
         current = "DEADLINE_PASSED_REPORT_BLOCKERS"
         day = 8
+    workplan, plan_digest = load_plan(ROOT)
     return seal({
         "kind":"schedule","version":VERSION,"commit":commit,
+        "management_task_plan_sha256":plan_digest,
+        "management_task_count":len(workplan["tasks"]),
         "current_day_wib":local_day,"deadline_wib":DEADLINE,
         "day_index":day,"current_priority":current,
         "locked_plan":list(PLAN),
@@ -217,8 +222,12 @@ def specialist(role: str, plan: dict, commit: str) -> dict:
         facts["legacy_specialist_receipt_sha256"]=result["receipt_sha256"]
     else:
         facts=_extra_role(role)
+    task_evidence = audit_role(ROOT, role)
+    if task_evidence["plan_sha256"] != plan["management_task_plan_sha256"]:
+        raise ValueError("specialist_schedule_task_mismatch")
     return seal({
         "kind":"specialist","version":VERSION,"commit":commit,
+        "management_task_evidence":task_evidence,
         "role":role,"status":"PASS_ENGINEERING_ONLY",
         "schedule_receipt_sha256":plan["receipt_sha256"],
         "findings":facts,
@@ -231,6 +240,10 @@ def specialist(role: str, plan: dict, commit: str) -> dict:
 def qa(folder: Path, commit: str, regression_pass: bool) -> dict:
     plan_raw=json.loads((folder/"schedule.json").read_text())
     sched=open_receipt(folder/"schedule.json",commit=commit,kind="schedule")
+    _, expected_plan_digest = load_plan(ROOT)
+    if (sched["management_task_plan_sha256"] != expected_plan_digest or
+            sched["management_task_count"] != len(SPECIALISTS)):
+        raise ValueError("management_workplan_stale")
     if sched["parallel_roles"] != list(SPECIALISTS) or sched["max_parallel"]>4:
         raise ValueError("schedule_scope_changed")
     results={}
@@ -245,6 +258,9 @@ def qa(folder: Path, commit: str, regression_pass: bool) -> dict:
                 record.get("model_production_authorized") is not False or
                 not isinstance(record.get("findings"),dict)):
             raise ValueError("specialist_scope_or_integrity_failure:"+role)
+        verify_role(ROOT, role, record.get("management_task_evidence"))
+        if record["management_task_evidence"]["plan_sha256"] != sched["management_task_plan_sha256"]:
+            raise ValueError("specialist_management_scope_mismatch")
         facts=record["findings"]
         if role=="infrastructure" and (facts.get("processes_terminated")!=0 or
                                       facts.get("vps_files_deleted")!=0):
@@ -254,6 +270,8 @@ def qa(folder: Path, commit: str, regression_pass: bool) -> dict:
         results[role]=record["receipt_sha256"] if "receipt_sha256" in record else digest(record)
     return seal({
         "kind":"qa","version":VERSION,"commit":commit,
+        "management_work_items_replayed":len(results),
+        "management_workplan_sha256":expected_plan_digest,
         "status":"PASS_ENGINEERING_ONLY" if regression_pass else "BLOCKED_REGRESSION",
         "regression_passed":bool(regression_pass),
         "schedule_receipt_sha256":plan_raw["receipt_sha256"],
@@ -272,8 +290,16 @@ def manager(folder: Path, commit: str) -> dict:
             record["independent_specialist_receipts"]!=check[
                 "independent_specialist_receipts"]):
         raise ValueError("qa_not_approved")
+    source_audits = {
+        role: open_receipt(folder / (role + ".json"), commit=commit, kind="specialist")["management_task_evidence"]
+        for role in SPECIALISTS
+    }
+    verified_work = management_summary(ROOT, source_audits)
+    if record.get("management_work_items_replayed") != len(SPECIALISTS):
+        raise ValueError("management_work_items_not_replayed")
     return seal({
         "kind":"manager","version":VERSION,"commit":commit,
+        "management_work_summary":verified_work,
         "specialists_verified":len(SPECIALISTS),
         "qa_passed":True,
         "plan_priority":sched["current_priority"],
