@@ -52,6 +52,19 @@ class TestActionRequestFanout(unittest.TestCase):
         self.assertIn("'docs/**'",source)
         self.assertIn("'website/hot-news.json'",source)
 
+    def test_management_evidence_gate_is_manual_read_only_and_hosted(self):
+        path=WORKFLOWS/"katarina-management-evidence-gate.yml"
+        source=path.read_text(encoding="utf-8")
+        self.assertEqual(events(source), {"workflow_dispatch"})
+        self.assertIn("permissions:\n  contents: read", source)
+        self.assertIn("persist-credentials: false", source)
+        self.assertIn("cancel-in-progress: true", source)
+        self.assertIn("runs-on: ubuntu-latest", source)
+        self.assertNotIn("runs-on: self-hosted", source)
+        self.assertIn("management_acceptance.py", source)
+        self.assertIn("tests/integration", source)
+        self.assertNotIn("models: write", source)
+
     def test_native_tester_has_pr_scoped_and_manual_vps_only(self):
         st=(WORKFLOWS/"stage35-tester-safety.yml").read_text()
         on=st.split("on:",1)[1].split("permissions:",1)[0]

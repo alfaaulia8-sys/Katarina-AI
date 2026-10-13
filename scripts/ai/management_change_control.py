@@ -20,10 +20,12 @@ ALLOWED = frozenset({
     "scripts/ai/management_workplan.py",
     "scripts/ai/management_resources.py",
     "scripts/ai/management_acceptance.py",
+    "scripts/ai/management_change_control.py",
     "tests/unit/governance/test_katarina_flow_v2.py",
     "tests/unit/governance/test_management_workplan.py",
     "tests/unit/governance/test_management_resources.py",
     "tests/unit/governance/test_management_acceptance.py",
+    "tests/unit/governance/test_management_change_control.py",
 })
 MAX_PROPOSAL_BYTES = 260_000
 MAX_PREVIEW_LINES = 100

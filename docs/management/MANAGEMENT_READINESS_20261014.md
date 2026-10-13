@@ -57,3 +57,15 @@ Work continues on isolated branch `feature/management-hardened-qa-20261014`; no 
 - **Adversarial regression:** tests cover forged specialist claims with recomputed checksum, forged QA, forged Manager summary, stale proposals, trading-scope denial, invalid syntax, unchanged source, and non-mutation guarantees.
 - **Local tests verified on this hardening branch:** 55 governance unit tests and 3 static workflow fanout tests passed, sequentially on the isolated VPS worktree. This is NOT a substitute for cloud full unit/static/integration regression.
 - **Still incomplete:** real autonomous coding workers, externally authenticated models, cloud end-to-end regression on this branch, and actual human-approved patch apply/release workflow. No claim of 100% Management autonomy or trading-ready release is made.
+
+## Management evidence gate — incremental hardening (14 October 2026)
+
+Branch: `feature/management-ci-gates-20261014`; separate from main, broker execution and trading terminals.
+
+- **True acceptance regression gate:** previously the local 15-stage helper supplied `regression_pass=True` without running tests. It now runs five explicit bounded management/static test modules in a separate, serial Python subprocess and fails closed on failure or timeout. The CLI requires a clean checkout pinned to the actual 40-character commit SHA.
+- **Additional adversarial tests:** failure from the subprocess blocks acceptance; spoofed pinned Git HEAD fails validation; released trading authorization remains denied.
+- **Manual GitHub-hosted evidence workflow:** `.github/workflows/katarina-management-evidence-gate.yml` has only `workflow_dispatch`, `contents: read`, runner concurrency cancellation, disabled credential persistence, and no production deployment. It runs management acceptance and then the entire unit/static/integration regression serially on GitHub-hosted runners. It emits an artifact and step summary, including the deliberate V1 release block.
+- **Verified on isolated Windows QA worktree:** 57 governance unit tests and 4 static request-budget workflow tests passed on 14 October 2026. This is not a claim that the full project regression passed.
+- **Unverified external gate:** new GitHub workflow has not yet completed an actual GitHub-hosted run; its deployment to the default branch and passing checks must be verified before claiming cloud CI readiness.
+- **Approval model:** Management source changes remain review-only proposals. The allowlist excludes broker/trading modules. GitHub human review and an explicit Owner decision are required before manually applying a proposal, merging or releasing; a locally generated checksum alone is not authority.
+- **Residual blockers:** no real autonomous external coding agents, no approved external model budget and independent model response evidence, and no verified full cloud CI run. All financial trading gates remain OFF.
