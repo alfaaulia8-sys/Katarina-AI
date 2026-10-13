@@ -1,39 +1,55 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-13T13:07:50Z",
+  "updatedAt": "2026-10-13T19:10:52Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "Paul Tudor Jones says 2027 could be a really challenging year for the stock market",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/13/paul-tudor-jones-2027-really-challenging-year.html",
-      "publishedAt": "2026-10-13T13:06:54Z",
+      "title": "JPMorgan Chase blocks outside AI agents like Muse, Instinct from directly accessing accounts",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/13/jpmorgan-ai-agents-account-access.html",
+      "publishedAt": "2026-10-13T18:46:27Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Jim Cramer's top 10 things to watch in the stock market Tuesday",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/investingclub/2026/10/13/jim-cramers-top-10-things-to-watch-in-the-stock-market-tuesday.html",
-      "publishedAt": "2026-10-13T12:54:50Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Micron, SoftBank and ASML slide as Wall Street chip rout spreads",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/sk-hynix-softbank-samsung-electronics-shares-tech-stocks-fall.html",
-      "publishedAt": "2026-10-13T12:50:01Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "U.S. Treasury yields fall as energy prices pull back",
+      "title": "The 10-year Treasury yield falls as energy prices stabilize",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/13/us-treasurys-bonds-yields.html",
-      "publishedAt": "2026-10-13T12:45:08Z",
+      "publishedAt": "2026-10-13T18:36:13Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Airport attacks put aviation in crosshairs of geopolitical conflicts",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/riyadh-airport-attacks-aviation.html",
+      "publishedAt": "2026-10-13T18:33:42Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "The latest inflation data is expected to show price increases are accelerating",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/13/september-consumer-price-index-inflation.html",
+      "publishedAt": "2026-10-13T18:05:57Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Minutes of the Board's discount rate meetings on August 17, September 9, and September 16, 2026",
+      "source": "Federal Reserve",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261013a.htm",
+      "publishedAt": "2026-10-13T18:00:00Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Oil prices little changed as traders assess Russian diesel supply prospects and Saudi-Houthi conflict",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/oil-prices-today-brent-wti-hormuz.html",
+      "publishedAt": "2026-10-13T17:21:02Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
@@ -41,7 +57,7 @@
       "title": "Why this little known Chinese chipmaker has caused a global stock rout",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/13/cxmt-memory-chip-stock-rout.html",
-      "publishedAt": "2026-10-13T12:41:56Z",
+      "publishedAt": "2026-10-13T16:28:25Z",
       "category": "Pasar Global",
       "language": "en"
     },
@@ -49,15 +65,15 @@
       "title": "Iran reportedly fortifies nuclear sites as it prepares for possible U.S. strikes after midterms",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/13/iran-us-war-houthis-saudi-arabia-airport.html",
-      "publishedAt": "2026-10-13T11:53:45Z",
+      "publishedAt": "2026-10-13T15:57:46Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
     {
-      "title": "The stock market is at a critical juncture. Wall Street is convinced it will resolve in the bulls' favor",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/13/santoli-the-stock-market-is-at-a-critical-juncture.html",
-      "publishedAt": "2026-10-13T10:59:35Z",
+      "title": "Paul Tudor Jones says 2027 could be a really challenging year for the stock market",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/paul-tudor-jones-2027-really-challenging-year.html",
+      "publishedAt": "2026-10-13T15:52:44Z",
       "category": "Pasar Global",
       "language": "en"
     },
@@ -65,39 +81,23 @@
       "title": "In charts: How one of the world's biggest economies got trapped by debt",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/13/france-2027-budget-debt.html",
-      "publishedAt": "2026-10-13T09:49:15Z",
+      "publishedAt": "2026-10-13T15:52:24Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Oil prices fall as traders assess Russian diesel supply prospects and Saudi-Houthi conflict",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/oil-prices-today-brent-wti-hormuz.html",
-      "publishedAt": "2026-10-13T09:20:00Z",
+      "title": "Paul Tudor Jones is bullish on oil, says it could rally another $20-$25 because of Iran conflict",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/13/paul-tudor-jones-oil-iran.html",
+      "publishedAt": "2026-10-13T15:52:09Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
     {
-      "title": "Visa gets Beijing's green light for bank card business after 40 years of working with China",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/13/visa-china-green-light-bank-card-business-.html",
-      "publishedAt": "2026-10-13T06:20:55Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "World Bank jobs council urges 'crisis-era' employment support measures as IMF warns of AI ‘tsunami’",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/imf-world-bank-ai-jobs-inflation-.html",
-      "publishedAt": "2026-10-13T05:24:17Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "IMF warns bond yields could see a 'disorderly' spike as debt, inflation risks worsen",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/treasury-yields-imf-debt-inflation-.html",
-      "publishedAt": "2026-10-13T04:54:07Z",
+      "title": "Thousands of homeowners face adjustable-rate mortgage resets — and much higher payments",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/13/arm-mortgage-borrowers-rate-adjustment.html",
+      "publishedAt": "2026-10-13T13:35:01Z",
       "category": "Suku Bunga / Inflasi",
       "language": "en"
     }
