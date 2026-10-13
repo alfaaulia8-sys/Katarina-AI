@@ -59,7 +59,7 @@ class ResearchCostMarginGateTests(unittest.TestCase):
 
     def test_drawdown_unbounded_and_open_risk(self):
         self.assertIn("governor_",self.qualify(
-            account=replace(self.account,daily_drawdown=.10)).reason)
+            account=replace(self.account,daily_drawdown=.35)).reason)
         self.assertIn("governor_",self.qualify(
             account=replace(self.account,unbounded_risk=True)).reason)
         self.assertFalse(self.qualify(account=replace(self.account,committed_risk_fraction=.079)).eligible_for_research)

@@ -46,7 +46,7 @@ class DailyDrawdownSnapshot:
 
 
 class DailyDrawdownTracker:
-    def __init__(self, *, limit: float = 0.10):
+    def __init__(self, *, limit: float = 0.35):
         if not (0 < limit < 1):
             raise ValueError("daily drawdown limit")
         self.limit=limit
@@ -118,7 +118,7 @@ class DailyDrawdownTracker:
 
 
 class TotalDrawdownTracker:
-    def __init__(self, *, limit: float = 0.20):
+    def __init__(self, *, limit: float = 0.35):
         self.limit=limit
         self.peak_equity=0.0
         self.current_equity=0.0
@@ -132,6 +132,12 @@ class TotalDrawdownTracker:
         dd=0.0 if self.peak_equity <= 0 else max(0.0,(self.peak_equity-self.current_equity)/self.peak_equity)
         self.max_drawdown_fraction=max(self.max_drawdown_fraction,dd)
         return self.max_drawdown_fraction
+
+    @property
+    def current_drawdown_fraction(self)->float:
+        if self.peak_equity<=0:
+            return 0.0
+        return max(0.0,(self.peak_equity-self.current_equity)/self.peak_equity)
 
     def apply_cash_flow(self, amount: float, *, equity_after: float) -> float:
         if not isfinite(amount):
@@ -210,7 +216,7 @@ class AccountRiskStateEngine:
         PositionOrigin.UNKNOWN.value,
     }
 
-    def __init__(self,*,max_open_risk:float=.08,daily_limit:float=.10,total_limit:float=.20):
+    def __init__(self,*,max_open_risk:float=.08,daily_limit:float=.35,total_limit:float=.35):
         self.max_open_risk=max_open_risk
         self.pending: dict[str,PendingOrderRiskInput]={}
         self.reservations=RiskReservationBook()
@@ -298,7 +304,7 @@ class AccountRiskStateEngine:
             total_committed_risk_fraction=committed,
             remaining_capacity_fraction=max(0.0,self.max_open_risk-committed),
             daily_drawdown_fraction=daily.max_drawdown_fraction,
-            total_drawdown_fraction=self.total.max_drawdown_fraction,
+            total_drawdown_fraction=self.total.current_drawdown_fraction,
             daily_halted=daily.halted,
             unbounded_exposure_ids=tuple(sorted(set(unbounded))),
         )

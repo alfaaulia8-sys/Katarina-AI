@@ -12,11 +12,11 @@ class Stage1620Tests(unittest.TestCase):
         self.assertLessEqual(d.approved_fraction,.05)
         self.assertAlmostEqual(d.approved_fraction,.05)
 
-    def test_daily_drawdown_ten_percent_pauses_new_risk(self):
-        d=RiskGovernor().evaluate(RiskRequest(.01,0,0,.1,2,True,True,.10))
+    def test_emergency_35pct_pauses_new_risk(self):
+        d=RiskGovernor().evaluate(RiskRequest(.01,0,0,.1,2,True,True,.35))
         self.assertEqual(d.action,RiskAction.PAUSE)
         self.assertEqual(d.approved_fraction,0.0)
-        self.assertEqual(d.reason,"daily_drawdown_limit")
+        self.assertEqual(d.reason,"emergency_drawdown_lock")
 
     def test_daily_drawdown_below_limit_can_continue(self):
         d=RiskGovernor().evaluate(RiskRequest(.01,0,0,.1,2,True,True,.099))

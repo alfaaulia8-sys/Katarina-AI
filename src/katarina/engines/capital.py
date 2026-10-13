@@ -44,10 +44,11 @@ class CapitalCompoundingEngine:
     """KATARINA active-capital / reserve compounding.
 
     Rules:
-    - Milestone is 100% growth: next target = active reference * 2.
-    - When broker BALANCE reaches the target, reserve becomes 30% of the
-      current total balance and active trading balance becomes the remaining 70%.
-    - The next target is 2x that new active balance.
+    - Milestones are realized-balance doublings, adjusted for deposits/withdrawals.
+    - When broker REALIZED BALANCE reaches the target, the logical reserve is
+      25% of the entire realized balance, not 25% of just the profit.
+    - Successive targets are cashflow-adjusted balance doubling milestones,
+      not two times the post-reserve active trading balance.
     - Reserve is logical protected capital and is excluded from risk sizing.
     - Withdrawals consume reserve first. Only withdrawal excess reduces active.
     - If withdrawal exceeds reserve, compounding reference/target are recalculated
@@ -58,7 +59,7 @@ class CapitalCompoundingEngine:
       but does not lower the existing target.
     """
 
-    def __init__(self, *, reserve_fraction: float = 0.30, growth_multiple: float = 2.0):
+    def __init__(self, *, reserve_fraction: float = 0.25, growth_multiple: float = 2.0):
         if not (0.0 < reserve_fraction < 1.0):
             raise ValueError("reserve_fraction")
         if not isfinite(growth_multiple) or growth_multiple <= 1.0:
@@ -124,14 +125,18 @@ class CapitalCompoundingEngine:
             return self._event("BALANCE",False,0.0,0.0,"no_active_capital")
 
         if self.next_target_balance>0 and self.total_balance+1e-12>=self.next_target_balance:
+            # Multiple thresholds may be crossed in one realized broker snapshot.
+            # A reserve sweep never redefines the next doubling milestone.
+            while self.next_target_balance>0 and self.total_balance+1e-12>=self.next_target_balance:
+                threshold=self.next_target_balance
+                self.compounding_reference=threshold
+                self.last_milestone_balance=threshold
+                self.next_target_balance=threshold*self.growth_multiple
+                self.milestone_count+=1
             self.reserve_balance=round(self.total_balance*self.reserve_fraction,10)
             self.active_balance=max(0.0,self.total_balance-self.reserve_balance)
-            self.compounding_reference=self.active_balance
-            self.next_target_balance=self.compounding_reference*self.growth_multiple
-            self.milestone_count+=1
-            self.last_milestone_balance=self.total_balance
             self.reserve_impaired=False
-            return self._event("MILESTONE",True,0.0,0.0,"reserve_rebalanced_from_total_balance")
+            return self._event("MILESTONE",True,0.0,0.0,"reserve_25pct_from_realized_balance")
 
         return self._event("BALANCE",False,0.0,0.0,"balance_synced")
 

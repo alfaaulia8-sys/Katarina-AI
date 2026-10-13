@@ -3,10 +3,10 @@
   "name": "KATARINA_CAPITAL_COMPOUNDING_V1",
   "trigger_basis": "BROKER_REALIZED_BALANCE",
   "floating_equity_can_trigger_milestone": false,
-  "reserve_fraction": 0.30,
-  "active_fraction_at_milestone": 0.70,
+  "reserve_fraction": 0.25,
+  "active_fraction_at_milestone": 0.75,
   "growth_multiple": 2.0,
-  "next_target_formula": "active_balance * 2",
+  "next_target_formula": "last_reached_realized_balance_milestone * 2 (cashflow adjusted)",
   "risk_basis": "MIN(active_trading_balance,current_equity)",
   "withdrawal_policy": {
     "consume_reserve_first": true,
@@ -20,5 +20,7 @@
     "deposit_rebases_next_target": true
   },
   "reserve_used_for_position_sizing": false,
+  "reserve_is_logical_not_withdrawn_cash": true,
+  "withdrawals_require_owner_authorization": true,
   "persist_across_restart": true
 }

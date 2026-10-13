@@ -5,9 +5,10 @@
   "per_trade_default_fraction": 0.01,
   "hard_per_entry_fraction": 0.05,
   "max_open_risk_fraction": 0.08,
-  "max_daily_drawdown_fraction": 0.10,
-  "max_total_drawdown_fraction": 0.20,
-  "daily_drawdown_action": "PAUSE_NEW_RISK_UNTIL_NEXT_TRADING_DAY",
+  "max_daily_drawdown_fraction": 0.35,
+  "max_total_drawdown_fraction": 0.35,
+  "daily_drawdown_action": "DD35_KATARINA_LOCKED_OWNER_VERIFIED_EXTREME",
+  "drawdown_modes": {"normal_below": 0.10, "caution_below": 0.23, "recovery_factor_only_below": 0.35, "emergency_at": 0.35},
   "environment_specific_risk_parameters": false,
   "adaptive_risk": {
     "enabled": true,

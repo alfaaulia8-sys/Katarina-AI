@@ -1,37 +1,54 @@
-# Risk Profile V3 — Unified Across Backtest, Demo and Real
+# Katarina — Unified Owner Risk Policy (14 October 2026)
 
-KATARINA uses **one risk profile in every environment**. Backtest, demo and real execution do not have separate numeric risk limits.
+This supersedes previous **drawdown mode boundaries** of daily 10% halt and
+total 20% halt. The independent Risk Governor still protects account-wide
+exposure and never delegates hard limits to the trading brain.
 
-## Unified limits
+## Final drawdown behavior
 
-- Maximum risk per entry: **5% of account equity**.
-- Maximum aggregate open risk: **8%**.
-- Maximum daily drawdown: **10%**.
-- At or above 10% daily drawdown, KATARINA pauses new risk until the next trading day.
-- Maximum total drawdown hard limit: **20%**.
+- **0–below 10%:** NORMAL, evidence-qualified entries.
+- **10–below 23%:** CAUTION, risk reduced; no compulsory lot increases.
+- **23–below 35%:** RECOVERY_FACTOR_ONLY, no standard entries.
+  A Recovery Factor entry needs genuine independent positive-edge evidence,
+  execution costs, spread/slippage, equity/margin headroom and risk budgets.
+  The Recovery Factor performance statistic alone is not a trade signal.
+- **35% or more caused by Katarina or unknown cause:** EMERGENCY_LOCKDOWN
+  for the remainder of that trading day, even if Owner later manually enters.
+- **35% or more demonstrably CAUSED by manual Owner activity:** Katarina may
+  assess EXTREME_SURVIVAL / EXTREME_RECOVERY **the same day**. It can create
+  new positions only when the independent governor approves validated
+  exposure, equity, margin and recovery edge. Otherwise survival is
+  protection-only, with zero new risk.
+- If Katarina first locked itself, and Owner worsened the loss afterward,
+  the next trading day can assess Owner Extreme Recovery, never unlock same
+  day. Existing manual Owner positions remain solely under Owner authority.
 
-These values are ceilings, not mandatory trade sizes. KATARINA may approve less than 5% based on uncertainty, open exposure, account state and other risk gates.
+Drawdown uses account-wide equity and cashflow-adjusted high-water accounting.
+Verified Owner-origin realized **and floating** P/L must be included.
+Large lots or a manual-looking origin tag alone are not proof of causation;
+uncertain attribution fails closed. Clock/day must reflect the verified
+broker-server trading session; current KAT1 day-key is UTC and needs
+separate broker-session verification.
 
-## Environment policy
+## Safety constraints
 
-The exact same numeric risk profile is used for:
-- backtest;
-- strategy tester;
-- paper trading;
-- demo;
-- real/live.
+- 5% hard maximum per entry, **8% aggregate open risk** (manual positions and
+  pending orders included), before more conservative adaptive sizing.
+- Any unknown or unbounded exposure, missing stop, missing currency/broker
+  spec, no healthy margin or unreliable account reconciliation blocks risk.
+- No martingale or obligatory lot escalation. Broker fills/slippage/gaps
+  mean a threshold cannot guarantee a precise maximum realized DD.
+- Only Katarina-owned positions may be modified or closed by Katarina.
+  Owner manual position commands require explicit Owner authorization.
+- Deposits are not realized profits. The Profit Lock is a **logical accounting
+  reserve**, not money already withdrawn into a separate safe account.
+- Live execution stays OFF until verified data, independent reconciled origin
+  attribution, forward testing and explicit release approval exist.
 
-Stage 38 still requires explicit authorization evidence before real execution can be armed. That gate is an **execution authorization gate**, not a different risk model. Once authorized, the same 5% per-entry / 10% daily-DD profile applies.
+Existing `OwnerDrawdownTracker` is an offline deterministic policy component.
+An independent real account/broker P/L attribution feed has **not** yet been
+verified as connected; never mark Owner Extreme Recovery ready for live
+trading merely because these unit tests pass.
 
-## Recovery Factor
-
-Recovery Factor remains:
-
-`Recovery Factor = Net Profit / Maximum Drawdown`
-
-It is reported by BacktestingEngine and PerformanceMonitor. It is a quality metric and does not bypass any safety or risk gate.
-
-
-## Manual and shared-account exposure
-
-Manual, foreign-EA and unknown-origin open positions consume the same 8% aggregate open-risk budget as KATARINA positions. KATARINA prefers broker-native OrderCalcProfit loss-to-SL and falls back to SymbolSpec tick economics. Any open exposure without a quantifiable SL is treated as unbounded and pauses new automated risk.
+Historical backtest research documents are retained as historical evidence;
+their old assumptions do not override this final Owner policy.

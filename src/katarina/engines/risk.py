@@ -14,6 +14,89 @@ if TYPE_CHECKING:
 class RiskAction(str, Enum):
     APPROVE="APPROVE"; REDUCE="REDUCE"; REJECT="REJECT"; PAUSE="PAUSE"
 
+class DrawdownMode(str,Enum):
+    NORMAL="NORMAL"
+    CAUTION="CAUTION"
+    RECOVERY_FACTOR_ONLY="RECOVERY_FACTOR_ONLY"
+    EXTREME_SURVIVAL="EXTREME_SURVIVAL"
+    EMERGENCY_LOCKDOWN="EMERGENCY_LOCKDOWN"
+
+
+@dataclass(frozen=True,slots=True)
+class DrawdownAuthority:
+    day_key: str
+    mode: DrawdownMode
+    drawdown_fraction: float
+    owner_caused: bool
+    verified: bool
+
+
+class OwnerDrawdownTracker:
+    """Broker-reconciled Owner vs Katarina P/L attribution; never sends orders."""
+    def __init__(self):
+        self.day_key=""
+        self.previous_dd=0.0
+        self.katarina_locked=False
+        self.extreme_today=False
+        self.manual_worsened_after_lock=False
+
+    def observe(self,day_key:str,dd:float,*,hwm_cash:float,
+                owner_loss_cash:float=0.,katarina_loss_cash:float=0.,
+                reconciled:bool=False)->DrawdownAuthority:
+        vals=(dd,hwm_cash,owner_loss_cash,katarina_loss_cash)
+        if (not day_key or any(not isfinite(v) for v in vals)
+                or not 0<=dd<=1 or hwm_cash<=0
+                or owner_loss_cash<0 or katarina_loss_cash<0):
+            raise ValueError("invalid_drawdown_attribution")
+        if day_key!=self.day_key:
+            carry=self.manual_worsened_after_lock if self.day_key else False
+            self.day_key=day_key
+            self.previous_dd=dd
+            self.katarina_locked=False
+            self.extreme_today=carry and reconciled
+            self.manual_worsened_after_lock=False
+            if self.extreme_today and dd>=.35:
+                return DrawdownAuthority(day_key,DrawdownMode.EXTREME_SURVIVAL,dd,True,True)
+        before=self.previous_dd
+        self.previous_dd=dd
+        if self.katarina_locked:
+            if reconciled and owner_loss_cash>0:
+                self.manual_worsened_after_lock=True
+            return DrawdownAuthority(day_key,DrawdownMode.EMERGENCY_LOCKDOWN,dd,False,reconciled)
+        if dd>=.35:
+            if self.extreme_today:
+                return DrawdownAuthority(day_key,DrawdownMode.EXTREME_SURVIVAL,dd,True,reconciled)
+            need=max(0.,(.35-before)*hwm_cash)
+            owner_cause=(reconciled and before<.35 and owner_loss_cash>=need-1e-8
+                         and owner_loss_cash>katarina_loss_cash and owner_loss_cash>0)
+            if owner_cause:
+                self.extreme_today=True
+                return DrawdownAuthority(day_key,DrawdownMode.EXTREME_SURVIVAL,dd,True,True)
+            self.katarina_locked=True
+            return DrawdownAuthority(day_key,DrawdownMode.EMERGENCY_LOCKDOWN,dd,False,reconciled)
+        mode=(DrawdownMode.RECOVERY_FACTOR_ONLY if dd>=.23
+              else DrawdownMode.CAUTION if dd>=.10 else DrawdownMode.NORMAL)
+        return DrawdownAuthority(day_key,mode,dd,False,reconciled)
+
+    def snapshot_state(self):
+        return dict(day_key=self.day_key,previous_dd=self.previous_dd,
+                    katarina_locked=self.katarina_locked,extreme_today=self.extreme_today,
+                    manual_worsened_after_lock=self.manual_worsened_after_lock)
+
+    def restore_state(self,state):
+        dd=float(state["previous_dd"])
+        if not isfinite(dd) or not 0<=dd<=1:
+            raise ValueError("invalid_saved_drawdown")
+        if bool(state["katarina_locked"]) and bool(state["extreme_today"]):
+            raise ValueError("conflicting_drawdown_authority")
+        self.day_key=str(state["day_key"])
+        self.previous_dd=dd
+        self.katarina_locked=bool(state["katarina_locked"])
+        self.extreme_today=bool(state["extreme_today"])
+        self.manual_worsened_after_lock=bool(state["manual_worsened_after_lock"])
+
+
+
 @dataclass(frozen=True, slots=True)
 class RiskRequest:
     requested_fraction: float | None
@@ -29,6 +112,9 @@ class RiskRequest:
     risk_capital: float | None = None
     risk_reference_capital: float | None = None
     account_currency: str | None = None
+    entry_kind: str = "NORMAL"
+    trading_day_key: str = ""
+    drawdown_authority: DrawdownAuthority | None = None
 
 @dataclass(frozen=True, slots=True)
 class RiskDecision:
@@ -43,16 +129,16 @@ class RiskGovernor:
         per_trade_default: float = 0.01,
         hard_per_trade: float = 0.05,
         max_open_risk: float = 0.08,
-        max_drawdown: float = 0.20,
-        max_daily_drawdown: float = 0.10,
+        max_drawdown: float = 0.35,
+        max_daily_drawdown: float = 0.35,
         adaptive_profile: AdaptiveRiskProfile | None = None,
     ):
         vals=(per_trade_default,hard_per_trade,max_open_risk,max_drawdown,max_daily_drawdown)
         if any(not isfinite(v) or v<=0 for v in vals):
             raise ValueError("invalid_risk_limits")
         if (per_trade_default>.05 or hard_per_trade>.05 or
-                max_open_risk>.08 or max_daily_drawdown>.10 or
-                max_drawdown>.20):
+                max_open_risk>.08 or max_daily_drawdown>.35 or
+                max_drawdown>.35):
             raise ValueError("cannot_expand_fixed_safety_limits")
         self.per_trade_default=per_trade_default
         self.hard_per_trade=hard_per_trade
@@ -99,10 +185,23 @@ class RiskGovernor:
             return RiskDecision(RiskAction.PAUSE,0.0,"invalid_risk_evidence")
         if r.open_risk_fraction<0 or r.drawdown_fraction<0 or r.daily_drawdown_fraction<0:
             return RiskDecision(RiskAction.PAUSE,0.0,"invalid_risk_evidence")
-        if r.daily_drawdown_fraction >= self.max_daily_drawdown:
-            return RiskDecision(RiskAction.PAUSE,0.0,"daily_drawdown_limit")
-        if r.drawdown_fraction >= self.max_drawdown:
-            return RiskDecision(RiskAction.REJECT,0.0,"drawdown_limit")
+        if r.entry_kind not in {"NORMAL","RECOVERY_FACTOR","EXTREME_RECOVERY"}:
+            return RiskDecision(RiskAction.REJECT,0.0,"invalid_entry_kind")
+        a=r.drawdown_authority
+        verified=(isinstance(a,DrawdownAuthority) and a.verified
+                  and bool(r.trading_day_key) and a.day_key==r.trading_day_key
+                  and abs(a.drawdown_fraction-r.drawdown_fraction)<1e-8)
+        owner_exception=(verified and a.mode is DrawdownMode.EXTREME_SURVIVAL
+                         and a.owner_caused and r.entry_kind=="EXTREME_RECOVERY")
+        if (r.daily_drawdown_fraction>=self.max_daily_drawdown
+                or r.drawdown_fraction>=self.max_drawdown) and not owner_exception:
+            return RiskDecision(RiskAction.PAUSE,0.0,"emergency_drawdown_lock")
+        if .23<=r.drawdown_fraction<.35 and r.entry_kind!="RECOVERY_FACTOR":
+            return RiskDecision(RiskAction.REJECT,0.0,"recovery_factor_entry_only")
+        if r.entry_kind=="EXTREME_RECOVERY" and not owner_exception:
+            return RiskDecision(RiskAction.REJECT,0.0,"owner_causation_not_verified")
+        if r.entry_kind=="RECOVERY_FACTOR" and r.drawdown_fraction<.23:
+            return RiskDecision(RiskAction.REJECT,0.0,"recovery_factor_not_active")
         if r.expected_rr <= 0 or r.uncertainty >= 0.75:
             return RiskDecision(RiskAction.REJECT,0.0,"insufficient_edge")
 
@@ -127,6 +226,8 @@ class RiskGovernor:
             requested=adaptive.fraction
         if not isfinite(requested) or requested<0:
             return RiskDecision(RiskAction.REJECT,0.0,"invalid_requested_risk")
+        if .10<=r.drawdown_fraction<.23:
+            cap=min(cap,self.hard_per_trade*.5)
         approved=min(requested,cap)
         if approved<=0:
             return RiskDecision(RiskAction.REJECT,0.0,"risk_capacity_exhausted")
@@ -149,6 +250,9 @@ class RiskGovernor:
         reconciled: bool,
         account_currency: str | None = None,
         risk_reference_capital: float | None = None,
+        entry_kind: str = "NORMAL",
+        trading_day_key: str = "",
+        drawdown_authority: DrawdownAuthority | None = None,
     ) -> RiskDecision:
         """Evaluate a full account snapshot; includes pending/reserved/manual risk."""
         return self.evaluate(RiskRequest(
@@ -164,6 +268,9 @@ class RiskGovernor:
             risk_capital=state.risk_capital,
             risk_reference_capital=risk_reference_capital,
             account_currency=account_currency,
+            entry_kind=entry_kind,
+            trading_day_key=trading_day_key,
+            drawdown_authority=drawdown_authority,
         ))
 
     def evaluate_account(
@@ -180,6 +287,9 @@ class RiskGovernor:
         risk_capital: float | None = None,
         risk_reference_capital: float | None = None,
         account_currency: str | None = None,
+        entry_kind: str = "NORMAL",
+        trading_day_key: str = "",
+        drawdown_authority: DrawdownAuthority | None = None,
     ) -> RiskDecision:
         """Shared-account path; adaptive mode requires verified capital & currency."""
         return self.evaluate(RiskRequest(
@@ -195,4 +305,7 @@ class RiskGovernor:
             risk_capital=risk_capital,
             risk_reference_capital=risk_reference_capital,
             account_currency=account_currency,
+            entry_kind=entry_kind,
+            trading_day_key=trading_day_key,
+            drawdown_authority=drawdown_authority,
         ))

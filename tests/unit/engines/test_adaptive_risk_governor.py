@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from katarina.engines.adaptive_risk import AdaptiveRiskProfile
-from katarina.engines.risk import RiskGovernor, RiskRequest, RiskAction
+from katarina.engines.risk import RiskGovernor, RiskRequest, RiskAction, OwnerDrawdownTracker, DrawdownMode
 from katarina.engines.account_risk_state import AccountRiskCoordinator, AccountRiskStateEngine
 from katarina.engines.manual_risk import SharedAccountRiskEngine
 from katarina.engines.sizing import PositionSizingEngine
@@ -68,8 +68,60 @@ class AdaptiveRiskTests(unittest.TestCase):
         req=RiskRequest(None,0,0,.1,2,True,True,.10,
                         risk_capital=100,risk_reference_capital=100,account_currency="USD")
         result=self.gov.evaluate(req)
-        self.assertEqual(result.action,RiskAction.PAUSE)
-        self.assertEqual(result.approved_fraction,0.)
+        self.assertIn(result.action,(RiskAction.APPROVE,RiskAction.REDUCE))
+        self.assertGreater(result.approved_fraction,0.)
+
+    def test_owner_caused_dd35_same_day_can_assess_extreme(self):
+        tracker=OwnerDrawdownTracker()
+        tracker.observe("2026-10-14",.20,hwm_cash=10000,reconciled=True)
+        evidence=tracker.observe("2026-10-14",.40,hwm_cash=10000,
+                                 owner_loss_cash=2000,reconciled=True)
+        self.assertEqual(evidence.mode,DrawdownMode.EXTREME_SURVIVAL)
+        req=RiskRequest(.01,0,.40,.1,2,True,True,.40,
+                        risk_capital=6000,risk_reference_capital=10000,
+                        account_currency="USD",entry_kind="EXTREME_RECOVERY",
+                        trading_day_key="2026-10-14",drawdown_authority=evidence)
+        self.assertGreater(self.gov.evaluate(req).approved_fraction,0)
+        req2=RiskRequest(.01,.08,.40,.1,2,True,True,.40,
+                        risk_capital=6000,risk_reference_capital=10000,
+                        account_currency="USD",entry_kind="EXTREME_RECOVERY",
+                        trading_day_key="2026-10-14",drawdown_authority=evidence)
+        self.assertEqual(self.gov.evaluate(req2).approved_fraction,0)
+
+    def test_katarina_caused_dd35_remains_locked_even_after_manual_loss(self):
+        tracker=OwnerDrawdownTracker()
+        tracker.observe("d1",.20,hwm_cash=10000,reconciled=True)
+        a=tracker.observe("d1",.36,hwm_cash=10000,katarina_loss_cash=1600,reconciled=True)
+        self.assertEqual(a.mode,DrawdownMode.EMERGENCY_LOCKDOWN)
+        b=tracker.observe("d1",.45,hwm_cash=10000,owner_loss_cash=900,reconciled=True)
+        self.assertEqual(b.mode,DrawdownMode.EMERGENCY_LOCKDOWN)
+        c=tracker.observe("d2",.45,hwm_cash=10000,reconciled=True)
+        self.assertEqual(c.mode,DrawdownMode.EXTREME_SURVIVAL)
+        again=OwnerDrawdownTracker()
+        again.restore_state(tracker.snapshot_state())
+        self.assertEqual(again.observe("d2",.45,hwm_cash=10000,
+                                       reconciled=True).mode,DrawdownMode.EXTREME_SURVIVAL)
+
+    def test_unverified_manual_attribution_never_unlocks(self):
+        tracker=OwnerDrawdownTracker()
+        tracker.observe("d",.20,hwm_cash=10000,reconciled=True)
+        evidence=tracker.observe("d",.40,hwm_cash=10000,
+                                 owner_loss_cash=2000,reconciled=False)
+        self.assertEqual(evidence.mode,DrawdownMode.EMERGENCY_LOCKDOWN)
+        req=RiskRequest(.01,0,.40,.1,2,True,True,.40,
+                        entry_kind="EXTREME_RECOVERY",
+                        trading_day_key="d",drawdown_authority=evidence)
+        self.assertEqual(self.gov.evaluate(req).approved_fraction,0)
+
+    def test_recovery_factor_only_from_23_to_35(self):
+        for dd in (.23,.30,.349):
+            with self.subTest(dd=dd):
+                denied=self.gov.evaluate(RiskRequest(.01,0,dd,.1,2,True,True,0))
+                self.assertEqual(denied.approved_fraction,0)
+                allowed=self.gov.evaluate(RiskRequest(.01,0,dd,.1,2,True,True,0,
+                    entry_kind="RECOVERY_FACTOR",risk_capital=100,
+                    risk_reference_capital=100,account_currency="USD"))
+                self.assertGreater(allowed.approved_fraction,0)
 
     def test_adaptive_governor_request_five_percent_reduced_to_two(self):
         r=RiskRequest(.05,0,0,.1,2,True,True,0,
@@ -104,8 +156,8 @@ class AdaptiveRiskTests(unittest.TestCase):
                               risk_capital=100,account_currency="USD")
         self.assertEqual(self.gov.evaluate(unhealthy).action,RiskAction.PAUSE)
         self.assertEqual(self.gov.evaluate(
-            RiskRequest(None,0,.20,.1,2,True,True,0,risk_capital=100,account_currency="USD")
-        ).action,RiskAction.REJECT)
+            RiskRequest(None,0,.35,.1,2,True,True,0,risk_capital=100,account_currency="USD")
+        ).action,RiskAction.PAUSE)
 
     def test_shared_account_authorize_and_reserve_with_native_currency(self):
         state=AccountRiskStateEngine()
@@ -136,7 +188,7 @@ class AdaptiveRiskTests(unittest.TestCase):
             p,reservation_id="r1",day_key="2026-10-11",requested_fraction=None,
             uncertainty=.1,expected_rr=2,health_ok=True,reconciled=True,
             account_currency="USD")
-        self.assertAlmostEqual(r.state.risk_capital,140)
+        self.assertAlmostEqual(r.state.risk_capital,150)
         self.assertTrue(0<r.approved_fraction<.02)
 
     def test_minimum_volume_not_forced_above_risk_budget(self):

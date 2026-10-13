@@ -64,8 +64,9 @@ KATARINA still does not acquire mutation authority over a manual/foreign positio
 All environments use the same profile:
 - max 5% per new entry;
 - max 8% aggregate open risk;
-- max 10% daily drawdown;
-- max 20% total drawdown.
+- 10%-23% caution, 23%-35% only independently qualified recovery;
+- at 35%, shutdown for Katarina-caused or unknown-cause loss;
+- Owner-caused 35% uses independently reconciled Extreme Survival gates.
 
 Example:
 - manual position risk = 3%;
@@ -73,3 +74,7 @@ Example:
 - aggregate = 8%, allowed.
 
 If manual risk = 6%, KATARINA's requested 5% is reduced to 2%.
+
+## Owner authority clarification — 14 October 2026
+
+Manual positions are observed as account-wide risk; they are not modified by Katarina. Owner manual realized and floating losses must be independently reconciled to attribute the actual crossing of the DD 35% threshold. The Owner-caused exception does not increase per-entry/aggregate open risk limits, and no extreme entry is allowed when exposure is unbounded, reconciliation is missing, or the account has insufficient margin/equity headroom.
