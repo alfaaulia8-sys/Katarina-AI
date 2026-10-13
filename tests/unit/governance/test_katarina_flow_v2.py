@@ -9,7 +9,7 @@ import unittest
 
 from scripts.ai.katarina_flow_v2 import (
     SPECIALISTS, VERSION, digest, manager, open_receipt, qa, release,
-    scheduler, specialist,
+    scheduler, specialist, seal,
 )
 
 SHA="4"*40
@@ -113,6 +113,38 @@ class FlowTests(unittest.TestCase):
             (folder/"qa.json").write_text(json.dumps(record))
             with self.assertRaises(ValueError):
                 manager(folder,SHA)
+
+    def test_resealed_false_claim_by_specialist_fails_independent_qa(self):
+        with TemporaryDirectory() as temp:
+            folder=Path(temp);prepare(folder)
+            path=folder/"data.json"
+            evidence=json.loads(path.read_text())
+            evidence["findings"]["real_OHLC_validated"]=True
+            evidence.pop("receipt_sha256")
+            path.write_text(json.dumps(seal(evidence)))
+            with self.assertRaisesRegex(ValueError,"findings_not_reproducible"):
+                qa(folder,SHA,True)
+
+    def test_resealed_qa_summary_fails_manager(self):
+        with TemporaryDirectory() as temp:
+            folder=Path(temp);prepare(folder)
+            evidence=qa(folder,SHA,True)
+            evidence["all_specialists_checked"]=False
+            evidence.pop("receipt_sha256")
+            (folder/"qa.json").write_text(json.dumps(seal(evidence)))
+            with self.assertRaisesRegex(ValueError,"qa_not_approved"):
+                manager(folder,SHA)
+
+    def test_resealed_manager_summary_fails_release(self):
+        with TemporaryDirectory() as temp:
+            folder=Path(temp);prepare(folder)
+            (folder/"qa.json").write_text(json.dumps(qa(folder,SHA,True)))
+            evidence=manager(folder,SHA)
+            evidence["remaining_blockers"]=[]
+            evidence.pop("receipt_sha256")
+            (folder/"manager.json").write_text(json.dumps(seal(evidence)))
+            with self.assertRaisesRegex(ValueError,"manager_evidence_not_reproducible"):
+                release(folder,SHA)
 
     def test_infra_does_not_clean_ram_or_touch_vps(self):
         with TemporaryDirectory() as temp:

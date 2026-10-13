@@ -263,12 +263,23 @@ def qa(folder: Path, commit: str, regression_pass: bool) -> dict:
         if record["management_task_evidence"]["plan_sha256"] != sched["management_task_plan_sha256"]:
             raise ValueError("specialist_management_scope_mismatch")
         facts=record["findings"]
-        if role=="infrastructure" and (facts.get("processes_terminated")!=0 or
-                                      facts.get("vps_files_deleted")!=0):
-            raise ValueError("unsafe_ram_cleaning")
-        if role=="security" and facts.get("production_risk_fraction")!=0:
-            raise ValueError("unsafe_security_result")
-        results[role]=record["receipt_sha256"] if "receipt_sha256" in record else digest(record)
+        # A self-hashed JSON receipt is not proof that the worker's findings are
+        # true. Replay all deterministic specialist evidence independently.
+        # Runner memory is the sole host-specific field and is checked below.
+        replay=specialist(role,plan_raw,commit)
+        observed=dict(facts)
+        expected=dict(replay["findings"])
+        if role=="infrastructure":
+            snapshot=observed.pop("memory_snapshot",None)
+            expected.pop("memory_snapshot",None)
+            if not isinstance(snapshot,dict) or any(
+                not isinstance(k,str) or not isinstance(v,int) or v<=0
+                for k,v in snapshot.items()
+            ):
+                raise ValueError("invalid_infrastructure_memory_snapshot")
+        if observed!=expected:
+            raise ValueError("specialist_findings_not_reproducible:"+role)
+        results[role]=digest(record)
     return seal({
         "kind":"qa","version":VERSION,"commit":commit,
         "management_work_items_replayed":len(results),
@@ -286,10 +297,8 @@ def manager(folder: Path, commit: str) -> dict:
     sched=open_receipt(folder/"schedule.json",commit=commit,kind="schedule")
     check=qa(folder,commit,regression_pass=True)
     record=open_receipt(folder/"qa.json",commit=commit,kind="qa")
-    if (record.get("status")!="PASS_ENGINEERING_ONLY" or
-            record.get("regression_passed") is not True or
-            record["independent_specialist_receipts"]!=check[
-                "independent_specialist_receipts"]):
+    expected_qa={k:v for k,v in check.items() if k!="receipt_sha256"}
+    if record!=expected_qa:
         raise ValueError("qa_not_approved")
     source_audits = {
         role: open_receipt(folder / (role + ".json"), commit=commit, kind="specialist")["management_task_evidence"]
@@ -319,7 +328,24 @@ def manager(folder: Path, commit: str) -> dict:
 
 def release(folder: Path, commit: str) -> dict:
     record=open_receipt(folder/"manager.json",commit=commit,kind="manager")
-    if record["engineering_status"]!="PASS" or record["live_trading"] is not False:
+    # Reconstruct the Manager's full authorization from source and the
+    # independent QA receipt. A valid JSON checksum alone is forgeable.
+    replay=manager(folder,commit)
+    immutable_fields=(
+        "management_work_summary","specialists_verified","qa_passed",
+        "plan_priority","week_deadline","engineering_status",
+        "release_status","remaining_blockers","next_action",
+        "auto_deployment","live_trading",
+    )
+    if any(record.get(k)!=replay.get(k) for k in immutable_fields):
+        raise ValueError("manager_evidence_not_reproducible")
+    resources=record.get("resource_safety_report")
+    cache=record.get("cache_inventory")
+    if (not isinstance(resources,dict) or not isinstance(cache,dict)
+            or resources.get("processes_terminated")!=0
+            or resources.get("files_deleted")!=0
+            or cache.get("deleted")!=0
+            or record.get("live_trading") is not False):
         raise ValueError("manager_or_governance_failed")
     return seal({
         "kind":"release","version":VERSION,"commit":commit,

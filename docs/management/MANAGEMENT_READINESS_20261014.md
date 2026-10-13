@@ -43,3 +43,17 @@ Owner authorized **GAS EKSEKUSI for Katarina Management first**. Do not implemen
 
 ## Rollback
 The management implementation is on a separate branch. To abandon its changes, do not merge it. The main branch, trading terminals, and unrelated worktrees remain unchanged.
+
+
+## Additional Management QA hardening — 14 October 2026
+
+Work continues on isolated branch `feature/management-hardened-qa-20261014`; no MT5, trading code, broker positions, main worktree or production process has been modified.
+
+- **Independent specialist replay:** QA now recalculates each deterministic specialist result instead of trusting a re-hashed claim. The infrastructure worker's host-specific memory numbers are excluded from byte-exact replay, but its immutable safety claims are independently verified.
+- **Exact QA handoff:** Manager validates all QA fields against its own reproduction, not just selected summary fields.
+- **Release authorization:** Release independently replays Manager/QA and detects re-sealed forged Management results. It still never promotes trading.
+- **Serial local acceptance:** `scripts/ai/management_acceptance.py --commit <clean-HEAD-SHA>` performs one-at-a-time Scheduler -> 11 specialists -> QA -> Manager -> Release checks. CLI refuses a dirty/unpinned checkout and stops if memory/disk are critically low. It returns explicit blockers without claiming external AI agents.
+- **Review-only change proposals:** `scripts/ai/management_change_control.py --proposal <review-json>` validates a SHA-pinned change limited to Management tooling/tests, checks Python syntax and emits a bounded diff. It does **not** apply the patch, run it, approve it, merge, deploy, or send orders. Owner plus independent QA approval remain required for any future source mutation.
+- **Adversarial regression:** tests cover forged specialist claims with recomputed checksum, forged QA, forged Manager summary, stale proposals, trading-scope denial, invalid syntax, unchanged source, and non-mutation guarantees.
+- **Local tests verified on this hardening branch:** 55 governance unit tests and 3 static workflow fanout tests passed, sequentially on the isolated VPS worktree. This is NOT a substitute for cloud full unit/static/integration regression.
+- **Still incomplete:** real autonomous coding workers, externally authenticated models, cloud end-to-end regression on this branch, and actual human-approved patch apply/release workflow. No claim of 100% Management autonomy or trading-ready release is made.
