@@ -1,15 +1,31 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-12T19:00:27Z",
+  "updatedAt": "2026-10-13T01:05:51Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "The bull market turned 4 years old on Monday. Investors say reaching a fifth birthday could be challenging",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/12/the-bull-market-just-turned-four-after-climbing-a-wall-of-worry.html",
-      "publishedAt": "2026-10-12T18:18:39Z",
+      "title": "Singapore PM Wong rejects weaker currency as shortcut to competitiveness",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/singapore-pm-wong-rejects-weakening-currency-for-competitiveness.html",
+      "publishedAt": "2026-10-13T00:39:36Z",
+      "category": "Valas",
+      "language": "en"
+    },
+    {
+      "title": "CNBC's The China Connection newsletter: How a gold-buying spree helps the yuan go global",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/cnbc-china-connection-newsletter-gold-purchases-yuan-globalization.html",
+      "publishedAt": "2026-10-12T23:00:01Z",
+      "category": "Emas / Logam",
+      "language": "en"
+    },
+    {
+      "title": "Earnings beats are now the norm. What the stock market needs to keep rallying",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/07/here-comes-third-quarter-earnings-season-booming-profits-could-propel-the-sp-500-to-new-heights.html",
+      "publishedAt": "2026-10-12T20:35:51Z",
       "category": "Pasar Global",
       "language": "en"
     },
@@ -17,7 +33,15 @@
       "title": "IonQ to acquire cybersecurity firm Elisity in an all-stock deal for up to $1.3 billion",
       "source": "CNBC Utama",
       "url": "https://www.cnbc.com/2026/10/12/ionq-elisity-acquisition-cybersecurity.html",
-      "publishedAt": "2026-10-12T18:14:45Z",
+      "publishedAt": "2026-10-12T19:35:48Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "The bull market turned 4 years old on Monday. Investors say reaching a fifth birthday could be challenging",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/12/the-bull-market-just-turned-four-after-climbing-a-wall-of-worry.html",
+      "publishedAt": "2026-10-12T18:18:39Z",
       "category": "Pasar Global",
       "language": "en"
     },
@@ -75,30 +99,6 @@
       "url": "https://www.cnbc.com/2026/10/12/us-iran-war-trump-hormuz-saudi.html",
       "publishedAt": "2026-10-12T13:01:49Z",
       "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "India’s retail inflation jumps to 5.54% in September, above estimates",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/india-inflation-oil-energy-iran-war.html",
-      "publishedAt": "2026-10-12T10:49:24Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "World Bank jobs council urges 'crisis-era' employment support measures as IMF warns of AI ‘tsunami’",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/imf-world-bank-ai-jobs-inflation-.html",
-      "publishedAt": "2026-10-12T08:58:54Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Why China is importing a record amount of gold — and what it means for prices",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/china-gold-buying-interest-rate-.html",
-      "publishedAt": "2026-10-12T00:51:10Z",
-      "category": "Emas / Logam",
       "language": "en"
     }
   ]
