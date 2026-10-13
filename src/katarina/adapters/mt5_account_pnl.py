@@ -198,18 +198,40 @@ class Mt5ReadOnlyPnLAdapter:
             fees = sum(self._cash(getattr(deal, field, None), "deal_" + field)
                        for field in ("commission", "fee", "swap"))
             realized[pid] = realized.get(pid, 0.0) + profit + fees
-            deal_origin = self._origin(
-                getattr(deal, "reason", None), getattr(deal, "magic", None),
-                position=False,
-            )
-            if pid not in origin:
-                origin[pid] = deal_origin
-            elif origin[pid] == "UNKNOWN" and deal_origin != "UNKNOWN":
-                # No change to an already-known/manual origin is permitted;
-                # only replace UNKNOWN if the deal's own source is explicit.
-                origin[pid] = deal_origin
-            elif deal_origin not in ("UNKNOWN", origin[pid]):
-                raise ValueError("broker_position_deal_origin_conflict")
+            # MT5 DEAL_REASON describes who initiated THIS execution, not
+            # necessarily who OPENED and owns the underlying position.
+            # A user closing Katarina's position (or automatic SL/TP close)
+            # must NOT reattribute the entire P/L to the Owner.
+            entry = getattr(deal, "entry", None)
+            entry_in = getattr(self._mt5, "DEAL_ENTRY_IN", None)
+            entry_out = getattr(self._mt5, "DEAL_ENTRY_OUT", None)
+            entry_out_by = getattr(self._mt5, "DEAL_ENTRY_OUT_BY", None)
+            entry_inout = getattr(self._mt5, "DEAL_ENTRY_INOUT", None)
+            if (type(entry) is not int
+                    or any(type(c) is not int for c in
+                           (entry_in, entry_out, entry_out_by, entry_inout))):
+                raise ValueError("missing_mt5_deal_entry_provenance")
+            if entry == entry_in:
+                opening_origin = self._origin(
+                    getattr(deal, "reason", None),
+                    getattr(deal, "magic", None),
+                    position=False,
+                )
+                if pid not in origin or origin[pid] == "UNKNOWN":
+                    origin[pid] = opening_origin
+                elif opening_origin not in ("UNKNOWN", origin[pid]):
+                    raise ValueError("broker_position_open_origin_conflict")
+            elif entry in (entry_out, entry_out_by):
+                # Closing reason is not position ownership evidence. For
+                # positions closed entirely inside the window, a known
+                # opening deal is REQUIRED to attribute their P/L.
+                origin.setdefault(pid, "UNKNOWN")
+            elif entry == entry_inout:
+                # Netting reversals can change owners mid-position; without
+                # volume-weighted lineage, conservatively reject the window.
+                raise ValueError("mt5_netting_reversal_not_attributable")
+            else:
+                raise ValueError("unsupported_mt5_deal_entry")
         changes = []
         for pid in sorted(set(old) | set(new) | set(realized)):
             before_profit = old[pid].floating_pnl if pid in old else 0.0

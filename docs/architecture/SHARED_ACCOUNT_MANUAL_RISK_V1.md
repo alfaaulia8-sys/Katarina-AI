@@ -110,3 +110,7 @@ not wired to `AccountRiskCoordinator`'s Owner Extreme Recovery permission:
 **attribution must remain blocked** pending verified complete broker provenance
 and safe read-only forward validation. Do not log into, change, or trade an
 Owner account solely to test this adapter.
+
+## Position-origin provenance hardening
+
+For each MT5 broker deal, DEAL_ENTRY distinguishes opening deals from exit deals. The reason on a manual closure or broker-triggered SL/TP is NOT evidence that the Owner originally opened the position. The read-only adapter now derives ownership from the opening deal (DEAL_ENTRY_IN), or from a consistently marked open-position snapshot. Closing-only deals for a position absent from both snapshots remain UNKNOWN, and balanced attribution is denied. Netting reversals (DEAL_ENTRY_INOUT) and missing entry values fail closed until volume-weighted origin lineage is implemented. This rule applies even when account P/L arithmetic balances. MT5 reference: https://www.mql5.com/en/docs/constants/tradingconstants/dealproperties

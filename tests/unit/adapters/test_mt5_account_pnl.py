@@ -15,11 +15,11 @@ def position(identifier=22, reason=0, magic=0, profit=0.0, swap=0.0):
               profit=profit, swap=swap)
 
 
-def deal(ticket=101, position_id=22, typ=0, reason=0, magic=0,
+def deal(ticket=101, position_id=22, typ=0, reason=0, magic=0, entry=1,
          profit=0.0, commission=0.0, fee=0.0, swap=0.0, time_msc=DEAL_MS):
     return NS(ticket=ticket, position_id=position_id, type=typ, reason=reason,
-              magic=magic, profit=profit, commission=commission, fee=fee,
-              swap=swap, time_msc=time_msc)
+              magic=magic, entry=entry, profit=profit, commission=commission,
+              fee=fee, swap=swap, time_msc=time_msc)
 
 
 class FakeMt5:
@@ -34,6 +34,11 @@ class FakeMt5:
     DEAL_TYPE_BUY = 0
     DEAL_TYPE_SELL = 1
     DEAL_TYPE_BALANCE = 2
+    DEAL_ENTRY_IN = 0
+    DEAL_ENTRY_OUT = 1
+    DEAL_ENTRY_INOUT = 2
+    DEAL_ENTRY_OUT_BY = 3
+    DEAL_REASON_SL = 4
 
     def __init__(self):
         self.login = 55
@@ -94,11 +99,62 @@ class ReadOnlyMt5PnLTests(unittest.TestCase):
         self.broker.positions = []
         previous = self.adapter.capture(captured_utc_ns=BEFORE)
         self.broker.equity = 8900
-        self.broker.deals = [deal(profit=-1000, commission=-80, fee=-20)]
+        self.broker.deals = [
+            deal(ticket=100, entry=0, profit=0),
+            deal(ticket=101, entry=1, profit=-1000,
+                 commission=-80, fee=-20, time_msc=DEAL_MS+1),
+        ]
         current = self.adapter.capture(captured_utc_ns=AFTER)
         result = self.adapter.reconcile(previous, current)
         self.assertTrue(result.attribution.balanced)
         self.assertEqual(result.attribution.owner_loss_cash, 1100)
+
+    def test_manual_close_of_katarina_position_stays_katarina_loss(self):
+        self.broker.positions = [position(reason=3, magic=99001, profit=-200)]
+        self.broker.equity = 9800
+        old = self.adapter.capture(captured_utc_ns=BEFORE)
+        self.broker.positions = []
+        self.broker.equity = 9700
+        self.broker.deals = [deal(entry=1, reason=0, profit=-300)]
+        new = self.adapter.capture(captured_utc_ns=AFTER)
+        observation = self.adapter.reconcile(old, new)
+        self.assertTrue(observation.attribution.balanced)
+        self.assertEqual(observation.attribution.owner_loss_cash, 0)
+        self.assertEqual(observation.attribution.katarina_loss_cash, 100)
+
+    def test_stop_loss_exit_is_not_missing_open_origin(self):
+        self.broker.positions = [position(reason=0, profit=-50)]
+        self.broker.equity = 9950
+        old = self.adapter.capture(captured_utc_ns=BEFORE)
+        self.broker.positions = []
+        self.broker.equity = 9850
+        self.broker.deals = [deal(entry=1, reason=4, profit=-150)]
+        new = self.adapter.capture(captured_utc_ns=AFTER)
+        observation = self.adapter.reconcile(old, new)
+        self.assertTrue(observation.attribution.balanced)
+        self.assertEqual(observation.attribution.owner_loss_cash, 100)
+
+    def test_orphan_close_deal_cannot_claim_owner_causation(self):
+        self.broker.positions = []
+        old = self.adapter.capture(captured_utc_ns=BEFORE)
+        self.broker.deals = [deal(entry=1, reason=0, profit=-1000)]
+        self.broker.equity = 9000
+        new = self.adapter.capture(captured_utc_ns=AFTER)
+        result = self.adapter.reconcile(old, new)
+        self.assertFalse(result.attribution.balanced)
+        self.assertEqual(result.attribution.owner_loss_cash, 0)
+        self.assertIn("unknown_or_foreign", result.attribution.reason)
+
+    def test_netting_reversal_or_missing_entry_denied(self):
+        self.broker.positions = []
+        old = self.adapter.capture(captured_utc_ns=BEFORE)
+        new = self.adapter.capture(captured_utc_ns=AFTER)
+        self.broker.deals = [deal(entry=2)]
+        with self.assertRaisesRegex(ValueError, "netting_reversal"):
+            self.adapter.reconcile(old, new)
+        self.broker.deals = [deal(entry=None)]
+        with self.assertRaisesRegex(ValueError, "missing_mt5_deal_entry"):
+            self.adapter.reconcile(old, new)
 
     def test_deposit_is_external_flow_not_owner_pnl(self):
         previous = self.adapter.capture(captured_utc_ns=BEFORE)
