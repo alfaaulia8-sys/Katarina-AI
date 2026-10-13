@@ -1,0 +1,200 @@
+name: KATARINA Orchestrated 15-Role Team
+
+# Manual-only. The scheduler coordinates fixed scope and bounded concurrency.
+# 11 independent specialists, then QA, Manager and Release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: katarina-team-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scheduler:
+    name: Scheduler - lock plan and assignments
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate and publish immutable schedule
+        run: python scripts/ai/katarina_flow_v2.py scheduler --commit "${{ github.sha }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: katarina-v2-schedule
+          path: build/team-v2/schedule.json
+          if-no-files-found: error
+          retention-days: 7
+
+  specialists:
+    name: ${{ matrix.role }} - assigned specialist
+    needs: scheduler
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        role: [ideas, coding, math, logic, builder, debugger, runner_ops, data, ai_integration, infrastructure, security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: src
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: katarina-v2-schedule
+          path: build/team-v2
+      - name: Perform scheduled ${{ matrix.role }} audit
+        run: python scripts/ai/katarina_flow_v2.py role --role "${{ matrix.role }}" --commit "${{ github.sha }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: katarina-v2-${{ matrix.role }}
+          path: build/team-v2/${{ matrix.role }}.json
+          if-no-files-found: error
+          retention-days: 7
+
+  qa:
+    name: QA - verify 11 role receipts and full regression
+    needs: [scheduler, specialists]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: katarina-v2-*
+          path: build/team-v2
+          merge-multiple: true
+      - name: Install regression dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements-stage07.txt
+          python -m pip install --disable-pip-version-check numpy==2.5.3
+      - name: Full unit static integration regression
+        id: regression
+        continue-on-error: true
+        run: |
+          python -m unittest discover -s tests/unit -p 'test_*.py' -q
+          python -m unittest discover -s tests/static -p 'test_*.py' -q
+          python -m unittest discover -s tests/integration -p 'test_*.py' -q
+      - name: QA validates 11 independent specialist receipts
+        if: always()
+        env:
+          REGRESSION: ${{ steps.regression.outcome }}
+        run: |
+          OUTCOME=fail
+          if [ "$REGRESSION" = success ]; then OUTCOME=pass; fi
+          python scripts/ai/katarina_flow_v2.py qa --commit "${{ github.sha }}" --regression "$OUTCOME"
+      - name: Upload QA decision
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katarina-v2-qa
+          path: build/team-v2/qa.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Reject failed regressions
+        if: steps.regression.outcome != 'success'
+        run: exit 1
+
+  manager:
+    name: Manager - priority and stop/go decision
+    needs: [scheduler, specialists, qa]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: katarina-v2-*
+          path: build/team-v2
+          merge-multiple: true
+      - name: Independently verify QA receipt and produce manager verdict
+        run: python scripts/ai/katarina_flow_v2.py manager --commit "${{ github.sha }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: katarina-v2-manager
+          path: build/team-v2/manager.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  release:
+    name: Release - fail-closed gate and summary
+    needs: [scheduler, specialists, qa, manager]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: katarina-v2-*
+          path: build/team-v2
+          merge-multiple: true
+      - name: Release manager records blocked/pass gates
+        run: python scripts/ai/katarina_flow_v2.py release --commit "${{ github.sha }}"
+      - name: Publish visible status
+        if: always()
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          f=Path('build/team-v2/release.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('## Katarina Team V2\n\n')
+              if not f.is_file():
+                  out.write('QA/Manager handoff is BLOCKED. No promotion.\n')
+              else:
+                  d=json.loads(f.read_text())
+                  out.write('**Engineering:** {}. **Release:** {}.\n\n'.format(
+                      d['build_team_status'],d['v1_release_status']))
+                  out.write('All 11 specialists + QA, Manager and Scheduler are auditable.\n')
+                  out.write('No live trading or automatic deployment.\n')
+                  for blocker in d['reasons']:
+                      out.write('- Still blocked: {}\n'.format(blocker))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: katarina-v2-release-${{ github.run_id }}
+          path: build/team-v2/
+          if-no-files-found: warn
+          retention-days: 7
