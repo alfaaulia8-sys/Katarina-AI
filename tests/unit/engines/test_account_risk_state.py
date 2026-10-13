@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timezone
 
 from katarina.engines.account_risk_state import (
     AccountRiskCoordinator,
@@ -7,9 +8,11 @@ from katarina.engines.account_risk_state import (
     Kat1AccountRiskStateRuntime,
     Kat1PendingOrderRiskRuntime,
     PendingOrderRiskInput,
+    authenticated_broker_day_key,
+    BrokerSessionEvidence,
 )
 from katarina.engines.manual_risk import SharedAccountRiskEngine, SymbolRiskSpec
-from katarina.engines.risk import RiskAction, RiskGovernor
+from katarina.engines.risk import RiskAction, RiskGovernor, DrawdownMode, DrawdownAuthority
 from katarina.contracts.runtime import EventEnvelope
 from katarina.validation.engine import ValidationDisposition, ValidationResult
 
@@ -18,6 +21,57 @@ class AccountRiskStateTests(unittest.TestCase):
     def setUp(self):
         self.positions=SharedAccountRiskEngine().assess([],equity=10000)
         self.spec=SymbolRiskSpec(.01,1.0)
+
+    def test_broker_day_requires_authenticated_offset_and_handles_rollover(self):
+        timestamp=int(datetime(2026,10,14,22,30,tzinfo=timezone.utc).timestamp()*1e9)
+        self.assertIsNone(authenticated_broker_day_key(timestamp,180))
+        self.assertIsNone(authenticated_broker_day_key(timestamp,None,
+                          broker_clock_authenticated=True))
+        self.assertIsNone(authenticated_broker_day_key(timestamp,900,
+                          broker_clock_authenticated=True))
+        self.assertEqual(authenticated_broker_day_key(timestamp,180,
+                         broker_clock_authenticated=True),"2026-10-15")
+        self.assertEqual(authenticated_broker_day_key(timestamp,-240,
+                         broker_clock_authenticated=True),"2026-10-14")
+
+    def test_coordinator_never_trades_owner_extreme_without_broker_pnl_adapter(self):
+        state=AccountRiskStateEngine()
+        state.observe_equity("2026-10-14",10000)
+        positions=SharedAccountRiskEngine().assess([],equity=6000)
+        authority=DrawdownAuthority("2026-10-14",DrawdownMode.EXTREME_SURVIVAL,
+                                     .4,True,True)
+        coordinator=AccountRiskCoordinator(state)
+        result=coordinator.authorize_and_reserve(
+            positions,reservation_id="extreme",day_key="2026-10-14",
+            requested_fraction=.01,uncertainty=.1,expected_rr=2,
+            health_ok=True,reconciled=True,entry_kind="EXTREME_RECOVERY",
+            broker_session=BrokerSessionEvidence(
+                int(datetime(2026,10,14,14,0,tzinfo=timezone.utc).timestamp()*1e9),
+                180,True),drawdown_authority=authority)
+        self.assertFalse(result.reserved)
+        self.assertEqual(result.action,"PAUSE")
+        self.assertEqual(result.reason,"broker_origin_pnl_adapter_not_authenticated")
+
+    def test_recovery_factor_requires_verified_broker_session_day(self):
+        state=AccountRiskStateEngine()
+        state.observe_equity("2026-10-14",10000)
+        positions=SharedAccountRiskEngine().assess([],equity=7500)
+        coordinator=AccountRiskCoordinator(state)
+        blocked=coordinator.authorize_and_reserve(
+            positions,reservation_id="no-day",day_key="2026-10-14",
+            requested_fraction=.01,uncertainty=.1,expected_rr=2,
+            health_ok=True,reconciled=True,entry_kind="RECOVERY_FACTOR")
+        self.assertFalse(blocked.reserved)
+        self.assertEqual(blocked.reason,"broker_trading_day_unverified")
+        allowed=coordinator.authorize_and_reserve(
+            positions,reservation_id="session-day",day_key="2026-10-14",
+            requested_fraction=.01,uncertainty=.1,expected_rr=2,
+            health_ok=True,reconciled=True,entry_kind="RECOVERY_FACTOR",
+            broker_session=BrokerSessionEvidence(
+                int(datetime(2026,10,14,14,0,tzinfo=timezone.utc).timestamp()*1e9),
+                180,True))
+        self.assertTrue(allowed.reserved)
+        self.assertGreater(allowed.approved_fraction,0)
 
     def test_pending_order_consumes_risk_budget(self):
         e=AccountRiskStateEngine()

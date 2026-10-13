@@ -8,6 +8,7 @@ from katarina.engines.manual_risk import SymbolRiskSpec
 from katarina.engines.position import RRPositionState, RRProfitTracker
 from katarina.memory.store import MemoryStore
 from katarina.memory.runtime_state import RuntimeStatePersistence
+from katarina.engines.capital import CapitalCompoundingEngine
 
 
 class RuntimePersistenceTests(unittest.TestCase):
@@ -30,6 +31,49 @@ class RuntimePersistenceTests(unittest.TestCase):
             self.assertAlmostEqual(risk2.reservations.total_fraction,.02)
             self.assertAlmostEqual(rr2.snapshot()["p"],2.5)
             self.assertIsNone(broker2.loss_for("p"))
+
+    def test_legacy_30pct_capital_snapshot_rejected_before_any_mutation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            old_capital=CapitalCompoundingEngine(reserve_fraction=.30)
+            old_capital.initialize(100)
+            old_capital.observe_balance(200)
+            old_risk=AccountRiskStateEngine()
+            old_risk.observe_equity("d",1000)
+            with MemoryStore(Path(folder)/"legacy.db") as store:
+                RuntimeStatePersistence(store).save_components(
+                    account_risk=old_risk,rr_tracker=RRProfitTracker(),
+                    execution_recovery=ManagementRecoveryCoordinator(),
+                    broker_risk=BrokerNativeRiskBook(),capital=old_capital)
+            new_risk=AccountRiskStateEngine()
+            new_risk.reservations.reserve("untouched",.01)
+            new_capital=CapitalCompoundingEngine()
+            with MemoryStore(Path(folder)/"legacy.db") as store:
+                with self.assertRaisesRegex(ValueError,"approved_migration"):
+                    RuntimeStatePersistence(store).restore_components(
+                        account_risk=new_risk,rr_tracker=RRProfitTracker(),
+                        execution_recovery=ManagementRecoveryCoordinator(),
+                        broker_risk=BrokerNativeRiskBook(),capital=new_capital)
+            self.assertAlmostEqual(new_risk.reservations.total_fraction,.01)
+            self.assertFalse(new_capital.initialized)
+
+    def test_legacy_drawdown_limits_rejected_before_any_mutation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            old=AccountRiskStateEngine(daily_limit=.10,total_limit=.20)
+            old.observe_equity("d",1000)
+            with MemoryStore(Path(folder)/"legacy.db") as store:
+                RuntimeStatePersistence(store).save_components(
+                    account_risk=old,rr_tracker=RRProfitTracker(),
+                    execution_recovery=ManagementRecoveryCoordinator(),
+                    broker_risk=BrokerNativeRiskBook())
+            fresh=AccountRiskStateEngine()
+            fresh.reservations.reserve("must_remain",.02)
+            with MemoryStore(Path(folder)/"legacy.db") as store:
+                with self.assertRaisesRegex(ValueError,"legacy_drawdown"):
+                    RuntimeStatePersistence(store).restore_components(
+                        account_risk=fresh,rr_tracker=RRProfitTracker(),
+                        execution_recovery=ManagementRecoveryCoordinator(),
+                        broker_risk=BrokerNativeRiskBook())
+            self.assertAlmostEqual(fresh.reservations.total_fraction,.02)
 
     def test_latest_operational_event(self):
         with tempfile.TemporaryDirectory() as d:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
 from math import ceil, floor, isfinite
 from typing import Any, Iterable, Mapping
 
@@ -10,6 +11,43 @@ from katarina.engines.manual_risk import (
     SharedAccountRiskEngine,
     SymbolRiskSpec,
 )
+
+def authenticated_broker_day_key(
+    source_time_ns: int | None,
+    utc_offset_minutes: int | None,
+    *,
+    broker_clock_authenticated: bool = False,
+) -> str | None:
+    """Never guess broker trading day from UTC or the VPS local timezone.
+
+    KAT1 source timestamps alone do not establish the broker UTC offset.
+    A separate trustworthy broker-clock observation must supply the offset.
+    """
+    if not broker_clock_authenticated:
+        return None
+    if (type(source_time_ns) is not int or source_time_ns <= 0
+            or type(utc_offset_minutes) is not int
+            or not -720 <= utc_offset_minutes <= 840):
+        return None
+    try:
+        source=datetime.fromtimestamp(source_time_ns/1_000_000_000,tz=timezone.utc)
+        return (source+timedelta(minutes=utc_offset_minutes)).date().isoformat()
+    except (ValueError,OverflowError,OSError):
+        return None
+
+
+@dataclass(frozen=True, slots=True)
+class BrokerSessionEvidence:
+    source_time_ns: int
+    utc_offset_minutes: int
+    broker_clock_authenticated: bool = False
+
+    @property
+    def day_key(self) -> str | None:
+        return authenticated_broker_day_key(
+            self.source_time_ns,self.utc_offset_minutes,
+            broker_clock_authenticated=self.broker_clock_authenticated,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -382,6 +420,9 @@ class AccountRiskCoordinator:
         health_ok:bool,
         reconciled:bool,
         account_currency:str|None=None,
+        entry_kind:str="NORMAL",
+        drawdown_authority=None,
+        broker_session:BrokerSessionEvidence|None=None,
     )->RiskAuthorizationResult:
         self.state_engine.observe_equity(day_key,positions.equity)
         risk_capital=None
@@ -392,12 +433,27 @@ class AccountRiskCoordinator:
         # Persistent equity high-water mark prevents raising the risk percentage
         # just because capital temporarily drops after a loss or reserve sweep.
         high_water=max(state.risk_capital,self.state_engine.total.peak_equity)
-        decision=self.governor.evaluate_state(
-            state,requested_fraction=requested_fraction,uncertainty=uncertainty,
-            expected_rr=expected_rr,health_ok=health_ok,reconciled=reconciled,
-            account_currency=account_currency,
-            risk_reference_capital=high_water,
-        )
+        from katarina.engines.risk import RiskAction, RiskDecision
+        # No authenticated per-position realized+floating source exists in
+        # the current KAT1 protocol. Do NOT authorize the Owner DD35
+        # exception from an arbitrary "verified" boolean or JSON receipt.
+        if entry_kind=="EXTREME_RECOVERY":
+            decision=RiskDecision(RiskAction.PAUSE,0.0,
+                                  "broker_origin_pnl_adapter_not_authenticated")
+        elif entry_kind=="RECOVERY_FACTOR" and (
+                not isinstance(broker_session,BrokerSessionEvidence)
+                or broker_session.day_key!=day_key):
+            decision=RiskDecision(RiskAction.PAUSE,0.0,
+                                  "broker_trading_day_unverified")
+        else:
+            decision=self.governor.evaluate_state(
+                state,requested_fraction=requested_fraction,uncertainty=uncertainty,
+                expected_rr=expected_rr,health_ok=health_ok,reconciled=reconciled,
+                account_currency=account_currency,
+                risk_reference_capital=high_water,entry_kind=entry_kind,
+                trading_day_key=day_key,
+                drawdown_authority=drawdown_authority,
+            )
         reserved=False
         if decision.action.value in {"APPROVE","REDUCE"} and decision.approved_fraction>0:
             reserved=self.state_engine.reservations.reserve(reservation_id,decision.approved_fraction)

@@ -52,3 +52,11 @@ trading merely because these unit tests pass.
 
 Historical backtest research documents are retained as historical evidence;
 their old assumptions do not override this final Owner policy.
+
+## Safety implementation phase — 14 October 2026
+
+- The existing broker P/L risk module now has a conservative **arithmetic** P/L attribution reconciler, with unknown-origin veto and verification of account equity delta after cash flows.
+- Recovery entry coordination requires a `BrokerSessionEvidence` object whose timestamp and observed server UTC offset reproduce the broker day; UTC fallback is not accepted as proof of broker trading day. Its `broker_clock_authenticated` field must be bound to a real authenticated broker clock provider before live use.
+- The per-position realized/floating provider does not yet exist in frozen KAT1 events. To prevent a forged Owner loss flag from authorizing leverage, the existing `AccountRiskCoordinator` **always pauses EXTREME_RECOVERY** until an authenticated broker adapter is implemented and tested. Offline `OwnerDrawdownTracker` classification still preserves the agreed rule, but it is not live trading authority.
+- On restart, old reserve 30% or old DD-limit snapshots are rejected **before any runtime state is modified**. No silent migration or cash reserve release takes place.
+- Still blocked: broker-native per-position deal/mark data, authenticated broker-server timezone/session, approved migration of legacy capital states, MT5 adapter verification and actual demo forward validation. Trading live stays disarmed.

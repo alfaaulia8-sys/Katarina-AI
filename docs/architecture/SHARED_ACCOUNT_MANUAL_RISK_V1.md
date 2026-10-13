@@ -78,3 +78,9 @@ If manual risk = 6%, KATARINA's requested 5% is reduced to 2%.
 ## Owner authority clarification — 14 October 2026
 
 Manual positions are observed as account-wide risk; they are not modified by Katarina. Owner manual realized and floating losses must be independently reconciled to attribute the actual crossing of the DD 35% threshold. The Owner-caused exception does not increase per-entry/aggregate open risk limits, and no extreme entry is allowed when exposure is unbounded, reconciliation is missing, or the account has insufficient margin/equity headroom.
+
+## Broker P/L reconciliation groundwork — 14 October 2026
+
+`BrokerPnLReconciler` in the existing `manual_risk.py` checks realized+floating per-position P/L against **equity change minus external cash flow**. It rejects missing fee/commission deltas, duplicate position IDs, unknown/foreign origin, and nonfinite values. Owner/Katarina losses remain separate and include still-open floating losses. It is **arithmetic validation**, not independent authentication; broker deal history and floating snapshots are not yet connected to it.
+
+Current KAT1 account state carries aggregate profit, while position state does **not** carry per-position realized+floating P/L. Therefore the reconciler cannot legitimately prove Owner causation using KAT1 alone. In the account-wide `AccountRiskCoordinator`, requests tagged `EXTREME_RECOVERY` remain PAUSE / `broker_origin_pnl_adapter_not_authenticated`. That is intentional until a trustworthy broker P/L provenance path and end-to-end reconciliation have been tested. A directly constructed DrawdownAuthority is not broker evidence.
