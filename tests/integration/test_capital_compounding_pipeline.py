@@ -13,7 +13,7 @@ def accepted(topic,payload):
 
 
 class CapitalCompoundingPipelineTests(unittest.TestCase):
-    def test_balance_100_to_200_changes_risk_basis_to_140(self):
+    def test_balance_100_to_200_changes_risk_basis_to_150(self):
         capital=CapitalCompoundingEngine()
         rt=Kat1CapitalCompoundingRuntime(capital)
         rt.observe(accepted("account.state",{"account_currency_digits":2,"balance_units":10000,"equity_units":10000}))
@@ -26,7 +26,7 @@ class CapitalCompoundingPipelineTests(unittest.TestCase):
             positions,reservation_id="trade-a",day_key="d",requested_fraction=.05,
             uncertainty=.1,expected_rr=2,health_ok=True,reconciled=True,
         )
-        self.assertAlmostEqual(out.state.risk_capital,140)
+        self.assertAlmostEqual(out.state.risk_capital,150)
         self.assertAlmostEqual(out.approved_fraction,.05)
 
     def test_withdrawal_excess_rebases_next_trade_capital(self):
