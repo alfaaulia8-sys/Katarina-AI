@@ -18,8 +18,9 @@ Owner authorized **GAS EKSEKUSI for Katarina Management first**. Do not implemen
 6. Added fail-closed regression tests for task ownership, path safety, evidence replay, tampering, duplicate assignment, future cache safety, and low-memory limits.
 
 ## Observed tests and machine evidence
-- At 14 October 2026 on the connected Windows VPS isolated Git worktree, 25 relevant tests passed:
+- At 14 October 2026 on the connected Windows VPS isolated Git worktree, 25 focused management and workflow-safety tests passed:
   `py -3 -m unittest tests.static.test_github_action_fanout tests.unit.governance.test_management_workplan tests.unit.governance.test_management_resources tests.unit.governance.test_katarina_flow_v2 -q`
+- Extended governance suite: **46 tests passed** using `py -3 -m unittest discover -s tests/unit/governance -p test_*.py -q`. No full repository test suite has been claimed.
 - Snapshot available RAM approximately 263 MiB out of 2047 MiB; drive C: approximately 8.96 GiB free.
 - Recommended **one local Management worker at a time** in that low-memory state. This is an advisory gate, not automatic control of unrelated applications.
 - The primary Windows `github-main` worktree had pre-existing uncommitted changes. Those changes were not overwritten. All QA work used a new dedicated detached worktree, `C:\KatarinaDev\management-qa-20261014`.
