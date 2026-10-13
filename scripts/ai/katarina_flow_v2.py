@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 import ast
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import os
@@ -16,7 +16,6 @@ from pathlib import Path
 import py_compile
 import re
 import sys
-from zoneinfo import ZoneInfo
 
 from scripts.ai.management_workplan import audit_role, load_plan, verify_role, management_summary
 
@@ -44,6 +43,7 @@ RELEASE_BLOCKERS = (
     "REAL_PROSPECTIVE_EDGE_NOT_PROVEN",
 )
 MAX_PARALLEL = 4
+WIB = timezone(timedelta(hours=7), 'Asia/Jakarta')
 
 
 def digest(record: dict) -> str:
@@ -76,7 +76,7 @@ def scheduler(commit: str, now: datetime) -> dict:
         raise ValueError("github_commit_sha_required")
     if now.tzinfo is None:
         raise ValueError("timezone_aware_clock_required")
-    local_day = now.astimezone(ZoneInfo("Asia/Jakarta")).date().isoformat()
+    local_day = now.astimezone(WIB).date().isoformat()
     day_index = (datetime.fromisoformat(local_day) -
                  datetime.fromisoformat(WEEK_START)).days
     if 0 <= day_index < len(PLAN):
@@ -338,7 +338,7 @@ def main():
     arguments=parser.parse_args()
     folder=arguments.folder
     if arguments.phase=="scheduler":
-        record=scheduler(arguments.commit,datetime.now(ZoneInfo("Asia/Jakarta")))
+        record=scheduler(arguments.commit,datetime.now(WIB))
         filename="schedule.json"
     elif arguments.phase=="role":
         p=json.loads((folder/"schedule.json").read_text())
