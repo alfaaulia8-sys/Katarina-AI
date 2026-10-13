@@ -114,3 +114,10 @@ Owner account solely to test this adapter.
 ## Position-origin provenance hardening
 
 For each MT5 broker deal, DEAL_ENTRY distinguishes opening deals from exit deals. The reason on a manual closure or broker-triggered SL/TP is NOT evidence that the Owner originally opened the position. The read-only adapter now derives ownership from the opening deal (DEAL_ENTRY_IN), or from a consistently marked open-position snapshot. Closing-only deals for a position absent from both snapshots remain UNKNOWN, and balanced attribution is denied. Netting reversals (DEAL_ENTRY_INOUT) and missing entry values fail closed until volume-weighted origin lineage is implemented. This rule applies even when account P/L arithmetic balances. MT5 reference: https://www.mql5.com/en/docs/constants/tradingconstants/dealproperties
+
+## Read-only snapshot and replay acceptance — 14 October 2026
+
+- Every MT5 capture rereads account identity **after** `positions_get()`, rejecting an account switch during the snapshot. The historical-deal reconciliation also rechecks identity after the history fetch.
+- `Mt5PnLReplayChain` accepts only contiguous before/after marks, on the same account, where the equity-minus-cash-flow reconciliation balances and no foreign/unknown origin contaminates attribution. An unbalanced, duplicated, mismatched or gapped window never advances the replay cursor.
+- The observation's historical-completeness, session-authentication and live-execution booleans are **constructor-locked to false**. External callers cannot assert them through normal initialization. No API here can enable live trading.
+- Existing private VPS artifacts are market-price/research snapshots, NOT the full native broker deal + mark ledger needed to verify real Owner-causation. MT5 terminals remain off; no broker session was started. Broker-native history completeness and server session authentication remain blocked pending an authorized read-only data source.

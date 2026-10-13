@@ -9,7 +9,7 @@ risk evidence and NEVER authorize Owner Extreme Recovery/live execution.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from math import isfinite
 from typing import Any
@@ -45,9 +45,11 @@ class Mt5PnLObservation:
     position_count_before: int
     position_count_after: int
     external_cash_flow: float
-    broker_history_complete_verified: bool = False
-    server_trading_day_authenticated: bool = False
-    live_execution_authorized: bool = False
+    # Refuse caller-supplied positive attestation flags on this read-only
+    # evidence class. Broker provenance cannot be asserted by these methods.
+    broker_history_complete_verified: bool = field(default=False, init=False)
+    server_trading_day_authenticated: bool = field(default=False, init=False)
+    live_execution_authorized: bool = field(default=False, init=False)
 
 
 class Mt5ReadOnlyPnLAdapter:
@@ -105,6 +107,14 @@ class Mt5ReadOnlyPnLAdapter:
         positions = self._mt5.positions_get()
         if account is None or positions is None:
             raise RuntimeError("mt5_broker_snapshot_unavailable")
+        # Refuse mixed-account marks if an operator switches the MT5 account
+        # between account_info() and positions_get().
+        again = self._mt5.account_info()
+        if (again is None
+                or any(getattr(account, field, None) !=
+                       getattr(again, field, None)
+                       for field in ("login", "server", "currency"))):
+            raise RuntimeError("mt5_account_changed_during_snapshot")
         login = getattr(account, "login", None)
         if type(login) is not int or login <= 0:
             raise ValueError("invalid_mt5_login")
@@ -247,3 +257,32 @@ class Mt5ReadOnlyPnLAdapter:
         return Mt5PnLObservation(
             attribution, len(seen_deals), len(old), len(new), external_cash_flow,
         )
+
+class Mt5PnLReplayChain:
+    """Reject noncontiguous or unreconciled offline broker snapshot windows.
+
+    This is deterministic engineering evidence only. No live authorization,
+    broker-session authentication, MT5 initialization, or trading operations.
+    """
+
+    def __init__(self, adapter: Mt5ReadOnlyPnLAdapter):
+        if not isinstance(adapter, Mt5ReadOnlyPnLAdapter):
+            raise TypeError("mt5_read_only_adapter_required")
+        self._adapter = adapter
+        self._last_after: Mt5AccountMark | None = None
+
+    @property
+    def last_after(self) -> Mt5AccountMark | None:
+        return self._last_after
+
+    def consume(self, before: Mt5AccountMark,
+                after: Mt5AccountMark) -> Mt5PnLObservation:
+        if self._last_after is not None and before != self._last_after:
+            raise ValueError("noncontiguous_mt5_broker_replay_window")
+        observation = self._adapter.reconcile(before, after)
+        if not observation.attribution.balanced:
+            raise RuntimeError("mt5_broker_replay_unreconciled")
+        # Advance only on an accepted complete *arithmetic* window. This is
+        # still not independent proof of complete broker historical coverage.
+        self._last_after = after
+        return observation

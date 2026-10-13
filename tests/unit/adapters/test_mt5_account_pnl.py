@@ -2,7 +2,9 @@
 import unittest
 from types import SimpleNamespace as NS
 
-from katarina.adapters.mt5_account_pnl import Mt5ReadOnlyPnLAdapter
+from katarina.adapters.mt5_account_pnl import (
+    Mt5ReadOnlyPnLAdapter, Mt5PnLReplayChain, Mt5PnLObservation,
+)
 
 
 BEFORE = 1_700_000_000_000_000_000
@@ -81,7 +83,8 @@ class ReadOnlyMt5PnLTests(unittest.TestCase):
         self.assertFalse(result.live_execution_authorized)
         self.assertEqual(self.broker.calls, [
             "account_info", "positions_get", "account_info",
-            "positions_get", "history_deals_get", "account_info",
+            "account_info", "positions_get", "account_info",
+            "history_deals_get", "account_info",
         ])
 
     def test_closing_existing_manual_loss_does_not_double_count_floating(self):
@@ -238,6 +241,60 @@ class ReadOnlyMt5PnLTests(unittest.TestCase):
         after = self.adapter.capture(captured_utc_ns=AFTER)
         with self.assertRaisesRegex(ValueError, "account_or_capture"):
             self.adapter.reconcile(prior, after)
+
+    def test_account_switch_during_snapshot_is_rejected(self):
+        original = self.broker.positions_get
+        def switched_positions():
+            result = original()
+            self.broker.login = 99
+            return result
+        self.broker.positions_get = switched_positions
+        with self.assertRaisesRegex(RuntimeError, "account_changed_during_snapshot"):
+            self.adapter.capture(captured_utc_ns=BEFORE)
+
+    def test_observation_cannot_be_constructed_with_fake_live_permission(self):
+        previous = self.adapter.capture(captured_utc_ns=BEFORE)
+        after = self.adapter.capture(captured_utc_ns=AFTER)
+        observation = self.adapter.reconcile(previous, after)
+        with self.assertRaises(TypeError):
+            Mt5PnLObservation(
+                observation.attribution, 0, 1, 1, 0,
+                live_execution_authorized=True,
+            )
+        with self.assertRaises(TypeError):
+            Mt5PnLObservation(
+                observation.attribution, 0, 1, 1, 0,
+                broker_history_complete_verified=True,
+            )
+
+    def test_broker_window_replay_requires_continuity(self):
+        before = self.adapter.capture(captured_utc_ns=BEFORE)
+        self.broker.equity = 9000
+        self.broker.positions = [position(profit=-1000)]
+        after = self.adapter.capture(captured_utc_ns=AFTER)
+        chain = Mt5PnLReplayChain(self.adapter)
+        first = chain.consume(before, after)
+        self.assertTrue(first.attribution.balanced)
+        self.assertEqual(chain.last_after, after)
+        self.broker.equity = 8800
+        self.broker.positions = [position(profit=-1200)]
+        last = self.adapter.capture(captured_utc_ns=AFTER + 10_000_000_000)
+        with self.assertRaisesRegex(ValueError, "noncontiguous_mt5"):
+            chain.consume(before, last)
+        self.assertEqual(chain.last_after, after)
+        second = chain.consume(after, last)
+        self.assertTrue(second.attribution.balanced)
+        self.assertEqual(chain.last_after, last)
+        self.assertFalse(second.live_execution_authorized)
+
+    def test_unreconciled_replay_does_not_advance(self):
+        before = self.adapter.capture(captured_utc_ns=BEFORE)
+        chain = Mt5PnLReplayChain(self.adapter)
+        self.broker.equity = 9000
+        after = self.adapter.capture(captured_utc_ns=AFTER)
+        with self.assertRaisesRegex(RuntimeError, "replay_unreconciled"):
+            chain.consume(before, after)
+        self.assertIsNone(chain.last_after)
 
     def test_absent_positions_or_invalid_ticks_rejected(self):
         self.broker.positions = None
