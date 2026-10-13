@@ -99,6 +99,22 @@ class CapitalCompoundingTests(unittest.TestCase):
         self.assertAlmostEqual(s.active_balance,200)
         self.assertAlmostEqual(s.next_target_balance,400)
 
+    def test_deposit_after_loss_does_not_lower_cashflow_adjusted_hwm(self):
+        c=CapitalCompoundingEngine()
+        c.initialize(100)
+        c.observe_balance(200)
+        c.observe_balance(180)
+        c.apply_external_flow(100,balance_after=280)
+        s=c.snapshot()
+        self.assertAlmostEqual(s.reserve_balance,50)
+        self.assertAlmostEqual(s.next_target_balance,500)
+        self.assertEqual(s.milestone_count,1)
+        c.observe_balance(499)
+        self.assertEqual(c.snapshot().milestone_count,1)
+        c.observe_balance(500)
+        self.assertEqual(c.snapshot().milestone_count,2)
+        self.assertAlmostEqual(c.snapshot().reserve_balance,125)
+
     def test_floating_equity_does_not_trigger_milestone(self):
         c=CapitalCompoundingEngine()
         rt=Kat1CapitalCompoundingRuntime(c)

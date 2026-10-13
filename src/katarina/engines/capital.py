@@ -159,13 +159,20 @@ class CapitalCompoundingEngine:
         active_used=0.0
         if amount>0:
             # External positive capital belongs to active capital; preserve reserve.
+            previous_cashflow_adjusted_target=self.next_target_balance
             self.total_balance=float(balance_after)
             self.reserve_balance=min(before_reserve,self.total_balance)
             self.active_balance=max(0.0,before_active+amount+trading_delta)
             # Reconcile to authoritative balance.
             self.active_balance=max(0.0,self.total_balance-self.reserve_balance)
             self.compounding_reference=self.active_balance
-            self.next_target_balance=self.compounding_reference*self.growth_multiple if self.active_balance>0 else 0.0
+            new_capital_target=(self.compounding_reference*self.growth_multiple
+                                if self.active_balance>0 else 0.0)
+            # Deposit is not trading profit: its added cash must not lower
+            # the previous realized-balance high-water milestone.
+            self.next_target_balance=max(
+                new_capital_target,previous_cashflow_adjusted_target+amount
+            ) if previous_cashflow_adjusted_target>0 else new_capital_target
             self.reserve_impaired=self.reserve_balance>self.total_balance
             return self._event("DEPOSIT",False,0.0,0.0,"external_capital_resets_compounding_reference")
 
