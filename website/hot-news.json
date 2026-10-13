@@ -1,10 +1,66 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-13T01:05:51Z",
+  "updatedAt": "2026-10-13T07:07:50Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
+    {
+      "title": "SK Hynix, SoftBank shares plunge as tech stocks in Asia track Wall Street chip sell-off",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/sk-hynix-softbank-samsung-electronics-shares-tech-stocks-fall.html",
+      "publishedAt": "2026-10-13T06:46:15Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Visa gets Beijing's green light for bank card business after 40 years of working with China",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/13/visa-china-green-light-bank-card-business-.html",
+      "publishedAt": "2026-10-13T06:20:55Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "World Bank jobs council urges 'crisis-era' employment support measures as IMF warns of AI ‘tsunami’",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/12/imf-world-bank-ai-jobs-inflation-.html",
+      "publishedAt": "2026-10-13T05:24:17Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "IMF warns bond yields could see a 'disorderly' spike as debt, inflation risks worsen",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/treasury-yields-imf-debt-inflation-.html",
+      "publishedAt": "2026-10-13T04:54:07Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Oil prices fall as traders assess Russian diesel supply prospects and Saudi-Houthi conflict",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/oil-prices-today-brent-wti-hormuz.html",
+      "publishedAt": "2026-10-13T03:49:23Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Higher rates could be needed to avoid 'inflationary mindset' taking hold, says Fed's Hammack",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/12/beth-hammack-fed-inflation-policy.html",
+      "publishedAt": "2026-10-13T02:58:11Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "'Boring is not bad': CEO of Southeast Asia's largest bank pitches Singapore as a haven amid global turmoil",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/13/singapore-war-geopolitics-dbs-bank-ceo.html",
+      "publishedAt": "2026-10-13T01:26:41Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
     {
       "title": "Singapore PM Wong rejects weaker currency as shortcut to competitiveness",
       "source": "CNBC Dunia",
@@ -43,62 +99,6 @@
       "url": "https://www.cnbc.com/2026/10/12/the-bull-market-just-turned-four-after-climbing-a-wall-of-worry.html",
       "publishedAt": "2026-10-12T18:18:39Z",
       "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Higher rates could be needed to avoid 'inflationary mindset' taking hold, says Fed's Hammack",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/12/beth-hammack-fed-inflation-policy.html",
-      "publishedAt": "2026-10-12T17:15:21Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "FAA warns U.S. airlines of safety risks over Saudi Arabia after attacks",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/faa-saudi-arabia-flight-risks.html",
-      "publishedAt": "2026-10-12T16:50:44Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Delta delays debut of Saudi Arabia service until March after Riyadh airport attacks",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/delta-riyadh-nonstop-service-delay.html",
-      "publishedAt": "2026-10-12T15:48:28Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Inflation likely peaked for 2026 but will remain sticky, according to prediction markets",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/12/inflation-will-remain-sticky-in-2026-according-to-prediction-markets.html",
-      "publishedAt": "2026-10-12T15:37:26Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Nobel prize in economics awarded to Robert E. Hall and Michael Woodford",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/nobel-economics-prize-winner-woodford-hall.html",
-      "publishedAt": "2026-10-12T14:09:02Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Banks are set to report this week. Here's what the options market expects",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/banks-are-set-to-report-this-week-heres-what-the-options-market-expects.html",
-      "publishedAt": "2026-10-12T13:27:20Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Saudi Arabia says drones and missiles still targeting kingdom as Iran-backed Houthis step up attacks",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/12/us-iran-war-trump-hormuz-saudi.html",
-      "publishedAt": "2026-10-12T13:01:49Z",
-      "category": "Energi / Geopolitik",
       "language": "en"
     }
   ]
