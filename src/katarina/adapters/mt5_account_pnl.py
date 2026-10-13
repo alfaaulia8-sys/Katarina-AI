@@ -140,6 +140,11 @@ class Mt5ReadOnlyPnLAdapter:
         deals = self._mt5.history_deals_get(begin, end)
         if deals is None:
             raise RuntimeError("broker_deal_history_unavailable")
+        # MT5 terminal accounts can be switched outside this Python process.
+        # Reject history if it was fetched under a different broker login.
+        rechecked = self._mt5.account_info()
+        if rechecked is None or getattr(rechecked, "login", None) != before.account_login:
+            raise RuntimeError("mt5_account_changed_during_history_read")
 
         old = {p.position_id: p for p in before.positions}
         new = {p.position_id: p for p in after.positions}

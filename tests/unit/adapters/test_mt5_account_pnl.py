@@ -73,7 +73,7 @@ class ReadOnlyMt5PnLTests(unittest.TestCase):
         self.assertFalse(result.live_execution_authorized)
         self.assertEqual(self.broker.calls, [
             "account_info", "positions_get", "account_info",
-            "positions_get", "history_deals_get",
+            "positions_get", "history_deals_get", "account_info",
         ])
 
     def test_closing_existing_manual_loss_does_not_double_count_floating(self):
@@ -154,6 +154,18 @@ class ReadOnlyMt5PnLTests(unittest.TestCase):
         self.broker.login = 66
         after = self.adapter.capture(captured_utc_ns=AFTER)
         with self.assertRaisesRegex(ValueError, "account_or_capture"):
+            self.adapter.reconcile(prior, after)
+
+    def test_account_switch_during_history_read_refuses_attribution(self):
+        prior = self.adapter.capture(captured_utc_ns=BEFORE)
+        after = self.adapter.capture(captured_utc_ns=AFTER)
+        original = self.broker.history_deals_get
+        def switch_account(begin, end):
+            items = original(begin, end)
+            self.broker.login = 99
+            return items
+        self.broker.history_deals_get = switch_account
+        with self.assertRaisesRegex(RuntimeError, "account_changed"):
             self.adapter.reconcile(prior, after)
 
     def test_absent_positions_or_invalid_ticks_rejected(self):
