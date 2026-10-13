@@ -201,4 +201,66 @@ class CapitalCompoundingTests(unittest.TestCase):
             self.assertAlmostEqual(restored.snapshot().next_target_balance,400)
 
 
+    def test_restore_rejects_corrupt_state_without_mutating_current_capital(self):
+        c=CapitalCompoundingEngine()
+        c.initialize(100)
+        c.observe_balance(200)
+        safe=c.snapshot_state()
+        for key,bad in (
+            ("total_balance",float("nan")),
+            ("active_balance",5),
+            ("reserve_balance",400),
+            ("next_target_balance",float("inf")),
+            ("milestone_count",-2),
+            ("reserve_fraction",float("nan")),
+            ("growth_multiple",float("nan")),
+            ("initialized","yes"),
+        ):
+            with self.subTest(field=key):
+                corrupt=dict(safe)
+                corrupt[key]=bad
+                with self.assertRaises(ValueError):
+                    c.restore_state(corrupt)
+                self.assertEqual(c.snapshot_state(),safe)
+
+    def test_legacy_30pct_preview_keeps_protected_reserve_and_rebases_milestone(self):
+        old=CapitalCompoundingEngine(reserve_fraction=.30)
+        old.initialize(100)
+        old.observe_balance(200)
+        original=old.snapshot_state()
+        proposed=CapitalCompoundingEngine.preview_legacy_migration(original)
+        self.assertEqual(old.snapshot_state(),original)
+        self.assertAlmostEqual(proposed["reserve_fraction"],.25)
+        self.assertAlmostEqual(proposed["reserve_balance"],60)
+        self.assertAlmostEqual(proposed["active_balance"],140)
+        self.assertAlmostEqual(proposed["next_target_balance"],400)
+        new=CapitalCompoundingEngine()
+        new.restore_state(proposed)
+        self.assertAlmostEqual(new.snapshot().reserve_balance,60)
+        self.assertAlmostEqual(new.snapshot().next_target_balance,400)
+        # Migration is OFFLINE ONLY, never silently applied at restart.
+        new.observe_balance(399)
+        self.assertEqual(new.snapshot().milestone_count,1)
+        new.observe_balance(400)
+        self.assertEqual(new.snapshot().milestone_count,2)
+        self.assertAlmostEqual(new.snapshot().reserve_balance,100)
+
+    def test_legacy_preview_rejects_incoherent_or_new_state(self):
+        old=CapitalCompoundingEngine(reserve_fraction=.30)
+        old.initialize(100)
+        old.observe_balance(200)
+        state=old.snapshot_state()
+        for changed in (
+            {"active_balance":500},
+            {"reserve_fraction":.25},
+            {"reserve_balance":float("nan")},
+            {"last_milestone_balance":float("inf")},
+        ):
+            with self.subTest(mod=changed):
+                with self.assertRaisesRegex(ValueError,"invalid_legacy"):
+                    CapitalCompoundingEngine.preview_legacy_migration(
+                        {**state,**changed}
+                    )
+
+
 if __name__=="__main__": unittest.main()

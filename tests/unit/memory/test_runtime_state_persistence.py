@@ -83,4 +83,42 @@ class RuntimePersistenceTests(unittest.TestCase):
                 self.assertEqual(store.load_latest_operational_event("state")["payload"]["n"],2)
 
 
+    def test_corrupt_capital_record_fails_before_mutating_account_risk(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db=Path(directory)/"k.db"
+            saved_risk=AccountRiskStateEngine()
+            saved_risk.observe_equity("saved",1000)
+            old_capital=CapitalCompoundingEngine()
+            old_capital.initialize(100)
+            old_capital.observe_balance(200)
+            damaged=old_capital.snapshot_state()
+            damaged["active_balance"]=999
+            broker=BrokerNativeRiskBook()
+            with MemoryStore(db) as store:
+                payload={
+                    "account_risk":saved_risk.snapshot_state(),
+                    "rr_peak":{},
+                    "execution_recovery":{},
+                    "broker_risk":broker.snapshot_state(),
+                    "capital":damaged,
+                }
+                store.append_operational_event(
+                    "runtime_state_snapshot_v1",payload,event_id="corrupt",
+                )
+            running=AccountRiskStateEngine()
+            running.observe_equity("running",3000)
+            running.reservations.reserve("stay",.01)
+            before=running.snapshot_state()
+            restored_capital=CapitalCompoundingEngine()
+            with MemoryStore(db) as store:
+                with self.assertRaisesRegex(ValueError,"preflight"):
+                    RuntimeStatePersistence(store).restore_components(
+                        account_risk=running,rr_tracker=RRProfitTracker(),
+                        execution_recovery=ManagementRecoveryCoordinator(),
+                        broker_risk=BrokerNativeRiskBook(),capital=restored_capital,
+                    )
+            self.assertEqual(running.snapshot_state(),before)
+            self.assertFalse(restored_capital.initialized)
+
+
 if __name__=="__main__": unittest.main()

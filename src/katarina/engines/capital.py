@@ -229,29 +229,94 @@ class CapitalCompoundingEngine:
             "initialized":self.initialized,
         }
 
+    @classmethod
+    def preview_legacy_migration(cls,state:Mapping[str,Any])->dict[str,Any]:
+        """Offline 30%-to-25% policy preview; never modifies the old snapshot.
+
+        Keep every dollar of old logical reserve locked, even though the new
+        policy's fraction is lower. Releasing capital is a distinct Owner action.
+        Reject incoherent historical state instead of guessing missing evidence.
+        """
+        if not isinstance(state,Mapping):
+            raise ValueError("invalid_legacy_capital_state")
+        try:
+            f=float(state["reserve_fraction"])
+            growth=float(state["growth_multiple"])
+            total=float(state["total_balance"])
+            reserve=float(state["reserve_balance"])
+            active=float(state["active_balance"])
+            target=float(state["next_target_balance"])
+            ref=float(state["compounding_reference"])
+            last=float(state["last_milestone_balance"])
+            count=state["milestone_count"]
+            initialized=state["initialized"]
+        except (KeyError,TypeError,ValueError,OverflowError) as exc:
+            raise ValueError("invalid_legacy_capital_state") from exc
+        amounts=(f,growth,total,reserve,active,target,ref,last)
+        if (any(not isfinite(x) for x in amounts)
+                or abs(f-0.30)>1e-12 or abs(growth-2.0)>1e-12
+                or min(total,reserve,active,target,ref,last)<0
+                or abs(total-reserve-active)>max(1e-6,total*1e-8)
+                or type(count) is not int or count<0
+                or type(initialized) is not bool):
+            raise ValueError("invalid_legacy_capital_state")
+        if not initialized and (total!=0 or count!=0):
+            raise ValueError("invalid_legacy_capital_state")
+        proposal=dict(state)
+        proposal["reserve_fraction"]=0.25
+        # Target must not fall below the last reached milestone's doubling
+        # and cannot be lowered by a policy migration.
+        proposal["next_target_balance"]=max(target,last*growth) if count>0 else target
+        proposal["compounding_reference"]=(
+            proposal["next_target_balance"]/growth if proposal["next_target_balance"]>0 else ref
+        )
+        proposal["reserve_balance"]=reserve
+        proposal["active_balance"]=active
+        return proposal
+
     def restore_state(self,state:Mapping[str,Any])->None:
+        """All-or-nothing validation: malformed snapshots never mutate capital."""
         if not state:
             return
-        if abs(float(state["reserve_fraction"])-self.reserve_fraction)>1e-12:
+        if not isinstance(state,Mapping):
+            raise ValueError("invalid_capital_state")
+        try:
+            fraction=float(state["reserve_fraction"])
+            multiple=float(state["growth_multiple"])
+            total=float(state["total_balance"])
+            reserve=float(state["reserve_balance"])
+            active=float(state["active_balance"])
+            reference=float(state["compounding_reference"])
+            target=float(state["next_target_balance"])
+            count=state["milestone_count"]
+            last=float(state["last_milestone_balance"])
+            impaired=state["reserve_impaired"]
+            initialized=state["initialized"]
+        except (KeyError,ValueError,TypeError,OverflowError) as exc:
+            raise ValueError("invalid_capital_state") from exc
+        values=(fraction,multiple,total,reserve,active,reference,target,last)
+        if (any(not isfinite(v) for v in values)
+                or not 0<fraction<1 or multiple<=1
+                or min(total,reserve,active,reference,target,last)<0
+                or type(count) is not int or count<0
+                or type(impaired) is not bool or type(initialized) is not bool
+                or abs(total-reserve-active)>max(1e-6,total*1e-8)
+                or not initialized and (total!=0 or count!=0)
+                or not initialized and (reserve!=0 or active!=0)):
+            raise ValueError("invalid_capital_state")
+        if abs(fraction-self.reserve_fraction)>1e-12:
             raise ValueError("reserve_fraction_mismatch")
-        if abs(float(state["growth_multiple"])-self.growth_multiple)>1e-12:
+        if abs(multiple-self.growth_multiple)>1e-12:
             raise ValueError("growth_multiple_mismatch")
-        self.total_balance=float(state["total_balance"])
-        self.reserve_balance=float(state["reserve_balance"])
-        self.active_balance=float(state["active_balance"])
-        self.compounding_reference=float(state["compounding_reference"])
-        self.next_target_balance=float(state["next_target_balance"])
-        self.milestone_count=int(state["milestone_count"])
-        self.last_milestone_balance=float(state["last_milestone_balance"])
-        self.reserve_impaired=bool(state["reserve_impaired"])
-        self.initialized=bool(state["initialized"])
-        for value in (
-            self.total_balance,self.reserve_balance,self.active_balance,
-            self.compounding_reference,self.next_target_balance,
-        ):
-            if not isfinite(value) or value<0:
-                raise ValueError("invalid_capital_state")
-
+        self.total_balance=total
+        self.reserve_balance=reserve
+        self.active_balance=active
+        self.compounding_reference=reference
+        self.next_target_balance=target
+        self.milestone_count=count
+        self.last_milestone_balance=last
+        self.reserve_impaired=impaired
+        self.initialized=initialized
 
 class Kat1CapitalCompoundingRuntime:
     """Consumes ACCEPTED account.ledger + account.state for compounding.

@@ -60,3 +60,10 @@ their old assumptions do not override this final Owner policy.
 - The per-position realized/floating provider does not yet exist in frozen KAT1 events. To prevent a forged Owner loss flag from authorizing leverage, the existing `AccountRiskCoordinator` **always pauses EXTREME_RECOVERY** until an authenticated broker adapter is implemented and tested. Offline `OwnerDrawdownTracker` classification still preserves the agreed rule, but it is not live trading authority.
 - On restart, old reserve 30% or old DD-limit snapshots are rejected **before any runtime state is modified**. No silent migration or cash reserve release takes place.
 - Still blocked: broker-native per-position deal/mark data, authenticated broker-server timezone/session, approved migration of legacy capital states, MT5 adapter verification and actual demo forward validation. Trading live stays disarmed.
+
+## Capital restart safety and legacy migration preview (14 October 2026)
+
+- Capital snapshot restoration now validates every field and the realized balance / active / reserve accounting identity **before mutating state**. NaN, infinity, impossible capital splits and type errors refuse restore.
+- Runtime snapshot restoration dry-runs component rehydration on detached copies **before any live account risk reservation is changed**, preventing a later invalid capital or broker-risk record from partially resetting previous risk state.
+- `CapitalCompoundingEngine.preview_legacy_migration(...)` is a **pure offline preview**, not an activation path. A historic 30% reserve is preserved **in full** when generating a candidate 25% policy snapshot; next milestone cannot be lowered below the old policy's target or the last reached realized balance milestone doubled. This does not physically withdraw funds, authorize reserve release, or modify saved VPS files.
+- **Existing old snapshots remain blocked** by `RuntimeStatePersistence` until a separate reviewed and authorized migration has been verified against authoritative broker cash flows. Do not auto-apply the proposed preview to production memory.

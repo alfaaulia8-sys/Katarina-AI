@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
 from typing import Any
 
 from katarina.memory.store import MemoryStore
@@ -71,6 +72,23 @@ class RuntimeStatePersistence:
         if any(not isinstance(item,dict) or item.get("origin")!="KATARINA"
                for item in snap.execution_recovery.values()):
             raise ValueError("untrusted_legacy_recovery_state")
+        # Dry-run the entire restore into detached objects first. A malformed
+        # broker-risk or capital record must not partially reset live account
+        # reservations, RR peaks, or recovery commands.
+        try:
+            trial_account=deepcopy(account_risk)
+            trial_rr=deepcopy(rr_tracker)
+            trial_recovery=deepcopy(execution_recovery)
+            trial_broker=deepcopy(broker_risk)
+            trial_capital=deepcopy(capital) if capital is not None else None
+            trial_account.restore_state(snap.account_risk)
+            trial_rr.restore(snap.rr_peak)
+            trial_recovery.restore_state(snap.execution_recovery)
+            trial_broker.restore_state(snap.broker_risk)
+            if trial_capital is not None and snap.capital:
+                trial_capital.restore_state(snap.capital)
+        except (KeyError,TypeError,ValueError,AttributeError,OverflowError) as exc:
+            raise ValueError("runtime_restore_preflight_failed") from exc
         account_risk.restore_state(snap.account_risk)
         rr_tracker.restore(snap.rr_peak)
         execution_recovery.restore_state(snap.execution_recovery)
