@@ -25,8 +25,21 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     parts=profile.get("canonical")
     disabled=profile.get("deferred")
     modes=profile.get("operating_mode")
-    if not isinstance(parts,dict) or len(parts)!=11 or not isinstance(disabled,dict):
+    # Management and its 11 specialists are deferred by the Owner, not active
+    # prerequisites for the one-brain Katarina AI acceptance profile.
+    expected_parts = {
+        "core", "brain", "observer", "shadow", "risk",
+        "manual_positions", "capital", "broker_readonly",
+        "recovery", "runtime_memory",
+    }
+    if (not isinstance(parts,dict) or set(parts)!=expected_parts
+            or not isinstance(disabled,dict)):
         raise ValueError("incomplete_unified_component_registry")
+    held = profile.get("on_hold")
+    if (not isinstance(held,dict)
+            or set(held)!={"katarina_management","eleven_specialists"}
+            or any(value is not True for value in held.values())):
+        raise ValueError("management_on_hold_required")
     if set(disabled)!={
         "external_ai_workers","autonomous_source_rewrite",
         "unverified_broker_provenance","unverified_broker_clock",
@@ -36,6 +49,8 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         raise ValueError("unapproved_unified_capability_enabled")
     if not isinstance(modes,dict) or modes.get("order_submission")!="DISABLED":
         raise ValueError("order_submission_must_remain_disabled")
+    if "management" in modes:
+        raise ValueError("management_on_hold_required")
     if modes.get("core")!="TESTER_ONLY" or modes.get("broker")!="OFFLINE_ADAPTER_IMPORT_ONLY":
         raise ValueError("unsafe_runtime_mode")
     limits=profile.get("owner_limits")
@@ -118,7 +133,7 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         "modules_verified":len(digest),
         "module_sha256":digest,
         "mode":"TESTER_NO_ORDERS",
-        "management":"MANUAL_ONLY",
+        "management":"ON_HOLD",
         "unverified_optional_components_disabled":True,
         "shadow_source":db_source,
         "shadow_db_path":source_path,

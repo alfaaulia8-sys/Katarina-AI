@@ -3,7 +3,6 @@
   "profile": "KATARINA_UNIFIED_V1_RESEARCH_ONLY",
   "canonical": {
     "core": "src/katarina/core/orchestrator.py",
-    "management": "scripts/ai/management_acceptance.py",
     "brain": "src/katarina/intelligence/unified_cognitive_cycle.py",
     "observer": "scripts/ai/run_contextual_market_observer.py",
     "shadow": "src/katarina/intelligence/prospective_shadow_book.py",
@@ -23,9 +22,12 @@
     "background_scheduler": false,
     "live_execution": false
   },
+  "on_hold": {
+    "katarina_management": true,
+    "eleven_specialists": true
+  },
   "operating_mode": {
     "core": "TESTER_ONLY",
-    "management": "MANUAL_QA_ON_PINNED_COMMIT",
     "brain": "READ_ONLY_PROSPECTIVE_LEARNING",
     "observer": "DISABLED_UNTIL_OWNER_AUTHORIZED_READ_ONLY_BROKER",
     "broker": "OFFLINE_ADAPTER_IMPORT_ONLY",
