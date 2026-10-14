@@ -1,55 +1,63 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-13T19:10:52Z",
+  "updatedAt": "2026-10-14T01:16:16Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "JPMorgan Chase blocks outside AI agents like Muse, Instinct from directly accessing accounts",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/13/jpmorgan-ai-agents-account-access.html",
-      "publishedAt": "2026-10-13T18:46:27Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "The 10-year Treasury yield falls as energy prices stabilize",
+      "title": "CNBC Daily Open: Diesel deal may not be enough to curb high energy prices",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/us-treasurys-bonds-yields.html",
-      "publishedAt": "2026-10-13T18:36:13Z",
+      "url": "https://www.cnbc.com/2026/10/14/cnbc-daily-open-diesel-energy-apple-anthropic-imf.html",
+      "publishedAt": "2026-10-14T01:09:16Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
     {
-      "title": "Airport attacks put aviation in crosshairs of geopolitical conflicts",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/riyadh-airport-attacks-aviation.html",
-      "publishedAt": "2026-10-13T18:33:42Z",
+      "title": "FBI arrests Saudi OpenAI employee who allegedly planted recording device in conference room",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/13/openai-employee-arrested-recording-device.html",
+      "publishedAt": "2026-10-14T00:13:45Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Here's where Jim Cramer stands on this newly public AI infrastructure stock",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/13/jim-cramer-accelevation-stock.html",
+      "publishedAt": "2026-10-13T22:47:07Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "The latest inflation data is expected to show price increases are accelerating",
+      "title": "Don't let inflation bite — how to hedge with TIPS, commodities and infrastructure funds",
       "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/13/september-consumer-price-index-inflation.html",
-      "publishedAt": "2026-10-13T18:05:57Z",
+      "url": "https://www.cnbc.com/2026/10/13/inflation-hedge-tips-commodities-infrastructure.html",
+      "publishedAt": "2026-10-13T20:52:22Z",
       "category": "Suku Bunga / Inflasi",
       "language": "en"
     },
     {
-      "title": "Minutes of the Board's discount rate meetings on August 17, September 9, and September 16, 2026",
-      "source": "Federal Reserve",
-      "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261013a.htm",
-      "publishedAt": "2026-10-13T18:00:00Z",
-      "category": "Suku Bunga / Inflasi",
+      "title": "JPMorgan Chase blocks outside AI agents like Muse, Instinct from directly accessing accounts",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/13/jpmorgan-ai-agents-account-access.html",
+      "publishedAt": "2026-10-13T20:48:37Z",
+      "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Oil prices little changed as traders assess Russian diesel supply prospects and Saudi-Houthi conflict",
+      "title": "Bank of America fined $1.2 billion over money-laundering violations",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/oil-prices-today-brent-wti-hormuz.html",
-      "publishedAt": "2026-10-13T17:21:02Z",
+      "url": "https://www.cnbc.com/2026/10/13/bank-of-america-treasury-money-laundering.html",
+      "publishedAt": "2026-10-13T20:45:01Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "10-year Treasury yield falls as energy prices stabilize",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/us-treasurys-bonds-yields.html",
+      "publishedAt": "2026-10-13T20:11:33Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
@@ -57,15 +65,31 @@
       "title": "Why this little known Chinese chipmaker has caused a global stock rout",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/13/cxmt-memory-chip-stock-rout.html",
-      "publishedAt": "2026-10-13T16:28:25Z",
+      "publishedAt": "2026-10-13T20:05:58Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Iran reportedly fortifies nuclear sites as it prepares for possible U.S. strikes after midterms",
+      "title": "We're upgrading our rating on Wells Fargo as the stock's pullback offers a nice entry point",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/investingclub/2026/10/13/were-upgrading-our-rating-on-wells-fargo-as-the-stocks-pullback-offers-a-nice-entry-point.html",
+      "publishedAt": "2026-10-13T19:51:06Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Williams says Fed may not have to hike rates in 2027, at odds with traders",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/13/john-williams-fed-rate-hikes-2027.html",
+      "publishedAt": "2026-10-13T19:46:12Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Oil prices mixed as traders assess Russian diesel supply prospects and Saudi-Houthi conflict",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/iran-us-war-houthis-saudi-arabia-airport.html",
-      "publishedAt": "2026-10-13T15:57:46Z",
+      "url": "https://www.cnbc.com/2026/10/13/oil-prices-today-brent-wti-hormuz.html",
+      "publishedAt": "2026-10-13T19:35:50Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
@@ -73,32 +97,8 @@
       "title": "Paul Tudor Jones says 2027 could be a really challenging year for the stock market",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/13/paul-tudor-jones-2027-really-challenging-year.html",
-      "publishedAt": "2026-10-13T15:52:44Z",
+      "publishedAt": "2026-10-13T19:21:27Z",
       "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "In charts: How one of the world's biggest economies got trapped by debt",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/france-2027-budget-debt.html",
-      "publishedAt": "2026-10-13T15:52:24Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Paul Tudor Jones is bullish on oil, says it could rally another $20-$25 because of Iran conflict",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/13/paul-tudor-jones-oil-iran.html",
-      "publishedAt": "2026-10-13T15:52:09Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Thousands of homeowners face adjustable-rate mortgage resets — and much higher payments",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/13/arm-mortgage-borrowers-rate-adjustment.html",
-      "publishedAt": "2026-10-13T13:35:01Z",
-      "category": "Suku Bunga / Inflasi",
       "language": "en"
     }
   ]
