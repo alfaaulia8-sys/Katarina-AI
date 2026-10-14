@@ -2,7 +2,7 @@
 
 ## Sasaran timeline Owner (14 Oktober 2026)
 
-1. **Hidupkan secara aman / satukan fondasi**: Core Orchestrator, Management, data broker, modal, Risk Governor, recovery dan unified brain tetap satu codebase. Tidak membuat EA atau otak kedua.
+1. **Hidupkan secara aman / satukan fondasi**: Core Orchestrator, data broker, modal, Risk Governor, recovery dan unified brain tetap satu codebase. **Katarina Management dan 11 spesialis ditunda** sesuai keputusan Owner terbaru; keduanya bukan dependensi acceptance Katarina AI. Tidak membuat EA atau otak kedua.
 2. **Stabilkan dan sinkronkan**: satu *pinned* Git commit untuk kandidat integrasi dan isolated worktree VPS; jalur `github-main` yang punya perubahan Owner **tidak ditimpa**.
 3. **Belajar dan bereksperimen**: observer tunggal mengalirkan hasil shadow quote yang telah selesai ke `self_evolution_lab`, kemudian mengubah hanya ambang pemilihan eksperimen berikutnya per symbol/metode/BUY/SELL/regime.
 4. **Buktikan hasil**: data broker per-deal dan floating P/L asli, server trading-day, uji metode BUY/SELL terpisah, biaya trading aktual, pengujian prospektif forward dan demo. Jika hasil negatif, WAIT; jangan klaim profit.
@@ -19,7 +19,7 @@ py -3 -B scripts/ai/verify_unified_katarina.py
 
 Perintah ini hanya memeriksa bahwa semua modul inti dapat diimpor, batas risiko final masih benar, dan brain/shadow bisa membaca SQLite. Tidak memanggil `mt5.initialize()`, tidak mengirim order, tidak memodifikasi database maupun menjadwalkan proses. Dengan parameter `--shadow-db`, SQLite lama dibuka **mode read-only**; ini bukan kelulusan live.
 
-**Ditangguhkan sementara** dalam profil: external-model coding workers, self-rewrite produksi, broker-provenance yang belum terverifikasi, server-clock yang belum terverifikasi, migrasi capital state otomatis, scheduler yang telah dibatalkan Owner, dan live execution. Kode/data lama tidak dihapus demi mencegah kehilangan audit trail. Penangguhan itu **tidak boleh menghapus fail-closed gate, mengubah Risk Governor atau menurunkan otorisasi live**.
+**Ditangguhkan sementara** dalam profil: Katarina Management beserta 11 spesialis (ditandai eksplisit `on_hold`), external-model coding workers, self-rewrite produksi, broker-provenance yang belum terverifikasi, server-clock yang belum terverifikasi, migrasi capital state otomatis, scheduler yang telah dibatalkan Owner, dan live execution. Kode/data lama tidak dihapus demi mencegah kehilangan audit trail. Penangguhan itu **tidak boleh menghapus fail-closed gate, mengubah Risk Governor atau menurunkan otorisasi live**.
 
 ### Konsistensi modal dan risiko
 
@@ -31,7 +31,7 @@ Perintah ini hanya memeriksa bahwa semua modul inti dapat diimpor, batas risiko 
 
 ### Aturan sinkronisasi aman
 
-1. Jalankan semua pengujian CI dan Management acceptance terhadap SHA yang sama.
+1. Jalankan semua pengujian CI serta pemeriksaan **Unified Katarina AI** terhadap SHA yang sama. Katarina Management dan 11 spesialis tidak menjadi syarat acceptance selama statusnya ditunda.
 2. Fetch SHA yang sudah diperiksa ke **worktree VPS terpisah**, jangan `reset --hard`, `clean`, atau `pull` pada `github-main` yang berisi perubahan lokal Owner.
 3. Pastikan `git rev-parse HEAD` dan `git status --porcelain` dari worktree tersebut identik dengan SHA GitHub dan tidak ada perubahan lokal.
 4. Jalankan checker read-only di worktree itu, lalu pastikan task terjadwal lama tetap Disabled, RAM cukup, dan MT5 tidak dinyalakan.

@@ -17,16 +17,33 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
     def setUp(self):
         self.profile=json.loads((ROOT/"config/katarina_unified_v1.json").read_text())
 
-    def test_existing_core_management_brain_risk_broker_fit_one_profile(self):
+    def test_existing_core_brain_risk_broker_fit_one_profile(self):
         result=verify(self.profile,root=ROOT)
         self.assertEqual(result["status"],"INTEGRATED_OFFLINE_ENGINEERING_ONLY")
-        self.assertEqual(result["modules_verified"],11)
-        self.assertEqual(len(set(result["module_sha256"])),11)
+        self.assertEqual(result["modules_verified"],10)
+        self.assertEqual(len(set(result["module_sha256"])),10)
+        self.assertEqual(result["management"],"ON_HOLD")
         self.assertTrue(result["learning_policy_valid"])
         self.assertEqual(result["shadow_observations"],0)
         self.assertEqual(result["mode"],"TESTER_NO_ORDERS")
         self.assertFalse(result["live_execution_authorized"])
         self.assertEqual(result["orders_submitted"],0)
+
+    def test_management_and_specialists_cannot_be_reactivated_by_manifest(self):
+        for component in ("katarina_management", "eleven_specialists"):
+            changed=deepcopy(self.profile)
+            changed["on_hold"][component]=False
+            with self.subTest(component=component):
+                with self.assertRaisesRegex(ValueError,"management_on_hold_required"):
+                    verify(changed,root=ROOT)
+        changed=deepcopy(self.profile)
+        changed["canonical"]["management"]="scripts/ai/management_acceptance.py"
+        with self.assertRaisesRegex(ValueError,"incomplete_unified_component_registry"):
+            verify(changed,root=ROOT)
+        changed=deepcopy(self.profile)
+        changed["operating_mode"]["management"]="MANUAL_QA_ON_PINNED_COMMIT"
+        with self.assertRaisesRegex(ValueError,"management_on_hold_required"):
+            verify(changed,root=ROOT)
 
     def test_unready_components_cannot_be_reenabled_by_manifest(self):
         for key in self.profile["deferred"]:
