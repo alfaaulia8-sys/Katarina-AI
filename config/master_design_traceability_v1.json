@@ -50,12 +50,14 @@
       "status": "PARTIAL",
       "evidence_paths": [
         "src/katarina/intelligence/unified_cognitive_cycle.py",
-        "src/katarina/intelligence/market_regime_intelligence.py"
+        "src/katarina/intelligence/market_regime_intelligence.py",
+        "src/katarina/intelligence/unified_research_handoff.py"
       ],
       "test_paths": [
-        "tests/unit/intelligence/test_unified_cognitive_cycle.py"
+        "tests/unit/intelligence/test_unified_cognitive_cycle.py",
+        "tests/unit/intelligence/test_unified_research_handoff.py"
       ],
-      "remaining": "Descriptive offline cognitive loop and chronological memory/rollback guards exist; predictive world calibration and Fast/Deep integration not established."
+      "remaining": "Descriptive offline cognitive loop and chronological memory/rollback guards exist; predictive world calibration and Fast/Deep integration not established. Offline Owner research review handoff exists; it does not authorize live execution."
     },
     {
       "id": "A05",
@@ -132,24 +134,28 @@
       "status": "PARTIAL",
       "evidence_paths": [
         "src/katarina/engines/execution_recovery.py",
-        "src/katarina/engines/multi_symbol_execution.py"
+        "src/katarina/engines/multi_symbol_execution.py",
+        "src/katarina/intelligence/unified_research_handoff.py"
       ],
       "test_paths": [
-        "tests/unit/engines/test_account_risk_state.py"
+        "tests/unit/engines/test_account_risk_state.py",
+        "tests/unit/intelligence/test_unified_research_handoff.py"
       ],
-      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration."
+      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution."
     },
     {
       "id": "A11",
       "requirement": "Account and portfolio intelligent HOLD FULL PARTIAL TRAIL exit",
       "status": "PARTIAL",
       "evidence_paths": [
-        "src/katarina/intelligence/structure_exit_plan.py"
+        "src/katarina/intelligence/structure_exit_plan.py",
+        "src/katarina/intelligence/unified_research_handoff.py"
       ],
       "test_paths": [
-        "tests/unit/intelligence/test_structure_exit_plan.py"
+        "tests/unit/intelligence/test_structure_exit_plan.py",
+        "tests/unit/intelligence/test_unified_research_handoff.py"
       ],
-      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven."
+      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution."
     },
     {
       "id": "A12",
