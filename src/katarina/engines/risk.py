@@ -188,6 +188,14 @@ class RiskGovernor:
         if r.entry_kind not in {"NORMAL","RECOVERY_FACTOR","EXTREME_RECOVERY"}:
             return RiskDecision(RiskAction.REJECT,0.0,"invalid_entry_kind")
         a=r.drawdown_authority
+        # A Katarina-caused emergency is latched for the full broker day.
+        # Improvements to DD or a stale/unverified attribution receipt may
+        # not silently re-authorize NEW trades while lockdown is in force.
+        # The OwnerDrawdownTracker explicitly issues a fresh authority on
+        # the next trading day; that is evaluation, never automatic entry.
+        if (isinstance(a,DrawdownAuthority)
+                and a.mode is DrawdownMode.EMERGENCY_LOCKDOWN):
+            return RiskDecision(RiskAction.PAUSE,0.0,"emergency_drawdown_lock")
         verified=(isinstance(a,DrawdownAuthority) and a.verified
                   and bool(r.trading_day_key) and a.day_key==r.trading_day_key
                   and abs(a.drawdown_fraction-r.drawdown_fraction)<1e-8)

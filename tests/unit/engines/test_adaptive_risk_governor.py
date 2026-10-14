@@ -102,6 +102,51 @@ class AdaptiveRiskTests(unittest.TestCase):
         self.assertEqual(again.observe("d2",.45,hwm_cash=10000,
                                        reconciled=True).mode,DrawdownMode.EXTREME_SURVIVAL)
 
+    def test_katarina_lockdown_stays_closed_after_same_day_dd_recovery(self):
+        tracker = OwnerDrawdownTracker()
+        tracker.observe("d1", .20, hwm_cash=10000, reconciled=True)
+        onset = tracker.observe("d1", .36, hwm_cash=10000,
+                                katarina_loss_cash=1600, reconciled=True)
+        self.assertEqual(onset.mode, DrawdownMode.EMERGENCY_LOCKDOWN)
+        # Equity/balance may improve, but a same-day Katarina-caused
+        # emergency must NOT automatically become new-entry permission.
+        improved = tracker.observe("d1", .12, hwm_cash=10000,
+                                   reconciled=True)
+        self.assertEqual(improved.mode, DrawdownMode.EMERGENCY_LOCKDOWN)
+        for entry_kind in ("NORMAL", "RECOVERY_FACTOR", "EXTREME_RECOVERY"):
+            with self.subTest(entry_kind=entry_kind):
+                req = RiskRequest(
+                    .01, 0, .12, .1, 2, True, True, .12,
+                    entry_kind=entry_kind,
+                    risk_capital=8800, risk_reference_capital=10000,
+                    account_currency="USD",
+                    trading_day_key="d1", drawdown_authority=improved,
+                )
+                decision = self.gov.evaluate(req)
+                self.assertEqual(decision.action, RiskAction.PAUSE)
+                self.assertEqual(decision.approved_fraction, 0)
+        # Stale/mismatched authority is not an excuse to bypass a
+        # known emergency latch: fail closed until reconciled.
+        stale = RiskRequest(.01, 0, .12, .1, 2, True, True, .12,
+                            entry_kind="NORMAL", risk_capital=8800,
+                            risk_reference_capital=10000,
+                            account_currency="USD",
+                            trading_day_key="d2",
+                            drawdown_authority=improved)
+        self.assertEqual(self.gov.evaluate(stale).action, RiskAction.PAUSE)
+
+        # A new authenticated/reconciled broker day can EVALUATE afresh.
+        next_day = tracker.observe("d2", .12, hwm_cash=10000,
+                                   reconciled=True)
+        self.assertEqual(next_day.mode, DrawdownMode.CAUTION)
+        reevaluated = RiskRequest(
+            .01, 0, .12, .1, 2, True, True, .12,
+            entry_kind="NORMAL", risk_capital=8800,
+            risk_reference_capital=10000, account_currency="USD",
+            trading_day_key="d2", drawdown_authority=next_day,
+        )
+        self.assertGreater(self.gov.evaluate(reevaluated).approved_fraction, 0)
+
     def test_unverified_manual_attribution_never_unlocks(self):
         tracker=OwnerDrawdownTracker()
         tracker.observe("d",.20,hwm_cash=10000,reconciled=True)
