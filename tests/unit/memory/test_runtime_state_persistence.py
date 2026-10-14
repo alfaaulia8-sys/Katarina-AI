@@ -1,4 +1,6 @@
 import tempfile, unittest
+import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 from katarina.engines.account_risk_state import AccountRiskStateEngine, PendingOrderRiskInput
@@ -74,6 +76,37 @@ class RuntimePersistenceTests(unittest.TestCase):
                         execution_recovery=ManagementRecoveryCoordinator(),
                         broker_risk=BrokerNativeRiskBook())
             self.assertAlmostEqual(fresh.reservations.total_fraction,.02)
+
+    def test_tampered_persistent_risk_snapshot_cannot_restore_any_component(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db_path=Path(folder)/"risk.db"
+            previous=AccountRiskStateEngine()
+            previous.observe_equity("old",10000)
+            with MemoryStore(db_path) as store:
+                RuntimeStatePersistence(store).save_components(
+                    account_risk=previous,rr_tracker=RRProfitTracker(),
+                    execution_recovery=ManagementRecoveryCoordinator(),
+                    broker_risk=BrokerNativeRiskBook(),
+                )
+            with closing(sqlite3.connect(db_path)) as con, con:
+                con.execute("DROP TRIGGER operational_events_no_update")
+                con.execute(
+                    "UPDATE operational_events SET payload_json='{}' "
+                    "WHERE event_type='runtime_state_snapshot_v1'")
+            current=AccountRiskStateEngine()
+            current.observe_equity("current",20000)
+            current.reservations.reserve("keep",.01)
+            before=current.snapshot_state()
+            with MemoryStore(db_path) as store:
+                self.assertTrue(store.integrity_check())
+                with self.assertRaisesRegex(
+                        ValueError,"memory_payload_digest_mismatch"):
+                    RuntimeStatePersistence(store).restore_components(
+                        account_risk=current,rr_tracker=RRProfitTracker(),
+                        execution_recovery=ManagementRecoveryCoordinator(),
+                        broker_risk=BrokerNativeRiskBook(),
+                    )
+            self.assertEqual(current.snapshot_state(),before)
 
     def test_latest_operational_event(self):
         with tempfile.TemporaryDirectory() as d:

@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 from pathlib import Path
@@ -69,6 +70,65 @@ class Stage10MemoryStoreTests(unittest.TestCase):
                 store._conn.execute("UPDATE trade_experiences SET closed_utc='x' WHERE experience_id='x1'")
             with self.assertRaises(sqlite3.DatabaseError):
                 store._conn.execute("DELETE FROM trade_experiences WHERE experience_id='x1'")
+
+    def test_unmodified_memory_survives_restart_and_duplicate_replay(self):
+        with MemoryStore(self.db) as store:
+            op = store.append_operational_event("risk", {"limit": .08}, event_id="risk-1")
+            xp = store.append_trade_experience({"net_r": -1.5}, experience_id="xp-1")
+            self.assertTrue(op.inserted)
+            self.assertTrue(xp.inserted)
+        with MemoryStore(self.db) as store:
+            self.assertEqual(store.load_operational_events()[0]["payload"], {"limit": .08})
+            self.assertEqual(store.load_latest_operational_event("risk")["payload"], {"limit": .08})
+            self.assertEqual(store.load_trade_experiences()[0]["payload"], {"net_r": -1.5})
+            self.assertFalse(store.append_operational_event(
+                "risk", {"limit": .08}, event_id="risk-1").inserted)
+            self.assertFalse(store.append_trade_experience(
+                {"net_r": -1.5}, experience_id="xp-1").inserted)
+
+    def test_reusing_operational_id_for_different_event_type_is_rejected(self):
+        with MemoryStore(self.db) as store:
+            store.append_operational_event("risk_guard", {"ok": True}, event_id="shared")
+            with self.assertRaisesRegex(IdempotencyConflict, "event_id conflict"):
+                store.append_operational_event(
+                    "risk_override", {"ok": True}, event_id="shared")
+
+    def test_modified_operational_payload_cannot_be_replayed_or_reused(self):
+        with MemoryStore(self.db) as store:
+            store.append_operational_event(
+                "risk_snapshot", {"max_open_risk": .08}, event_id="trusted")
+        # Simulate an outside writer bypassing SQLite append-only trigger,
+        # in a disposable test DB only; never touch an Owner memory DB.
+        with closing(sqlite3.connect(self.db)) as con, con:
+            con.execute("DROP TRIGGER operational_events_no_update")
+            con.execute(
+                "UPDATE operational_events SET payload_json=? WHERE event_id='trusted'",
+                ('{"max_open_risk":0.99}',))
+        with MemoryStore(self.db) as store:
+            self.assertTrue(store.integrity_check())  # SQLite pages remain structurally valid
+            with self.assertRaisesRegex(ValueError, "memory_payload_digest_mismatch"):
+                store.load_operational_events()
+            with self.assertRaisesRegex(ValueError, "memory_payload_digest_mismatch"):
+                store.load_latest_operational_event("risk_snapshot")
+            with self.assertRaisesRegex(ValueError, "memory_payload_digest_mismatch"):
+                store.append_operational_event(
+                    "risk_snapshot", {"max_open_risk": .08}, event_id="trusted")
+
+    def test_modified_experience_payload_cannot_be_loaded_or_reused(self):
+        with MemoryStore(self.db) as store:
+            store.append_trade_experience(
+                {"outcome": "LOSS", "net_r": -1.0}, experience_id="loss-1")
+        with closing(sqlite3.connect(self.db)) as con, con:
+            con.execute("DROP TRIGGER trade_experiences_no_update")
+            con.execute(
+                "UPDATE trade_experiences SET payload_json=? WHERE experience_id='loss-1'",
+                ('{"outcome":"WIN","net_r":3.0}',))
+        with MemoryStore(self.db) as store:
+            with self.assertRaisesRegex(ValueError, "memory_payload_digest_mismatch"):
+                store.load_trade_experiences()
+            with self.assertRaisesRegex(ValueError, "memory_payload_digest_mismatch"):
+                store.append_trade_experience(
+                    {"outcome": "LOSS", "net_r": -1.0}, experience_id="loss-1")
 
     def test_future_schema_version_is_rejected(self):
         conn = sqlite3.connect(str(self.db))
