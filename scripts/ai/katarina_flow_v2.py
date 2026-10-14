@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 import ast
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import os
@@ -16,7 +16,9 @@ from pathlib import Path
 import py_compile
 import re
 import sys
-from zoneinfo import ZoneInfo
+
+from scripts.ai.management_workplan import audit_role, load_plan, verify_role, management_summary
+from scripts.ai.management_resources import observe_workspace, safe_cache_inventory
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))  # script entrypoints need repository imports
@@ -42,6 +44,7 @@ RELEASE_BLOCKERS = (
     "REAL_PROSPECTIVE_EDGE_NOT_PROVEN",
 )
 MAX_PARALLEL = 4
+WIB = timezone(timedelta(hours=7), 'Asia/Jakarta')
 
 
 def digest(record: dict) -> str:
@@ -74,7 +77,7 @@ def scheduler(commit: str, now: datetime) -> dict:
         raise ValueError("github_commit_sha_required")
     if now.tzinfo is None:
         raise ValueError("timezone_aware_clock_required")
-    local_day = now.astimezone(ZoneInfo("Asia/Jakarta")).date().isoformat()
+    local_day = now.astimezone(WIB).date().isoformat()
     day_index = (datetime.fromisoformat(local_day) -
                  datetime.fromisoformat(WEEK_START)).days
     if 0 <= day_index < len(PLAN):
@@ -86,8 +89,11 @@ def scheduler(commit: str, now: datetime) -> dict:
     else:
         current = "DEADLINE_PASSED_REPORT_BLOCKERS"
         day = 8
+    workplan, plan_digest = load_plan(ROOT)
     return seal({
         "kind":"schedule","version":VERSION,"commit":commit,
+        "management_task_plan_sha256":plan_digest,
+        "management_task_count":len(workplan["tasks"]),
         "current_day_wib":local_day,"deadline_wib":DEADLINE,
         "day_index":day,"current_priority":current,
         "locked_plan":list(PLAN),
@@ -217,8 +223,12 @@ def specialist(role: str, plan: dict, commit: str) -> dict:
         facts["legacy_specialist_receipt_sha256"]=result["receipt_sha256"]
     else:
         facts=_extra_role(role)
+    task_evidence = audit_role(ROOT, role)
+    if task_evidence["plan_sha256"] != plan["management_task_plan_sha256"]:
+        raise ValueError("specialist_schedule_task_mismatch")
     return seal({
         "kind":"specialist","version":VERSION,"commit":commit,
+        "management_task_evidence":task_evidence,
         "role":role,"status":"PASS_ENGINEERING_ONLY",
         "schedule_receipt_sha256":plan["receipt_sha256"],
         "findings":facts,
@@ -231,6 +241,10 @@ def specialist(role: str, plan: dict, commit: str) -> dict:
 def qa(folder: Path, commit: str, regression_pass: bool) -> dict:
     plan_raw=json.loads((folder/"schedule.json").read_text())
     sched=open_receipt(folder/"schedule.json",commit=commit,kind="schedule")
+    _, expected_plan_digest = load_plan(ROOT)
+    if (sched["management_task_plan_sha256"] != expected_plan_digest or
+            sched["management_task_count"] != len(SPECIALISTS)):
+        raise ValueError("management_workplan_stale")
     if sched["parallel_roles"] != list(SPECIALISTS) or sched["max_parallel"]>4:
         raise ValueError("schedule_scope_changed")
     results={}
@@ -245,15 +259,31 @@ def qa(folder: Path, commit: str, regression_pass: bool) -> dict:
                 record.get("model_production_authorized") is not False or
                 not isinstance(record.get("findings"),dict)):
             raise ValueError("specialist_scope_or_integrity_failure:"+role)
+        verify_role(ROOT, role, record.get("management_task_evidence"))
+        if record["management_task_evidence"]["plan_sha256"] != sched["management_task_plan_sha256"]:
+            raise ValueError("specialist_management_scope_mismatch")
         facts=record["findings"]
-        if role=="infrastructure" and (facts.get("processes_terminated")!=0 or
-                                      facts.get("vps_files_deleted")!=0):
-            raise ValueError("unsafe_ram_cleaning")
-        if role=="security" and facts.get("production_risk_fraction")!=0:
-            raise ValueError("unsafe_security_result")
-        results[role]=record["receipt_sha256"] if "receipt_sha256" in record else digest(record)
+        # A self-hashed JSON receipt is not proof that the worker's findings are
+        # true. Replay all deterministic specialist evidence independently.
+        # Runner memory is the sole host-specific field and is checked below.
+        replay=specialist(role,plan_raw,commit)
+        observed=dict(facts)
+        expected=dict(replay["findings"])
+        if role=="infrastructure":
+            snapshot=observed.pop("memory_snapshot",None)
+            expected.pop("memory_snapshot",None)
+            if not isinstance(snapshot,dict) or any(
+                not isinstance(k,str) or not isinstance(v,int) or v<=0
+                for k,v in snapshot.items()
+            ):
+                raise ValueError("invalid_infrastructure_memory_snapshot")
+        if observed!=expected:
+            raise ValueError("specialist_findings_not_reproducible:"+role)
+        results[role]=digest(record)
     return seal({
         "kind":"qa","version":VERSION,"commit":commit,
+        "management_work_items_replayed":len(results),
+        "management_workplan_sha256":expected_plan_digest,
         "status":"PASS_ENGINEERING_ONLY" if regression_pass else "BLOCKED_REGRESSION",
         "regression_passed":bool(regression_pass),
         "schedule_receipt_sha256":plan_raw["receipt_sha256"],
@@ -267,13 +297,23 @@ def manager(folder: Path, commit: str) -> dict:
     sched=open_receipt(folder/"schedule.json",commit=commit,kind="schedule")
     check=qa(folder,commit,regression_pass=True)
     record=open_receipt(folder/"qa.json",commit=commit,kind="qa")
-    if (record.get("status")!="PASS_ENGINEERING_ONLY" or
-            record.get("regression_passed") is not True or
-            record["independent_specialist_receipts"]!=check[
-                "independent_specialist_receipts"]):
+    expected_qa={k:v for k,v in check.items() if k!="receipt_sha256"}
+    if record!=expected_qa:
         raise ValueError("qa_not_approved")
+    source_audits = {
+        role: open_receipt(folder / (role + ".json"), commit=commit, kind="specialist")["management_task_evidence"]
+        for role in SPECIALISTS
+    }
+    verified_work = management_summary(ROOT, source_audits)
+    resources = observe_workspace(ROOT)
+    cache_report = safe_cache_inventory(ROOT, max_paths=100)
+    if record.get("management_work_items_replayed") != len(SPECIALISTS):
+        raise ValueError("management_work_items_not_replayed")
     return seal({
         "kind":"manager","version":VERSION,"commit":commit,
+        "management_work_summary":verified_work,
+        "resource_safety_report": resources,
+        "cache_inventory": cache_report,
         "specialists_verified":len(SPECIALISTS),
         "qa_passed":True,
         "plan_priority":sched["current_priority"],
@@ -288,7 +328,24 @@ def manager(folder: Path, commit: str) -> dict:
 
 def release(folder: Path, commit: str) -> dict:
     record=open_receipt(folder/"manager.json",commit=commit,kind="manager")
-    if record["engineering_status"]!="PASS" or record["live_trading"] is not False:
+    # Reconstruct the Manager's full authorization from source and the
+    # independent QA receipt. A valid JSON checksum alone is forgeable.
+    replay=manager(folder,commit)
+    immutable_fields=(
+        "management_work_summary","specialists_verified","qa_passed",
+        "plan_priority","week_deadline","engineering_status",
+        "release_status","remaining_blockers","next_action",
+        "auto_deployment","live_trading",
+    )
+    if any(record.get(k)!=replay.get(k) for k in immutable_fields):
+        raise ValueError("manager_evidence_not_reproducible")
+    resources=record.get("resource_safety_report")
+    cache=record.get("cache_inventory")
+    if (not isinstance(resources,dict) or not isinstance(cache,dict)
+            or resources.get("processes_terminated")!=0
+            or resources.get("files_deleted")!=0
+            or cache.get("deleted")!=0
+            or record.get("live_trading") is not False):
         raise ValueError("manager_or_governance_failed")
     return seal({
         "kind":"release","version":VERSION,"commit":commit,
@@ -312,7 +369,7 @@ def main():
     arguments=parser.parse_args()
     folder=arguments.folder
     if arguments.phase=="scheduler":
-        record=scheduler(arguments.commit,datetime.now(ZoneInfo("Asia/Jakarta")))
+        record=scheduler(arguments.commit,datetime.now(WIB))
         filename="schedule.json"
     elif arguments.phase=="role":
         p=json.loads((folder/"schedule.json").read_text())

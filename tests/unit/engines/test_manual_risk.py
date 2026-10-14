@@ -7,6 +7,8 @@ from katarina.engines.manual_risk import (
     SharedAccountRiskEngine,
     SharedAccountRiskTracker,
     SymbolRiskSpec,
+    PositionPnLChange,
+    BrokerPnLReconciler,
 )
 from katarina.engines.risk import RiskAction, RiskGovernor, RiskRequest
 from katarina.validation.engine import (
@@ -163,6 +165,62 @@ class ManualAccountRiskTests(unittest.TestCase):
     def test_invalid_equity_fails_closed(self):
         a=self.engine.assess([manual()],equity=0)
         self.assertTrue(a.has_unbounded_risk)
+
+    def test_broker_pnl_owner_floating_loss_reconciles_without_realized_close(self):
+        result=BrokerPnLReconciler.reconcile(
+            previous_equity=8000,current_equity=6000,external_cash_flow=0,
+            changes=(PositionPnLChange("manual","MANUAL_MOBILE",0,-2000),))
+        self.assertTrue(result.balanced)
+        self.assertAlmostEqual(result.owner_loss_cash,2000)
+        self.assertEqual(result.katarina_loss_cash,0)
+        self.assertIn("not_broker_authenticated",result.reason)
+
+    def test_broker_pnl_manual_realized_loss_included(self):
+        result=BrokerPnLReconciler.reconcile(
+            previous_equity=10000,current_equity=7000,external_cash_flow=0,
+            changes=(PositionPnLChange("closed_manual","MANUAL_WEB",-3000,0),))
+        self.assertTrue(result.balanced)
+        self.assertAlmostEqual(result.owner_loss_cash,3000)
+
+    def test_broker_pnl_deposit_not_counted_as_owner_profit(self):
+        result=BrokerPnLReconciler.reconcile(
+            previous_equity=10000,current_equity=11000,external_cash_flow=2000,
+            changes=(PositionPnLChange("manual","MANUAL_DESKTOP",-1000,0),))
+        self.assertTrue(result.balanced)
+        self.assertAlmostEqual(result.owner_loss_cash,1000)
+
+    def test_broker_pnl_missing_fee_or_unknown_origin_fails_closed(self):
+        missing=BrokerPnLReconciler.reconcile(
+            previous_equity=10000,current_equity=8900,external_cash_flow=0,
+            changes=(PositionPnLChange("manual","MANUAL_WEB",-1000,0),))
+        self.assertFalse(missing.balanced)
+        self.assertAlmostEqual(missing.unexplained_cash,-100)
+        unknown=BrokerPnLReconciler.reconcile(
+            previous_equity=10000,current_equity=9000,external_cash_flow=0,
+            changes=(PositionPnLChange("manual","MANUAL_WEB",-1000,0),
+                     PositionPnLChange("foreign","FOREIGN_EA",100,-100)))
+        self.assertFalse(unknown.balanced)
+        self.assertIn("unknown_or_foreign",unknown.reason)
+
+    def test_broker_pnl_multiple_origins_not_misattributed(self):
+        result=BrokerPnLReconciler.reconcile(
+            previous_equity=10000,current_equity=7200,external_cash_flow=0,
+            changes=(PositionPnLChange("manual","MANUAL_MOBILE",-2000,0),
+                     PositionPnLChange("katarina","KATARINA",-800,0)))
+        self.assertTrue(result.balanced)
+        self.assertAlmostEqual(result.owner_loss_cash,2000)
+        self.assertAlmostEqual(result.katarina_loss_cash,800)
+
+    def test_broker_pnl_duplicate_or_nan_rejected(self):
+        item=PositionPnLChange("position1","MANUAL_MOBILE",-100,0)
+        with self.assertRaisesRegex(ValueError,"duplicate"):
+            BrokerPnLReconciler.reconcile(
+                previous_equity=10000,current_equity=9800,external_cash_flow=0,
+                changes=(item,item))
+        with self.assertRaisesRegex(ValueError,"nonfinite"):
+            BrokerPnLReconciler.reconcile(
+                previous_equity=10000,current_equity=9800,external_cash_flow=0,
+                changes=(PositionPnLChange("p","KATARINA",float("nan"),0),))
 
     def test_runtime_consumes_only_accepted_kat1_state(self):
         rt=Kat1SharedAccountRiskRuntime()

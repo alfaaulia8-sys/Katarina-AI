@@ -21,35 +21,44 @@ def accepted(topic,payload):
 
 
 class CapitalCompoundingTests(unittest.TestCase):
-    def test_100_to_200_saves_thirty_percent_and_next_target_280(self):
+    def test_100_to_200_locks_25pct_total_realized_balance_next_400(self):
         c=CapitalCompoundingEngine()
         c.initialize(100)
         e=c.observe_balance(200)
         s=c.snapshot()
         self.assertTrue(e.milestone_triggered)
-        self.assertAlmostEqual(s.reserve_balance,60)
-        self.assertAlmostEqual(s.active_balance,140)
-        self.assertAlmostEqual(s.next_target_balance,280)
+        self.assertAlmostEqual(s.reserve_balance,50)
+        self.assertAlmostEqual(s.active_balance,150)
+        self.assertAlmostEqual(s.next_target_balance,400)
 
-    def test_second_milestone_rebalances_reserve_to_30_percent_of_total_not_additive(self):
+    def test_second_balance_doubling_locks_25pct_of_total(self):
         c=CapitalCompoundingEngine()
         c.initialize(100)
         c.observe_balance(200)
-        c.observe_balance(280)
+        c.observe_balance(400)
         s=c.snapshot()
         self.assertEqual(s.milestone_count,2)
-        self.assertAlmostEqual(s.reserve_balance,84)
-        self.assertAlmostEqual(s.active_balance,196)
-        self.assertAlmostEqual(s.next_target_balance,392)
+        self.assertAlmostEqual(s.reserve_balance,100)
+        self.assertAlmostEqual(s.active_balance,300)
+        self.assertAlmostEqual(s.next_target_balance,800)
+
+    def test_snapshot_crosses_multiple_realized_balance_milestones(self):
+        c=CapitalCompoundingEngine()
+        c.initialize(100)
+        c.observe_balance(450)
+        s=c.snapshot()
+        self.assertEqual(s.milestone_count,2)
+        self.assertAlmostEqual(s.reserve_balance,112.5)
+        self.assertAlmostEqual(s.next_target_balance,800)
 
     def test_profit_between_milestones_is_active_but_target_stays_fixed(self):
         c=CapitalCompoundingEngine()
         c.initialize(100); c.observe_balance(200)
         c.observe_balance(250)
         s=c.snapshot()
-        self.assertAlmostEqual(s.reserve_balance,60)
-        self.assertAlmostEqual(s.active_balance,190)
-        self.assertAlmostEqual(s.next_target_balance,280)
+        self.assertAlmostEqual(s.reserve_balance,50)
+        self.assertAlmostEqual(s.active_balance,200)
+        self.assertAlmostEqual(s.next_target_balance,400)
 
     def test_withdrawal_within_reserve_does_not_reduce_active_or_rebase_target(self):
         c=CapitalCompoundingEngine()
@@ -57,17 +66,17 @@ class CapitalCompoundingTests(unittest.TestCase):
         e=c.apply_external_flow(-30,balance_after=170)
         s=c.snapshot()
         self.assertAlmostEqual(e.reserve_used,30)
-        self.assertAlmostEqual(s.reserve_balance,30)
-        self.assertAlmostEqual(s.active_balance,140)
-        self.assertAlmostEqual(s.next_target_balance,280)
+        self.assertAlmostEqual(s.reserve_balance,20)
+        self.assertAlmostEqual(s.active_balance,150)
+        self.assertAlmostEqual(s.next_target_balance,400)
 
     def test_withdrawal_exceeding_reserve_recalculates_active_and_target(self):
         c=CapitalCompoundingEngine()
         c.initialize(100); c.observe_balance(200)
         e=c.apply_external_flow(-100,balance_after=100)
         s=c.snapshot()
-        self.assertAlmostEqual(e.reserve_used,60)
-        self.assertAlmostEqual(e.active_used,40)
+        self.assertAlmostEqual(e.reserve_used,50)
+        self.assertAlmostEqual(e.active_used,50)
         self.assertAlmostEqual(s.reserve_balance,0)
         self.assertAlmostEqual(s.active_balance,100)
         self.assertAlmostEqual(s.next_target_balance,200)
@@ -90,6 +99,22 @@ class CapitalCompoundingTests(unittest.TestCase):
         self.assertAlmostEqual(s.active_balance,200)
         self.assertAlmostEqual(s.next_target_balance,400)
 
+    def test_deposit_after_loss_does_not_lower_cashflow_adjusted_hwm(self):
+        c=CapitalCompoundingEngine()
+        c.initialize(100)
+        c.observe_balance(200)
+        c.observe_balance(180)
+        c.apply_external_flow(100,balance_after=280)
+        s=c.snapshot()
+        self.assertAlmostEqual(s.reserve_balance,50)
+        self.assertAlmostEqual(s.next_target_balance,500)
+        self.assertEqual(s.milestone_count,1)
+        c.observe_balance(499)
+        self.assertEqual(c.snapshot().milestone_count,1)
+        c.observe_balance(500)
+        self.assertEqual(c.snapshot().milestone_count,2)
+        self.assertAlmostEqual(c.snapshot().reserve_balance,125)
+
     def test_floating_equity_does_not_trigger_milestone(self):
         c=CapitalCompoundingEngine()
         rt=Kat1CapitalCompoundingRuntime(c)
@@ -111,7 +136,7 @@ class CapitalCompoundingTests(unittest.TestCase):
         rt=Kat1CapitalCompoundingRuntime(c)
         rt.observe(accepted("account.state",{"account_currency_digits":2,"balance_units":10000,"equity_units":10000}))
         rt.observe(accepted("account.state",{"account_currency_digits":2,"balance_units":20000,"equity_units":20000}))
-        self.assertAlmostEqual(c.snapshot().reserve_balance,60)
+        self.assertAlmostEqual(c.snapshot().reserve_balance,50)
 
     def test_kat1_withdrawal_uses_reserve_first(self):
         c=CapitalCompoundingEngine()
@@ -120,8 +145,8 @@ class CapitalCompoundingTests(unittest.TestCase):
         rt.observe(accepted("account.state",{"account_currency_digits":2,"balance_units":20000,"equity_units":20000}))
         rt.observe(accepted("account.ledger",{"ledger_kind":2,"amount_units":-3000}))
         rt.observe(accepted("account.state",{"account_currency_digits":2,"balance_units":17000,"equity_units":17000}))
-        self.assertAlmostEqual(c.snapshot().reserve_balance,30)
-        self.assertAlmostEqual(c.snapshot().active_balance,140)
+        self.assertAlmostEqual(c.snapshot().reserve_balance,20)
+        self.assertAlmostEqual(c.snapshot().active_balance,150)
 
     def test_sizing_uses_active_balance_not_total_balance(self):
         r=PositionSizingEngine().size_active(
@@ -142,7 +167,7 @@ class CapitalCompoundingTests(unittest.TestCase):
 
     def test_risk_coordinator_rebases_existing_cash_risk_to_active_capital(self):
         c=CapitalCompoundingEngine(); c.initialize(100); c.observe_balance(200)
-        # Position has $7 cash risk = 5% of active $140.
+        # Position risk $7; locked reserve 25% leaves $150 active.
         from katarina.engines.manual_risk import PositionRiskInput, SymbolRiskSpec
         p=PositionRiskInput("p","KATARINA","BUY",.007,2000,2000,1990,SymbolRiskSpec(.01,1.0))
         positions=SharedAccountRiskEngine().assess([p],equity=200)
@@ -152,9 +177,9 @@ class CapitalCompoundingTests(unittest.TestCase):
             positions,reservation_id="r",day_key="d",requested_fraction=.05,
             uncertainty=.1,expected_rr=2,health_ok=True,reconciled=True,
         )
-        self.assertAlmostEqual(out.state.risk_capital,140)
-        self.assertAlmostEqual(out.state.position_risk_fraction,.05)
-        self.assertAlmostEqual(out.approved_fraction,.03)
+        self.assertAlmostEqual(out.state.risk_capital,150)
+        self.assertAlmostEqual(out.state.position_risk_fraction,7/150)
+        self.assertAlmostEqual(out.approved_fraction,.08-7/150)
 
     def test_capital_state_persists_across_restart(self):
         with tempfile.TemporaryDirectory() as d:
@@ -171,9 +196,71 @@ class CapitalCompoundingTests(unittest.TestCase):
                 self.assertTrue(RuntimeStatePersistence(store).restore_components(
                     account_risk=ar2,rr_tracker=rr2,execution_recovery=ex2,broker_risk=br2,capital=restored
                 ))
-            self.assertAlmostEqual(restored.snapshot().reserve_balance,60)
-            self.assertAlmostEqual(restored.snapshot().active_balance,140)
-            self.assertAlmostEqual(restored.snapshot().next_target_balance,280)
+            self.assertAlmostEqual(restored.snapshot().reserve_balance,50)
+            self.assertAlmostEqual(restored.snapshot().active_balance,150)
+            self.assertAlmostEqual(restored.snapshot().next_target_balance,400)
+
+
+    def test_restore_rejects_corrupt_state_without_mutating_current_capital(self):
+        c=CapitalCompoundingEngine()
+        c.initialize(100)
+        c.observe_balance(200)
+        safe=c.snapshot_state()
+        for key,bad in (
+            ("total_balance",float("nan")),
+            ("active_balance",5),
+            ("reserve_balance",400),
+            ("next_target_balance",float("inf")),
+            ("milestone_count",-2),
+            ("reserve_fraction",float("nan")),
+            ("growth_multiple",float("nan")),
+            ("initialized","yes"),
+        ):
+            with self.subTest(field=key):
+                corrupt=dict(safe)
+                corrupt[key]=bad
+                with self.assertRaises(ValueError):
+                    c.restore_state(corrupt)
+                self.assertEqual(c.snapshot_state(),safe)
+
+    def test_legacy_30pct_preview_keeps_protected_reserve_and_rebases_milestone(self):
+        old=CapitalCompoundingEngine(reserve_fraction=.30)
+        old.initialize(100)
+        old.observe_balance(200)
+        original=old.snapshot_state()
+        proposed=CapitalCompoundingEngine.preview_legacy_migration(original)
+        self.assertEqual(old.snapshot_state(),original)
+        self.assertAlmostEqual(proposed["reserve_fraction"],.25)
+        self.assertAlmostEqual(proposed["reserve_balance"],60)
+        self.assertAlmostEqual(proposed["active_balance"],140)
+        self.assertAlmostEqual(proposed["next_target_balance"],400)
+        new=CapitalCompoundingEngine()
+        new.restore_state(proposed)
+        self.assertAlmostEqual(new.snapshot().reserve_balance,60)
+        self.assertAlmostEqual(new.snapshot().next_target_balance,400)
+        # Migration is OFFLINE ONLY, never silently applied at restart.
+        new.observe_balance(399)
+        self.assertEqual(new.snapshot().milestone_count,1)
+        new.observe_balance(400)
+        self.assertEqual(new.snapshot().milestone_count,2)
+        self.assertAlmostEqual(new.snapshot().reserve_balance,100)
+
+    def test_legacy_preview_rejects_incoherent_or_new_state(self):
+        old=CapitalCompoundingEngine(reserve_fraction=.30)
+        old.initialize(100)
+        old.observe_balance(200)
+        state=old.snapshot_state()
+        for changed in (
+            {"active_balance":500},
+            {"reserve_fraction":.25},
+            {"reserve_balance":float("nan")},
+            {"last_milestone_balance":float("inf")},
+        ):
+            with self.subTest(mod=changed):
+                with self.assertRaisesRegex(ValueError,"invalid_legacy"):
+                    CapitalCompoundingEngine.preview_legacy_migration(
+                        {**state,**changed}
+                    )
 
 
 if __name__=="__main__": unittest.main()

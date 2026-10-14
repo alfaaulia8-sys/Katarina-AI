@@ -44,10 +44,11 @@ class CapitalCompoundingEngine:
     """KATARINA active-capital / reserve compounding.
 
     Rules:
-    - Milestone is 100% growth: next target = active reference * 2.
-    - When broker BALANCE reaches the target, reserve becomes 30% of the
-      current total balance and active trading balance becomes the remaining 70%.
-    - The next target is 2x that new active balance.
+    - Milestones are realized-balance doublings, adjusted for deposits/withdrawals.
+    - When broker REALIZED BALANCE reaches the target, the logical reserve is
+      25% of the entire realized balance, not 25% of just the profit.
+    - Successive targets are cashflow-adjusted balance doubling milestones,
+      not two times the post-reserve active trading balance.
     - Reserve is logical protected capital and is excluded from risk sizing.
     - Withdrawals consume reserve first. Only withdrawal excess reduces active.
     - If withdrawal exceeds reserve, compounding reference/target are recalculated
@@ -58,7 +59,7 @@ class CapitalCompoundingEngine:
       but does not lower the existing target.
     """
 
-    def __init__(self, *, reserve_fraction: float = 0.30, growth_multiple: float = 2.0):
+    def __init__(self, *, reserve_fraction: float = 0.25, growth_multiple: float = 2.0):
         if not (0.0 < reserve_fraction < 1.0):
             raise ValueError("reserve_fraction")
         if not isfinite(growth_multiple) or growth_multiple <= 1.0:
@@ -124,14 +125,18 @@ class CapitalCompoundingEngine:
             return self._event("BALANCE",False,0.0,0.0,"no_active_capital")
 
         if self.next_target_balance>0 and self.total_balance+1e-12>=self.next_target_balance:
+            # Multiple thresholds may be crossed in one realized broker snapshot.
+            # A reserve sweep never redefines the next doubling milestone.
+            while self.next_target_balance>0 and self.total_balance+1e-12>=self.next_target_balance:
+                threshold=self.next_target_balance
+                self.compounding_reference=threshold
+                self.last_milestone_balance=threshold
+                self.next_target_balance=threshold*self.growth_multiple
+                self.milestone_count+=1
             self.reserve_balance=round(self.total_balance*self.reserve_fraction,10)
             self.active_balance=max(0.0,self.total_balance-self.reserve_balance)
-            self.compounding_reference=self.active_balance
-            self.next_target_balance=self.compounding_reference*self.growth_multiple
-            self.milestone_count+=1
-            self.last_milestone_balance=self.total_balance
             self.reserve_impaired=False
-            return self._event("MILESTONE",True,0.0,0.0,"reserve_rebalanced_from_total_balance")
+            return self._event("MILESTONE",True,0.0,0.0,"reserve_25pct_from_realized_balance")
 
         return self._event("BALANCE",False,0.0,0.0,"balance_synced")
 
@@ -154,13 +159,20 @@ class CapitalCompoundingEngine:
         active_used=0.0
         if amount>0:
             # External positive capital belongs to active capital; preserve reserve.
+            previous_cashflow_adjusted_target=self.next_target_balance
             self.total_balance=float(balance_after)
             self.reserve_balance=min(before_reserve,self.total_balance)
             self.active_balance=max(0.0,before_active+amount+trading_delta)
             # Reconcile to authoritative balance.
             self.active_balance=max(0.0,self.total_balance-self.reserve_balance)
             self.compounding_reference=self.active_balance
-            self.next_target_balance=self.compounding_reference*self.growth_multiple if self.active_balance>0 else 0.0
+            new_capital_target=(self.compounding_reference*self.growth_multiple
+                                if self.active_balance>0 else 0.0)
+            # Deposit is not trading profit: its added cash must not lower
+            # the previous realized-balance high-water milestone.
+            self.next_target_balance=max(
+                new_capital_target,previous_cashflow_adjusted_target+amount
+            ) if previous_cashflow_adjusted_target>0 else new_capital_target
             self.reserve_impaired=self.reserve_balance>self.total_balance
             return self._event("DEPOSIT",False,0.0,0.0,"external_capital_resets_compounding_reference")
 
@@ -217,29 +229,94 @@ class CapitalCompoundingEngine:
             "initialized":self.initialized,
         }
 
+    @classmethod
+    def preview_legacy_migration(cls,state:Mapping[str,Any])->dict[str,Any]:
+        """Offline 30%-to-25% policy preview; never modifies the old snapshot.
+
+        Keep every dollar of old logical reserve locked, even though the new
+        policy's fraction is lower. Releasing capital is a distinct Owner action.
+        Reject incoherent historical state instead of guessing missing evidence.
+        """
+        if not isinstance(state,Mapping):
+            raise ValueError("invalid_legacy_capital_state")
+        try:
+            f=float(state["reserve_fraction"])
+            growth=float(state["growth_multiple"])
+            total=float(state["total_balance"])
+            reserve=float(state["reserve_balance"])
+            active=float(state["active_balance"])
+            target=float(state["next_target_balance"])
+            ref=float(state["compounding_reference"])
+            last=float(state["last_milestone_balance"])
+            count=state["milestone_count"]
+            initialized=state["initialized"]
+        except (KeyError,TypeError,ValueError,OverflowError) as exc:
+            raise ValueError("invalid_legacy_capital_state") from exc
+        amounts=(f,growth,total,reserve,active,target,ref,last)
+        if (any(not isfinite(x) for x in amounts)
+                or abs(f-0.30)>1e-12 or abs(growth-2.0)>1e-12
+                or min(total,reserve,active,target,ref,last)<0
+                or abs(total-reserve-active)>max(1e-6,total*1e-8)
+                or type(count) is not int or count<0
+                or type(initialized) is not bool):
+            raise ValueError("invalid_legacy_capital_state")
+        if not initialized and (total!=0 or count!=0):
+            raise ValueError("invalid_legacy_capital_state")
+        proposal=dict(state)
+        proposal["reserve_fraction"]=0.25
+        # Target must not fall below the last reached milestone's doubling
+        # and cannot be lowered by a policy migration.
+        proposal["next_target_balance"]=max(target,last*growth) if count>0 else target
+        proposal["compounding_reference"]=(
+            proposal["next_target_balance"]/growth if proposal["next_target_balance"]>0 else ref
+        )
+        proposal["reserve_balance"]=reserve
+        proposal["active_balance"]=active
+        return proposal
+
     def restore_state(self,state:Mapping[str,Any])->None:
+        """All-or-nothing validation: malformed snapshots never mutate capital."""
         if not state:
             return
-        if abs(float(state["reserve_fraction"])-self.reserve_fraction)>1e-12:
+        if not isinstance(state,Mapping):
+            raise ValueError("invalid_capital_state")
+        try:
+            fraction=float(state["reserve_fraction"])
+            multiple=float(state["growth_multiple"])
+            total=float(state["total_balance"])
+            reserve=float(state["reserve_balance"])
+            active=float(state["active_balance"])
+            reference=float(state["compounding_reference"])
+            target=float(state["next_target_balance"])
+            count=state["milestone_count"]
+            last=float(state["last_milestone_balance"])
+            impaired=state["reserve_impaired"]
+            initialized=state["initialized"]
+        except (KeyError,ValueError,TypeError,OverflowError) as exc:
+            raise ValueError("invalid_capital_state") from exc
+        values=(fraction,multiple,total,reserve,active,reference,target,last)
+        if (any(not isfinite(v) for v in values)
+                or not 0<fraction<1 or multiple<=1
+                or min(total,reserve,active,reference,target,last)<0
+                or type(count) is not int or count<0
+                or type(impaired) is not bool or type(initialized) is not bool
+                or abs(total-reserve-active)>max(1e-6,total*1e-8)
+                or not initialized and (total!=0 or count!=0)
+                or not initialized and (reserve!=0 or active!=0)):
+            raise ValueError("invalid_capital_state")
+        if abs(fraction-self.reserve_fraction)>1e-12:
             raise ValueError("reserve_fraction_mismatch")
-        if abs(float(state["growth_multiple"])-self.growth_multiple)>1e-12:
+        if abs(multiple-self.growth_multiple)>1e-12:
             raise ValueError("growth_multiple_mismatch")
-        self.total_balance=float(state["total_balance"])
-        self.reserve_balance=float(state["reserve_balance"])
-        self.active_balance=float(state["active_balance"])
-        self.compounding_reference=float(state["compounding_reference"])
-        self.next_target_balance=float(state["next_target_balance"])
-        self.milestone_count=int(state["milestone_count"])
-        self.last_milestone_balance=float(state["last_milestone_balance"])
-        self.reserve_impaired=bool(state["reserve_impaired"])
-        self.initialized=bool(state["initialized"])
-        for value in (
-            self.total_balance,self.reserve_balance,self.active_balance,
-            self.compounding_reference,self.next_target_balance,
-        ):
-            if not isfinite(value) or value<0:
-                raise ValueError("invalid_capital_state")
-
+        self.total_balance=total
+        self.reserve_balance=reserve
+        self.active_balance=active
+        self.compounding_reference=reference
+        self.next_target_balance=target
+        self.milestone_count=count
+        self.last_milestone_balance=last
+        self.reserve_impaired=impaired
+        self.initialized=initialized
 
 class Kat1CapitalCompoundingRuntime:
     """Consumes ACCEPTED account.ledger + account.state for compounding.

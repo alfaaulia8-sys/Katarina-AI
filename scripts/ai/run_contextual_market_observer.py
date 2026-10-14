@@ -41,7 +41,9 @@ from katarina.intelligence.causal_broker_quotes import (
 from katarina.intelligence.market_article_context import collect_market_articles
 from katarina.intelligence.evidence_risk import assess_legacy_august_audit
 from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
-from katarina.intelligence.self_evolution_lab import evaluate_shadow_self_evolution
+from katarina.intelligence.self_evolution_lab import (
+    evaluate_shadow_self_evolution,derive_shadow_research_policy,
+)
 from katarina.governance.multi_model_evolution_review import review_candidate
 from katarina.intelligence.prospective_shadow_book import (
     ProspectiveShadowBook,ResearchHypothesis,
@@ -410,14 +412,17 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         # Price path gaps => invalid virtual observations, NOT assumed fills.
         report["virtual_shadow_settled"]=virtual_book.settle(
             now=now,quotes=latest_quotes)
-        report["virtual_shadow_selection"]=virtual_book.propose(
-            paper_hypotheses,now)
-        report["virtual_shadow_summary"]=virtual_book.summary()
-        retrospective=shadow_review(store.db,now)
-        # Offline statistical learning, never modifies strategy, code, or orders.
-        # Reuses the existing SQLite observer: NO second daemon or model workers.
+        # Unified research brain uses only matured, past-only quote outcomes
+        # to adjust subsequent virtual *sampling*, never production strategy.
         report["self_evolution_lab"]=evaluate_shadow_self_evolution(
             store.db,as_of_utc=now)
+        learned_policy=derive_shadow_research_policy(
+            report["self_evolution_lab"])
+        report["shadow_research_policy"]=learned_policy.to_dict()
+        report["virtual_shadow_selection"]=virtual_book.propose(
+            paper_hypotheses,now,research_policy=learned_policy)
+        report["virtual_shadow_summary"]=virtual_book.summary()
+        retrospective=shadow_review(store.db,now)
         # Future independent AI reviewers must bind verdicts to a current
         # receipt; with no providers configured the review fails closed.
         report["self_evolution_model_review"]=review_candidate(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
 from math import ceil, floor, isfinite
 from typing import Any, Iterable, Mapping
 
@@ -10,6 +11,43 @@ from katarina.engines.manual_risk import (
     SharedAccountRiskEngine,
     SymbolRiskSpec,
 )
+
+def authenticated_broker_day_key(
+    source_time_ns: int | None,
+    utc_offset_minutes: int | None,
+    *,
+    broker_clock_authenticated: bool = False,
+) -> str | None:
+    """Never guess broker trading day from UTC or the VPS local timezone.
+
+    KAT1 source timestamps alone do not establish the broker UTC offset.
+    A separate trustworthy broker-clock observation must supply the offset.
+    """
+    if not broker_clock_authenticated:
+        return None
+    if (type(source_time_ns) is not int or source_time_ns <= 0
+            or type(utc_offset_minutes) is not int
+            or not -720 <= utc_offset_minutes <= 840):
+        return None
+    try:
+        source=datetime.fromtimestamp(source_time_ns/1_000_000_000,tz=timezone.utc)
+        return (source+timedelta(minutes=utc_offset_minutes)).date().isoformat()
+    except (ValueError,OverflowError,OSError):
+        return None
+
+
+@dataclass(frozen=True, slots=True)
+class BrokerSessionEvidence:
+    source_time_ns: int
+    utc_offset_minutes: int
+    broker_clock_authenticated: bool = False
+
+    @property
+    def day_key(self) -> str | None:
+        return authenticated_broker_day_key(
+            self.source_time_ns,self.utc_offset_minutes,
+            broker_clock_authenticated=self.broker_clock_authenticated,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,7 +84,7 @@ class DailyDrawdownSnapshot:
 
 
 class DailyDrawdownTracker:
-    def __init__(self, *, limit: float = 0.10):
+    def __init__(self, *, limit: float = 0.35):
         if not (0 < limit < 1):
             raise ValueError("daily drawdown limit")
         self.limit=limit
@@ -118,7 +156,7 @@ class DailyDrawdownTracker:
 
 
 class TotalDrawdownTracker:
-    def __init__(self, *, limit: float = 0.20):
+    def __init__(self, *, limit: float = 0.35):
         self.limit=limit
         self.peak_equity=0.0
         self.current_equity=0.0
@@ -132,6 +170,12 @@ class TotalDrawdownTracker:
         dd=0.0 if self.peak_equity <= 0 else max(0.0,(self.peak_equity-self.current_equity)/self.peak_equity)
         self.max_drawdown_fraction=max(self.max_drawdown_fraction,dd)
         return self.max_drawdown_fraction
+
+    @property
+    def current_drawdown_fraction(self)->float:
+        if self.peak_equity<=0:
+            return 0.0
+        return max(0.0,(self.peak_equity-self.current_equity)/self.peak_equity)
 
     def apply_cash_flow(self, amount: float, *, equity_after: float) -> float:
         if not isfinite(amount):
@@ -210,7 +254,7 @@ class AccountRiskStateEngine:
         PositionOrigin.UNKNOWN.value,
     }
 
-    def __init__(self,*,max_open_risk:float=.08,daily_limit:float=.10,total_limit:float=.20):
+    def __init__(self,*,max_open_risk:float=.08,daily_limit:float=.35,total_limit:float=.35):
         self.max_open_risk=max_open_risk
         self.pending: dict[str,PendingOrderRiskInput]={}
         self.reservations=RiskReservationBook()
@@ -298,7 +342,7 @@ class AccountRiskStateEngine:
             total_committed_risk_fraction=committed,
             remaining_capacity_fraction=max(0.0,self.max_open_risk-committed),
             daily_drawdown_fraction=daily.max_drawdown_fraction,
-            total_drawdown_fraction=self.total.max_drawdown_fraction,
+            total_drawdown_fraction=self.total.current_drawdown_fraction,
             daily_halted=daily.halted,
             unbounded_exposure_ids=tuple(sorted(set(unbounded))),
         )
@@ -376,6 +420,9 @@ class AccountRiskCoordinator:
         health_ok:bool,
         reconciled:bool,
         account_currency:str|None=None,
+        entry_kind:str="NORMAL",
+        drawdown_authority=None,
+        broker_session:BrokerSessionEvidence|None=None,
     )->RiskAuthorizationResult:
         self.state_engine.observe_equity(day_key,positions.equity)
         risk_capital=None
@@ -386,12 +433,27 @@ class AccountRiskCoordinator:
         # Persistent equity high-water mark prevents raising the risk percentage
         # just because capital temporarily drops after a loss or reserve sweep.
         high_water=max(state.risk_capital,self.state_engine.total.peak_equity)
-        decision=self.governor.evaluate_state(
-            state,requested_fraction=requested_fraction,uncertainty=uncertainty,
-            expected_rr=expected_rr,health_ok=health_ok,reconciled=reconciled,
-            account_currency=account_currency,
-            risk_reference_capital=high_water,
-        )
+        from katarina.engines.risk import RiskAction, RiskDecision
+        # No authenticated per-position realized+floating source exists in
+        # the current KAT1 protocol. Do NOT authorize the Owner DD35
+        # exception from an arbitrary "verified" boolean or JSON receipt.
+        if entry_kind=="EXTREME_RECOVERY":
+            decision=RiskDecision(RiskAction.PAUSE,0.0,
+                                  "broker_origin_pnl_adapter_not_authenticated")
+        elif entry_kind=="RECOVERY_FACTOR" and (
+                not isinstance(broker_session,BrokerSessionEvidence)
+                or broker_session.day_key!=day_key):
+            decision=RiskDecision(RiskAction.PAUSE,0.0,
+                                  "broker_trading_day_unverified")
+        else:
+            decision=self.governor.evaluate_state(
+                state,requested_fraction=requested_fraction,uncertainty=uncertainty,
+                expected_rr=expected_rr,health_ok=health_ok,reconciled=reconciled,
+                account_currency=account_currency,
+                risk_reference_capital=high_water,entry_kind=entry_kind,
+                trading_day_key=day_key,
+                drawdown_authority=drawdown_authority,
+            )
         reserved=False
         if decision.action.value in {"APPROVE","REDUCE"} and decision.approved_fraction>0:
             reserved=self.state_engine.reservations.reserve(reservation_id,decision.approved_fraction)

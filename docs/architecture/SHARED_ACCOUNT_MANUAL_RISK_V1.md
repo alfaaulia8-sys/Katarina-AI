@@ -64,8 +64,9 @@ KATARINA still does not acquire mutation authority over a manual/foreign positio
 All environments use the same profile:
 - max 5% per new entry;
 - max 8% aggregate open risk;
-- max 10% daily drawdown;
-- max 20% total drawdown.
+- 10%-23% caution, 23%-35% only independently qualified recovery;
+- at 35%, shutdown for Katarina-caused or unknown-cause loss;
+- Owner-caused 35% uses independently reconciled Extreme Survival gates.
 
 Example:
 - manual position risk = 3%;
@@ -73,3 +74,50 @@ Example:
 - aggregate = 8%, allowed.
 
 If manual risk = 6%, KATARINA's requested 5% is reduced to 2%.
+
+## Owner authority clarification — 14 October 2026
+
+Manual positions are observed as account-wide risk; they are not modified by Katarina. Owner manual realized and floating losses must be independently reconciled to attribute the actual crossing of the DD 35% threshold. The Owner-caused exception does not increase per-entry/aggregate open risk limits, and no extreme entry is allowed when exposure is unbounded, reconciliation is missing, or the account has insufficient margin/equity headroom.
+
+## Broker P/L reconciliation groundwork — 14 October 2026
+
+`BrokerPnLReconciler` in the existing `manual_risk.py` checks realized+floating per-position P/L against **equity change minus external cash flow**. It rejects missing fee/commission deltas, duplicate position IDs, unknown/foreign origin, and nonfinite values. Owner/Katarina losses remain separate and include still-open floating losses. It is **arithmetic validation**, not independent authentication; broker deal history and floating snapshots are not yet connected to it.
+
+Current KAT1 account state carries aggregate profit, while position state does **not** carry per-position realized+floating P/L. Therefore the reconciler cannot legitimately prove Owner causation using KAT1 alone. In the account-wide `AccountRiskCoordinator`, requests tagged `EXTREME_RECOVERY` remain PAUSE / `broker_origin_pnl_adapter_not_authenticated`. That is intentional until a trustworthy broker P/L provenance path and end-to-end reconciliation have been tested. A directly constructed DrawdownAuthority is not broker evidence.
+
+
+## Offline MT5 native read-only P/L adapter (14 October 2026)
+
+The existing Katarina adapter package contains `mt5_account_pnl.py`. It reads only
+`account_info`, `positions_get`, and `history_deals_get` from an already initialized
+MT5 client and never logs in or transmits an order. For a pair of same-account
+snapshots it:
+
+- Tracks per-position floating profit and swap, recognized deal realized profit,
+  commission, fee and swap, closing trades, and explicit broker balance cash flows.
+- Uses broker-supplied reason codes and Katarina magic to separate Owner,
+  Katarina, and foreign/unknown positions; origin changes fail closed.
+- Reconciles the resulting broker account-equity change using the existing
+  `BrokerPnLReconciler`; duplicates, missing broker fields, stale account identity
+  and unsupported ledger operations are rejected.
+- Outputs `broker_history_complete_verified=False`,
+  `server_trading_day_authenticated=False`, and
+  `live_execution_authorized=False`. Python MT5 reads do NOT attest broker
+  completeness, trading date, network authenticity, or transaction atomicity.
+
+The adapter supports deterministic mocked testing without launching MT5. It is
+not wired to `AccountRiskCoordinator`'s Owner Extreme Recovery permission:
+**attribution must remain blocked** pending verified complete broker provenance
+and safe read-only forward validation. Do not log into, change, or trade an
+Owner account solely to test this adapter.
+
+## Position-origin provenance hardening
+
+For each MT5 broker deal, DEAL_ENTRY distinguishes opening deals from exit deals. The reason on a manual closure or broker-triggered SL/TP is NOT evidence that the Owner originally opened the position. The read-only adapter now derives ownership from the opening deal (DEAL_ENTRY_IN), or from a consistently marked open-position snapshot. Closing-only deals for a position absent from both snapshots remain UNKNOWN, and balanced attribution is denied. Netting reversals (DEAL_ENTRY_INOUT) and missing entry values fail closed until volume-weighted origin lineage is implemented. This rule applies even when account P/L arithmetic balances. MT5 reference: https://www.mql5.com/en/docs/constants/tradingconstants/dealproperties
+
+## Read-only snapshot and replay acceptance — 14 October 2026
+
+- Every MT5 capture rereads account identity **after** `positions_get()`, rejecting an account switch during the snapshot. The historical-deal reconciliation also rechecks identity after the history fetch.
+- `Mt5PnLReplayChain` accepts only contiguous before/after marks, on the same account, where the equity-minus-cash-flow reconciliation balances and no foreign/unknown origin contaminates attribution. An unbalanced, duplicated, mismatched or gapped window never advances the replay cursor.
+- The observation's historical-completeness, session-authentication and live-execution booleans are **constructor-locked to false**. External callers cannot assert them through normal initialization. No API here can enable live trading.
+- Existing private VPS artifacts are market-price/research snapshots, NOT the full native broker deal + mark ledger needed to verify real Owner-causation. MT5 terminals remain off; no broker session was started. Broker-native history completeness and server session authentication remain blocked pending an authorized read-only data source.

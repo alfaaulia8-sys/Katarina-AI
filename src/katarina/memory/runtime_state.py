@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
 from typing import Any
 
 from katarina.memory.store import MemoryStore
@@ -50,6 +51,44 @@ class RuntimeStatePersistence:
     def restore_components(self,*,account_risk,rr_tracker,execution_recovery,broker_risk,capital=None)->bool:
         snap=self.load_latest()
         if snap is None:return False
+        # Reject incompatible 30% reserve / old DD limits BEFORE mutating
+        # any live runtime component. A signed migration must be reviewed
+        # separately; never silently unlock protected balance on restart.
+        if capital is not None and snap.capital:
+            old_reserve=float(snap.capital["reserve_fraction"])
+            old_growth=float(snap.capital["growth_multiple"])
+            if (abs(old_reserve-capital.reserve_fraction)>1e-12
+                    or abs(old_growth-capital.growth_multiple)>1e-12):
+                raise ValueError("legacy_capital_snapshot_requires_approved_migration")
+        if snap.account_risk:
+            risk_limits=snap.account_risk
+            if abs(float(risk_limits.get("max_open_risk",0))-account_risk.max_open_risk)>1e-12:
+                raise ValueError("incompatible_open_risk_snapshot")
+            for label,tracker in (("daily",account_risk.daily),
+                                  ("total",account_risk.total)):
+                section=risk_limits.get(label,{})
+                if abs(float(section.get("limit",-1))-tracker.limit)>1e-12:
+                    raise ValueError("legacy_drawdown_snapshot_requires_review")
+        if any(not isinstance(item,dict) or item.get("origin")!="KATARINA"
+               for item in snap.execution_recovery.values()):
+            raise ValueError("untrusted_legacy_recovery_state")
+        # Dry-run the entire restore into detached objects first. A malformed
+        # broker-risk or capital record must not partially reset live account
+        # reservations, RR peaks, or recovery commands.
+        try:
+            trial_account=deepcopy(account_risk)
+            trial_rr=deepcopy(rr_tracker)
+            trial_recovery=deepcopy(execution_recovery)
+            trial_broker=deepcopy(broker_risk)
+            trial_capital=deepcopy(capital) if capital is not None else None
+            trial_account.restore_state(snap.account_risk)
+            trial_rr.restore(snap.rr_peak)
+            trial_recovery.restore_state(snap.execution_recovery)
+            trial_broker.restore_state(snap.broker_risk)
+            if trial_capital is not None and snap.capital:
+                trial_capital.restore_state(snap.capital)
+        except (KeyError,TypeError,ValueError,AttributeError,OverflowError) as exc:
+            raise ValueError("runtime_restore_preflight_failed") from exc
         account_risk.restore_state(snap.account_risk)
         rr_tracker.restore(snap.rr_peak)
         execution_recovery.restore_state(snap.execution_recovery)

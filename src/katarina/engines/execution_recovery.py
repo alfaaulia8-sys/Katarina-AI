@@ -23,6 +23,7 @@ class _State:
     side: str
     target_remaining_volume: float
     desired_stop: float|None
+    origin: str="KATARINA"
     reduce_inflight: bool=False
     modify_inflight: bool=False
     last_volume: float|None=None
@@ -44,7 +45,10 @@ class ManagementRecoveryCoordinator:
     def _floor(value:float,step:float)->float:
         return round(max(0.0,floor((value+1e-12)/step)*step),8)
 
-    def apply_plan(self,plan:RRManagementPlan,*,side:str,current_stop:float)->None:
+    def apply_plan(self,plan:RRManagementPlan,*,side:str,current_stop:float,
+                   position_origin:str)->None:
+        if position_origin!="KATARINA":
+            raise PermissionError("owner_manual_position_not_manageable")
         s=self._states.get(plan.position_id)
         if s is None:
             s=_State(side,plan.target_remaining_volume,None)
@@ -61,6 +65,8 @@ class ManagementRecoveryCoordinator:
     def reconcile(self,position_id:str,*,current_volume:float,current_stop:float,volume_step:float)->tuple[RecoveryCommand,...]:
         s=self._states.get(position_id)
         if s is None:return ()
+        if s.origin!="KATARINA":
+            raise PermissionError("foreign_position_recovery_state")
         out=[]
         if s.reduce_inflight and s.last_volume is not None and current_volume < s.last_volume-1e-12:
             s.reduce_inflight=False
@@ -104,4 +110,7 @@ class ManagementRecoveryCoordinator:
         return {k:asdict(v) for k,v in self._states.items()}
 
     def restore_state(self,state:Mapping[str,Any])->None:
+        if any(not isinstance(v,Mapping) or v.get("origin")!="KATARINA"
+               for v in state.values()):
+            raise ValueError("unverified_or_foreign_recovery_state")
         self._states={str(k):_State(**v) for k,v in state.items()}

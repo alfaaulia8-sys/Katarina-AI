@@ -331,3 +331,95 @@ class Kat1SharedAccountRiskRuntime:
     @property
     def equity_native(self) -> float | None:
         return self._equity_native
+
+
+@dataclass(frozen=True, slots=True)
+class PositionPnLChange:
+    """Broker-ledger realized and broker-marked floating changes, account units."""
+    position_id: str
+    origin: str
+    realized_delta: float
+    floating_delta: float
+
+
+@dataclass(frozen=True, slots=True)
+class BrokerLossAttribution:
+    """Arithmetic reconciliation ONLY; not authenticated live broker authority."""
+    balanced: bool
+    owner_loss_cash: float
+    katarina_loss_cash: float
+    unknown_loss_cash: float
+    unexplained_cash: float
+    reason: str
+
+
+class BrokerPnLReconciler:
+    """Conservatively attribute account-wide realized+floating P/L movement.
+
+    Position changes must be derived from *complete* broker deal history and
+    marked snapshots, including closed trades, commission, swap and fees.
+    This function cannot authenticate a broker or certify event completeness.
+    Those are mandatory separate runtime integration gates.
+    """
+
+    OWNER_ORIGINS=frozenset({
+        "MANUAL_DESKTOP","MANUAL_MOBILE","MANUAL_WEB",
+    })
+
+    @classmethod
+    def reconcile(
+        cls, *, previous_equity: float, current_equity: float,
+        external_cash_flow: float, changes: Iterable[PositionPnLChange],
+        smallest_currency_unit: float = 0.01,
+    ) -> BrokerLossAttribution:
+        vals=(previous_equity,current_equity,external_cash_flow,smallest_currency_unit)
+        if (any(not isfinite(v) for v in vals)
+                or previous_equity<=0 or current_equity<=0
+                or not 0<smallest_currency_unit<=1):
+            raise ValueError("invalid_broker_account_snapshot")
+        rows=tuple(changes)
+        seen=set()
+        owner=katarina=unknown=0.0
+        unknown_origin_present=False
+        signed_total=0.0
+        for row in rows:
+            if not isinstance(row,PositionPnLChange) or not row.position_id:
+                raise ValueError("invalid_broker_position_delta")
+            if row.position_id in seen:
+                raise ValueError("duplicate_broker_position_delta")
+            seen.add(row.position_id)
+            if any(not isfinite(v) for v in (row.realized_delta,row.floating_delta)):
+                raise ValueError("nonfinite_broker_position_delta")
+            contribution=row.realized_delta+row.floating_delta
+            signed_total+=contribution
+            origin=SharedAccountRiskEngine._norm_origin(row.origin)
+            if origin in cls.OWNER_ORIGINS:
+                owner+=contribution
+            elif origin=="KATARINA":
+                katarina+=contribution
+            else:
+                # Includes foreign-EA, UNKNOWN and broker operations: their
+                # activity must never be reclassified as Owner-caused.
+                unknown+=contribution
+                unknown_origin_present=True
+        actual=current_equity-previous_equity-external_cash_flow
+        diff=actual-signed_total
+        balanced=abs(diff)<=smallest_currency_unit/2+1e-9
+        # Unknown-origin activity may offset a loss or falsely explain DD.
+        # Require no unmatched source P/L before claiming Owner causation.
+        if not balanced:
+            reason="account_equity_profit_reconciliation_failed"
+        elif unknown_origin_present:
+            reason="unknown_or_foreign_origin_not_attributable"
+        elif not rows:
+            reason="empty_position_history"
+        else:
+            reason="arithmetic_balanced_not_broker_authenticated"
+        return BrokerLossAttribution(
+            balanced=balanced and reason=="arithmetic_balanced_not_broker_authenticated",
+            owner_loss_cash=max(0.0,-owner),
+            katarina_loss_cash=max(0.0,-katarina),
+            unknown_loss_cash=max(0.0,-unknown),
+            unexplained_cash=diff,
+            reason=reason,
+        )

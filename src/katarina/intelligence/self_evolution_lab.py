@@ -11,6 +11,7 @@ NOT broker executions and can NEVER authorize risk.
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 from math import isfinite, sqrt
@@ -245,3 +246,108 @@ def evaluate_shadow_self_evolution(
         "reviewers":report["reviewers"], "version":VERSION,
     })
     return report
+
+
+@dataclass(frozen=True, slots=True)
+class ShadowResearchPolicy:
+    """Evolving observation filter for ONE existing virtual-shadow book.
+
+    It may narrow which hypotheses are sampled in research. It cannot
+    change live risk, trade orders, production weights, or source code.
+    """
+    source_digest_sha256: str
+    review_receipt_sha256: str
+    as_of_utc: str
+    integrity_ok: bool
+    rules: tuple[tuple[str,str,str,str,float,str], ...]
+    default_min_score: float = 0.62
+    live_execution_authorized: bool = False
+
+    def score_floor(self, symbol: str, method: str,
+                    side: str, regime: str) -> float:
+        if not self.integrity_ok:
+            return 1.01  # no research entries from corrupt evidence
+        for sym, meth, direction, state, floor, _ in self.rules:
+            if (sym,meth,direction,state)==(symbol,method,side,regime):
+                return floor
+        return self.default_min_score
+
+    def to_dict(self) -> dict:
+        return {
+            "mode":"CAUSAL_SHADOW_FEEDBACK_RESEARCH_ONLY",
+            "as_of_utc":self.as_of_utc,
+            "source_digest_sha256":self.source_digest_sha256,
+            "review_receipt_sha256":self.review_receipt_sha256,
+            "integrity_ok":self.integrity_ok,
+            "default_min_score":self.default_min_score,
+            "cohorts":[{
+                "symbol":sym,"method":method,"side":side,"regime":regime,
+                "observational_score_floor":score,"reason":reason,
+            } for sym,method,side,regime,score,reason in self.rules],
+            "may_change_real_orders":False,
+            "may_change_production_model":False,
+            "may_authorize_live":False,
+        }
+
+
+def derive_shadow_research_policy(report: dict) -> ShadowResearchPolicy:
+    """Close feedback loop on mature quote-only observations, conservatively.
+
+    Every side / strategy / regime learns separately. Poor prospective quote
+    outcomes quarantine sampling to a high threshold; favorable held-out
+    quotes MAY narrow the virtual sampling threshold. Unknown cohorts keep the
+    old baseline. No outcome can lower a floor or promote a real strategy.
+    """
+    if not isinstance(report, dict):
+        raise ValueError("invalid_shadow_learning_report")
+    valid = report.get("data_integrity") == "VALID"
+    cohorts = report.get("cohorts")
+    if not isinstance(cohorts,list):
+        valid=False
+        cohorts=[]
+    proposals=[]
+    if valid:
+        for row in cohorts:
+            if not isinstance(row,dict):
+                valid=False
+                break
+            key=tuple(row.get(x) for x in ("symbol","method","side","regime"))
+            if (any(not isinstance(x,str) or not x for x in key)
+                    or key[2] not in ("BUY","SELL")):
+                valid=False
+                break
+            status=row.get("status")
+            floor=.62
+            reason="AWAIT_MATURE_PROSPECTIVE_OUTCOMES"
+            if status == "RESEARCH_CANDIDATE_REVIEW_REQUIRED":
+                proposed=row.get("proposed_min_evidence_score")
+                if type(proposed) not in (int,float) or not isfinite(proposed):
+                    valid=False
+                    break
+                floor=max(.62,min(.95,float(proposed)))
+                reason="HELD_OUT_VIRTUAL_SCORE_THRESHOLD_REVIEW_ONLY"
+            elif status == "UNSTABLE_OR_NEGATIVE_QUOTE_EDGE":
+                # Reduces exploration of apparently poor research cohorts;
+                # never forces the opposite BUY/SELL decision.
+                floor=.78
+                reason="NEGATIVE_VIRTUAL_OUTCOMES_CONSERVATIVE_QUARANTINE"
+            elif status in ("HOLDOUT_INSUFFICIENT","INSUFFICIENT_EVIDENCE"):
+                pass
+            else:
+                valid=False
+                break
+            proposals.append((*key,floor,reason))
+    if not valid:
+        proposals=[]
+    asof=report.get("as_of_utc","")
+    source=report.get("source_digest_sha256","")
+    receipt=report.get("review_receipt_sha256","")
+    if not (isinstance(asof,str) and isinstance(source,str)
+            and isinstance(receipt,str) and len(source)==64
+            and len(receipt)==64):
+        valid=False
+        proposals=[]
+    return ShadowResearchPolicy(source if isinstance(source,str) else "",
+                                receipt if isinstance(receipt,str) else "",
+                                asof if isinstance(asof,str) else "",
+                                valid,tuple(sorted(proposals)))

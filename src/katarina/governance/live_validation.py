@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from math import isfinite
 
 @dataclass(frozen=True, slots=True)
 class LiveValidationEvidence:
@@ -36,12 +37,22 @@ class LiveMicroRiskValidator:
             e.stress_pass,
             e.monitoring_ready,
         )
-        if not all(gates):
+        # A dataclass type annotation is not a runtime trust boundary:
+        # the text "False", integers and other truthy placeholders must NOT
+        # be accepted as signed approval / verified broker evidence.
+        if any(type(flag) is not bool for flag in gates) or not all(gates):
             return LiveValidationDecision(False,0.0,"validation_gate_incomplete")
-        if e.requested_risk_fraction<=0:
+        requested=e.requested_risk_fraction
+        if (type(requested) not in (float,int)):
+            return LiveValidationDecision(False,0.0,"invalid_risk")
+        try:
+            finite=isfinite(requested)
+        except (OverflowError,ValueError,TypeError):
+            finite=False
+        if not finite or requested<=0:
             return LiveValidationDecision(False,0.0,"invalid_risk")
         return LiveValidationDecision(
             True,
-            min(e.requested_risk_fraction,self.HARD_RISK_CAP),
+            min(float(requested),self.HARD_RISK_CAP),
             "unified_risk_profile",
         )
