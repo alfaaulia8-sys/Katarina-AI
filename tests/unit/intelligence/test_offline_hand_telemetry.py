@@ -89,7 +89,7 @@ class OfflineHandsTests(unittest.TestCase):
         one = receipt("a-hand")
         with self.assertRaisesRegex(ValueError, "hand_report_integrity_mismatch"):
             consolidate_hand_reports(
-                [replace(one, entry=3000.)], inspected_at_utc=CLOCK)
+                [replace(one, entry=2001.)], inspected_at_utc=CLOCK)
 
     def test_no_source_authentication_is_claimed(self):
         x = consolidate_hand_reports([], inspected_at_utc=CLOCK)
