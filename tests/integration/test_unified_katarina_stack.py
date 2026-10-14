@@ -8,7 +8,9 @@ import sqlite3
 import tempfile
 import unittest
 
-from scripts.ai.verify_unified_katarina import verify
+from scripts.ai.verify_unified_katarina import (
+    verify,build_stage3_evidence_backlog,
+)
 from katarina.intelligence.prospective_shadow_book import ProspectiveShadowBook
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -30,6 +32,13 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
                          "VERIFIED_NO_NEW_ENTRY")
         self.assertTrue(result["learning_policy_valid"])
         self.assertEqual(result["shadow_observations"],0)
+        self.assertEqual(
+            result["stage3_evidence_backlog"]["cohorts"],[])
+        self.assertEqual(
+            result["stage3_evidence_backlog"]["mode"],
+            "READ_ONLY_EVIDENCE_COLLECTION_BACKLOG")
+        self.assertFalse(
+            result["stage3_evidence_backlog"]["may_authorize_live"])
         self.assertEqual(result["mode"],"TESTER_NO_ORDERS")
         self.assertFalse(result["live_execution_authorized"])
         self.assertEqual(result["orders_submitted"],0)
@@ -115,6 +124,58 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
         changed["canonical"]["brain"]="src/../../secrets.py"
         with self.assertRaisesRegex(ValueError,"invalid_canonical"):
             verify(changed,root=ROOT)
+
+    def test_stage3_backlog_preserves_buy_sell_and_gaps_without_promotion(self):
+        def cohort(side,status,*,gapped=0,pending=0,completed=3):
+            return dict(
+                symbol="XAUUSD",method="SWEEP",side=side,regime="TREND_UP",
+                status=status,recorded=completed+gapped+pending,
+                completed=completed,gapped=gapped,pending=pending,
+                coverage=(completed/(completed+gapped)
+                          if completed+gapped else None),
+            )
+        buy=cohort("BUY","INSUFFICIENT_EVIDENCE",gapped=2,pending=1)
+        sell=cohort("SELL","UNSTABLE_OR_NEGATIVE_QUOTE_EDGE")
+        source=dict(
+            data_integrity="VALID",rows_read=buy["recorded"]+sell["recorded"],
+            cohorts=[sell,buy],
+        )
+        plan=build_stage3_evidence_backlog(source)
+        self.assertEqual(plan["mode"],"READ_ONLY_EVIDENCE_COLLECTION_BACKLOG")
+        self.assertEqual([x["side"] for x in plan["cohorts"]],["BUY","SELL"])
+        self.assertEqual(plan,build_stage3_evidence_backlog(
+            {**source,"cohorts":[buy,sell]}))
+        buy_plan,sell_plan=plan["cohorts"]
+        self.assertEqual(buy_plan["unobserved_quote_gaps"],2)
+        self.assertEqual(buy_plan["pending_virtual_outcomes"],1)
+        self.assertIn("RECOVER_MISSING_CAUSAL_QUOTE_PATHS_WITHOUT_IMPUTATION",
+                      buy_plan["next_research_tasks"])
+        self.assertIn("WAIT_FOR_OPEN_VIRTUAL_OBSERVATIONS_TO_CLOSE",
+                      buy_plan["next_research_tasks"])
+        self.assertIn("PRECOMMIT_DISCONFIRMING_ALTERNATIVE_OR_WAIT",
+                      sell_plan["next_research_tasks"])
+        self.assertFalse(plan["may_promote_strategy"])
+        self.assertFalse(plan["may_authorize_live"])
+        self.assertEqual(plan["orders_submitted"],0)
+        self.assertTrue(plan["no_automatic_data_collection"])
+
+    def test_stage3_backlog_rejects_corrupt_evidence_and_unknown_status(self):
+        with self.assertRaisesRegex(ValueError,"stage3_evidence_source_not_verified"):
+            build_stage3_evidence_backlog({
+                "data_integrity":"INVALID","cohorts":[],"rows_read":0})
+        with self.assertRaisesRegex(ValueError,"stage3_evidence_cohorts_invalid"):
+            build_stage3_evidence_backlog({
+                "data_integrity":"VALID","cohorts":None,"rows_read":0})
+        with self.assertRaisesRegex(ValueError,"stage3_evidence_status_unknown"):
+            build_stage3_evidence_backlog({
+                "data_integrity":"VALID","rows_read":1,
+                "cohorts":[{
+                    "symbol":"XAUUSD","method":"SWEEP","side":"BUY",
+                    "regime":"TREND_UP","status":"LIVE_READY",
+                    "recorded":1,"completed":1,"gapped":0,
+                    "pending":0,"coverage":1.0,
+                }],
+            })
 
     def test_existing_shadow_sqlite_is_read_only(self):
         with tempfile.TemporaryDirectory() as directory:
