@@ -1,6 +1,7 @@
 """Integration contract: a single pinned Katarina V1 engineering tree."""
 from copy import deepcopy
 import json
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -60,7 +61,7 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
     def test_existing_shadow_sqlite_is_read_only(self):
         with tempfile.TemporaryDirectory() as directory:
             target=Path(directory)/"prospective.sqlite3"
-            with sqlite3.connect(target) as db:
+            with closing(sqlite3.connect(target)) as db:
                 ProspectiveShadowBook(db)
             before=target.read_bytes()
             result=verify(self.profile,root=ROOT,shadow_db=target)
