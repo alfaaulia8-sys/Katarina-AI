@@ -175,10 +175,13 @@
       "requirement": "One cloud brain many hands local survival and authenticated transport",
       "status": "NOT_INTEGRATED",
       "evidence_paths": [
-        "docs/architecture/KATARINA_OWNER_DESIGN_BASELINE_20261014.md"
+        "docs/architecture/KATARINA_OWNER_DESIGN_BASELINE_20261014.md",
+        "src/katarina/intelligence/offline_hand_telemetry.py"
       ],
-      "test_paths": [],
-      "remaining": "Cloud and multi-hand production service, security and offline integration not accepted."
+      "test_paths": [
+        "tests/unit/intelligence/test_offline_hand_telemetry.py"
+      ],
+      "remaining": "Cloud and multi-hand production service, security and offline integration not accepted. Offline untrusted telemetry aggregation now exists; this is not authenticated Cloud Hands or an Owner control service."
     },
     {
       "id": "A14",
@@ -198,10 +201,13 @@
       "requirement": "Strong Owner authentication dashboard emergency and audit controls",
       "status": "NOT_INTEGRATED",
       "evidence_paths": [
-        "docs/architecture/KATARINA_OWNER_DESIGN_BASELINE_20261014.md"
+        "docs/architecture/KATARINA_OWNER_DESIGN_BASELINE_20261014.md",
+        "src/katarina/intelligence/offline_hand_telemetry.py"
       ],
-      "test_paths": [],
-      "remaining": "No verified full Owner authentication and web/chat control integration."
+      "test_paths": [
+        "tests/unit/intelligence/test_offline_hand_telemetry.py"
+      ],
+      "remaining": "No verified full Owner authentication and web/chat control integration. Offline untrusted telemetry aggregation now exists; this is not authenticated Cloud Hands or an Owner control service."
     },
     {
       "id": "A16",
