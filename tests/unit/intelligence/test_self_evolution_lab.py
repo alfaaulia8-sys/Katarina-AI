@@ -46,21 +46,37 @@ def sample(db, days=30, high=2.0, low=-1.0, pending=0):
 
 
 class SelfEvolutionLabTests(unittest.TestCase):
+    def setUp(self):
+        # sqlite3 context managers commit/rollback but DO NOT close connections.
+        # Track every in-memory DB so resource-bound test runs do not leak handles.
+        self._owned_dbs = []
+
+    def tearDown(self):
+        for db in reversed(self._owned_dbs):
+            db.close()
+
+    def _own(self, db):
+        self._owned_dbs.append(db)
+        return db
+
+    def _mkdb(self):
+        return self._own(mkdb())
+
     def test_no_table_no_signal(self):
-        x=evaluate_shadow_self_evolution(sqlite3.connect(":memory:"),as_of_utc=AT)
+        x=evaluate_shadow_self_evolution(self._own(sqlite3.connect(":memory:")),as_of_utc=AT)
         self.assertEqual(x["data_integrity"],"INVALID")
         self.assertEqual(x["decision"],"WAIT_FOR_VERIFIED_EVIDENCE")
         self.assertFalse(x["promotion_allowed"])
 
     def test_negative_series_no_promotion(self):
-        db=mkdb()
+        db=self._mkdb()
         sample(db,high=-.3,low=-.9)
         r=evaluate_shadow_self_evolution(db,as_of_utc=AT)
         self.assertEqual(r["cohorts"][0]["status"],"UNSTABLE_OR_NEGATIVE_QUOTE_EDGE")
         self.assertEqual(r["decision"],"WAIT_FOR_VERIFIED_EVIDENCE")
 
     def test_witnesses_real_train_holdout_learning_not_llm(self):
-        db=mkdb();sample(db)
+        db=self._mkdb();sample(db)
         r=evaluate_shadow_self_evolution(db,as_of_utc=AT)
         self.assertEqual(r["data_integrity"],"VALID")
         self.assertEqual(r["cohorts"][0]["proposed_min_evidence_score"],.70)
@@ -78,7 +94,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
         self.assertEqual(r["version"],VERSION)
 
     def test_determinism_and_freshness_fingerprint(self):
-        db=mkdb();sample(db)
+        db=self._mkdb();sample(db)
         a=evaluate_shadow_self_evolution(db,as_of_utc=AT)
         b=evaluate_shadow_self_evolution(db,as_of_utc=AT)
         self.assertEqual(a,b)
@@ -91,7 +107,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
         self.assertNotEqual(a["review_receipt_sha256"],c["review_receipt_sha256"])
 
     def test_time_leak_blocks(self):
-        db=mkdb();sample(db)
+        db=self._mkdb();sample(db)
         db.execute("UPDATE prospective_shadow SET exit_at=? WHERE id=1",
                    ((AT+timedelta(hours=1)).timestamp(),))
         x=evaluate_shadow_self_evolution(db,as_of_utc=AT)
@@ -99,7 +115,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
         self.assertFalse(x["promotion_allowed"])
 
     def test_gap_coverage_blocks_cherrypicking(self):
-        db=mkdb();sample(db)
+        db=self._mkdb();sample(db)
         # Mark 70% quote paths as uncertain without claiming loss or victory
         db.execute("""UPDATE prospective_shadow SET state='UNCERTAIN_GAP',
                    virtual_net_r=NULL WHERE id % 4 != 0""")
@@ -108,13 +124,13 @@ class SelfEvolutionLabTests(unittest.TestCase):
         self.assertLess(x["cohorts"][0]["coverage"],.8)
 
     def test_unknown_or_corrupt_record_fails_closed(self):
-        db=mkdb();sample(db)
+        db=self._mkdb();sample(db)
         db.execute("UPDATE prospective_shadow SET evidence_score=2.0 WHERE id=1")
         self.assertEqual(evaluate_shadow_self_evolution(
             db,as_of_utc=AT)["data_integrity"],"INVALID")
 
     def test_pending_never_treated_as_loss_or_win(self):
-        db=mkdb();sample(db,days=5,pending=2)
+        db=self._mkdb();sample(db,days=5,pending=2)
         x=evaluate_shadow_self_evolution(db,as_of_utc=AT)
         self.assertEqual(x["cohorts"][0]["pending"],2)
         self.assertEqual(x["cohorts"][0]["status"],"INSUFFICIENT_EVIDENCE")
@@ -131,7 +147,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
         )
 
     def test_positive_shadow_learning_changes_next_virtual_sample(self):
-        past=mkdb()
+        past=self._mkdb()
         sample(past,days=30,high=2.,low=-1.)
         report=evaluate_shadow_self_evolution(past,as_of_utc=AT)
         learned=derive_shadow_research_policy(report)
@@ -142,7 +158,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
                                              "TREND_DOWN"),.62)
         self.assertFalse(learned.live_execution_authorized)
         self.assertEqual(learned.to_dict()["may_change_production_model"],False)
-        research_db=sqlite3.connect(":memory:")
+        research_db=self._own(sqlite3.connect(":memory:"))
         book=ProspectiveShadowBook(research_db)
         rejected=book.propose([self._candidate(.64)],AT,research_policy=learned)
         self.assertFalse(rejected["accepted"])
@@ -153,7 +169,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
         self.assertEqual(accepted["mode"],"NO_REAL_ORDERS")
 
     def test_negative_cohort_is_quarantined_but_buy_learns_separately(self):
-        past=mkdb()
+        past=self._mkdb()
         sample(past,high=-.3,low=-.9)
         policy=derive_shadow_research_policy(
             evaluate_shadow_self_evolution(past,as_of_utc=AT))
@@ -161,7 +177,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
                                              "TREND_DOWN"),.78)
         self.assertEqual(policy.score_floor("XAUUSD.vx","SWEEP","BUY",
                                              "TREND_DOWN"),.62)
-        db=sqlite3.connect(":memory:")
+        db=self._own(sqlite3.connect(":memory:"))
         book=ProspectiveShadowBook(db)
         self.assertFalse(book.propose(
             [self._candidate(.7)],AT,research_policy=policy)["accepted"])
@@ -169,24 +185,24 @@ class SelfEvolutionLabTests(unittest.TestCase):
             [self._candidate(.81)],AT,research_policy=policy)["accepted"])
 
     def test_corrupt_shadow_learning_blocks_new_virtual_hypothesis(self):
-        past=mkdb()
+        past=self._mkdb()
         sample(past)
         past.execute("UPDATE prospective_shadow SET evidence_score=2 WHERE id=1")
         report=evaluate_shadow_self_evolution(past,as_of_utc=AT)
         policy=derive_shadow_research_policy(report)
         self.assertFalse(policy.integrity_ok)
-        db=sqlite3.connect(":memory:")
+        db=self._own(sqlite3.connect(":memory:"))
         book=ProspectiveShadowBook(db)
         result=book.propose([self._candidate(.85)],AT,research_policy=policy)
         self.assertEqual(result["reason"],"SHADOW_LEARNING_INVALID_FAIL_CLOSED")
         self.assertEqual(book.summary()["counts"],{})
 
     def test_policy_from_future_is_never_applied(self):
-        past=mkdb()
+        past=self._mkdb()
         sample(past)
         report=evaluate_shadow_self_evolution(past,as_of_utc=AT)
         policy=derive_shadow_research_policy(report)
-        db=sqlite3.connect(":memory:")
+        db=self._own(sqlite3.connect(":memory:"))
         book=ProspectiveShadowBook(db)
         with self.assertRaisesRegex(ValueError,"invalid_or_future_shadow_learning"):
             book.propose([self._candidate(.85,now=AT-timedelta(days=1))],
@@ -195,7 +211,7 @@ class SelfEvolutionLabTests(unittest.TestCase):
 
     def test_asof_must_be_aware(self):
         with self.assertRaises(ValueError):
-            evaluate_shadow_self_evolution(mkdb(),as_of_utc=datetime(2026,10,13))
+            evaluate_shadow_self_evolution(self._mkdb(),as_of_utc=datetime(2026,10,13))
 
 if __name__=="__main__":
     unittest.main()
