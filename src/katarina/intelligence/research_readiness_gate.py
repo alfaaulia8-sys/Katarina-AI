@@ -29,10 +29,21 @@ class ResearchReadiness:
     live_execution_authorized:bool=False
 
 def evaluate_readiness(x:Evidence)->ResearchReadiness:
-    if not x.symbol or x.trades<0:raise ValueError("invalid_identity_or_count")
+    if (type(x.symbol) is not str or not x.symbol.strip()
+            or type(x.trades) is not int or x.trades<0):
+        raise ValueError("invalid_identity_or_count")
+    if type(x.segment_mean_r) is not tuple:
+        raise ValueError("invalid_segment_metrics")
     for v in (x.mean_r,x.profit_factor,x.cost_stress_mean_r,*x.segment_mean_r):
-        if v is not None and not isfinite(v):
-            raise ValueError("nonfinite_metrics")
+        if v is not None:
+            if type(v) not in (int,float):
+                raise ValueError("invalid_metric_type")
+            try:
+                finite=isfinite(v)
+            except OverflowError:
+                finite=False
+            if not finite:
+                raise ValueError("nonfinite_metrics")
     reasons=[]
     if x.trades<150:reasons.append("not_enough_observations")
     if x.mean_r is None or x.mean_r<=0:
@@ -50,7 +61,7 @@ def evaluate_readiness(x:Evidence)->ResearchReadiness:
         (x.full_chronological_replay,"sampling_not_full_replay"),
         (x.causal_inputs_verified,"point_in_time_causality_unverified"),
     ]
-    reasons.extend(reason for good,reason in checks if not good)
+    reasons.extend(reason for good,reason in checks if good is not True)
     return ResearchReadiness(
         "PAPER_RESEARCH_CANDIDATE" if not reasons else "UNVALIDATED",
         tuple(reasons),not reasons)
