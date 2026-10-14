@@ -81,7 +81,9 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     # reserve accounting and a real but order-free shadow learning path.
     from katarina.contracts.runtime import RuntimeMode
     from katarina.core.orchestrator import KatarinaOrchestrator,OrchestratorConfig
-    from katarina.engines.risk import RiskGovernor
+    from katarina.engines.risk import (
+        RiskGovernor, RiskRequest, RiskAction, DrawdownAuthority, DrawdownMode,
+    )
     from katarina.engines.capital import CapitalCompoundingEngine
     from katarina.intelligence.prospective_shadow_book import ProspectiveShadowBook
     from katarina.intelligence.self_evolution_lab import (
@@ -96,9 +98,48 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     capital=CapitalCompoundingEngine()
     if core.new_live_risk_allowed or capital.reserve_fraction!=.25:
         raise ValueError("unsafe_core_or_capital")
+    # The Owner's rule is ADDITIVE 25% of actual balance at EACH doubling,
+    # not merely a nominal config value. Exercise a separate offline ledger;
+    # no real broker state is read or modified.
+    capital.initialize(10_000)
+    for observed, reserve, active in (
+        (20_000, 5_000, 15_000),
+        (40_000, 15_000, 25_000),
+        (80_000, 35_000, 45_000),
+    ):
+        event=capital.observe_balance(observed)
+        snapshot=capital.snapshot()
+        if (not event.milestone_triggered
+                or abs(snapshot.reserve_balance-reserve)>1e-8
+                or abs(snapshot.active_balance-active)>1e-8):
+            raise ValueError("cumulative_profit_lock_policy_mismatch")
+        # Retries, duplicate snapshots and restarts must not lock again.
+        if (capital.observe_balance(observed).milestone_triggered
+                or abs(capital.snapshot().reserve_balance-reserve)>1e-8):
+            raise ValueError("duplicate_profit_lock_milestone")
+    restored=CapitalCompoundingEngine()
+    restored.restore_state(capital.snapshot_state())
+    if (restored.observe_balance(80_000).milestone_triggered
+            or abs(restored.snapshot().reserve_balance-35_000)>1e-8):
+        raise ValueError("profit_lock_restart_idempotence_mismatch")
     if (governor.hard_per_trade>.05 or governor.max_open_risk>.08
             or governor.max_drawdown>.35 or governor.max_daily_drawdown>.35):
         raise ValueError("owner_risk_limits_exceeded")
+    # Same-day emergency latching is a final Owner safety rule.
+    # A return below the nominal DD threshold must not reopen new entry.
+    locked=DrawdownAuthority(
+        "broker-day", DrawdownMode.EMERGENCY_LOCKDOWN, .12, False, True,
+    )
+    for kind in ("NORMAL", "RECOVERY_FACTOR", "EXTREME_RECOVERY"):
+        decision=governor.evaluate(RiskRequest(
+            .01, 0., .12, .1, 2., True, True, .12,
+            entry_kind=kind, trading_day_key="broker-day",
+            drawdown_authority=locked,
+            risk_capital=8800, risk_reference_capital=10000,
+            account_currency="USD",
+        ))
+        if decision.action is not RiskAction.PAUSE or decision.approved_fraction!=0:
+            raise ValueError("same_day_emergency_lockdown_bypass")
     if not callable(Mt5ReadOnlyPnLAdapter):
         raise ValueError("broker_read_only_adapter_missing")
     if shadow_db is None:
@@ -134,6 +175,8 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         "module_sha256":digest,
         "mode":"TESTER_NO_ORDERS",
         "management":"ON_HOLD",
+        "cumulative_profit_lock":"VERIFIED_THREE_MILESTONES_AND_RESTART",
+        "same_day_emergency_lockdown":"VERIFIED_NO_NEW_ENTRY",
         "unverified_optional_components_disabled":True,
         "shadow_source":db_source,
         "shadow_db_path":source_path,
