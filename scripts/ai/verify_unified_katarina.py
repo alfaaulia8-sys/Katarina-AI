@@ -72,6 +72,9 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     from katarina.intelligence.self_evolution_lab import (
         evaluate_shadow_self_evolution,derive_shadow_research_policy,
     )
+    from katarina.intelligence.unified_cognitive_cycle import (
+        run_unified_cognitive_cycle,
+    )
     from katarina.adapters.mt5_account_pnl import Mt5ReadOnlyPnLAdapter
     core=KatarinaOrchestrator(OrchestratorConfig(RuntimeMode.TESTER,32))
     governor=RiskGovernor.from_config(root/"config/risk_governor_v2.json")
@@ -97,8 +100,16 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     try:
         if shadow_db is None:
             ProspectiveShadowBook(db)
-        report=evaluate_shadow_self_evolution(db,as_of_utc=datetime.now(timezone.utc))
+        now=datetime.now(timezone.utc)
+        report=evaluate_shadow_self_evolution(db,as_of_utc=now)
         proposal=derive_shadow_research_policy(report)
+        cognitive=run_unified_cognitive_cycle(
+            db,as_of_utc=now,persist=False)
+        if (cognitive["orders_submitted"]!=0
+                or cognitive["real_execution_authorized"]
+                or cognitive["production_mutation_authorized"]
+                or cognitive["ledger_status"]!="READ_ONLY_PREVIEW"):
+            raise RuntimeError("unified_brain_safety_violation")
     finally:
         db.close()
     return {
@@ -116,6 +127,13 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         "learning_integrity":report["data_integrity"],
         "learning_policy_valid":proposal.integrity_ok,
         "learning_source_sha256":report["source_digest_sha256"],
+        "unified_cognitive_cycle":"COMPLETE_READONLY_PREVIEW",
+        "cognitive_matured_samples":cognitive["matured_observations"],
+        "cognitive_epistemic_gaps":len(
+            cognitive["metacognition"]["uncertainty_flags"]),
+        "cognitive_curiosity_experiments":len(
+            cognitive["curiosity_hypotheses"]),
+        "cognitive_no_real_orders":cognitive["orders_submitted"]==0,
         "real_broker_edge_proven":False,
         "human_live_approval":False,
         "live_execution_authorized":False,
