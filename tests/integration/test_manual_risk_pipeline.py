@@ -109,6 +109,29 @@ class ManualRiskPipelineTests(unittest.TestCase):
         self.assertEqual(authority.mode,DrawdownMode.EMERGENCY_LOCKDOWN)
         self.assertFalse(authority.owner_caused)
 
+    def test_katarina_same_day_lockdown_survives_account_recovery(self):
+        tracker = OwnerDrawdownTracker()
+        tracker.observe("broker-day", .20, hwm_cash=10000, reconciled=True)
+        entered = tracker.observe(
+            "broker-day", .36, hwm_cash=10000,
+            katarina_loss_cash=1600, reconciled=True,
+        )
+        self.assertEqual(entered.mode, DrawdownMode.EMERGENCY_LOCKDOWN)
+        recovery = tracker.observe(
+            "broker-day", .12, hwm_cash=10000, reconciled=True,
+        )
+        self.assertEqual(recovery.mode, DrawdownMode.EMERGENCY_LOCKDOWN)
+        account = SharedAccountRiskEngine().assess([], equity=8800)
+        decision = RiskGovernor().evaluate_account(
+            account, requested_fraction=.01,
+            drawdown_fraction=.12, daily_drawdown_fraction=.12,
+            uncertainty=.1, expected_rr=2,
+            health_ok=True, reconciled=True,
+            trading_day_key="broker-day", drawdown_authority=recovery,
+        )
+        self.assertEqual(decision.action, RiskAction.PAUSE)
+        self.assertEqual(decision.approved_fraction, 0)
+
     def test_manual_kat1_position_consumes_account_risk_capacity(self):
         account=self._runtime().assessment()
         decision=RiskGovernor(max_open_risk=.08,hard_per_trade=.05).evaluate_account(
