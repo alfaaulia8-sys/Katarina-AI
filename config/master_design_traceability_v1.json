@@ -181,7 +181,7 @@
       "test_paths": [
         "tests/unit/intelligence/test_offline_hand_telemetry.py"
       ],
-      "remaining": "Cloud and multi-hand production service, security and offline integration not accepted. Offline untrusted telemetry aggregation now exists; this is not authenticated Cloud Hands or an Owner control service."
+      "remaining": "Cloud and multi-hand production service, security and offline integration not accepted. Offline untrusted telemetry aggregation now exists; this is not authenticated Cloud Hands or an Owner control service. Per-hand causal-source reuse and forged research-state alerts are now surfaced in the offline Owner view; origin is still unauthenticated."
     },
     {
       "id": "A14",
@@ -207,7 +207,7 @@
       "test_paths": [
         "tests/unit/intelligence/test_offline_hand_telemetry.py"
       ],
-      "remaining": "No verified full Owner authentication and web/chat control integration. Offline untrusted telemetry aggregation now exists; this is not authenticated Cloud Hands or an Owner control service."
+      "remaining": "No verified full Owner authentication and web/chat control integration. Offline untrusted telemetry aggregation now exists; this is not authenticated Cloud Hands or an Owner control service. Per-hand causal-source reuse and forged research-state alerts are now surfaced in the offline Owner view; origin is still unauthenticated."
     },
     {
       "id": "A16",
