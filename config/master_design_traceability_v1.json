@@ -160,7 +160,7 @@
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
         "tests/unit/intelligence/test_research_exit_lifecycle.py"
       ],
-      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders."
+      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders. Offline exit review now rechecks adaptive entry receipt contents, causal time and semantic validity; actual broker lifecycle is still unverified."
     },
     {
       "id": "A11",
@@ -178,7 +178,7 @@
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
         "tests/unit/intelligence/test_research_exit_lifecycle.py"
       ],
-      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders."
+      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders. Offline exit review now rechecks adaptive entry receipt contents, causal time and semantic validity; actual broker lifecycle is still unverified."
     },
     {
       "id": "A12",

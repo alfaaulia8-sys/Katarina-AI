@@ -1,6 +1,8 @@
 """Broker specification boundary tests for non-executing Smart Exit reviews."""
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+import json
 import unittest
 
 from katarina.engines.adaptive_scalper import ResearchEntryPlan, ScalpSide
@@ -170,6 +172,57 @@ class OfflineSmartExitLifecycleTests(unittest.TestCase):
         self.assertNotEqual(a.receipt_sha256,review(action="FULL").receipt_sha256)
         self.assertFalse(a.owner_view()["live_execution_authorized"])
         self.assertNotIn("order_send",a.owner_view())
+
+    def test_modified_research_receipt_digest_is_not_trusted(self):
+        for modified in (
+            replace(source(), action="WAIT"),
+            replace(source(), entry=2001.),
+            replace(source(), target=2040.),
+            replace(source(), reasons=("fake",)),
+            replace(source(), source_digest="b"*64),
+        ):
+            with self.subTest(modified=modified):
+                with self.assertRaises(ValueError):
+                    review(action="FULL", source=modified)
+
+    def test_future_entry_receipt_cannot_be_replayed_as_past_exit(self):
+        late=source()
+        with self.assertRaisesRegex(ValueError,"future_entry_research_evidence"):
+            review(action="FULL",source=late,
+                   observed_utc=CLOCK-timedelta(seconds=1))
+        self.assertEqual(
+            review(action="FULL", source=late,
+                   observed_utc=CLOCK+timedelta(minutes=1)).research_action,
+            "EXIT_FEASIBLE_RESEARCH_ONLY")
+
+    def test_forged_hash_does_not_authorize_invalid_entry_geometry(self):
+        def forge(**changes):
+            item=replace(source(),**changes)
+            fields=("observed_utc","source_digest","symbol","side",
+                    "regime","playbook","action","entry","stop","target",
+                    "reasons","hand_id")
+            msg={k:getattr(item,k) for k in fields}
+            dig=sha256(json.dumps(msg,sort_keys=True,
+                                  separators=(",",":"),allow_nan=False
+                                  ).encode()).hexdigest()
+            return replace(item,digest=dig)
+        for changes in (
+            {"stop":2100.},
+            {"target":1900.},
+            {"action":"WAIT"},
+            {"action":"LIVE_READY"},
+            {"source_digest":"INVALID"},
+            {"reasons":("fake-approval",)},
+        ):
+            with self.subTest(changes=changes):
+                with self.assertRaises(ValueError):
+                    review(action="FULL",source=forge(**changes))
+
+    def test_wait_source_remains_wait_with_genuine_receipt(self):
+        item=review(action="FULL",source=source(ready=False))
+        self.assertEqual(item.research_action,"WAIT")
+        self.assertIn("ENTRY_RESEARCH_NOT_READY",item.blockers)
+
 
 
 if __name__=="__main__":

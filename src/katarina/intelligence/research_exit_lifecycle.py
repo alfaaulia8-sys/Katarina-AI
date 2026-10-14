@@ -9,6 +9,7 @@ from dataclasses import dataclass, asdict
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
 from hashlib import sha256
+from hmac import compare_digest
 import json
 import re
 
@@ -18,6 +19,9 @@ _HEX = re.compile(r"[0-9a-f]{64}\Z")
 _ACTIONS = ("HOLD", "FULL", "PARTIAL", "TRAIL")
 _SIDES = ("BUY", "SELL")
 _OWNERS = ("KATARINA", "OWNER_MANUAL")
+_SOURCE_FIELDS = ("observed_utc","source_digest","symbol","side",
+                  "regime","playbook","action","entry","stop","target",
+                  "reasons","hand_id")
 
 
 def _dec(value, field: str, *, minimum: Decimal = Decimal("0")) -> Decimal:
@@ -30,6 +34,51 @@ def _dec(value, field: str, *, minimum: Decimal = Decimal("0")) -> Decimal:
     if not v.is_finite() or v < minimum:
         raise ValueError("invalid_exit_numeric_" + field)
     return v
+
+
+def _verify_source_receipt(source: OwnerResearchReceipt,
+                           inspected_at: datetime) -> None:
+    """Local checksum and chronology, never authentication of Hand origin."""
+    if source.action not in ("RESEARCH_CANDIDATE", "WAIT"):
+        raise ValueError("untrusted_exit_source_action")
+    if source.side not in _SIDES or not isinstance(source.symbol, str) or not source.symbol:
+        raise ValueError("untrusted_exit_source_identity")
+    if (not isinstance(source.source_digest, str)
+            or not _HEX.fullmatch(source.source_digest)):
+        raise ValueError("untrusted_exit_source_digest")
+    if (not isinstance(source.reasons, tuple)
+            or not all(isinstance(x, str) and x for x in source.reasons)):
+        raise ValueError("untrusted_exit_source_reasons")
+    entry = _dec(source.entry, "source_entry", minimum=Decimal("0.00000001"))
+    if source.action == "WAIT":
+        if (not source.reasons or source.stop is not None
+                or source.target is not None):
+            raise ValueError("inconsistent_wait_exit_source")
+    else:
+        if source.reasons:
+            raise ValueError("inconsistent_candidate_exit_source")
+        stop = _dec(source.stop, "source_stop", minimum=Decimal("0.00000001"))
+        target = _dec(source.target, "source_target", minimum=Decimal("0.00000001"))
+        if ((source.side == "BUY" and not stop < entry < target)
+                or (source.side == "SELL" and not target < entry < stop)):
+            raise ValueError("invalid_source_exit_geometry")
+    try:
+        born = datetime.fromisoformat(source.observed_utc)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid_source_clock") from exc
+    if born.tzinfo is None or born.utcoffset() is None:
+        raise ValueError("invalid_source_clock")
+    if born.astimezone(timezone.utc) > inspected_at.astimezone(timezone.utc):
+        raise ValueError("future_entry_research_evidence")
+    data = {key:getattr(source, key) for key in _SOURCE_FIELDS}
+    try:
+        digest = sha256(json.dumps(
+            data, sort_keys=True, separators=(",", ":"),
+            allow_nan=False).encode()).hexdigest()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("unverifiable_exit_research_source") from exc
+    if not compare_digest(source.digest, digest):
+        raise ValueError("exit_research_receipt_digest_mismatch")
 
 
 def _on_broker_volume_grid(
@@ -93,6 +142,7 @@ def review_offline_exit_lifecycle(
     if (not isinstance(observed_utc, datetime) or observed_utc.tzinfo is None
             or observed_utc.utcoffset() is None):
         raise ValueError("invalid_exit_observation_clock")
+    _verify_source_receipt(source, observed_utc)
     min_vol = _dec(broker_min_volume,"minimum_volume",minimum=Decimal("0.00000001"))
     step = _dec(broker_volume_step,"volume_step",minimum=Decimal("0.00000001"))
     max_vol = _dec(broker_max_volume,"maximum_volume",minimum=min_vol)

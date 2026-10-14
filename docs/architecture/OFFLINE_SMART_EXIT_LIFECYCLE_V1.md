@@ -31,3 +31,17 @@ Tests:
 
 Production path remains NO REAL ORDERS, and the independent Risk Governor
 may never be bypassed by an offline feasibility result.
+
+## Research receipt integrity and chronology
+
+Smart Exit never accepts a string that merely resembles a SHA256 digest.
+The input Adaptive Entry/Exit research object must have a valid *matching*
+canonical payload digest, a coherent WAIT or RESEARCH_CANDIDATE state,
+and finite directional Entry/Stop/Target geometry. A recomputed checksum
+for contradictory or forged research-ready fields remains rejected. The
+source observation must not occur in the future relative to the proposed
+exit review. Caller-supplied broker geometry and manual Owner protections
+still apply independently.
+
+This is a **local integrity check, not authentication**: a matching SHA256
+does not certify a real broker fill or authorize live trading.
