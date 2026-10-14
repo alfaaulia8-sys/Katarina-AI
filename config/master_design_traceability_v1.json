@@ -72,15 +72,17 @@
         "src/katarina/memory/store.py",
         "src/katarina/intelligence/historical_analog_memory.py",
         "src/katarina/intelligence/unified_adaptive_research_cycle.py",
-        "src/katarina/memory/quarantined_research_memory.py"
+        "src/katarina/memory/quarantined_research_memory.py",
+        "src/katarina/intelligence/self_evolution_lab.py"
       ],
       "test_paths": [
         "tests/unit/memory/test_runtime_state_persistence.py",
         "tests/unit/memory/test_stage10_memory.py",
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
-        "tests/unit/memory/test_quarantined_research_memory.py"
+        "tests/unit/memory/test_quarantined_research_memory.py",
+        "tests/unit/intelligence/test_strict_self_evolution_integrity.py"
       ],
-      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing."
+      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding."
     },
     {
       "id": "A06",
@@ -95,9 +97,10 @@
       "test_paths": [
         "tests/unit/intelligence/test_unified_cognitive_cycle.py",
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
-        "tests/unit/memory/test_quarantined_research_memory.py"
+        "tests/unit/memory/test_quarantined_research_memory.py",
+        "tests/unit/intelligence/test_strict_self_evolution_integrity.py"
       ],
-      "remaining": "Virtual research works; independent broker forward and promotion/canary standards await evidence and Owner decision. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing."
+      "remaining": "Virtual research works; independent broker forward and promotion/canary standards await evidence and Owner decision. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding."
     },
     {
       "id": "A07",
@@ -247,13 +250,15 @@
       "evidence_paths": [
         "src/katarina/intelligence/unified_cognitive_cycle.py",
         "src/katarina/memory/runtime_state.py",
-        "src/katarina/memory/quarantined_research_memory.py"
+        "src/katarina/memory/quarantined_research_memory.py",
+        "src/katarina/intelligence/self_evolution_lab.py"
       ],
       "test_paths": [
         "tests/unit/intelligence/test_unified_cognitive_cycle.py",
-        "tests/unit/memory/test_quarantined_research_memory.py"
+        "tests/unit/memory/test_quarantined_research_memory.py",
+        "tests/unit/intelligence/test_strict_self_evolution_integrity.py"
       ],
-      "remaining": "Unified offline snapshot exists; evidence weighting, duplicate-source rules and Fast/Deep resource scheduling deferred. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing."
+      "remaining": "Unified offline snapshot exists; evidence weighting, duplicate-source rules and Fast/Deep resource scheduling deferred. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding."
     },
     {
       "id": "A18",

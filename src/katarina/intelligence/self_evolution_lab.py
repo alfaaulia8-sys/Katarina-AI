@@ -69,13 +69,18 @@ def _read(db: sqlite3.Connection, as_of: float) -> tuple[list[dict], str | None]
                       state,virtual_net_r,evidence_score,official_news_verified
                FROM prospective_shadow WHERE observed_at<=?
                ORDER BY observed_at DESC,id DESC LIMIT ?""",
-            (as_of, MAX_ROWS),
+            (as_of, MAX_ROWS + 1),
         ).fetchall()
     except sqlite3.OperationalError:
         return [], "prospective_shadow_schema_unavailable"
+    # Never silently drop older rows and then treat the surviving recent
+    # window as an unbiased cohort. Require explicitly bounded evidence.
+    if len(data) > MAX_ROWS:
+        return [], "shadow_observation_window_truncated"
 
     clean = []
     seen = set()
+    causal_identities = set()
     for raw in data:
         oid, symbol, method, side, regime, observed, exited, status, value, score, news = raw
         if oid in seen:
@@ -90,6 +95,12 @@ def _read(db: sqlite3.Connection, as_of: float) -> tuple[list[dict], str | None]
                 not 0 <= score <= 1 or status not in
                 ("OPEN", "UNCERTAIN_GAP", "VIRTUAL_QUOTED")):
             return [], "invalid_shadow_observation"
+        # Separate SQL row IDs do not make a repeated symbol/method/side/
+        # regime/observation instant an independent market event.
+        identity = (symbol, method, side, regime, float(observed))
+        if identity in causal_identities:
+            return [], "duplicate_causal_shadow_observation"
+        causal_identities.add(identity)
         if status == "VIRTUAL_QUOTED":
             if (not isinstance(exited,(float,int)) or not isfinite(exited) or
                     exited < observed or exited > as_of or
