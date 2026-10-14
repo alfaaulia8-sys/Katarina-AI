@@ -102,6 +102,14 @@ class SharedAccountRiskEngine:
         return str(side or "").upper()
 
     def position_risk(self, p: PositionRiskInput) -> PositionRisk:
+        def finite_number(value:Any)->bool:
+            if type(value) not in (int,float):
+                return False
+            try:
+                return isfinite(value)
+            except (OverflowError,TypeError,ValueError):
+                return False
+
         origin=self._norm_origin(p.origin)
         side=self._norm_side(p.side)
 
@@ -109,11 +117,12 @@ class SharedAccountRiskEngine:
             return PositionRisk(p.position_id,origin,0.0,True,"broker_operation_not_exposure")
 
         values=(p.volume,p.open_price,p.current_price)
-        if any(not isfinite(v) for v in values) or p.volume <= 0 or p.open_price <= 0:
+        if (any(not finite_number(v) for v in values)
+                or p.volume <= 0 or p.open_price <= 0):
             return PositionRisk(p.position_id,origin,0.0,False,"invalid_position_values")
         if side not in {"BUY","SELL"}:
             return PositionRisk(p.position_id,origin,0.0,False,"unknown_position_side")
-        if p.stop_loss is None or not isfinite(p.stop_loss) or p.stop_loss <= 0:
+        if (not finite_number(p.stop_loss) or p.stop_loss <= 0):
             return PositionRisk(p.position_id,origin,0.0,False,"missing_stop_loss")
 
         mark=p.current_price if p.current_price > 0 else p.open_price
@@ -126,8 +135,11 @@ class SharedAccountRiskEngine:
         if side == "SELL" and p.stop_loss <= mark:
             return PositionRisk(p.position_id,origin,0.0,True,"stop_protects_current_equity")
 
+        # With a genuine positive stop distance, a broker quote of zero/NaN
+        # loss is not evidence of bounded risk; reject rather than approve.
         if p.broker_loss_to_sl is not None:
-            if not isfinite(p.broker_loss_to_sl) or p.broker_loss_to_sl < 0:
+            if (not finite_number(p.broker_loss_to_sl)
+                    or p.broker_loss_to_sl <= 0):
                 return PositionRisk(p.position_id,origin,0.0,False,"invalid_broker_loss_to_sl")
             return PositionRisk(
                 p.position_id,origin,float(p.broker_loss_to_sl),True,"broker_ordercalcprofit"
@@ -136,18 +148,17 @@ class SharedAccountRiskEngine:
         spec=p.symbol_spec
         if spec is None:
             return PositionRisk(p.position_id,origin,0.0,False,"missing_symbol_risk_spec")
-        if (
-            not isfinite(spec.tick_size)
-            or not isfinite(spec.tick_value_loss)
-            or spec.tick_size <= 0
-            or spec.tick_value_loss <= 0
-        ):
+        if (not isinstance(spec,SymbolRiskSpec)
+                or not finite_number(spec.tick_size)
+                or not finite_number(spec.tick_value_loss)
+                or spec.tick_size <= 0
+                or spec.tick_value_loss <= 0):
             return PositionRisk(p.position_id,origin,0.0,False,"invalid_symbol_risk_spec")
 
         distance=abs(mark-p.stop_loss)
         ticks=distance/spec.tick_size
         risk_cash=ticks*spec.tick_value_loss*p.volume
-        if not isfinite(risk_cash) or risk_cash < 0:
+        if not finite_number(risk_cash) or risk_cash <= 0:
             return PositionRisk(p.position_id,origin,0.0,False,"risk_calculation_failed")
         return PositionRisk(p.position_id,origin,risk_cash,True,"symbol_spec_fallback")
 
