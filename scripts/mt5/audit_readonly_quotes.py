@@ -5,7 +5,11 @@ forward-test pass, or evidence of profitable/authorized trading. No account
 number, server, balance, equity, or credentials are emitted.
 
 Run (using an existing MT5-connected Python environment)::
-    python scripts/mt5/audit_readonly_quotes.py --max-age-seconds 180
+    PYTHONPATH=src python scripts/mt5/audit_readonly_quotes.py --max-age-seconds 180
+
+Production observation deliberately uses bounded historical UTC Bid/Ask ticks;
+raw terminal tick timestamps can be broker-local and appear hours in the
+future. Historical ticks are quote provenance, NOT witnessed trade fills.
 """
 from __future__ import annotations
 
@@ -14,6 +18,7 @@ from datetime import datetime, timezone
 import json
 import math
 import time
+from types import SimpleNamespace
 from typing import Any
 
 DEFAULT_SYMBOLS = (
@@ -81,7 +86,8 @@ def quote_snapshot(symbol: str, info: Any, tick: Any, *, now_ms: int,
 
 
 def observe(mt5: Any, *, symbols: tuple[str, ...], now_ms: int,
-            max_age_ms: int, terminal_path: str | None = None) -> dict[str, Any]:
+            max_age_ms: int, terminal_path: str | None = None,
+            historical_quote_reader: Any = None) -> dict[str, Any]:
     """Only invokes read-only MetaTrader5 APIs; does not select symbols."""
     result: dict[str, Any] = {
         "proof_type": "KATARINA_MT5_READ_ONLY_QUOTE_SNAPSHOT",
@@ -130,10 +136,24 @@ def observe(mt5: Any, *, symbols: tuple[str, ...], now_ms: int,
             return result
         for symbol in symbols:
             info = mt5.symbol_info(symbol)
-            tick = mt5.symbol_info_tick(symbol) if info is not None else None
-            result["quotes"].append(quote_snapshot(symbol, info, tick,
-                                                     now_ms=now_ms,
-                                                     max_age_ms=max_age_ms))
+            source = "RAW_TERMINAL_TIMESTAMP_DIAGNOSTIC"
+            if historical_quote_reader is not None:
+                source = "MT5_HISTORICAL_UTC_BID_ASK_READONLY"
+                historical = (historical_quote_reader(
+                    mt5, symbol, datetime.fromtimestamp(now_ms / 1000, timezone.utc),
+                    lookback_seconds=max_age_ms / 1000)
+                    if info is not None else None)
+                # The existing causal reader returns (bid, ask, UTC epoch sec).
+                # Never fall back to broker-local raw timestamps on failure.
+                tick = (SimpleNamespace(bid=historical[0], ask=historical[1],
+                                        time_msc=int(historical[2] * 1000))
+                        if historical is not None else None)
+            else:
+                tick = mt5.symbol_info_tick(symbol) if info is not None else None
+            item = quote_snapshot(symbol, info, tick, now_ms=now_ms,
+                                  max_age_ms=max_age_ms)
+            item["quote_source"] = source
+            result["quotes"].append(item)
         if all(q["decision"] == "OBSERVED_ONLY" for q in result["quotes"]):
             result["result"] = "PASS_SINGLE_READ_ONLY_OBSERVATION"
             result["reason"] = "all_requested_quotes_fresh_not_forward_validation"
@@ -158,19 +178,21 @@ def main() -> int:
     parser.add_argument("--symbols", nargs="+", default=list(DEFAULT_SYMBOLS))
     parser.add_argument("--max-age-seconds", type=int, default=180)
     args = parser.parse_args()
-    if args.max_age_seconds <= 0 or not args.symbols or len(set(args.symbols)) != len(args.symbols):
-        parser.error("Positive quote age and distinct, nonempty symbols required")
+    if not 0 < args.max_age_seconds <= 180 or not args.symbols or len(set(args.symbols)) != len(args.symbols):
+        parser.error("Quote age must be 1..180 seconds with distinct, nonempty symbols")
     try:
         import MetaTrader5 as mt5
+        from katarina.intelligence.causal_broker_quotes import last_past_quote
     except ImportError:
         print(json.dumps({"result": "WAIT_INSUFFICIENT_BROKER_EVIDENCE",
-                          "reason": "MetaTrader5_python_module_unavailable",
+                          "reason": "MT5_or_causal_UTC_quote_reader_unavailable",
                           "live_execution_enabled": False}))
         return 2
     output = observe(mt5, symbols=tuple(args.symbols),
                      now_ms=time.time_ns() // 1_000_000,
                      max_age_ms=args.max_age_seconds * 1000,
-                     terminal_path=args.terminal_path)
+                     terminal_path=args.terminal_path,
+                     historical_quote_reader=last_past_quote)
     print(json.dumps(output, sort_keys=True, allow_nan=False))
     return 0 if output["result"] == "PASS_SINGLE_READ_ONLY_OBSERVATION" else 2
 
