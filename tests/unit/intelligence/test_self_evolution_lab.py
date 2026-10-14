@@ -4,7 +4,10 @@ import sqlite3
 import unittest
 
 from katarina.intelligence.self_evolution_lab import (
-    evaluate_shadow_self_evolution, VERSION,
+    evaluate_shadow_self_evolution,derive_shadow_research_policy, VERSION,
+)
+from katarina.intelligence.prospective_shadow_book import (
+    ProspectiveShadowBook,ResearchHypothesis,
 )
 
 START = datetime(2026, 7, 1, tzinfo=timezone.utc)
@@ -115,6 +118,80 @@ class SelfEvolutionLabTests(unittest.TestCase):
         x=evaluate_shadow_self_evolution(db,as_of_utc=AT)
         self.assertEqual(x["cohorts"][0]["pending"],2)
         self.assertEqual(x["cohorts"][0]["status"],"INSUFFICIENT_EVIDENCE")
+
+    def _candidate(self, score, *, side="SELL", now=AT):
+        return ResearchHypothesis(
+            symbol="XAUUSD.vx",method="SWEEP",regime="TREND_DOWN",
+            side=side,closed_bar_at=now-timedelta(minutes=5),
+            observed_at=now,bid=100,ask=100.1,tick_at=now.timestamp(),
+            stop=101.3 if side=="SELL" else 99.,
+            target=97 if side=="SELL" else 103.,
+            evidence_score=score,blockers=("unverified_news",),
+            official_news_verified=False,spread_atr=.05,
+        )
+
+    def test_positive_shadow_learning_changes_next_virtual_sample(self):
+        past=mkdb()
+        sample(past,days=30,high=2.,low=-1.)
+        report=evaluate_shadow_self_evolution(past,as_of_utc=AT)
+        learned=derive_shadow_research_policy(report)
+        self.assertTrue(learned.integrity_ok)
+        self.assertEqual(learned.score_floor("XAUUSD.vx","SWEEP","SELL",
+                                             "TREND_DOWN"),.70)
+        self.assertEqual(learned.score_floor("XAUUSD.vx","SWEEP","BUY",
+                                             "TREND_DOWN"),.62)
+        self.assertFalse(learned.live_execution_authorized)
+        self.assertEqual(learned.to_dict()["may_change_production_model"],False)
+        research_db=sqlite3.connect(":memory:")
+        book=ProspectiveShadowBook(research_db)
+        rejected=book.propose([self._candidate(.64)],AT,research_policy=learned)
+        self.assertFalse(rejected["accepted"])
+        self.assertEqual(book.summary()["counts"],{})
+        accepted=book.propose([self._candidate(.85)],AT,research_policy=learned)
+        self.assertTrue(accepted["accepted"])
+        self.assertEqual(book.summary()["counts"],{"OPEN":1})
+        self.assertEqual(accepted["mode"],"NO_REAL_ORDERS")
+
+    def test_negative_cohort_is_quarantined_but_buy_learns_separately(self):
+        past=mkdb()
+        sample(past,high=-.3,low=-.9)
+        policy=derive_shadow_research_policy(
+            evaluate_shadow_self_evolution(past,as_of_utc=AT))
+        self.assertEqual(policy.score_floor("XAUUSD.vx","SWEEP","SELL",
+                                             "TREND_DOWN"),.78)
+        self.assertEqual(policy.score_floor("XAUUSD.vx","SWEEP","BUY",
+                                             "TREND_DOWN"),.62)
+        db=sqlite3.connect(":memory:")
+        book=ProspectiveShadowBook(db)
+        self.assertFalse(book.propose(
+            [self._candidate(.7)],AT,research_policy=policy)["accepted"])
+        self.assertTrue(book.propose(
+            [self._candidate(.81)],AT,research_policy=policy)["accepted"])
+
+    def test_corrupt_shadow_learning_blocks_new_virtual_hypothesis(self):
+        past=mkdb()
+        sample(past)
+        past.execute("UPDATE prospective_shadow SET evidence_score=2 WHERE id=1")
+        report=evaluate_shadow_self_evolution(past,as_of_utc=AT)
+        policy=derive_shadow_research_policy(report)
+        self.assertFalse(policy.integrity_ok)
+        db=sqlite3.connect(":memory:")
+        book=ProspectiveShadowBook(db)
+        result=book.propose([self._candidate(.85)],AT,research_policy=policy)
+        self.assertEqual(result["reason"],"SHADOW_LEARNING_INVALID_FAIL_CLOSED")
+        self.assertEqual(book.summary()["counts"],{})
+
+    def test_policy_from_future_is_never_applied(self):
+        past=mkdb()
+        sample(past)
+        report=evaluate_shadow_self_evolution(past,as_of_utc=AT)
+        policy=derive_shadow_research_policy(report)
+        db=sqlite3.connect(":memory:")
+        book=ProspectiveShadowBook(db)
+        with self.assertRaisesRegex(ValueError,"invalid_or_future_shadow_learning"):
+            book.propose([self._candidate(.85,now=AT-timedelta(days=1))],
+                         AT-timedelta(days=1),research_policy=policy)
+        self.assertEqual(book.summary()["counts"],{})
 
     def test_asof_must_be_aware(self):
         with self.assertRaises(ValueError):

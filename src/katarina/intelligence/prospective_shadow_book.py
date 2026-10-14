@@ -15,6 +15,8 @@ from math import isfinite
 import json
 import sqlite3
 
+from katarina.intelligence.self_evolution_lab import ShadowResearchPolicy
+
 UTC=timezone.utc
 MAX_HORIZON_SEC=2*3600
 MAX_GAP_SEC=8*60
@@ -164,13 +166,26 @@ class ProspectiveShadowBook:
             state=?,exit_at=?,exit_price=?,reason=?,virtual_net_r=?
             WHERE id=? AND state='OPEN'""",(state,t,price,reason,net,oid))
 
-    def propose(self,hypotheses:list[ResearchHypothesis],now:datetime):
+    def propose(self,hypotheses:list[ResearchHypothesis],now:datetime,
+                *,research_policy:ShadowResearchPolicy|None=None):
         """Deterministic, ranked one-entry across all correlated instruments.
 
         Signal is a virtual simulation even if official news is unavailable;
         such uncleared cases are labeled, never counted as validated alpha.
         """
         t=epoch(now)
+        if research_policy is not None:
+            if not isinstance(research_policy,ShadowResearchPolicy):
+                raise ValueError("invalid_shadow_research_policy")
+            try:
+                learned_at=datetime.fromisoformat(research_policy.as_of_utc)
+                if learned_at.tzinfo is None or epoch(learned_at)>t+1e-6:
+                    raise ValueError("future_shadow_learning_not_allowed")
+            except (TypeError,ValueError) as exc:
+                raise ValueError("invalid_or_future_shadow_learning") from exc
+            if not research_policy.integrity_ok:
+                return {"accepted":False,"reason":"SHADOW_LEARNING_INVALID_FAIL_CLOSED",
+                        "candidates":0,"mode":"NO_REAL_ORDERS"}
         for h in hypotheses:
             if abs(epoch(h.observed_at)-t)>3:
                 raise ValueError("hypothesis_timestamp_mismatch")
@@ -184,6 +199,10 @@ class ProspectiveShadowBook:
                 continue
             dims=h.geometry()
             if dims is None:continue
+            if research_policy is not None and h.evidence_score < (
+                    research_policy.score_floor(
+                        h.symbol,h.method,h.side,h.regime)):
+                continue
             bt=epoch(h.closed_bar_at)
             if bt>t or t-bt>900 or abs(t-h.tick_at)>QUOTE_SKEW_SEC:
                 continue
