@@ -140,6 +140,53 @@ class ManualAccountRiskTests(unittest.TestCase):
         a=self.engine.assess([manual(broker_loss_to_sl=275.0,symbol_spec=None)],equity=10000)
         self.assertAlmostEqual(a.open_risk_cash,275.0)
 
+    def test_open_manual_position_rejects_invalid_broker_loss_evidence(self):
+        for loss in (0, -1, float("nan"), float("inf"), "bad", True):
+            with self.subTest(broker_loss_to_sl=loss):
+                assessment=self.engine.assess([
+                    manual(broker_loss_to_sl=loss, symbol_spec=None)
+                ],equity=10000)
+                self.assertTrue(assessment.has_unbounded_risk)
+                decision=self.gov.evaluate_account(
+                    assessment,requested_fraction=.01,drawdown_fraction=0,
+                    daily_drawdown_fraction=0,uncertainty=.1,expected_rr=2,
+                    health_ok=True,reconciled=True,
+                )
+                self.assertEqual(decision.action,RiskAction.PAUSE)
+
+    def test_open_manual_position_rejects_corrupt_tick_spec(self):
+        for spec in (
+            SymbolRiskSpec(float("nan"),1.0),
+            SymbolRiskSpec(float("inf"),1.0),
+            SymbolRiskSpec(.01,float("nan")),
+            SymbolRiskSpec(.01,float("inf")),
+            SymbolRiskSpec("bad",1.0),
+            SymbolRiskSpec(.01,"bad"),
+        ):
+            with self.subTest(spec=spec):
+                assessment=self.engine.assess([
+                    manual(symbol_spec=spec)
+                ],equity=10000)
+                self.assertTrue(assessment.has_unbounded_risk)
+                self.assertEqual(self.gov.evaluate_account(
+                    assessment,requested_fraction=.01,drawdown_fraction=0,
+                    daily_drawdown_fraction=0,uncertainty=.1,expected_rr=2,
+                    health_ok=True,reconciled=True,
+                ).action,RiskAction.PAUSE)
+
+    def test_manual_position_calculated_loss_overflow_never_approves(self):
+        assessment=self.engine.assess([
+            manual(volume=1e300,symbol_spec=SymbolRiskSpec(1e-300,1e300))
+        ],equity=10000)
+        self.assertTrue(assessment.has_unbounded_risk)
+
+    def test_protected_position_zero_risk_is_still_valid(self):
+        assessment=self.engine.assess([
+            manual(current_price=2010,stop_loss=2011,broker_loss_to_sl=0)
+        ],equity=10000)
+        self.assertFalse(assessment.has_unbounded_risk)
+        self.assertEqual(assessment.open_risk_cash,0)
+
     def test_missing_symbol_spec_without_broker_calc_blocks(self):
         a=self.engine.assess([manual(symbol_spec=None,broker_loss_to_sl=None)],equity=10000)
         self.assertTrue(a.has_unbounded_risk)
