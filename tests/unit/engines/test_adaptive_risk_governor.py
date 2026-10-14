@@ -1,6 +1,7 @@
 """Adaptive KATARINA risk curve and shared-account safety regression tests."""
 import math
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from katarina.engines.adaptive_risk import AdaptiveRiskProfile
@@ -181,6 +182,31 @@ class AdaptiveRiskTests(unittest.TestCase):
         result=self.gov.evaluate(r)
         self.assertEqual(result.action,RiskAction.APPROVE)
         self.assertAlmostEqual(result.approved_fraction,.0075)
+
+    def test_malformed_risk_evidence_fails_closed_without_exception(self):
+        # Broker/adapter inputs may be malformed; the safety gate must never
+        # let invalid fractions or invalid numeric types become trade approval.
+        gov=RiskGovernor()
+        baseline=RiskRequest(.01,0.0,0.0,.10,2.0,True,True,0.0)
+        cases=(
+            {"uncertainty":-.01},
+            {"uncertainty":None},
+            {"uncertainty":"0.10"},
+            {"uncertainty":True},
+            {"open_risk_fraction":1.01},
+            {"drawdown_fraction":1.01},
+            {"daily_drawdown_fraction":1.01},
+            {"open_risk_fraction":None},
+            {"expected_rr":None},
+            {"expected_rr":"2"},
+            {"drawdown_fraction":True},
+        )
+        for overrides in cases:
+            with self.subTest(overrides=overrides):
+                decision=gov.evaluate(replace(baseline,**overrides))
+                self.assertEqual(decision.action,RiskAction.PAUSE)
+                self.assertEqual(decision.approved_fraction,0)
+                self.assertEqual(decision.reason,"invalid_risk_evidence")
 
     def test_unverified_account_data_never_approves(self):
         for capital,currency in ((None,"USD"),(100,None),(100,"EUR")):

@@ -181,9 +181,14 @@ class RiskGovernor:
             return RiskDecision(RiskAction.PAUSE,0.0,"unbounded_open_risk")
         values=(r.open_risk_fraction,r.drawdown_fraction,r.daily_drawdown_fraction,
                 r.uncertainty,r.expected_rr)
-        if any(not isfinite(v) for v in values):
+        # Reject malformed broker evidence rather than throwing an exception
+        # or letting an impossible fraction slip through the risk gate.
+        if any(type(v) not in (int,float) or not isfinite(v) for v in values):
             return RiskDecision(RiskAction.PAUSE,0.0,"invalid_risk_evidence")
-        if r.open_risk_fraction<0 or r.drawdown_fraction<0 or r.daily_drawdown_fraction<0:
+        if (not 0<=r.open_risk_fraction<=1 or
+                not 0<=r.drawdown_fraction<=1 or
+                not 0<=r.daily_drawdown_fraction<=1 or
+                not 0<=r.uncertainty<=1):
             return RiskDecision(RiskAction.PAUSE,0.0,"invalid_risk_evidence")
         if r.entry_kind not in {"NORMAL","RECOVERY_FACTOR","EXTREME_RECOVERY"}:
             return RiskDecision(RiskAction.REJECT,0.0,"invalid_entry_kind")
