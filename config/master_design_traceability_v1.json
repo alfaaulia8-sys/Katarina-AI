@@ -55,7 +55,7 @@
       "test_paths": [
         "tests/unit/intelligence/test_unified_cognitive_cycle.py"
       ],
-      "remaining": "Descriptive offline cognitive loop exists; predictive world calibration and Fast/Deep integration not established."
+      "remaining": "Descriptive offline cognitive loop and chronological memory/rollback guards exist; predictive world calibration and Fast/Deep integration not established."
     },
     {
       "id": "A05",
