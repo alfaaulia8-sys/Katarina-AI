@@ -70,7 +70,7 @@
         "tests/unit/memory/test_runtime_state_persistence.py",
         "tests/unit/memory/test_stage10_memory.py"
       ],
-      "remaining": "Local persisted payload checksum and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete."
+      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete."
     },
     {
       "id": "A06",

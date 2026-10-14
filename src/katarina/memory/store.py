@@ -25,7 +25,17 @@ class AppendResult:
 
 
 def _canonical_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    # Python otherwise serializes NaN/Infinity as nonstandard JSON. Those
+    # values cannot be safe evidence or persisted runtime risk state.
+    try:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("nonfinite_or_invalid_memory_payload") from exc
+
+
+def _reject_nonfinite_memory_constant(value: str) -> None:
+    raise ValueError("memory_nonfinite_json_constant:" + value)
 
 
 def _payload_hash(value: Any) -> str:
@@ -46,7 +56,7 @@ def _verified_payload(row: sqlite3.Row) -> Any:
             or sha256(raw.encode("utf-8")).hexdigest() != expected):
         raise ValueError("memory_payload_digest_mismatch")
     try:
-        return json.loads(raw)
+        return json.loads(raw, parse_constant=_reject_nonfinite_memory_constant)
     except (TypeError, ValueError) as exc:
         raise ValueError("memory_payload_corrupt") from exc
 
