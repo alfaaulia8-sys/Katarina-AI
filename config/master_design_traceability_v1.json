@@ -61,7 +61,7 @@
         "tests/unit/intelligence/test_unified_research_handoff.py",
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
       ],
-      "remaining": "Descriptive offline cognitive loop and chronological memory/rollback guards exist; predictive world calibration and Fast/Deep integration not established. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
+      "remaining": "Descriptive offline cognitive loop and chronological memory/rollback guards exist; predictive world calibration and Fast/Deep integration not established. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Offline adaptive synthesis now respects active cognitive learning checkpoint and explicit Owner rollback; production learning and strategy promotion remain blocked."
     },
     {
       "id": "A05",
@@ -82,7 +82,7 @@
         "tests/unit/memory/test_quarantined_research_memory.py",
         "tests/unit/intelligence/test_strict_self_evolution_integrity.py"
       ],
-      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding."
+      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding. Offline adaptive synthesis now respects active cognitive learning checkpoint and explicit Owner rollback; production learning and strategy promotion remain blocked."
     },
     {
       "id": "A06",
@@ -100,7 +100,7 @@
         "tests/unit/memory/test_quarantined_research_memory.py",
         "tests/unit/intelligence/test_strict_self_evolution_integrity.py"
       ],
-      "remaining": "Virtual research works; independent broker forward and promotion/canary standards await evidence and Owner decision. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding."
+      "remaining": "Virtual research works; independent broker forward and promotion/canary standards await evidence and Owner decision. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding. Offline adaptive synthesis now respects active cognitive learning checkpoint and explicit Owner rollback; production learning and strategy promotion remain blocked."
     },
     {
       "id": "A07",
