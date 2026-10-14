@@ -38,9 +38,50 @@ class CapitalCompoundingTests(unittest.TestCase):
         c.observe_balance(400)
         s=c.snapshot()
         self.assertEqual(s.milestone_count,2)
-        self.assertAlmostEqual(s.reserve_balance,100)
-        self.assertAlmostEqual(s.active_balance,300)
+        self.assertAlmostEqual(s.reserve_balance,150)  # previous 50 + new 100
+        self.assertAlmostEqual(s.active_balance,250)
         self.assertAlmostEqual(s.next_target_balance,800)
+
+    def test_owner_approved_10k_20k_40k_80k_cumulative_lock(self):
+        c = CapitalCompoundingEngine()
+        c.initialize(10_000)
+        for balance, locked, active in (
+            (20_000, 5_000, 15_000),
+            (40_000, 15_000, 25_000),
+            (80_000, 35_000, 45_000),
+        ):
+            e = c.observe_balance(balance)
+            self.assertTrue(e.milestone_triggered)
+            self.assertAlmostEqual(c.snapshot().reserve_balance, locked)
+            self.assertAlmostEqual(c.snapshot().active_balance, active)
+            # Repeated broker snapshots must NOT reserve the same milestone twice.
+            self.assertFalse(c.observe_balance(balance).milestone_triggered)
+            self.assertAlmostEqual(c.snapshot().reserve_balance, locked)
+        self.assertEqual(c.snapshot().milestone_count, 3)
+
+    def test_restart_preserves_cumulative_lock_without_double_trigger(self):
+        c = CapitalCompoundingEngine()
+        c.initialize(10_000)
+        c.observe_balance(20_000)
+        c.observe_balance(40_000)
+        persisted = c.snapshot_state()
+        restarted = CapitalCompoundingEngine()
+        restarted.restore_state(persisted)
+        self.assertFalse(restarted.observe_balance(40_000).milestone_triggered)
+        self.assertAlmostEqual(restarted.snapshot().reserve_balance, 15_000)
+        restarted.observe_balance(80_000)
+        self.assertAlmostEqual(restarted.snapshot().reserve_balance, 35_000)
+
+    def test_withdrawal_consumes_cumulative_lock_before_active_capital(self):
+        c = CapitalCompoundingEngine()
+        c.initialize(10_000)
+        c.observe_balance(20_000)
+        c.observe_balance(40_000)
+        e = c.apply_external_flow(-5_000, balance_after=35_000)
+        self.assertAlmostEqual(e.reserve_used, 5_000)
+        self.assertAlmostEqual(e.active_used, 0)
+        self.assertAlmostEqual(c.snapshot().reserve_balance, 10_000)
+        self.assertAlmostEqual(c.snapshot().active_balance, 25_000)
 
     def test_snapshot_crosses_multiple_realized_balance_milestones(self):
         c=CapitalCompoundingEngine()
@@ -113,7 +154,7 @@ class CapitalCompoundingTests(unittest.TestCase):
         self.assertEqual(c.snapshot().milestone_count,1)
         c.observe_balance(500)
         self.assertEqual(c.snapshot().milestone_count,2)
-        self.assertAlmostEqual(c.snapshot().reserve_balance,125)
+        self.assertAlmostEqual(c.snapshot().reserve_balance,175)  # old 50 + 25% of 500
 
     def test_floating_equity_does_not_trigger_milestone(self):
         c=CapitalCompoundingEngine()
@@ -243,7 +284,7 @@ class CapitalCompoundingTests(unittest.TestCase):
         self.assertEqual(new.snapshot().milestone_count,1)
         new.observe_balance(400)
         self.assertEqual(new.snapshot().milestone_count,2)
-        self.assertAlmostEqual(new.snapshot().reserve_balance,100)
+        self.assertAlmostEqual(new.snapshot().reserve_balance,160)  # preserved legacy 60 + new 100
 
     def test_legacy_preview_rejects_incoherent_or_new_state(self):
         old=CapitalCompoundingEngine(reserve_fraction=.30)

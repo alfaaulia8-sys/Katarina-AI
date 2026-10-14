@@ -29,6 +29,30 @@ class CapitalCompoundingPipelineTests(unittest.TestCase):
         self.assertAlmostEqual(out.state.risk_capital,150)
         self.assertAlmostEqual(out.approved_fraction,.05)
 
+    def test_second_milestone_cumulative_lock_reaches_risk_coordinator(self):
+        capital = CapitalCompoundingEngine()
+        rt = Kat1CapitalCompoundingRuntime(capital)
+        for balance in (100, 200, 400):
+            self.assertTrue(rt.observe(accepted("account.state", {
+                "account_currency_digits": 2,
+                "balance_units": balance * 100,
+                "equity_units": balance * 100,
+            })))
+        # 25% of 200, then 25% of 400: total locked 150, active 250.
+        self.assertAlmostEqual(capital.snapshot().reserve_balance, 150)
+        positions = SharedAccountRiskEngine().assess([], equity=400)
+        coord = AccountRiskCoordinator(
+            AccountRiskStateEngine(max_open_risk=.08),
+            RiskGovernor(max_open_risk=.08, hard_per_trade=.05),
+            capital=capital,
+        )
+        out = coord.authorize_and_reserve(
+            positions, reservation_id="cumulative-lock", day_key="d",
+            requested_fraction=.05, uncertainty=.1, expected_rr=2,
+            health_ok=True, reconciled=True,
+        )
+        self.assertAlmostEqual(out.state.risk_capital, 250)
+
     def test_withdrawal_excess_rebases_next_trade_capital(self):
         capital=CapitalCompoundingEngine()
         rt=Kat1CapitalCompoundingRuntime(capital)
