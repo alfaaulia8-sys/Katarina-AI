@@ -263,27 +263,42 @@ class AccountRiskStateEngine:
 
     @staticmethod
     def _pending_risk(p:PendingOrderRiskInput)->PendingOrderRisk:
+        # Unverified inputs must never turn an outstanding order into a
+        # zero-risk commitment or crash account-wide risk assessment.
+        def positive_number(value:Any)->bool:
+            if type(value) not in (int,float):
+                return False
+            try:
+                return isfinite(value) and value>0
+            except (OverflowError,TypeError,ValueError):
+                return False
+
         origin=str(p.origin or "UNKNOWN").upper()
         side=str(p.side or "").upper()
-        vals=(p.volume,p.entry_price)
-        if any(not isfinite(v) for v in vals) or p.volume<=0 or p.entry_price<=0:
+        if not positive_number(p.volume) or not positive_number(p.entry_price):
             return PendingOrderRisk(p.order_id,origin,0.0,False,"invalid_pending_values")
         if side not in {"BUY","SELL"}:
             return PendingOrderRisk(p.order_id,origin,0.0,False,"invalid_pending_side")
-        if p.stop_loss is None or not isfinite(p.stop_loss) or p.stop_loss<=0:
+        if not positive_number(p.stop_loss):
             return PendingOrderRisk(p.order_id,origin,0.0,False,"missing_stop_loss")
         if side=="BUY" and p.stop_loss>=p.entry_price:
             return PendingOrderRisk(p.order_id,origin,0.0,False,"invalid_buy_stop_geometry")
         if side=="SELL" and p.stop_loss<=p.entry_price:
             return PendingOrderRisk(p.order_id,origin,0.0,False,"invalid_sell_stop_geometry")
         if p.broker_loss_to_sl is not None:
-            loss=float(p.broker_loss_to_sl)
-            if not isfinite(loss) or loss<0:return PendingOrderRisk(p.order_id,origin,0.0,False,"invalid_broker_loss")
-            return PendingOrderRisk(p.order_id,origin,loss,True,"broker_ordercalcprofit")
+            if not positive_number(p.broker_loss_to_sl):
+                return PendingOrderRisk(p.order_id,origin,0.0,False,"invalid_broker_loss")
+            return PendingOrderRisk(
+                p.order_id,origin,float(p.broker_loss_to_sl),True,"broker_ordercalcprofit"
+            )
         spec=p.symbol_spec
-        if spec is None or spec.tick_size<=0 or spec.tick_value_loss<=0:
+        if (not isinstance(spec,SymbolRiskSpec)
+                or not positive_number(spec.tick_size)
+                or not positive_number(spec.tick_value_loss)):
             return PendingOrderRisk(p.order_id,origin,0.0,False,"missing_symbol_spec")
         cash=abs(p.entry_price-p.stop_loss)/spec.tick_size*spec.tick_value_loss*p.volume
+        if not positive_number(cash):
+            return PendingOrderRisk(p.order_id,origin,0.0,False,"invalid_calculated_loss")
         return PendingOrderRisk(p.order_id,origin,cash,True,"symbol_spec_fallback")
 
     def upsert_pending(self,p:PendingOrderRiskInput)->None:

@@ -83,6 +83,88 @@ class AccountRiskStateTests(unittest.TestCase):
         self.assertEqual(d.action,RiskAction.APPROVE)
         self.assertAlmostEqual(d.approved_fraction,.05)
 
+    def test_pending_broker_loss_must_be_positive_finite_evidence(self):
+        for loss in (0, -1, float("nan"), float("inf"), "not-a-number", True):
+            with self.subTest(broker_loss=loss):
+                engine=AccountRiskStateEngine()
+                engine.observe_equity("d", 10000)
+                engine.upsert_pending(PendingOrderRiskInput(
+                    "pending", "KATARINA", "BUY", .5, 2000, 1994,
+                    self.spec, broker_loss_to_sl=loss,
+                ))
+                snapshot=engine.assess(self.positions)
+                self.assertTrue(snapshot.has_unbounded_risk)
+                decision=RiskGovernor().evaluate_state(
+                    snapshot, requested_fraction=.01, uncertainty=.1,
+                    expected_rr=2, health_ok=True, reconciled=True,
+                )
+                self.assertEqual(decision.action, RiskAction.PAUSE)
+
+    def test_pending_untrusted_tick_spec_fails_closed(self):
+        for spec in (
+            SymbolRiskSpec(float("nan"), 1.0),
+            SymbolRiskSpec(float("inf"), 1.0),
+            SymbolRiskSpec(.01, float("nan")),
+            SymbolRiskSpec(.01, float("inf")),
+            SymbolRiskSpec("bad", 1.0),
+            SymbolRiskSpec(.01, "bad"),
+        ):
+            with self.subTest(spec=spec):
+                engine=AccountRiskStateEngine()
+                engine.observe_equity("d", 10000)
+                engine.upsert_pending(PendingOrderRiskInput(
+                    "pending", "KATARINA", "BUY", .5, 2000, 1994, spec,
+                ))
+                snapshot=engine.assess(self.positions)
+                self.assertTrue(snapshot.has_unbounded_risk)
+                self.assertEqual(RiskGovernor().evaluate_state(
+                    snapshot, requested_fraction=.01, uncertainty=.1,
+                    expected_rr=2, health_ok=True, reconciled=True,
+                ).action, RiskAction.PAUSE)
+
+    def test_pending_invalid_geometry_numbers_never_crash_risk_assessment(self):
+        for volume,entry,stop in (
+            ("bad", 2000, 1994),
+            (True, 2000, 1994),
+            (.5, "bad", 1994),
+            (.5, 2000, "bad"),
+            (.5, 2000, float("nan")),
+            (.5, 2000, float("inf")),
+        ):
+            with self.subTest(volume=volume, entry=entry, stop=stop):
+                engine=AccountRiskStateEngine()
+                engine.observe_equity("d", 10000)
+                engine.upsert_pending(PendingOrderRiskInput(
+                    "pending", "KATARINA", "BUY", volume, entry, stop, self.spec,
+                ))
+                snapshot=engine.assess(self.positions)
+                self.assertTrue(snapshot.has_unbounded_risk)
+
+    def test_pending_loss_calculation_overflow_never_approves(self):
+        engine=AccountRiskStateEngine()
+        engine.observe_equity("d", 10000)
+        engine.upsert_pending(PendingOrderRiskInput(
+            "pending", "KATARINA", "BUY", 1e300, 2000, 1994,
+            SymbolRiskSpec(1e-300, 1e300),
+        ))
+        snapshot=engine.assess(self.positions)
+        self.assertTrue(snapshot.has_unbounded_risk)
+        self.assertEqual(RiskGovernor().evaluate_state(
+            snapshot, requested_fraction=.01, uncertainty=.1,
+            expected_rr=2, health_ok=True, reconciled=True,
+        ).action, RiskAction.PAUSE)
+
+    def test_valid_pending_broker_loss_is_still_budgeted(self):
+        engine=AccountRiskStateEngine()
+        engine.observe_equity("d", 10000)
+        engine.upsert_pending(PendingOrderRiskInput(
+            "pending", "KATARINA", "BUY", .5, 2000, 1994,
+            self.spec, broker_loss_to_sl=300.0,
+        ))
+        snapshot=engine.assess(self.positions)
+        self.assertFalse(snapshot.has_unbounded_risk)
+        self.assertAlmostEqual(snapshot.pending_risk_fraction, .03)
+
     def test_pending_plus_reservation_prevents_concurrent_overallocation(self):
         e=AccountRiskStateEngine()
         e.observe_equity("2026-10-06",10000)
