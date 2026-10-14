@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "authoritative_source": "https://docs.google.com/document/d/1jR80gSoN2mYlAzwoy373vKJmkvcBtTc4H-alaQtNL0Q/edit",
+  "source_precedence": "LATEST_OWNER_APPROVED_DECISIONS_OVERRIDE_HISTORICAL_ARCHIVE",
+  "canonical_profile": "config/katarina_unified_v1.json",
+  "operating_scope": "RESEARCH_ONLY_NO_REAL_ORDERS",
+  "approved_areas": [
+    {
+      "id": "A01",
+      "requirement": "Single Unified Cognitive Brain",
+      "status": "OFFLINE_VERIFIED",
+      "evidence_paths": [
+        "src/katarina/core/orchestrator.py",
+        "src/katarina/intelligence/unified_cognitive_cycle.py"
+      ],
+      "test_paths": [
+        "tests/integration/test_unified_katarina_stack.py"
+      ],
+      "remaining": "Single-brain offline acceptance only; no live activation."
+    },
+    {
+      "id": "A02",
+      "requirement": "Growth within independent capital protection and NO TRADE",
+      "status": "OFFLINE_VERIFIED",
+      "evidence_paths": [
+        "src/katarina/engines/risk.py",
+        "src/katarina/engines/capital.py"
+      ],
+      "test_paths": [
+        "tests/integration/test_unified_katarina_stack.py"
+      ],
+      "remaining": "Risk safety constraints verified offline; realized growth remains unproven."
+    },
+    {
+      "id": "A03",
+      "requirement": "Independent alpha research, asymmetric BUY and SELL",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/intelligence/self_evolution_lab.py",
+        "src/katarina/intelligence/prospective_shadow_book.py"
+      ],
+      "test_paths": [
+        "tests/unit/intelligence/test_unified_cognitive_cycle.py"
+      ],
+      "remaining": "Requires credible cross-market learning and broker-verified BUY/SELL prospective outcomes."
+    },
+    {
+      "id": "A04",
+      "requirement": "Perception curiosity causal reasoning metacognition regime and Fast/Deep",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/intelligence/unified_cognitive_cycle.py",
+        "src/katarina/intelligence/market_regime_intelligence.py"
+      ],
+      "test_paths": [
+        "tests/unit/intelligence/test_unified_cognitive_cycle.py"
+      ],
+      "remaining": "Descriptive offline cognitive loop exists; predictive world calibration and Fast/Deep integration not established."
+    },
+    {
+      "id": "A05",
+      "requirement": "Selective lifelong episodic semantic procedural decision/error memory",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/memory/runtime_state.py",
+        "src/katarina/intelligence/historical_analog_memory.py"
+      ],
+      "test_paths": [
+        "tests/unit/memory/test_runtime_state_persistence.py"
+      ],
+      "remaining": "Requires verified cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy."
+    },
+    {
+      "id": "A06",
+      "requirement": "Scientific alpha self-evolution OOS forward canary rollback",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/intelligence/self_evolution_lab.py",
+        "src/katarina/intelligence/unified_cognitive_cycle.py"
+      ],
+      "test_paths": [
+        "tests/unit/intelligence/test_unified_cognitive_cycle.py"
+      ],
+      "remaining": "Virtual research works; independent broker forward and promotion/canary standards await evidence and Owner decision."
+    },
+    {
+      "id": "A07",
+      "requirement": "Independent Risk Governor manual exposure and minimum-safe-lot veto",
+      "status": "OFFLINE_VERIFIED",
+      "evidence_paths": [
+        "src/katarina/engines/risk.py",
+        "src/katarina/engines/manual_risk.py",
+        "src/katarina/engines/account_risk_state.py"
+      ],
+      "test_paths": [
+        "tests/integration/test_manual_risk_pipeline.py",
+        "tests/integration/test_unified_katarina_stack.py"
+      ],
+      "remaining": "Offline risk path and veto guards tested; live broker interoperability unverified."
+    },
+    {
+      "id": "A08",
+      "requirement": "Cashflow-adjusted DD bands attribution recovery and 35pct lockdown",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/engines/account_risk_state.py",
+        "src/katarina/engines/risk.py"
+      ],
+      "test_paths": [
+        "tests/unit/engines/test_account_risk_state.py"
+      ],
+      "remaining": "Main offline guard behavior exists; complete mixed manual/Katarina attribution and timezone semantics deferred."
+    },
+    {
+      "id": "A09",
+      "requirement": "Cumulative recurring Profit Lock 25pct of actual broker balance",
+      "status": "OFFLINE_VERIFIED",
+      "evidence_paths": [
+        "src/katarina/engines/capital.py"
+      ],
+      "test_paths": [
+        "tests/integration/test_unified_katarina_stack.py",
+        "tests/unit/engines/test_capital_compounding.py"
+      ],
+      "remaining": "20k/40k/80k cumulative milestones and restart verified; recurring deposits/withdrawals algorithm deferred."
+    },
+    {
+      "id": "A10",
+      "requirement": "Adaptive market limit stop entry TTL cancel repricing and idempotent hand",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/engines/execution_recovery.py",
+        "src/katarina/engines/multi_symbol_execution.py"
+      ],
+      "test_paths": [
+        "tests/unit/engines/test_account_risk_state.py"
+      ],
+      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration."
+    },
+    {
+      "id": "A11",
+      "requirement": "Account and portfolio intelligent HOLD FULL PARTIAL TRAIL exit",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/intelligence/structure_exit_plan.py"
+      ],
+      "test_paths": [
+        "tests/unit/intelligence/test_structure_exit_plan.py"
+      ],
+      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven."
+    },
+    {
+      "id": "A12",
+      "requirement": "Adaptive position growth and survival within verified alpha constraints",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/engines/adaptive_risk.py",
+        "src/katarina/engines/risk.py"
+      ],
+      "test_paths": [
+        "tests/unit/engines/test_adaptive_risk_governor.py"
+      ],
+      "remaining": "Research scaffolding exists; quantitative approved growth/canary guard thresholds still deferred."
+    },
+    {
+      "id": "A13",
+      "requirement": "One cloud brain many hands local survival and authenticated transport",
+      "status": "NOT_INTEGRATED",
+      "evidence_paths": [
+        "docs/architecture/KATARINA_OWNER_DESIGN_BASELINE_20261014.md"
+      ],
+      "test_paths": [],
+      "remaining": "Cloud and multi-hand production service, security and offline integration not accepted."
+    },
+    {
+      "id": "A14",
+      "requirement": "Separate human behavioral learning and privacy-safe feed clustering",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "docs/architecture/MANUAL_TRADE_LEARNING_CONTRACT_V1.md",
+        "src/katarina/engines/manual_risk.py"
+      ],
+      "test_paths": [
+        "tests/unit/engines/test_manual_risk.py"
+      ],
+      "remaining": "Manual positions counted for safety, but privacy-isolated behavioral learning and clustering not end-to-end."
+    },
+    {
+      "id": "A15",
+      "requirement": "Strong Owner authentication dashboard emergency and audit controls",
+      "status": "NOT_INTEGRATED",
+      "evidence_paths": [
+        "docs/architecture/KATARINA_OWNER_DESIGN_BASELINE_20261014.md"
+      ],
+      "test_paths": [],
+      "remaining": "No verified full Owner authentication and web/chat control integration."
+    },
+    {
+      "id": "A16",
+      "requirement": "Post-early-exit immutable counterfactual HOLD PARTIAL TRAIL observation",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/intelligence/forward_outcomes.py",
+        "src/katarina/intelligence/structure_exit_plan.py"
+      ],
+      "test_paths": [],
+      "remaining": "Research paths exist; exact post-exit counterfactual broker-cost horizon and lifecycle integration deferred."
+    },
+    {
+      "id": "A17",
+      "requirement": "Neuro-Link bidirectional knowledge shared one brain and dedup",
+      "status": "PARTIAL",
+      "evidence_paths": [
+        "src/katarina/intelligence/unified_cognitive_cycle.py",
+        "src/katarina/memory/runtime_state.py"
+      ],
+      "test_paths": [
+        "tests/unit/intelligence/test_unified_cognitive_cycle.py"
+      ],
+      "remaining": "Unified offline snapshot exists; evidence weighting, duplicate-source rules and Fast/Deep resource scheduling deferred."
+    },
+    {
+      "id": "A18",
+      "requirement": "Management and eleven specialists on hold",
+      "status": "ON_HOLD",
+      "evidence_paths": [
+        "config/katarina_unified_v1.json"
+      ],
+      "test_paths": [
+        "tests/integration/test_unified_katarina_stack.py"
+      ],
+      "remaining": "Explicitly suspended by latest Owner decision; never an active prerequisite."
+    }
+  ],
+  "deferred_decisions": [
+    {
+      "id": "D1",
+      "description": "Recurring deposits, withdrawals, cashflow-adjusted HWM and one-month milestone rebase",
+      "status": "AWAIT_OWNER_DECISION"
+    },
+    {
+      "id": "D2",
+      "description": "Daily versus total DD attribution, broker day boundary and hard-stop priority",
+      "status": "AWAIT_OWNER_DECISION"
+    },
+    {
+      "id": "D3",
+      "description": "Predictive account/portfolio exit, partial/trailing net costs and counterfactual horizon",
+      "status": "AWAIT_OWNER_DECISION"
+    },
+    {
+      "id": "D4",
+      "description": "Numeric alpha/growth evidence, drift, canary, risk step and rollback thresholds",
+      "status": "AWAIT_OWNER_DECISION"
+    },
+    {
+      "id": "D5",
+      "description": "Neuro-Link knowledge confidence/dedup/evidence weighting and Fast/Deep scheduling",
+      "status": "AWAIT_OWNER_DECISION"
+    },
+    {
+      "id": "D6",
+      "description": "Cloud/MT5/hands SLO, Owner security, privacy, retention and offline incidents",
+      "status": "AWAIT_OWNER_DECISION"
+    }
+  ],
+  "release_gate": "BLOCKED_PENDING_BROKER_EVIDENCE_AND_OWNER_AUTHORIZATION"
+}
