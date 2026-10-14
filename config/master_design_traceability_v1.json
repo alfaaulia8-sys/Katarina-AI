@@ -63,12 +63,14 @@
       "status": "PARTIAL",
       "evidence_paths": [
         "src/katarina/memory/runtime_state.py",
+        "src/katarina/memory/store.py",
         "src/katarina/intelligence/historical_analog_memory.py"
       ],
       "test_paths": [
-        "tests/unit/memory/test_runtime_state_persistence.py"
+        "tests/unit/memory/test_runtime_state_persistence.py",
+        "tests/unit/memory/test_stage10_memory.py"
       ],
-      "remaining": "Requires verified cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy."
+      "remaining": "Local persisted payload checksum and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete."
     },
     {
       "id": "A06",

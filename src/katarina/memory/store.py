@@ -32,6 +32,25 @@ def _payload_hash(value: Any) -> str:
     return sha256(_canonical_json(value).encode("utf-8")).hexdigest()
 
 
+def _verified_payload(row: sqlite3.Row) -> Any:
+    """Reject changed or malformed stored evidence before any replay/restore.
+
+    SQLite integrity_check verifies page structure, not that the original
+    signed-by-digest payload is still present. This hash is a local integrity
+    guard, not external authentication against a DB attacker who can rewrite
+    both payload and hash.
+    """
+    raw = row["payload_json"]
+    expected = row["payload_hash"]
+    if (not isinstance(raw, str) or not isinstance(expected, str)
+            or sha256(raw.encode("utf-8")).hexdigest() != expected):
+        raise ValueError("memory_payload_digest_mismatch")
+    try:
+        return json.loads(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("memory_payload_corrupt") from exc
+
+
 def _deterministic_id(namespace: str, value: Any) -> str:
     raw = (namespace + "\x00" + _canonical_json(value)).encode("utf-8")
     return sha256(raw).hexdigest()
@@ -165,11 +184,13 @@ class MemoryStore:
         digest = sha256(payload_json.encode("utf-8")).hexdigest()
         record_id = event_id or _deterministic_id("operational:" + event_type, payload)
         existing = self._conn.execute(
-            "SELECT sequence,payload_hash FROM operational_events WHERE event_id=?",
+            "SELECT sequence,event_type,payload_json,payload_hash FROM operational_events WHERE event_id=?",
             (record_id,),
         ).fetchone()
         if existing is not None:
-            if existing["payload_hash"] != digest:
+            _verified_payload(existing)
+            if (existing["payload_hash"] != digest
+                    or existing["event_type"] != event_type):
                 raise IdempotencyConflict(f"event_id conflict: {record_id}")
             return AppendResult(record_id, int(existing["sequence"]), False)
 
@@ -194,10 +215,11 @@ class MemoryStore:
         digest = sha256(payload_json.encode("utf-8")).hexdigest()
         record_id = experience_id or _deterministic_id("trade_experience", payload)
         existing = self._conn.execute(
-            "SELECT sequence,payload_hash FROM trade_experiences WHERE experience_id=?",
+            "SELECT sequence,payload_json,payload_hash FROM trade_experiences WHERE experience_id=?",
             (record_id,),
         ).fetchone()
         if existing is not None:
+            _verified_payload(existing)
             if existing["payload_hash"] != digest:
                 raise IdempotencyConflict(f"experience_id conflict: {record_id}")
             return AppendResult(record_id, int(existing["sequence"]), False)
@@ -231,7 +253,7 @@ class MemoryStore:
                 "event_id": row["event_id"],
                 "event_type": row["event_type"],
                 "created_utc": row["created_utc"],
-                "payload": json.loads(row["payload_json"]),
+                "payload": _verified_payload(row),
                 "payload_hash": row["payload_hash"],
             }
             for row in rows
@@ -257,7 +279,7 @@ class MemoryStore:
             "event_id": row["event_id"],
             "event_type": row["event_type"],
             "created_utc": row["created_utc"],
-            "payload": json.loads(row["payload_json"]),
+            "payload": _verified_payload(row),
             "payload_hash": row["payload_hash"],
         }
 
@@ -279,7 +301,7 @@ class MemoryStore:
                 "sequence": int(row["sequence"]),
                 "experience_id": row["experience_id"],
                 "closed_utc": row["closed_utc"],
-                "payload": json.loads(row["payload_json"]),
+                "payload": _verified_payload(row),
                 "payload_hash": row["payload_hash"],
             }
             for row in rows
