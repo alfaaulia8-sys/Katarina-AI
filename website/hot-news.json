@@ -1,104 +1,104 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-14T07:21:06Z",
+  "updatedAt": "2026-10-14T13:16:18Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "ASML says it's getting order interest through 2030 as profit smashes expectations",
+      "title": "10-year Treasury yield jumps as September core inflation comes in hotter than expected",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/asml-3q-earnings-ai-demand-orders-capacity.html",
-      "publishedAt": "2026-10-14T07:10:36Z",
+      "url": "https://www.cnbc.com/2026/10/14/us-treasury-yields-cpi-inflation-report.html",
+      "publishedAt": "2026-10-14T13:15:50Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Morgan Stanley tops estimates as equities trading revenue beats expectations by $909 million",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/14/morgan-stanley-ms-q3-2026-earnings.html",
+      "publishedAt": "2026-10-14T13:11:07Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Russia pounds Ukraine's energy infrastructure, leaving 600,000 without power",
+      "title": "Consumer prices rose at 3.7% annual rate in September as gas costs skyrocket",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/cpi-inflation-report-september-2026.html",
+      "publishedAt": "2026-10-14T13:06:23Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Jim Cramer's top 10 things to watch in the stock market Wednesday",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/investingclub/2026/10/14/jim-cramers-top-10-things-to-watch-in-the-stock-market-wednesday.html",
+      "publishedAt": "2026-10-14T12:59:49Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Bank of America shares drop 7% after third-quarter revenue miss and regulatory penalty",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/14/bank-of-america-bac-q3-2026-earnings.html",
+      "publishedAt": "2026-10-14T12:54:01Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Iran says it’s ‘counting the moments’ until it can attack U.S. warships; Saudi Aramco facilities attacked",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/us-iran-war-trump-hormuz-saudi.html",
+      "publishedAt": "2026-10-14T12:43:45Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Even more borrowers choose riskier mortgages, as higher interest rates crush affordability",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/even-more-borrowers-choose-riskier-mortgages-as-higher-interest-rates-crush-affordability.html",
+      "publishedAt": "2026-10-14T12:01:31Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Bank of America fined $1.2 billion over money laundering violations",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/13/bank-of-america-treasury-money-laundering.html",
+      "publishedAt": "2026-10-14T11:11:30Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Diesel squeeze set to last well into 2027 as Iran war disrupts supply, IEA says",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/diesel-deal-oil-price-iea-report.html",
+      "publishedAt": "2026-10-14T10:37:42Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Oil prices rise after IEA warns on market constraints; Saudi officials say Aramco facilities attacked",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/oil-rises-amid-growing-tensions-between-saudis-and-iran-backed-houthis.html",
+      "publishedAt": "2026-10-14T10:33:13Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "How Trump’s tariffs and Iran war are becoming liabilities in Michigan’s Senate race",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/mike-rogers-trump-tariffs-michigan-senate-election.html",
+      "publishedAt": "2026-10-14T10:30:01Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Ukraine warns Starlink limits are disrupting military operations as Russia pounds its energy infrastructure",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/14/russia-ukraine-energy-ceasefire-power-outages.html",
-      "publishedAt": "2026-10-14T07:07:56Z",
+      "publishedAt": "2026-10-14T09:18:18Z",
       "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Crypto bosses, CEOs and F1: Singapore's business events boom gathers pace",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/crypto-bosses-ceos-and-f1-singapore-events-boom-gathers-pace-.html",
-      "publishedAt": "2026-10-14T04:41:29Z",
-      "category": "Kripto",
-      "language": "en"
-    },
-    {
-      "title": "'Godzilla El Niño' is wreaking havoc with Philippine central bank's inflation forecasts",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/godzilla-el-nino-asia-inflation-philippines.html",
-      "publishedAt": "2026-10-14T04:24:28Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Oil rises amid growing Mideast tensions between Iran-backed Houthis and Saudi Arabia",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/oil-rises-amid-growing-tensions-between-saudis-and-iran-backed-houthis.html",
-      "publishedAt": "2026-10-14T04:07:00Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "China's exports and imports surge past expectations in September",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/14/chinas-exports-likely-grew-by-double-digits-in-september.html",
-      "publishedAt": "2026-10-14T03:41:36Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "China's producer prices rise at fastest pace since June 2022, beating expectations",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/producer-prices-in-china-rise-fastest-since-june-2022-on-fuel-costs.html",
-      "publishedAt": "2026-10-14T03:14:48Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "CNBC Daily Open: Diesel deal may not be enough to curb high energy prices",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/cnbc-daily-open-diesel-energy-apple-anthropic-imf.html",
-      "publishedAt": "2026-10-14T01:09:16Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "FBI arrests Saudi OpenAI employee who allegedly planted recording device in conference room",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/openai-employee-arrested-recording-device.html",
-      "publishedAt": "2026-10-14T00:13:45Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Here's where Jim Cramer stands on this newly public AI infrastructure stock",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/13/jim-cramer-accelevation-stock.html",
-      "publishedAt": "2026-10-13T22:47:07Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Don't let inflation bite — how to hedge with TIPS, commodities and infrastructure funds",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/13/inflation-hedge-tips-commodities-infrastructure.html",
-      "publishedAt": "2026-10-13T20:52:22Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "JPMorgan Chase blocks outside AI agents like Muse, Instinct from directly accessing accounts",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/13/jpmorgan-ai-agents-account-access.html",
-      "publishedAt": "2026-10-13T20:48:37Z",
-      "category": "Pasar Global",
       "language": "en"
     }
   ]
