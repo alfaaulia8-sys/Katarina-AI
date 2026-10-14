@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from contextlib import closing
 from pathlib import Path
+from unittest.mock import patch
 import sqlite3
 import tempfile
 import unittest
@@ -23,11 +24,51 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
         self.assertEqual(result["modules_verified"],10)
         self.assertEqual(len(set(result["module_sha256"])),10)
         self.assertEqual(result["management"],"ON_HOLD")
+        self.assertEqual(result["cumulative_profit_lock"],
+                         "VERIFIED_THREE_MILESTONES_AND_RESTART")
+        self.assertEqual(result["same_day_emergency_lockdown"],
+                         "VERIFIED_NO_NEW_ENTRY")
         self.assertTrue(result["learning_policy_valid"])
         self.assertEqual(result["shadow_observations"],0)
         self.assertEqual(result["mode"],"TESTER_NO_ORDERS")
         self.assertFalse(result["live_execution_authorized"])
         self.assertEqual(result["orders_submitted"],0)
+
+    def test_acceptance_rejects_old_reserve_overwrite_implementation(self):
+        from katarina.engines.capital import CapitalCompoundingEngine
+        original=CapitalCompoundingEngine.observe_balance
+
+        def incorrectly_reset_lock(engine,balance):
+            event=original(engine,balance)
+            if event.milestone_triggered:
+                engine.reserve_balance=round(engine.total_balance*.25,10)
+                engine.active_balance=round(
+                    engine.total_balance-engine.reserve_balance,10)
+            return event
+
+        with patch.object(CapitalCompoundingEngine,"observe_balance",
+                          incorrectly_reset_lock):
+            with self.assertRaisesRegex(
+                    ValueError,"cumulative_profit_lock_policy_mismatch"):
+                verify(self.profile,root=ROOT)
+
+    def test_acceptance_rejects_same_day_emergency_bypass(self):
+        from katarina.engines.risk import (
+            RiskGovernor,RiskDecision,RiskAction,DrawdownMode,
+        )
+        original=RiskGovernor.evaluate
+
+        def incorrectly_reopen(governor,request):
+            authority=request.drawdown_authority
+            if (authority is not None
+                    and authority.mode is DrawdownMode.EMERGENCY_LOCKDOWN):
+                return RiskDecision(RiskAction.APPROVE,.01,"unsafe")
+            return original(governor,request)
+
+        with patch.object(RiskGovernor,"evaluate",incorrectly_reopen):
+            with self.assertRaisesRegex(
+                    ValueError,"same_day_emergency_lockdown_bypass"):
+                verify(self.profile,root=ROOT)
 
     def test_management_and_specialists_cannot_be_reactivated_by_manifest(self):
         for component in ("katarina_management", "eleven_specialists"):
