@@ -148,14 +148,16 @@
         "src/katarina/engines/execution_recovery.py",
         "src/katarina/engines/multi_symbol_execution.py",
         "src/katarina/intelligence/unified_research_handoff.py",
-        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py",
+        "src/katarina/intelligence/research_exit_lifecycle.py"
       ],
       "test_paths": [
         "tests/unit/engines/test_account_risk_state.py",
         "tests/unit/intelligence/test_unified_research_handoff.py",
-        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
+        "tests/unit/intelligence/test_research_exit_lifecycle.py"
       ],
-      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
+      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders."
     },
     {
       "id": "A11",
@@ -164,14 +166,16 @@
       "evidence_paths": [
         "src/katarina/intelligence/structure_exit_plan.py",
         "src/katarina/intelligence/unified_research_handoff.py",
-        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py",
+        "src/katarina/intelligence/research_exit_lifecycle.py"
       ],
       "test_paths": [
         "tests/unit/intelligence/test_structure_exit_plan.py",
         "tests/unit/intelligence/test_unified_research_handoff.py",
-        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
+        "tests/unit/intelligence/test_research_exit_lifecycle.py"
       ],
-      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
+      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders."
     },
     {
       "id": "A12",
