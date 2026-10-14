@@ -1,10 +1,66 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-14T01:16:16Z",
+  "updatedAt": "2026-10-14T07:21:06Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
+    {
+      "title": "ASML says it's getting order interest through 2030 as profit smashes expectations",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/asml-3q-earnings-ai-demand-orders-capacity.html",
+      "publishedAt": "2026-10-14T07:10:36Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Russia pounds Ukraine's energy infrastructure, leaving 600,000 without power",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/russia-ukraine-energy-ceasefire-power-outages.html",
+      "publishedAt": "2026-10-14T07:07:56Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "Crypto bosses, CEOs and F1: Singapore's business events boom gathers pace",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/crypto-bosses-ceos-and-f1-singapore-events-boom-gathers-pace-.html",
+      "publishedAt": "2026-10-14T04:41:29Z",
+      "category": "Kripto",
+      "language": "en"
+    },
+    {
+      "title": "'Godzilla El Niño' is wreaking havoc with Philippine central bank's inflation forecasts",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/godzilla-el-nino-asia-inflation-philippines.html",
+      "publishedAt": "2026-10-14T04:24:28Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Oil rises amid growing Mideast tensions between Iran-backed Houthis and Saudi Arabia",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/oil-rises-amid-growing-tensions-between-saudis-and-iran-backed-houthis.html",
+      "publishedAt": "2026-10-14T04:07:00Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "China's exports and imports surge past expectations in September",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/14/chinas-exports-likely-grew-by-double-digits-in-september.html",
+      "publishedAt": "2026-10-14T03:41:36Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "China's producer prices rise at fastest pace since June 2022, beating expectations",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/producer-prices-in-china-rise-fastest-since-june-2022-on-fuel-costs.html",
+      "publishedAt": "2026-10-14T03:14:48Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
     {
       "title": "CNBC Daily Open: Diesel deal may not be enough to curb high energy prices",
       "source": "CNBC Dunia",
@@ -15,7 +71,7 @@
     },
     {
       "title": "FBI arrests Saudi OpenAI employee who allegedly planted recording device in conference room",
-      "source": "CNBC Utama",
+      "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/13/openai-employee-arrested-recording-device.html",
       "publishedAt": "2026-10-14T00:13:45Z",
       "category": "Energi / Geopolitik",
@@ -42,62 +98,6 @@
       "source": "CNBC Pasar",
       "url": "https://www.cnbc.com/2026/10/13/jpmorgan-ai-agents-account-access.html",
       "publishedAt": "2026-10-13T20:48:37Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Bank of America fined $1.2 billion over money-laundering violations",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/bank-of-america-treasury-money-laundering.html",
-      "publishedAt": "2026-10-13T20:45:01Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "10-year Treasury yield falls as energy prices stabilize",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/us-treasurys-bonds-yields.html",
-      "publishedAt": "2026-10-13T20:11:33Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Why this little known Chinese chipmaker has caused a global stock rout",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/cxmt-memory-chip-stock-rout.html",
-      "publishedAt": "2026-10-13T20:05:58Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "We're upgrading our rating on Wells Fargo as the stock's pullback offers a nice entry point",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/investingclub/2026/10/13/were-upgrading-our-rating-on-wells-fargo-as-the-stocks-pullback-offers-a-nice-entry-point.html",
-      "publishedAt": "2026-10-13T19:51:06Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Williams says Fed may not have to hike rates in 2027, at odds with traders",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/13/john-williams-fed-rate-hikes-2027.html",
-      "publishedAt": "2026-10-13T19:46:12Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Oil prices mixed as traders assess Russian diesel supply prospects and Saudi-Houthi conflict",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/oil-prices-today-brent-wti-hormuz.html",
-      "publishedAt": "2026-10-13T19:35:50Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Paul Tudor Jones says 2027 could be a really challenging year for the stock market",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/paul-tudor-jones-2027-really-challenging-year.html",
-      "publishedAt": "2026-10-13T19:21:27Z",
       "category": "Pasar Global",
       "language": "en"
     }
