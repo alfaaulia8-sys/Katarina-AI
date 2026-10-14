@@ -19,6 +19,63 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT / "src"))
 
 
+def build_stage3_evidence_backlog(report: dict) -> dict:
+    """Read-only collection checklist; it never overrides any trading gate.
+
+    Cohort rows come exclusively from the validated, past-only shadow lab.
+    No fabricated targets or thresholds are supplied for deferred decisions.
+    """
+    if report.get("data_integrity") != "VALID":
+        raise ValueError("stage3_evidence_source_not_verified")
+    cohorts = report.get("cohorts")
+    if not isinstance(cohorts, list):
+        raise ValueError("stage3_evidence_cohorts_invalid")
+    items = []
+    for cohort in sorted(cohorts, key=lambda c: (
+            c["symbol"], c["method"], c["side"], c["regime"])):
+        tasks = []
+        if cohort["gapped"] > 0:
+            tasks.append("RECOVER_MISSING_CAUSAL_QUOTE_PATHS_WITHOUT_IMPUTATION")
+        if cohort["pending"] > 0:
+            tasks.append("WAIT_FOR_OPEN_VIRTUAL_OBSERVATIONS_TO_CLOSE")
+        if cohort["status"] == "INSUFFICIENT_EVIDENCE":
+            tasks.append("COLLECT_MORE_INDEPENDENT_CLOSED_QUOTE_OUTCOMES")
+        elif cohort["status"] == "HOLDOUT_INSUFFICIENT":
+            tasks.append("EXTEND_UNSEEN_CHRONOLOGICAL_HOLDOUT")
+        elif cohort["status"] == "UNSTABLE_OR_NEGATIVE_QUOTE_EDGE":
+            tasks.append("PRECOMMIT_DISCONFIRMING_ALTERNATIVE_OR_WAIT")
+        elif cohort["status"] == "RESEARCH_CANDIDATE_REVIEW_REQUIRED":
+            tasks.append("REPLICATE_ON_NEW_UNSEEN_FORWARD_WINDOW")
+        else:
+            raise ValueError("stage3_evidence_status_unknown")
+        items.append({
+            "symbol": cohort["symbol"], "method": cohort["method"],
+            "side": cohort["side"], "regime": cohort["regime"],
+            "research_status": cohort["status"],
+            "observations_recorded": cohort["recorded"],
+            "completed_virtual_outcomes": cohort["completed"],
+            "unobserved_quote_gaps": cohort["gapped"],
+            "pending_virtual_outcomes": cohort["pending"],
+            "quote_coverage": cohort["coverage"],
+            "next_research_tasks": tasks,
+            "broker_edge_proven": False,
+        })
+    return {
+        "mode": "READ_ONLY_EVIDENCE_COLLECTION_BACKLOG",
+        "observed_shadow_rows": report["rows_read"],
+        "cohorts": items,
+        "common_unverified_evidence": [
+            "AUTHENTICATED_BROKER_BID_ASK_AND_SESSION_TIME",
+            "ACTUAL_SPREAD_COMMISSION_SLIPPAGE_AND_EXECUTION_FILLS",
+            "PRECOMMITTED_UNSEEN_PROSPECTIVE_FORWARD_EVALUATION",
+        ],
+        "no_automatic_data_collection": True,
+        "may_promote_strategy": False,
+        "may_authorize_live": False,
+        "orders_submitted": 0,
+    }
+
+
 def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -> dict:
     if profile.get("schema_version") != 1 or profile.get("profile") != "KATARINA_UNIFIED_V1_RESEARCH_ONLY":
         raise ValueError("unrecognized_unified_profile")
@@ -182,6 +239,7 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         "shadow_db_path":source_path,
         "shadow_observations":report["rows_read"],
         "shadow_cohorts":len(report["cohorts"]),
+        "stage3_evidence_backlog":build_stage3_evidence_backlog(report),
         "learning_integrity":report["data_integrity"],
         "learning_policy_valid":proposal.integrity_ok,
         "learning_source_sha256":report["source_digest_sha256"],
