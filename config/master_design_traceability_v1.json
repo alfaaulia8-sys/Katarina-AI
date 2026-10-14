@@ -37,12 +37,14 @@
       "status": "PARTIAL",
       "evidence_paths": [
         "src/katarina/intelligence/self_evolution_lab.py",
-        "src/katarina/intelligence/prospective_shadow_book.py"
+        "src/katarina/intelligence/prospective_shadow_book.py",
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
       ],
       "test_paths": [
-        "tests/unit/intelligence/test_unified_cognitive_cycle.py"
+        "tests/unit/intelligence/test_unified_cognitive_cycle.py",
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
       ],
-      "remaining": "Requires credible cross-market learning and broker-verified BUY/SELL prospective outcomes."
+      "remaining": "Requires credible cross-market learning and broker-verified BUY/SELL prospective outcomes. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
     },
     {
       "id": "A04",
@@ -51,13 +53,15 @@
       "evidence_paths": [
         "src/katarina/intelligence/unified_cognitive_cycle.py",
         "src/katarina/intelligence/market_regime_intelligence.py",
-        "src/katarina/intelligence/unified_research_handoff.py"
+        "src/katarina/intelligence/unified_research_handoff.py",
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
       ],
       "test_paths": [
         "tests/unit/intelligence/test_unified_cognitive_cycle.py",
-        "tests/unit/intelligence/test_unified_research_handoff.py"
+        "tests/unit/intelligence/test_unified_research_handoff.py",
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
       ],
-      "remaining": "Descriptive offline cognitive loop and chronological memory/rollback guards exist; predictive world calibration and Fast/Deep integration not established. Offline Owner research review handoff exists; it does not authorize live execution."
+      "remaining": "Descriptive offline cognitive loop and chronological memory/rollback guards exist; predictive world calibration and Fast/Deep integration not established. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
     },
     {
       "id": "A05",
@@ -66,13 +70,15 @@
       "evidence_paths": [
         "src/katarina/memory/runtime_state.py",
         "src/katarina/memory/store.py",
-        "src/katarina/intelligence/historical_analog_memory.py"
+        "src/katarina/intelligence/historical_analog_memory.py",
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
       ],
       "test_paths": [
         "tests/unit/memory/test_runtime_state_persistence.py",
-        "tests/unit/memory/test_stage10_memory.py"
+        "tests/unit/memory/test_stage10_memory.py",
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
       ],
-      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete."
+      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
     },
     {
       "id": "A06",
@@ -80,12 +86,14 @@
       "status": "PARTIAL",
       "evidence_paths": [
         "src/katarina/intelligence/self_evolution_lab.py",
-        "src/katarina/intelligence/unified_cognitive_cycle.py"
+        "src/katarina/intelligence/unified_cognitive_cycle.py",
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
       ],
       "test_paths": [
-        "tests/unit/intelligence/test_unified_cognitive_cycle.py"
+        "tests/unit/intelligence/test_unified_cognitive_cycle.py",
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
       ],
-      "remaining": "Virtual research works; independent broker forward and promotion/canary standards await evidence and Owner decision."
+      "remaining": "Virtual research works; independent broker forward and promotion/canary standards await evidence and Owner decision. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
     },
     {
       "id": "A07",
@@ -135,13 +143,15 @@
       "evidence_paths": [
         "src/katarina/engines/execution_recovery.py",
         "src/katarina/engines/multi_symbol_execution.py",
-        "src/katarina/intelligence/unified_research_handoff.py"
+        "src/katarina/intelligence/unified_research_handoff.py",
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
       ],
       "test_paths": [
         "tests/unit/engines/test_account_risk_state.py",
-        "tests/unit/intelligence/test_unified_research_handoff.py"
+        "tests/unit/intelligence/test_unified_research_handoff.py",
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
       ],
-      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution."
+      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
     },
     {
       "id": "A11",
@@ -149,13 +159,15 @@
       "status": "PARTIAL",
       "evidence_paths": [
         "src/katarina/intelligence/structure_exit_plan.py",
-        "src/katarina/intelligence/unified_research_handoff.py"
+        "src/katarina/intelligence/unified_research_handoff.py",
+        "src/katarina/intelligence/unified_adaptive_research_cycle.py"
       ],
       "test_paths": [
         "tests/unit/intelligence/test_structure_exit_plan.py",
-        "tests/unit/intelligence/test_unified_research_handoff.py"
+        "tests/unit/intelligence/test_unified_research_handoff.py",
+        "tests/unit/intelligence/test_unified_adaptive_research_cycle.py"
       ],
-      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution."
+      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven."
     },
     {
       "id": "A12",
