@@ -70,6 +70,11 @@ original `context.sqlite3` is unchanged by this test.
 
 - Timestamp-aware, past-only; no future outcomes, random profit claims,
   fabricated trades, external AI agent credentials, or live market orders.
+- Cognitive LEARN/ROLLBACK ledger timestamps must be timezone-aware and
+  nondecreasing. A restarted or backdated observer cannot append a checkpoint
+  earlier than its last persisted event, even if the virtual evidence differs.
+  A rewritten earlier ledger timestamp is rejected on history verification.
+  Read-only previews are unaffected and no clock correction is fabricated.
 - SHA256 ledger integrity and source fingerprint are verified before
   appending any memory. Schema/tamper failures block the observer.
 - Existing research persists through a restart; rollback is visible and

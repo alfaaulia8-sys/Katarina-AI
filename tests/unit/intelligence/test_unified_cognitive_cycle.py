@@ -173,6 +173,66 @@ class UnifiedCognitionTests(unittest.TestCase):
             run_unified_cognitive_cycle(self.db,as_of_utc=AS_OF)
         self.assertEqual(verify_cognitive_history(self.db)["events"],0)
 
+    def test_stale_cognitive_clock_refuses_replay_without_changing_checkpoint(self):
+        old=run_unified_cognitive_cycle(self.db,as_of_utc=AS_OF)
+        with self.assertRaisesRegex(ValueError,"cognitive_learning_clock_regressed"):
+            run_unified_cognitive_cycle(
+                self.db,as_of_utc=AS_OF-timedelta(minutes=1))
+        self.assertEqual(verify_cognitive_history(self.db)["events"],1)
+        self.assertEqual(
+            verify_cognitive_history(self.db)["active_checkpoint_sha256"],
+            old["active_checkpoint_sha256"])
+
+    def test_stale_clock_refuses_newly_modified_outcome_checkpoint(self):
+        original=run_unified_cognitive_cycle(self.db,as_of_utc=AS_OF)
+        self.db.execute(
+            "UPDATE prospective_shadow SET virtual_net_r=-.9 WHERE side='BUY'")
+        self.db.commit()
+        with self.assertRaisesRegex(ValueError,"cognitive_learning_clock_regressed"):
+            run_unified_cognitive_cycle(
+                self.db,as_of_utc=AS_OF-timedelta(minutes=1))
+        self.assertEqual(
+            verify_cognitive_history(self.db)["active_checkpoint_sha256"],
+            original["active_checkpoint_sha256"])
+
+    def test_owner_rollback_cannot_backdate_a_newer_learning_event(self):
+        first=run_unified_cognitive_cycle(self.db,as_of_utc=AS_OF)
+        self.db.execute(
+            "UPDATE prospective_shadow SET virtual_net_r=-.9 WHERE side='BUY'")
+        self.db.commit()
+        run_unified_cognitive_cycle(
+            self.db,as_of_utc=AS_OF+timedelta(minutes=10))
+        before=verify_cognitive_history(self.db)
+        with self.assertRaisesRegex(ValueError,"cognitive_rollback_clock_regressed"):
+            rollback_cognitive_research(
+                self.db,to_receipt_sha256=first["active_checkpoint_sha256"],
+                as_of_utc=AS_OF+timedelta(minutes=5),owner_approved=True)
+        self.assertEqual(before,verify_cognitive_history(self.db))
+
+    def test_history_rejects_rewritten_backwards_timestamp_even_with_valid_receipt(self):
+        from katarina.intelligence.unified_cognitive_cycle import _digest
+        run_unified_cognitive_cycle(self.db,as_of_utc=AS_OF)
+        self.db.execute(
+            "UPDATE prospective_shadow SET virtual_net_r=-.9 WHERE side='BUY'")
+        self.db.commit()
+        run_unified_cognitive_cycle(
+            self.db,as_of_utc=AS_OF+timedelta(minutes=10))
+        row=self.db.execute(
+            "SELECT seq,kind,observation_sha256,payload_json,previous_sha256 "
+            "FROM katarina_cognitive_ledger WHERE seq=2").fetchone()
+        earlier=(AS_OF-timedelta(minutes=5)).isoformat()
+        mutated=dict(
+            seq=row[0],kind=row[1],as_of_utc=earlier,
+            observation_sha256=row[2],payload=json.loads(row[3]),
+            previous_sha256=row[4],
+        )
+        self.db.execute(
+            "UPDATE katarina_cognitive_ledger SET as_of_utc=?,entry_sha256=? "
+            "WHERE seq=2",(earlier,_digest(mutated)))
+        self.db.commit()
+        with self.assertRaisesRegex(ValueError,"cognitive_ledger_clock_regressed"):
+            verify_cognitive_history(self.db)
+
     def test_readonly_preview_no_ledger_created(self):
         result=run_unified_cognitive_cycle(self.db,as_of_utc=AS_OF,
                                           persist=False)

@@ -70,6 +70,7 @@ def _history(db: sqlite3.Connection) -> tuple[list[dict], dict | None]:
         return [], None
     events = []
     prior = GENESIS
+    prior_clock = None
     active = None
     for seq, kind, when, observation, raw, previous, receipt in db.execute(
         "SELECT seq,kind,as_of_utc,observation_sha256,payload_json,"
@@ -77,6 +78,16 @@ def _history(db: sqlite3.Connection) -> tuple[list[dict], dict | None]:
         "ORDER BY seq ASC"):
         if len(events) >= MAX_LEDGER or kind not in ("LEARN", "ROLLBACK"):
             raise ValueError("cognitive_ledger_limit_or_kind_invalid")
+        if seq != len(events) + 1:
+            raise ValueError("cognitive_ledger_sequence_gap")
+        try:
+            if not isinstance(when, str):
+                raise ValueError("invalid_ledger_time")
+            event_clock = _utc(datetime.fromisoformat(when))
+        except (TypeError, ValueError, OverflowError, OSError) as exc:
+            raise ValueError("cognitive_ledger_timestamp_invalid") from exc
+        if prior_clock is not None and event_clock < prior_clock:
+            raise ValueError("cognitive_ledger_clock_regressed")
         try:
             payload = json.loads(raw)
             if not isinstance(payload, dict):
@@ -103,6 +114,7 @@ def _history(db: sqlite3.Connection) -> tuple[list[dict], dict | None]:
             active = selected
         events.append(event)
         prior = receipt
+        prior_clock = event_clock
     return events, active
 
 
@@ -296,6 +308,8 @@ def run_unified_cognitive_cycle(
     with db:
         _schema(db, create=True)
         events, active = _history(db)
+        if events and clock < _utc(datetime.fromisoformat(events[-1]["as_of_utc"])):
+            raise ValueError("cognitive_learning_clock_regressed")
         identical = next((e for e in reversed(events)
                           if e["kind"]=="LEARN" and
                           e["observation_sha256"]==episode["observation_sha256"]),None)
@@ -346,6 +360,8 @@ def rollback_cognitive_research(
             raise ValueError("unknown_or_nonlearn_checkpoint")
         if datetime.fromisoformat(target["as_of_utc"]) > clock:
             raise ValueError("future_rollback_checkpoint_forbidden")
+        if clock < _utc(datetime.fromisoformat(events[-1]["as_of_utc"])):
+            raise ValueError("cognitive_rollback_clock_regressed")
         if active and active["entry_sha256"]==target["entry_sha256"]:
             return {"rollback":"ALREADY_ACTIVE",
                     "active_checkpoint_sha256":to_receipt_sha256}
