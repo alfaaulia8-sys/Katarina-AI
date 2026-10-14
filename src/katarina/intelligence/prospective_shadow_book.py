@@ -167,13 +167,25 @@ class ProspectiveShadowBook:
             WHERE id=? AND state='OPEN'""",(state,t,price,reason,net,oid))
 
     def propose(self,hypotheses:list[ResearchHypothesis],now:datetime,
-                *,research_policy:ShadowResearchPolicy|None=None):
+                *,research_policy:ShadowResearchPolicy|None=None,
+                research_priorities:dict[tuple[str,str,str,str],int]|None=None):
         """Deterministic, ranked one-entry across all correlated instruments.
 
         Signal is a virtual simulation even if official news is unavailable;
         such uncleared cases are labeled, never counted as validated alpha.
         """
         t=epoch(now)
+        if research_priorities is None:
+            research_priorities={}
+        if (not isinstance(research_priorities,dict)
+                or len(research_priorities)>20):
+            raise ValueError("invalid_curiosity_priority_map")
+        for key,priority in research_priorities.items():
+            if (not isinstance(key,tuple) or len(key)!=4
+                    or any(not isinstance(k,str) or not k for k in key)
+                    or key[2] not in ("BUY","SELL")
+                    or type(priority) is not int or not 0<=priority<=3):
+                raise ValueError("invalid_curiosity_priority")
         if research_policy is not None:
             if not isinstance(research_policy,ShadowResearchPolicy):
                 raise ValueError("invalid_shadow_research_policy")
@@ -210,15 +222,19 @@ class ProspectiveShadowBook:
                 continue
             risk,rr=dims
             if not (h.ask>0 and h.bid>0):continue
-            # Stable ranking, not repeated search for optimal parameters.
-            rank=(min(rr,3.0)/(1+max(h.spread_atr,0)),
+            # Curiosity guides ONLY virtual samples; geometry, spread,
+            # news, one-position and learning-integrity gates still prevail.
+            curiosity=research_priorities.get(
+                (h.symbol,h.method,h.side,h.regime),0)
+            rank=(curiosity,min(rr,3.0)/(1+max(h.spread_atr,0)),
                   h.evidence_score, -((h.ask-h.bid)/risk))
             eligible.append((rank,h.symbol,h,risk,rr))
         if not eligible:
             return {"accepted":False,"reason":"NO_CLOSED_BAR_VALID_HYPOTHESIS",
                     "candidates":0,"drift_paused":drift_paused}
-        # Always select by score, NEVER whichever symbol the input listed first.
-        ranked=sorted(eligible,key=lambda x:(-x[0][0],-x[0][1],-x[0][2],x[1]))
+        # Stable priority + quality; never dependent on input order.
+        ranked=sorted(eligible,key=lambda x:(
+            -x[0][0],-x[0][1],-x[0][2],-x[0][3],x[1]))
         with self.db:
             open_count=self.db.execute(
                 "SELECT COUNT(*) FROM prospective_shadow WHERE state='OPEN'").fetchone()[0]

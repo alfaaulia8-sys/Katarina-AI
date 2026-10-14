@@ -4,7 +4,7 @@
   "canonical": {
     "core": "src/katarina/core/orchestrator.py",
     "management": "scripts/ai/management_acceptance.py",
-    "brain": "src/katarina/intelligence/self_evolution_lab.py",
+    "brain": "src/katarina/intelligence/unified_cognitive_cycle.py",
     "observer": "scripts/ai/run_contextual_market_observer.py",
     "shadow": "src/katarina/intelligence/prospective_shadow_book.py",
     "risk": "src/katarina/engines/risk.py",

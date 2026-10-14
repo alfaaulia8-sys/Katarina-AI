@@ -44,6 +44,9 @@ from katarina.intelligence.prospective_shadow_review import summarize as shadow_
 from katarina.intelligence.self_evolution_lab import (
     evaluate_shadow_self_evolution,derive_shadow_research_policy,
 )
+from katarina.intelligence.unified_cognitive_cycle import (
+    run_unified_cognitive_cycle,
+)
 from katarina.governance.multi_model_evolution_review import review_candidate
 from katarina.intelligence.prospective_shadow_book import (
     ProspectiveShadowBook,ResearchHypothesis,
@@ -416,11 +419,29 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         # to adjust subsequent virtual *sampling*, never production strategy.
         report["self_evolution_lab"]=evaluate_shadow_self_evolution(
             store.db,as_of_utc=now)
+        # The same canonical observer owns the full cognitive loop: episodic
+        # and semantic memory, descriptive world model, causal alternatives,
+        # curiosity experiments, metacognition and an auditable checkpoint.
+        # No external agent, strategy promotion or second scheduler.
+        report["unified_cognitive_cycle"]=run_unified_cognitive_cycle(
+            store.db,as_of_utc=now)
         learned_policy=derive_shadow_research_policy(
             report["self_evolution_lab"])
+        if report["unified_cognitive_cycle"].get(
+                "source_snapshot_matches_active") is not True:
+            # Owner rollback/replayed evidence always pauses new sampling.
+            learned_policy=replace(learned_policy,integrity_ok=False)
         report["shadow_research_policy"]=learned_policy.to_dict()
+        curiosity_priorities={
+            (q["symbol"],q["method"],q["side"],q["regime"]):
+                q["curiosity_priority"]
+            for q in report["unified_cognitive_cycle"]["curiosity_hypotheses"]
+        }
+        if not learned_policy.integrity_ok:
+            curiosity_priorities={}
         report["virtual_shadow_selection"]=virtual_book.propose(
-            paper_hypotheses,now,research_policy=learned_policy)
+            paper_hypotheses,now,research_policy=learned_policy,
+            research_priorities=curiosity_priorities)
         report["virtual_shadow_summary"]=virtual_book.summary()
         retrospective=shadow_review(store.db,now)
         # Future independent AI reviewers must bind verdicts to a current
