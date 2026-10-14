@@ -1,4 +1,6 @@
 import sqlite3
+import json
+from hashlib import sha256
 from contextlib import closing
 import tempfile
 import unittest
@@ -129,6 +131,51 @@ class Stage10MemoryStoreTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "memory_payload_digest_mismatch"):
                 store.append_trade_experience(
                     {"outcome": "LOSS", "net_r": -1.0}, experience_id="loss-1")
+
+    def test_nonfinite_memory_payloads_cannot_be_appended(self):
+        with MemoryStore(self.db) as store:
+            for value in (float("nan"),float("inf"),-float("inf")):
+                with self.subTest(nonfinite=str(value)):
+                    with self.assertRaisesRegex(
+                            ValueError,"nonfinite_or_invalid_memory_payload"):
+                        store.append_operational_event("risk",{"dd":value})
+                    with self.assertRaisesRegex(
+                            ValueError,"nonfinite_or_invalid_memory_payload"):
+                        store.append_trade_experience({"virtual_r":value})
+                    with self.assertRaisesRegex(
+                            ValueError,"nonfinite_or_invalid_memory_payload"):
+                        store.deterministic_id("research",{"score":value})
+            self.assertEqual(store.load_operational_events(),[])
+            self.assertEqual(store.load_trade_experiences(),[])
+
+    def test_legacy_matching_sha_nonfinite_memory_is_still_rejected(self):
+        raw='{"fake_broker_r":NaN}'
+        digest=sha256(raw.encode("utf-8")).hexdigest()
+        with MemoryStore(self.db) as store:
+            with store._conn:
+                store._conn.execute(
+                    "INSERT INTO operational_events("
+                    "event_id,event_type,created_utc,payload_json,payload_hash)"
+                    " VALUES (?,?,?,?,?)",
+                    ("legacy-test","risk_snapshot","2026-01-01T00:00:00+00:00",raw,digest),
+                )
+            self.assertTrue(store.integrity_check())
+            with self.assertRaisesRegex(ValueError,"memory_payload_corrupt"):
+                store.load_operational_events()
+            with self.assertRaisesRegex(ValueError,"memory_payload_corrupt"):
+                store.load_latest_operational_event("risk_snapshot")
+            with self.assertRaisesRegex(ValueError,"memory_payload_corrupt"):
+                store.append_operational_event(
+                    "risk_snapshot",{"fake_broker_r":0},event_id="legacy-test")
+
+    def test_valid_finite_nested_memory_still_roundtrips(self):
+        payload={"outer":{"growth":[0,1.25,-0.5],"side":"SELL"}}
+        with MemoryStore(self.db) as store:
+            first=store.append_operational_event("model",payload,event_id="valid")
+            second=store.append_operational_event("model",payload,event_id="valid")
+            self.assertTrue(first.inserted)
+            self.assertFalse(second.inserted)
+            self.assertEqual(store.load_latest_operational_event("model")["payload"],payload)
 
     def test_future_schema_version_is_rejected(self):
         conn = sqlite3.connect(str(self.db))
