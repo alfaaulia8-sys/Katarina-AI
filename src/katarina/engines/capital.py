@@ -45,8 +45,9 @@ class CapitalCompoundingEngine:
 
     Rules:
     - Milestones are realized-balance doublings, adjusted for deposits/withdrawals.
-    - When broker REALIZED BALANCE reaches the target, the logical reserve is
-      25% of the entire realized balance, not 25% of just the profit.
+    - When broker REALIZED BALANCE reaches each observed target, NEW reserve
+      is 25% of the entire realized balance, ADDED to previously locked funds;
+      it is not 25% of just the profit or a reset of cumulative reserve.
     - Successive targets are cashflow-adjusted balance doubling milestones,
       not two times the post-reserve active trading balance.
     - Reserve is logical protected capital and is excluded from risk sizing.
@@ -133,10 +134,14 @@ class CapitalCompoundingEngine:
                 self.last_milestone_balance=threshold
                 self.next_target_balance=threshold*self.growth_multiple
                 self.milestone_count+=1
-            self.reserve_balance=round(self.total_balance*self.reserve_fraction,10)
+            # Owner policy: each observed growth milestone locks an ADDITIONAL
+            # 25% of the broker's ACTUAL realized balance at that milestone.
+            # Existing reserve must never be silently replaced by the new lock.
+            new_lock=round(self.total_balance*self.reserve_fraction,10)
+            self.reserve_balance=round(min(self.total_balance,self.reserve_balance+new_lock),10)
             self.active_balance=max(0.0,self.total_balance-self.reserve_balance)
             self.reserve_impaired=False
-            return self._event("MILESTONE",True,0.0,0.0,"reserve_25pct_from_realized_balance")
+            return self._event("MILESTONE",True,0.0,0.0,"additional_25pct_actual_balance_locked")
 
         return self._event("BALANCE",False,0.0,0.0,"balance_synced")
 
