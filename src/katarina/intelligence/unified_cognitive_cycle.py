@@ -289,7 +289,11 @@ def verify_cognitive_history(db: sqlite3.Connection) -> dict:
     return {
         "events":len(events),
         "active_checkpoint_sha256":active["entry_sha256"] if active else None,
+        "active_observation_sha256":active["observation_sha256"] if active else None,
+        "active_checkpoint_as_of_utc":active["as_of_utc"] if active else None,
         "chain_head_sha256":events[-1]["entry_sha256"] if events else GENESIS,
+        "last_event_kind":events[-1]["kind"] if events else None,
+        "last_event_as_of_utc":events[-1]["as_of_utc"] if events else None,
         "integrity":"VALID",
     }
 

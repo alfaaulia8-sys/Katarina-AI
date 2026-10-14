@@ -14,7 +14,9 @@ import sqlite3
 
 from katarina.intelligence.adaptive_brain_v2 import BrainV2Observation
 from katarina.intelligence.structure_exit_plan import StructuralExitPlan
-from katarina.intelligence.unified_cognitive_cycle import run_unified_cognitive_cycle
+from katarina.intelligence.unified_cognitive_cycle import (
+    run_unified_cognitive_cycle, verify_cognitive_history,
+)
 from katarina.intelligence.unified_research_handoff import research_handoff
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -31,6 +33,8 @@ class UnifiedOfflineResearchDecision:
     regime: str
     entry_exit_receipt_sha256: str
     cognitive_source_sha256: str
+    cognitive_active_checkpoint_sha256: str | None
+    cognitive_chain_head_sha256: str
     cognitive_mode: str
     action: str
     cohort_status: str | None
@@ -75,6 +79,16 @@ def synthesize_offline_research(
             or not isinstance(cognition.get("observation_sha256"), str)
             or not _SHA.fullmatch(cognition["observation_sha256"])):
         raise ValueError("cognitive_research_proof_invalid")
+    # Read the persisted Owner-approved research history before interpreting
+    # live quote shadow state. A read-only preview must never silently
+    # override an Owner rollback or an older active learning checkpoint.
+    history = verify_cognitive_history(db)
+    if (history.get("integrity") != "VALID"
+            or type(history.get("events")) is not int
+            or history["events"] < 0
+            or not isinstance(history.get("chain_head_sha256"), str)
+            or not _SHA.fullmatch(history["chain_head_sha256"])):
+        raise ValueError("invalid_cognitive_checkpoint_history")
     key = (symbol, research_method, entry_review.side, entry_review.regime)
     matches = [
         row for row in cognition["semantic_memory"]
@@ -89,6 +103,29 @@ def synthesize_offline_research(
     cohort = matches[0] if matches else None
     question = curiosities[0] if curiosities else None
     blockers = []
+    if history["events"]:
+        if (not isinstance(history.get("active_checkpoint_sha256"), str)
+                or not _SHA.fullmatch(history["active_checkpoint_sha256"])
+                or not isinstance(history.get("active_observation_sha256"), str)
+                or not _SHA.fullmatch(history["active_observation_sha256"])):
+            raise ValueError("invalid_cognitive_active_checkpoint")
+        if history.get("last_event_kind") == "ROLLBACK":
+            blockers.append("OWNER_RESEARCH_ROLLBACK_HOLD")
+        elif history.get("last_event_kind") != "LEARN":
+            raise ValueError("invalid_cognitive_history_event")
+        try:
+            last_at = datetime.fromisoformat(history["last_event_as_of_utc"])
+        except (ValueError, TypeError) as exc:
+            raise ValueError("invalid_cognitive_checkpoint_clock") from exc
+        if last_at.tzinfo is None or last_at.utcoffset() is None:
+            raise ValueError("invalid_cognitive_checkpoint_clock")
+        if last_at.astimezone(timezone.utc) > as_of_utc.astimezone(timezone.utc):
+            blockers.append("COGNITIVE_HISTORY_NEWER_THAN_RESEARCH_CLOCK")
+        if history["active_observation_sha256"] != cognition["observation_sha256"]:
+            blockers.append("ACTIVE_COGNITIVE_CHECKPOINT_NOT_CURRENT_SNAPSHOT")
+    elif (history.get("last_event_kind") is not None
+          or history.get("active_checkpoint_sha256") is not None):
+        raise ValueError("invalid_empty_cognitive_history")
     if entry_review.action != "RESEARCH_CANDIDATE":
         blockers.append("ADAPTIVE_ENTRY_OR_EXIT_NOT_RESEARCH_READY")
     if research_method != entry_review.playbook:
@@ -115,6 +152,8 @@ def synthesize_offline_research(
         regime=entry_review.regime,
         entry_exit_receipt_sha256=entry_review.digest,
         cognitive_source_sha256=cognition["observation_sha256"],
+        cognitive_active_checkpoint_sha256=history["active_checkpoint_sha256"],
+        cognitive_chain_head_sha256=history["chain_head_sha256"],
         cognitive_mode=cognition["ledger_status"],
         action=action,
         cohort_status=cohort["status"] if cohort else None,

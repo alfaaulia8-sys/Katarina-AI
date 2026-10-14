@@ -2,13 +2,17 @@
 import sqlite3
 import unittest
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from katarina.engines.adaptive_scalper import ResearchEntryPlan, ScalpSide
 from katarina.intelligence.adaptive_regime import MarketRead, MarketState, Playbook
 from katarina.intelligence.adaptive_brain_v2 import BrainV2Observation
 from katarina.intelligence.prospective_shadow_book import ProspectiveShadowBook
+from katarina.intelligence.unified_cognitive_cycle import (
+    run_unified_cognitive_cycle, rollback_cognitive_research,
+    verify_cognitive_history,
+)
 from katarina.intelligence.structure_exit_plan import StructuralExitPlan
 from katarina.intelligence.unified_adaptive_research_cycle import (
     synthesize_offline_research,
@@ -217,6 +221,108 @@ class UnifiedAdaptiveResearchCycleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,
                                         "cognitive_research_status_contradiction"):
                 self.synthesize()
+
+    def test_matching_saved_checkpoint_can_be_reviewed_but_never_executed(self):
+        saved = run_unified_cognitive_cycle(
+            self.db, as_of_utc=CLOCK-timedelta(minutes=10))
+        summary = verify_cognitive_history(self.db)
+        self.assertEqual(summary["active_observation_sha256"],
+                         saved["observation_sha256"])
+        self.assertEqual(summary["last_event_kind"], "LEARN")
+        snapshot = {**mock_report(),
+                    "observation_sha256":saved["observation_sha256"]}
+        with patch("katarina.intelligence.unified_adaptive_research_cycle."
+                   "run_unified_cognitive_cycle", return_value=snapshot):
+            item=self.synthesize()
+        self.assertEqual(item.action, "VIRTUAL_EXPERIMENT_REVIEW_ONLY")
+        self.assertEqual(item.cognitive_active_checkpoint_sha256,
+                         saved["active_checkpoint_sha256"])
+        self.assertEqual(item.cognitive_chain_head_sha256,
+                         summary["chain_head_sha256"])
+        self.assertFalse(item.live_execution_authorized)
+
+    def test_stale_saved_learning_checkpoint_blocks_positive_virtual_review(self):
+        saved = run_unified_cognitive_cycle(
+            self.db, as_of_utc=CLOCK-timedelta(minutes=10))
+        with patch("katarina.intelligence.unified_adaptive_research_cycle."
+                   "run_unified_cognitive_cycle", return_value=mock_report()):
+            item=self.synthesize()
+        self.assertEqual(item.action, "WAIT")
+        self.assertIn("ACTIVE_COGNITIVE_CHECKPOINT_NOT_CURRENT_SNAPSHOT",
+                      item.quarantine_reasons)
+        self.assertEqual(item.cognitive_active_checkpoint_sha256,
+                         saved["active_checkpoint_sha256"])
+
+    def test_real_owner_rollback_can_never_be_bypassed_by_shadow_preview(self):
+        first = run_unified_cognitive_cycle(
+            self.db, as_of_utc=CLOCK-timedelta(minutes=20))
+        observed = (CLOCK-timedelta(minutes=15)).timestamp()
+        exited = observed+60
+        self.db.execute("""INSERT INTO prospective_shadow(
+            symbol,bar_close,observed_at,tick_at,method,regime,side,
+            bid,ask,entry,stop,target,risk,rr,evidence_score,
+            official_news_verified,blockers,state,last_quote_epoch,
+            exit_at,exit_price,reason,virtual_net_r
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
+            "XAUUSD",datetime.fromtimestamp(observed-300,timezone.utc).isoformat(),
+            observed,observed,"TREND_PULLBACK","TREND_UP","BUY",
+            100.,100.1,100.1,99.,103.,1.1,2.,.85,
+            0,'["news_unverified"]',"VIRTUAL_QUOTED",exited,
+            exited,101.,"VIRTUAL_QUOTE_ONLY",.3,
+        ))
+        self.db.commit()
+        second = run_unified_cognitive_cycle(
+            self.db, as_of_utc=CLOCK-timedelta(minutes=5))
+        self.assertNotEqual(first["observation_sha256"],
+                            second["observation_sha256"])
+        rollback_cognitive_research(
+            self.db, to_receipt_sha256=first["active_checkpoint_sha256"],
+            as_of_utc=CLOCK, owner_approved=True)
+        audit = verify_cognitive_history(self.db)
+        self.assertEqual(audit["last_event_kind"], "ROLLBACK")
+        self.assertEqual(audit["active_observation_sha256"],
+                         first["observation_sha256"])
+        snapshot = {**mock_report(),
+                    "observation_sha256":second["observation_sha256"]}
+        with patch("katarina.intelligence.unified_adaptive_research_cycle."
+                   "run_unified_cognitive_cycle", return_value=snapshot):
+            item=self.synthesize(as_of_utc=CLOCK+timedelta(minutes=1))
+        self.assertEqual(item.action, "WAIT")
+        self.assertIn("OWNER_RESEARCH_ROLLBACK_HOLD", item.quarantine_reasons)
+        self.assertIn("ACTIVE_COGNITIVE_CHECKPOINT_NOT_CURRENT_SNAPSHOT",
+                      item.quarantine_reasons)
+        self.assertEqual(item.cognitive_active_checkpoint_sha256,
+                         first["active_checkpoint_sha256"])
+        self.assertEqual(item.cognitive_chain_head_sha256,
+                         audit["chain_head_sha256"])
+        self.assertFalse(item.may_promote_strategy)
+
+    def test_future_history_event_blocks_stale_asof_review(self):
+        run_unified_cognitive_cycle(
+            self.db, as_of_utc=CLOCK+timedelta(minutes=10))
+        data = mock_report()
+        data["observation_sha256"] = verify_cognitive_history(
+            self.db)["active_observation_sha256"]
+        with patch("katarina.intelligence.unified_adaptive_research_cycle."
+                   "run_unified_cognitive_cycle", return_value=data):
+            item=self.synthesize()
+        self.assertEqual(item.action, "WAIT")
+        self.assertIn("COGNITIVE_HISTORY_NEWER_THAN_RESEARCH_CLOCK",
+                      item.quarantine_reasons)
+
+    def test_tampered_ledger_prevents_even_readonly_synthesis(self):
+        run_unified_cognitive_cycle(
+            self.db, as_of_utc=CLOCK-timedelta(minutes=10))
+        with self.db:
+            self.db.execute(
+                "UPDATE katarina_cognitive_ledger "
+                "SET payload_json='{}' WHERE seq=1")
+        with patch("katarina.intelligence.unified_adaptive_research_cycle."
+                   "run_unified_cognitive_cycle", return_value=mock_report()):
+            with self.assertRaisesRegex(ValueError,
+                                        "cognitive_ledger_chain_tampered"):
+                self.synthesize()
+
 
 
 if __name__ == "__main__":
