@@ -1,104 +1,104 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-14T13:16:18Z",
+  "updatedAt": "2026-10-14T19:14:44Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "10-year Treasury yield jumps as September core inflation comes in hotter than expected",
+      "title": "10-year Treasury yields dip as traders look ahead to Thursday economic reports",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/14/us-treasury-yields-cpi-inflation-report.html",
-      "publishedAt": "2026-10-14T13:15:50Z",
+      "publishedAt": "2026-10-14T19:10:20Z",
       "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "CoreWeave shares tumble as bond yields near 15% on concern about AI borrowing binge",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/coreweave-stock-bond-yields-ai-debt.html",
+      "publishedAt": "2026-10-14T19:04:29Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Traders pile into 'bubble puts' on CoreWeave as neocloud stocks plunge",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/coreweave-put-options-ai-trade.html",
+      "publishedAt": "2026-10-14T19:03:44Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Treasury says largest U.S. banks let politics influence who received banking services",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/treasury-banks-debanking-trump-reputation-risk.html",
+      "publishedAt": "2026-10-14T18:51:42Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Bank of America hired 1,000 contractors to patch software flaws exposed by Anthropic's Mythos",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/14/anthropic-mythos-bank-of-america-hiring-cost.html",
+      "publishedAt": "2026-10-14T18:48:44Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "AI infrastructure stocks tumble. Here's a few reasons for the sell-off",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/investingclub/2026/10/14/ai-infrastructure-stocks-tumble-heres-a-few-reasons-for-the-sell-off-.html",
+      "publishedAt": "2026-10-14T18:41:11Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Container ship sinks in Strait of Hormuz as Iran steps up attacks",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/container-ship-sinks-strait-hormuz-as-iran-war-attacks.html",
+      "publishedAt": "2026-10-14T18:18:43Z",
+      "category": "Energi / Geopolitik",
+      "language": "en"
+    },
+    {
+      "title": "The steel stock that has the shorts and options traders on edge",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/the-steel-stock-that-has-the-shorts-and-options-traders-on-edge.html",
+      "publishedAt": "2026-10-14T17:22:55Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "How high inflation became a 'fact of life' in the U.S.",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/high-inflation-fed-expectations.html",
+      "publishedAt": "2026-10-14T17:20:23Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Iran says it’s ‘counting the moments’ until it can strike U.S. warships; Saudi Aramco facilities attacked",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/us-iran-war-trump-hormuz-saudi.html",
+      "publishedAt": "2026-10-14T17:12:20Z",
+      "category": "Energi / Geopolitik",
       "language": "en"
     },
     {
       "title": "Morgan Stanley tops estimates as equities trading revenue beats expectations by $909 million",
       "source": "CNBC Pasar",
       "url": "https://www.cnbc.com/2026/10/14/morgan-stanley-ms-q3-2026-earnings.html",
-      "publishedAt": "2026-10-14T13:11:07Z",
+      "publishedAt": "2026-10-14T17:08:23Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Consumer prices rose at 3.7% annual rate in September as gas costs skyrocket",
+      "title": "Fannie Mae sharply raises mortgage rate forecast for 2027",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/cpi-inflation-report-september-2026.html",
-      "publishedAt": "2026-10-14T13:06:23Z",
+      "url": "https://www.cnbc.com/2026/10/14/fannie-mae-sharply-raises-mortgage-rate-forecast-for-2027-.html",
+      "publishedAt": "2026-10-14T17:08:07Z",
       "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Jim Cramer's top 10 things to watch in the stock market Wednesday",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/investingclub/2026/10/14/jim-cramers-top-10-things-to-watch-in-the-stock-market-wednesday.html",
-      "publishedAt": "2026-10-14T12:59:49Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Bank of America shares drop 7% after third-quarter revenue miss and regulatory penalty",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/14/bank-of-america-bac-q3-2026-earnings.html",
-      "publishedAt": "2026-10-14T12:54:01Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Iran says it’s ‘counting the moments’ until it can attack U.S. warships; Saudi Aramco facilities attacked",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/us-iran-war-trump-hormuz-saudi.html",
-      "publishedAt": "2026-10-14T12:43:45Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Even more borrowers choose riskier mortgages, as higher interest rates crush affordability",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/even-more-borrowers-choose-riskier-mortgages-as-higher-interest-rates-crush-affordability.html",
-      "publishedAt": "2026-10-14T12:01:31Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Bank of America fined $1.2 billion over money laundering violations",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/13/bank-of-america-treasury-money-laundering.html",
-      "publishedAt": "2026-10-14T11:11:30Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Diesel squeeze set to last well into 2027 as Iran war disrupts supply, IEA says",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/diesel-deal-oil-price-iea-report.html",
-      "publishedAt": "2026-10-14T10:37:42Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Oil prices rise after IEA warns on market constraints; Saudi officials say Aramco facilities attacked",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/oil-rises-amid-growing-tensions-between-saudis-and-iran-backed-houthis.html",
-      "publishedAt": "2026-10-14T10:33:13Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "How Trump’s tariffs and Iran war are becoming liabilities in Michigan’s Senate race",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/mike-rogers-trump-tariffs-michigan-senate-election.html",
-      "publishedAt": "2026-10-14T10:30:01Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Ukraine warns Starlink limits are disrupting military operations as Russia pounds its energy infrastructure",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/russia-ukraine-energy-ceasefire-power-outages.html",
-      "publishedAt": "2026-10-14T09:18:18Z",
-      "category": "Energi / Geopolitik",
       "language": "en"
     }
   ]
