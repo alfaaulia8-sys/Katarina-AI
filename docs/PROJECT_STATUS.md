@@ -1,55 +1,63 @@
 # Status perkembangan Katarina AI
 
-Diperbarui: **15 Oktober 2026, WIB**. Baseline sumber yang telah diverifikasi:
-`958ae7d692330f4137144222331f8b6081b3464b` (PR #83). Angka di bawah adalah
-snapshot bertanggal, bukan monitoring langsung atau persentase kesiapan trading.
+Diperbarui: **15 Oktober 2026**. Baseline integrasi kode:
+`3b43c04f6efc9484b383db135e01ac7d5d3ec611` (PR #86).
 
-| Bagian | Hasil terverifikasi | Batas yang belum selesai |
+| Bagian | Hasil terverifikasi | Batas |
 |---|---|---|
-| Sumber GitHub dan checkout kerja | Commit sama; working tree bersih | Deployment dan proses VPS belum diperiksa pada sesi ini |
-| Otak unified | 10 komponen canonical terintegrasi; fingerprint SHA256 cocok | Tidak membuktikan model profitable atau memori privat VPS sudah sinkron |
-| Pengujian sumber | 1.245 unit; 110 static (4 skipped); 42 integration lulus | Empat skip dan validasi broker/Windows tetap memiliki batas masing-masing |
-| GitHub Actions | Body CI dan Stage 35 lulus pada baseline | Workflow manual lain tidak dianggap baru diuji hanya karena tersedia |
-| Branch | 43 total: main dilindungi + 42 dengan commit unik | Branch unik perlu review dan CI sebelum integrasi/penghapusan |
-| Pull request | Tidak ada PR terbuka saat snapshot | PR dokumentasi baru dapat muncul setelah snapshot |
-| Cleanup | 12 branch lama dihapus dalam dua siklus; dry-run akhir 0 kandidat | Tidak ada penghapusan paksa untuk branch divergen |
-| Akses | Pemilik repository memiliki akses; 0 kolaborator tambahan | Autentikasi CLI perangkat di luar Work belum terpasang/terverifikasi |
-| Keamanan | Main wajib PR + body CI; token default read-only; Actions dipin | Bukan audit penetrasi menyeluruh atau jaminan bebas kerentanan |
-| Trading | Orders submitted 0 dalam verifikasi offline; live execution false | Edge prospektif, biaya/fill broker dan izin live belum terbukti/aktif |
+| Branch | Hanya `main`; 42 branch awal selain main sudah terhapus | Branch kerja sementara boleh muncul untuk PR berikutnya |
+| Integrasi | 34 branch terverifikasi setara/identik; delapan direview dan diselesaikan | Varian eksekusi eksperimen tetap terpisah dari engine produksi |
+| Pengujian | 1.309 unit, 110 static (4 skipped), 42 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
+| Otak unified | 10 komponen canonical diverifikasi; Neuro-Link recall ditambahkan | Memori privat dan proses VPS belum diperiksa |
+| Trading | Engine produksi, Risk Governor, konfigurasi risk dan MT5 tidak berubah | Live execution false; 0 order pada verifikasi offline |
+| Keamanan | Main wajib PR/body CI, up-to-date dan conversation resolution; admin tunduk aturan | Bukan audit penetrasi menyeluruh |
+| Akses | Tidak ada kolaborator tambahan; token Actions read-only secara default | CLI perangkat luar Work belum dipasang/diuji |
 
-## Bukti yang dapat dibuka
+## Integrasi branch
 
-- [PR #81: cleanup sumber](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/81).
-- [PR #82: pemulihan izin executable](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/82).
-- [PR #83: keamanan dan workflow](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/83).
-- [Body CI baseline](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38755998941).
-- [Stage 35 baseline](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38755998956).
-- [Cleanup execute terakhir](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38756384825).
-- [Dry-run penutup](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38756681364).
+[PR #85](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/85)
+menyatukan riwayat 34 branch setelah verifikasi patch-id atau blob file identik.
+[PR #86](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/86)
+mengintegrasikan Neuro-Link, shadow paper/replay dan penelitian portfolio offline.
+Pembacaan memori tetap memeriksa checksum dan menolak payload yang berubah.
 
-## Pemutakhiran navigasi dan alat akses
+Perubahan lama yang sudah ditingkatkan dipertahankan dalam bentuk main terbaru.
+Ekstraksi website tidak diterapkan sebagai penghapusan 799 file AI: instruksinya
+masuk ke `docs/deployment/STANDALONE_WEBSITE_EXTRACTION.md`.
+Varian portfolio historis berada di
+`src/katarina/research/experimental_strategy_evidence_portfolio.py`, tanpa
+registrasi runtime atau perubahan strategi produksi.
 
-Perubahan dokumentasi ini menambah pemeriksaan akses CLI read-only dan tiga
-regresi yang memastikan role repository tidak disalahartikan sebagai seluruh
-scope token. Suite lokal pemutakhiran ini: **1.248 unit**, **110 static (4 skipped)**,
-dan **42 integration**. Angka baseline PR #83 di tabel tetap dipertahankan dengan
-rujukan run aslinya. CI PR pemutakhiran harus lulus sebelum merge.
+Bukti per branch: [34 branch setara](operations/BRANCH_CONSOLIDATION_20261015.json),
+[delapan resolusi unik](operations/BRANCH_UNIQUE_INTEGRATION_20261015.json),
+dan [receipt cleanup](operations/BRANCH_CLEANUP_RESULTS_20261015.json).
+Seluruh head awal tersimpan sebagai ancestor main; tidak ada force push.
+
+## Bukti CI dan cleanup
+
+- [Body CI PR #85](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38762804497).
+- [Body CI PR #86](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38763776156).
+- [Body CI main integrasi](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38764010009).
+
+- [Cleanup execute 1](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38763507369): 10 branch dihapus; 33 total branch tersisa.
+- [Cleanup execute 2](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38764266063): 10 branch dihapus; 23 total branch tersisa.
+- [Cleanup execute 3](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38764494806): 10 branch dihapus; 13 total branch tersisa.
+- [Cleanup execute 4](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38764768540): 10 branch dihapus; 3 total branch tersisa.
+- [Cleanup execute 5](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38764950294): 2 branch dihapus; 1 total branch tersisa.
+- [Dry-run penutup](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38765089798): 0 kandidat, 0 penghapusan.
+
+Setiap eksekusi mengecek ulang SHA branch, strict ancestry, protection dan PR aktif.
+Daftar branch dicocokkan setelah setiap batch. Main dipertahankan karena default
+branch dilindungi. Seluruh 42 kandidat awal telah diselesaikan; tidak ada branch
+unik yang ditinggalkan atau dihapus sebelum integrasi dan CI.
 
 ## Prioritas berikutnya
 
-1. Pasang dan autentikasi GitHub CLI pada perangkat kerja tujuan, lalu jalankan
-   pemeriksaan akses yang disediakan. Koneksi aplikasi ChatGPT tidak otomatis
-   memberikan sesi CLI di perangkat lain.
-2. Inventaris checkout, fingerprint modul, lokasi memori dan sumber proses VPS
-   secara read-only sebelum menyatakan otak yang berjalan di VPS sinkron.
-3. Review perubahan unik per branch dalam kelompok kecil; integrasikan hanya
-   bagian yang relevan, tanpa mengubah strategi/Risk Governor dalam pekerjaan
-   administrasi repository ini.
+1. Verifikasi checkout, fingerprint modul, lokasi memori dan proses VPS secara
+   read-only sebelum menyatakan otak yang berjalan di VPS sinkron.
+2. Autentikasi CLI pada perangkat kerja tujuan bila dibutuhkan, sesuai
+   [panduan akses](operations/GITHUB_ACCESS.md).
+3. Evaluasi bukti broker prospektif secara terpisah; repository rapi dan CI hijau
+   tidak mengaktifkan live trading.
 
-## Cara membaca perkembangan
-
-Gunakan [CHANGELOG](../CHANGELOG.md) untuk perubahan material,
-[Actions](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions) untuk hasil
-run terbaru, dan commit SHA untuk kesamaan sumber. Badge hijau berarti pemeriksaan
-tertentu lulus pada commit tertentu, bukan kesiapan live trading. Snapshot lama
-berada di `docs/handoff/` dan laporan audit bertanggal di `docs/operations/`.
+Gunakan [CHANGELOG](../CHANGELOG.md) dan commit SHA untuk menelusuri perubahan.

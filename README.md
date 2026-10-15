@@ -12,12 +12,12 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 
 **Development Preview / research-only. Live trading belum diaktifkan.**
 
-| Bagian | Terverifikasi pada baseline PR #83 |
+| Bagian | Terverifikasi setelah integrasi PR #86 |
 |---|---|
 | Otak unified | 10 komponen canonical terintegrasi; 0 order dalam uji offline |
-| Pengujian | 1.245 unit, 110 static (4 skipped), 42 integration lulus |
+| Pengujian | 1.309 unit, 110 static (4 skipped), 42 integration lulus |
 | Repository | Main dilindungi; wajib PR dan CI; 0 kolaborator tambahan |
-| Cleanup | 12 branch ancestor dihapus; 42 branch unik dipertahankan |
+| Cleanup | 42 branch lama diintegrasikan dan dihapus; hanya `main` tersisa |
 | Sinkronisasi | GitHub dan checkout kerja cocok; VPS belum diverifikasi |
 | Akses luar Work | Panduan tersedia; login CLI perangkat tujuan belum terpasang |
 
