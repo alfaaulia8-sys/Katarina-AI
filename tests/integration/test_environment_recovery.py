@@ -123,10 +123,10 @@ class EnvironmentRecoveryTests(unittest.TestCase):
         import tempfile as module
         original=module.TemporaryFile
         with tempfile.TemporaryDirectory() as root:
-            checkout=Path(root)/'repo';checkout.mkdir()
-            home=Path(root)/'user';home.mkdir()
+            checkout=(Path(root)/'repo').resolve();checkout.mkdir()
+            home=(Path(root)/'user').resolve();home.mkdir()
             def writable(*a,**kwargs):
-                if Path(kwargs.get('dir','')).parent==checkout:raise OSError('read only checkout')
+                if Path(kwargs.get('dir','')).resolve().parent==checkout:raise OSError('read only checkout')
                 return original(*a,**kwargs)
             with patch.dict('os.environ',{},clear=True), patch('pathlib.Path.home',return_value=home), \
                  patch('scripts.pc.environment_recovery.tempfile.TemporaryFile',side_effect=writable):
