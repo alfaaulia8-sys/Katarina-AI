@@ -42,3 +42,10 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 - [Laporan validasi jalur, kode MT5, dan observer](docs/validation/2026-10-11-paths-mt5-integration.md).
 - [Audit struktur dan dependensi otomatis](scripts/governance/audit_dependency_links.py) diperiksa di GitHub Actions. Ini adalah pemeriksaan sumber, **bukan** bukti kesiapan live.
 - [Status tahap pengembangan dan batas validasi](docs/operations/GITHUB_FIRST_STATUS_20261011.md).
+
+## Navigasi pengembangan
+
+- [Aturan pengembangan dan validasi](docs/operations/GITHUB_FIRST_DEVELOPMENT.md).
+- [Audit cleanup dan sinkronisasi sumber](docs/operations/REPOSITORY_CLEANUP_20261015.md).
+- [Checkpoint historis sampai 13 Oktober](docs/handoff/KATARINA_START_NEXT_CHAT_20261013.md) — bukan status VPS terkini.
+- [Panduan hosting Cloudflare Pages](docs/deployment/CLOUDFLARE_PAGES_SETUP.md).

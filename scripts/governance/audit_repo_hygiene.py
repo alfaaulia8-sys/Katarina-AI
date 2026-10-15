@@ -60,6 +60,7 @@ def audit_tracked_files(root: Path, paths: Iterable[str]) -> tuple[list[str], li
             or "node_modules" in parts
             or is_secret_name
             or lower.startswith(("build/", "dist/", "scratch/", "tmp/", "temp/"))
+            or (lower.startswith("ops/vps/health/") and name == "status.json")
         ):
             accidental.add(normalized)
         path = root / normalized

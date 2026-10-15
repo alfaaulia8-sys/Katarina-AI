@@ -1,6 +1,6 @@
 param(
     [string]$InstallRoot = "C:\KatarinaVPSAgent",
-    [string]$Repository = "alfaaulia8-sys/Katarina-AI",
+    [string]$Repository = "alfaauliau-katarinaAI/Katarina-AI",
     [string]$Branch = "main"
 )
 
