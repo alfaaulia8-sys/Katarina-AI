@@ -11,7 +11,7 @@ Arsitektur canonical terbaru: `UnifiedKatarinaBrain`, satu instance observer,
 11 spesialis, workplan, script dan workflow pemanggil sudah dihapus berdasarkan
 instruksi Owner 15 Oktober 2026. Risk Governor tetap independen.
 
-Pengujian perubahan: 1.270 unit, 113 static (4 skipped), 98 integration.
+Pengujian perubahan: 1.270 unit, 113 static (4 skipped), 110 integration.
 Tidak ada order atau live execution. GitHub dan checkout kerja disamakan pada
 commit hasil merge; checkout, memori dan proses VPS belum diverifikasi.
 
@@ -57,3 +57,9 @@ bukan supervisor VPS background. SETUP_KATARINA membuat environment privat.
 Laporan HTML/JSON lokal memisahkan hasil demo dari observasi broker dan tidak
 menganggap fallback offline sebagai kelulusan broker. Lihat [panduan PC](QUICKSTART_PC.md).
 Paket source-only bermanifest commit disediakan artifact CI; live OFF.
+
+## Pemulihan environment privat — 16 Oktober 2026
+
+Startup memeriksa dependensi dan menguji kandidat pengganti sebelum memilihnya.
+Environment lama, strategi, Risk Governor dan memori tetap dipertahankan; tidak
+ada perubahan source atau izin trading. Panduan: [pemulihan environment](architecture/KATARINA_ENVIRONMENT_RECOVERY.md). Live OFF.

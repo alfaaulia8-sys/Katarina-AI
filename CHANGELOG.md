@@ -93,3 +93,10 @@ Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
 - Add private Python 3.12 environment setup and optional Windows MT5 dependency.
 - Separate invented demo state from bound read-only broker observation and report locally.
 - Build source-only kit with commit/checksum manifest; test extracted kit on three OSes.
+
+## 2026-10-16 — guarded PC environment recovery
+
+- Validate private dependency environments at startup and build isolated replacements.
+- Require actual synthetic acceptance before atomic selection; preserve old environments.
+- Add validated previous-environment fallback, lock, failure cooldown and local redacted audit.
+- Prove recovery from an unavailable interpreter in extracted packages on three OSes.

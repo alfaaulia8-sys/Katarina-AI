@@ -21,7 +21,7 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 | Bagian | Satu otak canonical — pembaruan 16 Oktober 2026 |
 |---|---|
 | Otak unified | 1 otak, 17 modul canonical; Management dan 11 spesialis dihapus |
-| Pengujian | 1.270 unit, 113 static (4 skipped), 98 integration lulus |
+| Pengujian | 1.270 unit, 113 static (4 skipped), 110 integration lulus |
 | Repository | Main dilindungi; wajib PR dan CI; 0 kolaborator tambahan |
 | Cleanup | 42 branch lama diintegrasikan dan dihapus; hanya `main` tersisa |
 | Sinkronisasi | GitHub dan checkout kerja cocok; VPS belum diverifikasi |
@@ -89,3 +89,9 @@ Launcher memilih local/cloud/offline menurut konfigurasi akun yang diizinkan.
 Retry terbatas mengulang seluruh pass; tanpa koneksi valid tetap riset lokal.
 Sensor HTTPS baru memerlukan pemasangan dan kredensial sekali; belum diuji pada
 MT5/cloud nyata. Lihat [kontrak koneksi otomatis](docs/architecture/KATARINA_AUTOMATIC_CONNECTION.md). Risk Governor independen, live OFF.
+
+## Pemulihan environment privat — 16 Oktober 2026
+
+Startup memeriksa dependensi dan menguji kandidat pengganti sebelum memilihnya.
+Environment lama, strategi, Risk Governor dan memori tetap dipertahankan; tidak
+ada perubahan source atau izin trading. Panduan: [pemulihan environment](docs/architecture/KATARINA_ENVIRONMENT_RECOVERY.md). Live OFF.
