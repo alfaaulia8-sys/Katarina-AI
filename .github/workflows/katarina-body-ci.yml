@@ -47,6 +47,9 @@ jobs:
       - name: Verify Python, MQL5, JSON, and website local dependencies
         run: python scripts/governance/audit_dependency_links.py --repo-root . --output build/validation/dependency-links.json
 
+      - name: Verify unified Katarina brain registry and fail-closed integration
+        run: PYTHONPATH=src:. python scripts/ai/verify_unified_katarina.py
+
       - name: Unit regression
         run: PYTHONPATH=src python -m unittest discover -s tests/unit -p 'test_*.py' -v
 
