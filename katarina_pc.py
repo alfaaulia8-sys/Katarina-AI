@@ -29,7 +29,8 @@ def main(argv=None):
         return 0
     print('Memeriksa environment privat Katarina; pemulihan terbatas, LIVE OFF ...',flush=True)
     python=manager.ensure(mt5=args.mt5,explicit=args.action in ('setup','repair'),
-                          force=args.action=='repair',auto=not args.no_auto_repair)
+                          force=args.action=='repair',
+                          auto=not args.no_auto_repair and args.action!='doctor')
     if args.action in ('setup','repair'):
         print('SETUP_OK. Environment lulus uji sintetis. Jalankan START_KATARINA.bat. LIVE OFF.',flush=True)
         return 0

@@ -58,6 +58,7 @@ python3.12 katarina_pc.py test --no-auto-repair
 
 Windows memakai `py -3.12`. `setup --mt5` atau `repair --mt5` adalah permintaan
 instalasi adapter native secara eksplisit; tidak login atau membuka MT5.
+`doctor` dan `repair-status` tidak memasang environment baru.
 `START_KATARINA.bat` sekarang memeriksa dan mencoba pemulihan dependensi bila perlu.
 Internet dan ruang disk diperlukan untuk pemasangan baru. Persyaratan platform,
 izin admin, credential, sertifikat, atau ketiadaan wheel kompatibel tetap dapat
