@@ -179,6 +179,14 @@ class BrainOwnedWorkflowTests(unittest.TestCase):
                 self.assertEqual(brain.control.capital.total_balance, 10000.)
                 self.assertEqual(brain.control.delivery.inspect('blocked',
                     RiskRequest(.01,0.,0.,.1,2.,True,True), None)['orders_submitted'], 0)
+            from katarina.health.engine import HealthState
+            brain.control.health.observe_health_event(
+                {name+'_health':1 for name in ('data', 'transport', 'execution',
+                 'reconciliation', 'journal', 'clock', 'snapshot')}, observed_at_ns=1)
+            brain.control.health.observe_data_fresh(True)
+            self.assertEqual(brain.control.health.evaluate(now_ns=1).data, HealthState.OK)
+            brain.control.restore(saved)
+            self.assertNotEqual(brain.control.health.evaluate(now_ns=1).data, HealthState.OK)
         db.close()
 
     def test_tampered_persistent_checkpoint_prevents_restart(self):

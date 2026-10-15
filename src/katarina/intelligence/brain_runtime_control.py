@@ -88,6 +88,7 @@ class BrainRuntimeControl:
         recovery.restore_state(payload["recovery"])
         self.capital, self.recovery = capital, recovery
         # Old health/connectivity never grants permission after a restart.
+        self.health = HealthSafetyEngine()
         self.phase, self.last_error = "OFFLINE", None
 
     def checkpoint(self) -> str:
