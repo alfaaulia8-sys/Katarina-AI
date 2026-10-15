@@ -276,6 +276,22 @@ class MemoryStore:
             for row in rows
         ]
 
+    def load_operational_event(self, event_id: str) -> dict[str, Any] | None:
+        """Read original availability and payload with the same integrity guard."""
+        if not isinstance(event_id, str) or not event_id:
+            raise ValueError("event_id_required")
+        row = self._conn.execute(
+            "SELECT sequence,event_id,event_type,created_utc,payload_json,payload_hash "
+            "FROM operational_events WHERE event_id=?", (event_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "sequence":int(row["sequence"]), "event_id":row["event_id"],
+            "event_type":row["event_type"], "created_utc":row["created_utc"],
+            "payload":_verified_payload(row), "payload_hash":row["payload_hash"],
+        }
+
     def load_recent_operational_events_of_type(
         self, event_type: str, *, limit: int = 1000
     ) -> list[dict[str, Any]]:

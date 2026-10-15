@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "config" / "master_design_traceability_v1.json"
 EXPECTED_AREA_IDS = {f"A{i:02d}" for i in range(1, 19)}
 EXPECTED_DECISION_IDS = {f"D{i}" for i in range(1, 7)}
-VALID_STATUSES = {"OFFLINE_VERIFIED", "PARTIAL", "NOT_INTEGRATED", "ON_HOLD"}
+VALID_STATUSES = {"OFFLINE_VERIFIED", "PARTIAL", "NOT_INTEGRATED", "REMOVED"}
 BASELINE = "docs/architecture/KATARINA_OWNER_DESIGN_BASELINE_20261014.md"
 
 
@@ -64,8 +64,8 @@ def audit_master_design(
         status = area.get("status")
         if status not in VALID_STATUSES:
             raise ValueError("master_design_invalid_implementation_status:" + aid)
-        if ((aid == "A18") != (status == "ON_HOLD")):
-            raise ValueError("master_design_management_on_hold_mismatch")
+        if ((aid == "A18") != (status == "REMOVED")):
+            raise ValueError("master_design_management_removal_mismatch")
         if status == "OFFLINE_VERIFIED" and aid not in {"A01", "A02", "A07", "A09"}:
             raise ValueError("master_design_unsubstantiated_offline_certification:" + aid)
         if not isinstance(area.get("requirement"), str) or not area["requirement"].strip():
@@ -87,10 +87,10 @@ def audit_master_design(
         profile = json.loads((root / manifest["canonical_profile"]).read_text())
         actual = verify(profile, root=root)
         if (actual["status"] != "INTEGRATED_OFFLINE_ENGINEERING_ONLY" or
-                actual["modules_verified"] != 10 or
+                actual["modules_verified"] != 14 or
                 actual["orders_submitted"] != 0 or
                 actual["live_execution_authorized"] or
-                actual["management"] != "ON_HOLD" or
+                actual["management"] != "REMOVED" or
                 actual["cumulative_profit_lock"] != "VERIFIED_THREE_MILESTONES_AND_RESTART" or
                 actual["same_day_emergency_lockdown"] != "VERIFIED_NO_NEW_ENTRY"):
             raise ValueError("master_design_canonical_acceptance_failed")
@@ -100,7 +100,7 @@ def audit_master_design(
         "registered_approved_areas": len(areas),
         "deferred_owner_decisions": len(decisions),
         "counts": {status: counts[status] for status in
-                   ("OFFLINE_VERIFIED", "PARTIAL", "NOT_INTEGRATED", "ON_HOLD")},
+                   ("OFFLINE_VERIFIED", "PARTIAL", "NOT_INTEGRATED", "REMOVED")},
         "areas": statuses,
         "files_with_verified_sha256": len(file_hashes),
         "evidence_sha256": sha256(json.dumps(

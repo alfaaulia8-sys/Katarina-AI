@@ -22,13 +22,13 @@ class MasterDesignTraceabilityTests(unittest.TestCase):
         self.assertEqual(output["deferred_owner_decisions"], 6)
         self.assertEqual(output["counts"], {
             "OFFLINE_VERIFIED": 4, "PARTIAL": 11,
-            "NOT_INTEGRATED": 2, "ON_HOLD": 1,
+            "NOT_INTEGRATED": 2, "REMOVED": 1,
         })
         self.assertEqual(output["readiness"], "OFFLINE_ENGINEERING_ONLY")
         self.assertFalse(output["master_design_fully_implemented"])
         self.assertFalse(output["deferred_decisions_resolved"])
         self.assertFalse(output["live_trading_authorized"])
-        self.assertEqual(output["areas"]["A18"], "ON_HOLD")
+        self.assertEqual(output["areas"]["A18"], "REMOVED")
         self.assertGreater(output["files_with_verified_sha256"], 20)
 
     def test_missing_approved_rule_or_deferred_decision_refused(self):
@@ -70,10 +70,10 @@ class MasterDesignTraceabilityTests(unittest.TestCase):
         from scripts.ai import verify_master_design_traceability as audit
         bad = {
             "status":"INTEGRATED_OFFLINE_ENGINEERING_ONLY",
-            "modules_verified":10,
+            "modules_verified":14,
             "orders_submitted":0,
             "live_execution_authorized":True,
-            "management":"ON_HOLD",
+            "management":"REMOVED",
             "cumulative_profit_lock":"VERIFIED_THREE_MILESTONES_AND_RESTART",
             "same_day_emergency_lockdown":"VERIFIED_NO_NEW_ENTRY",
         }

@@ -1,3 +1,5 @@
+> Historical report: Management/specialist code and workflows described below were removed by Owner on 2026-10-15. Current architecture is one unified research brain; this report is not an execution instruction.
+
 # KATARINA AI — Multi-Timeframe and Risk:Reward Study, 2025–2026
 
 **Study date:** 2026-10-11. **Research-only, live disabled.**

@@ -1,5 +1,21 @@
 # Perubahan material Katarina AI
 
+## 2026-10-15 — satu otak; Management dan 11 spesialis dihapus
+
+- Hapus tiga workflow Management/team, enam script, workplan, roadmap dan
+  enam suite unit yang hanya menguji sistem spesialis yang telah dihapus.
+  Hapus pula sembilan job spesialis/Management dari Body CI.
+- Satu `UnifiedKatarinaBrain` menghubungkan persepsi pasar, kognisi, Neuro-Link
+  dan sintesis riset entry/exit. Observer memakai instance yang sama setelah
+  settlement dan sebelum proposal virtual, tanpa worker/scheduler baru.
+- Neuro-Link mempertahankan waktu pertama ingest, dedup, checksum dan quarantine;
+  Fast/Deep berbagi memori dan checkpoint. Rollback Owner memblokir sampling.
+- Tambah tujuh regresi integrasi untuk restart/idempotensi, preview tanpa tulis,
+  pemisahan outcome quote dari bukti broker, causal time, tampering dan rollback.
+- Registry 14 modul; 1.270 unit, 109 static (4 skipped), 49 integration lulus lokal.
+  CI GitHub tetap menjadi syarat merge. Batas produksi/broker/VPS tetap eksplisit.
+- Engine trading, Risk Governor, konfigurasi risiko dan MT5 tidak diubah.
+
 ## 2026-10-15 — seluruh branch disatukan ke main
 
 - PR #85 menyatukan ancestry 34 branch yang patch-nya sudah terwakili di main

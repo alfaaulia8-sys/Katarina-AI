@@ -82,21 +82,30 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     parts=profile.get("canonical")
     disabled=profile.get("deferred")
     modes=profile.get("operating_mode")
-    # Management and its 11 specialists are deferred by the Owner, not active
-    # prerequisites for the one-brain Katarina AI acceptance profile.
+    # One brain owns perception, cognition and shared knowledge; no specialist runtime.
     expected_parts = {
         "core", "brain", "observer", "shadow", "risk",
         "manual_positions", "capital", "broker_readonly",
-        "recovery", "runtime_memory",
+        "recovery", "runtime_memory", "cognition", "knowledge_memory",
+        "market_perception", "adaptive_research",
     }
     if (not isinstance(parts,dict) or set(parts)!=expected_parts
             or not isinstance(disabled,dict)):
         raise ValueError("incomplete_unified_component_registry")
-    held = profile.get("on_hold")
-    if (not isinstance(held,dict)
-            or set(held)!={"katarina_management","eleven_specialists"}
-            or any(value is not True for value in held.values())):
-        raise ValueError("management_on_hold_required")
+    if profile.get("organization") != {
+        "architecture":"SINGLE_COGNITIVE_BRAIN", "management":"REMOVED",
+        "specialist_workers":0,
+    } or "on_hold" in profile:
+        raise ValueError("single_brain_organization_required")
+    expected_paths = {
+        "brain":"src/katarina/intelligence/unified_brain.py",
+        "cognition":"src/katarina/intelligence/unified_cognitive_cycle.py",
+        "knowledge_memory":"src/katarina/memory/neuro_link.py",
+        "market_perception":"src/katarina/intelligence/market_decision_brain_v3.py",
+        "adaptive_research":"src/katarina/intelligence/unified_adaptive_research_cycle.py",
+    }
+    if any(parts.get(k) != v for k,v in expected_paths.items()):
+        raise ValueError("invalid_canonical_single_brain_path")
     if set(disabled)!={
         "external_ai_workers","autonomous_source_rewrite",
         "unverified_broker_provenance","unverified_broker_clock",
@@ -107,7 +116,7 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     if not isinstance(modes,dict) or modes.get("order_submission")!="DISABLED":
         raise ValueError("order_submission_must_remain_disabled")
     if "management" in modes:
-        raise ValueError("management_on_hold_required")
+        raise ValueError("single_brain_organization_required")
     if modes.get("core")!="TESTER_ONLY" or modes.get("broker")!="OFFLINE_ADAPTER_IMPORT_ONLY":
         raise ValueError("unsafe_runtime_mode")
     limits=profile.get("owner_limits")
@@ -146,9 +155,8 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     from katarina.intelligence.self_evolution_lab import (
         evaluate_shadow_self_evolution,derive_shadow_research_policy,
     )
-    from katarina.intelligence.unified_cognitive_cycle import (
-        run_unified_cognitive_cycle,
-    )
+    from katarina.intelligence.unified_brain import UnifiedKatarinaBrain
+    from katarina.memory.store import MemoryStore
     from katarina.adapters.mt5_account_pnl import Mt5ReadOnlyPnLAdapter
     core=KatarinaOrchestrator(OrchestratorConfig(RuntimeMode.TESTER,32))
     governor=RiskGovernor.from_config(root/"config/risk_governor_v2.json")
@@ -210,20 +218,23 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         db=sqlite3.connect("file:"+target.as_posix()+"?mode=ro",uri=True)
         db_source="READ_ONLY_EXISTING_SQLITE"
         source_path=str(target)
+    memory=MemoryStore(":memory:")
     try:
         if shadow_db is None:
             ProspectiveShadowBook(db)
         now=datetime.now(timezone.utc)
         report=evaluate_shadow_self_evolution(db,as_of_utc=now)
         proposal=derive_shadow_research_policy(report)
-        cognitive=run_unified_cognitive_cycle(
-            db,as_of_utc=now,persist=False)
+        unified=UnifiedKatarinaBrain(db,memory).run_unified_cognitive_cycle(
+            as_of_utc=now,persist=False)
+        cognitive=unified["cognition"]
         if (cognitive["orders_submitted"]!=0
                 or cognitive["real_execution_authorized"]
                 or cognitive["production_mutation_authorized"]
                 or cognitive["ledger_status"]!="READ_ONLY_PREVIEW"):
             raise RuntimeError("unified_brain_safety_violation")
     finally:
+        memory.close()
         db.close()
     return {
         "profile":profile["profile"],
@@ -231,7 +242,10 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         "modules_verified":len(digest),
         "module_sha256":digest,
         "mode":"TESTER_NO_ORDERS",
-        "management":"ON_HOLD",
+        "management":"REMOVED",
+        "brain_architecture":unified["architecture"],
+        "specialist_workers":unified["specialist_workers"],
+        "neuro_link_shared_memory":unified["knowledge_memory"]["shared_memory"],
         "cumulative_profit_lock":"VERIFIED_THREE_MILESTONES_AND_RESTART",
         "same_day_emergency_lockdown":"VERIFIED_NO_NEW_ENTRY",
         "unverified_optional_components_disabled":True,
