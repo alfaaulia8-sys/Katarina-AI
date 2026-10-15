@@ -1,0 +1,46 @@
+name: Katarina Guarded Branch Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      execute:
+        description: 'Delete only strict ancestor unprotected branches without open PRs'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  guarded-cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prune branches proven fully contained in main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXECUTE: ${{ inputs.execute }}
+        run: |
+          if [ "$EXECUTE" = "true" ]; then
+            python scripts/governance/guarded_branch_cleanup.py --execute --max-deletes 10
+          else
+            python scripts/governance/guarded_branch_cleanup.py
+          fi
+      - name: Store auditable cleanup receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guarded-branch-cleanup-${{ github.run_id }}
+          path: build/validation/branch-cleanup.json
+          if-no-files-found: warn
+          retention-days: 30
