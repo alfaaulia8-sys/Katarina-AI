@@ -23,8 +23,8 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
     def test_existing_core_brain_risk_broker_fit_one_profile(self):
         result=verify(self.profile,root=ROOT)
         self.assertEqual(result["status"],"INTEGRATED_OFFLINE_ENGINEERING_ONLY")
-        self.assertEqual(result["modules_verified"],14)
-        self.assertEqual(len(set(result["module_sha256"])),14)
+        self.assertEqual(result["modules_verified"],17)
+        self.assertEqual(len(set(result["module_sha256"])),17)
         self.assertEqual(result["management"],"REMOVED")
         self.assertEqual(result["cumulative_profit_lock"],
                          "VERIFIED_THREE_MILESTONES_AND_RESTART")

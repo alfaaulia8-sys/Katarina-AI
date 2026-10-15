@@ -8,19 +8,20 @@ KATARINA AI adalah proyek yang dikembangkan untuk membantu pengamatan pasar, eva
 
 Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur, dan memperhatikan risiko. Pengembangan dan pengujian masih berlangsung.
 
-## Status perkembangan — 15 Oktober 2026
+## Status perkembangan — 16 Oktober 2026
 
 **Development Preview / research-only. Live trading belum diaktifkan.**
 
-| Bagian | Satu otak canonical — pembaruan 15 Oktober 2026 |
+| Bagian | Satu otak canonical — pembaruan 16 Oktober 2026 |
 |---|---|
-| Otak unified | 1 otak, 14 modul canonical; Management dan 11 spesialis dihapus |
-| Pengujian | 1.270 unit, 109 static (4 skipped), 49 integration lulus |
+| Otak unified | 1 otak, 17 modul canonical; Management dan 11 spesialis dihapus |
+| Pengujian | 1.270 unit, 113 static (4 skipped), 61 integration lulus |
 | Repository | Main dilindungi; wajib PR dan CI; 0 kolaborator tambahan |
 | Cleanup | 42 branch lama diintegrasikan dan dihapus; hanya `main` tersisa |
 | Sinkronisasi | GitHub dan checkout kerja cocok; VPS belum diverifikasi |
 | Akses luar Work | Panduan tersedia; login CLI perangkat tujuan belum terpasang |
 
+[**Diagram patokan dan jalur implementasi**](docs/architecture/KATARINA_SINGLE_BRAIN_WORKFLOW_20261016.md) ·
 [**Lihat status lengkap dan bukti**](docs/PROJECT_STATUS.md) ·
 [**Lihat perubahan**](CHANGELOG.md) ·
 [**Lanjutkan pekerjaan**](docs/CURRENT_PROJECT_HANDOFF.md) ·

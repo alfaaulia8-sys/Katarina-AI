@@ -1,5 +1,21 @@
 # Perubahan material Katarina AI
 
+## 2026-10-16 — jalur runtime sesuai diagram patokan Owner
+
+- Catat diagram sebagai kontrak arsitektur dan pindahkan observer ke kemampuan
+  internal otak. CLI menjadi delegasi; helper candle berpindah dari entry point
+  legacy ke adapter broker read-only yang diinjeksi.
+- Otak memiliki context/memori/journal/shadow, urutan settle/learn/propose,
+  monitoring/foundation, publikasi, core tester serta modal/recovery offline.
+- Tambahkan checkpoint dan audit internal; restore atomik mempertahankan reserve
+  dan inflight tanpa replay order, migrasi modal broker atau perubahan posisi manual.
+- Gerbang pengiriman memerlukan Risk Governor eksternal dan tetap menolak semua
+  order nyata, termasuk ketika penilaian simulasi menyetujui review.
+- Tutup dua CLI observer legacy agar tidak menyalakan loop atau otak paralel.
+- Perbaiki import `replace` pada konteks berita yang terungkap lewat uji alur penuh.
+- Lokal: 1.270 unit, 113 static (4 skipped), 61 integration. CI tetap wajib sebelum
+  merge. Source engine trading/Risk Governor/MT5 tidak berubah; VPS belum diverifikasi.
+
 ## 2026-10-15 — satu otak; Management dan 11 spesialis dihapus
 
 - Hapus tiga workflow Management/team, enam script, workplan, roadmap dan

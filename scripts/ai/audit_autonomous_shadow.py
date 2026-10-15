@@ -68,13 +68,18 @@ def verify(repo_root):
         assert result["usable_for_live_model_promotion"] is False
     finally:
         db.close()
-    src=(repo_root/"scripts/ai/run_contextual_market_observer.py").read_text()
-    assert "terminal_info()" in src and "term.trade_allowed" in src
-    assert "lock_worker(" in src
-    assert "ProspectiveShadowBook(" in src
-    assert "collect_market_articles(" in src
-    assert "order_send(" not in src
-    assert "order_check(" not in src
+    cli=(repo_root/"scripts/ai/run_contextual_market_observer.py").read_text()
+    brain=(repo_root/"src/katarina/intelligence/unified_brain.py").read_text()
+    observer=(repo_root/"src/katarina/intelligence/brain_observer.py").read_text()
+    assert "UnifiedKatarinaBrain.observe_once(" in cli
+    assert "terminal_info()" in brain and "terminal.trade_allowed" in brain
+    assert "lock_worker(" in brain and "lock.close()" in brain
+    assert "ProspectiveShadowBook(" in brain
+    assert "collect_market_articles(" in observer
+    assert "self.shadow_book.settle(" in brain and "self.shadow_book.propose(" in brain
+    for source in (cli, brain, observer):
+        assert "order_send(" not in source
+        assert "order_check(" not in source
     return {
         "status":"PASS_SYNTHETIC_SOFTWARE_SAFETY_ONLY",
         "verified_guards":[

@@ -310,17 +310,19 @@ class UnifiedCognitionTests(unittest.TestCase):
             finally:
                 again.close()
 
-    def test_actual_observer_owns_same_brain_no_second_process(self):
+    def test_actual_brain_owns_observer_no_second_process(self):
         from pathlib import Path
-        script=(Path(__file__).resolve().parents[3]/
-                "scripts/ai/run_contextual_market_observer.py").read_text()
-        self.assertIn("run_unified_cognitive_cycle(",script)
-        self.assertLess(script.index("virtual_book.settle("),
-                        script.index("run_unified_cognitive_cycle("))
-        self.assertLess(script.index("run_unified_cognitive_cycle("),
-                        script.index("virtual_book.propose("))
-        self.assertNotIn("order_send(",script)
-        self.assertNotIn("subprocess.Popen(",script)
+        root=Path(__file__).resolve().parents[3]
+        source=(root/"src/katarina/intelligence/unified_brain.py").read_text()
+        cli=(root/"scripts/ai/run_contextual_market_observer.py").read_text()
+        self.assertLess(source.index("self.shadow_book.settle("),
+                        source.index("unified = self.run_unified_cognitive_cycle("))
+        self.assertLess(source.index("unified = self.run_unified_cognitive_cycle("),
+                        source.index("self.shadow_book.propose("))
+        self.assertIn("UnifiedKatarinaBrain.observe_once(",cli)
+        for text in (source,cli):
+            self.assertNotIn("order_send(",text)
+            self.assertNotIn("subprocess.Popen(",text)
 
 
 if __name__=="__main__":

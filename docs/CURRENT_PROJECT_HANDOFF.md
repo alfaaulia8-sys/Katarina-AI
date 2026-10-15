@@ -1,17 +1,17 @@
 # Katarina AI — Current Project Handoff
 
-Updated: **2026-10-15 (Asia/Jakarta)**.
+Updated: **2026-10-16 (Asia/Jakarta)**.
 
 Mulai dari [status proyek terkini](PROJECT_STATUS.md),
 [changelog](../CHANGELOG.md), dan
 [aturan GitHub-first](operations/GITHUB_FIRST_DEVELOPMENT.md).
 
 Arsitektur canonical terbaru: `UnifiedKatarinaBrain`, satu instance observer,
-14 modul dalam registry dan satu memori bersama untuk Fast/Deep. Management,
+17 modul dalam registry dan satu memori bersama untuk Fast/Deep. Management,
 11 spesialis, workplan, script dan workflow pemanggil sudah dihapus berdasarkan
 instruksi Owner 15 Oktober 2026. Risk Governor tetap independen.
 
-Pengujian perubahan: 1.270 unit, 109 static (4 skipped), 49 integration.
+Pengujian perubahan: 1.270 unit, 113 static (4 skipped), 61 integration.
 Tidak ada order atau live execution. GitHub dan checkout kerja disamakan pada
 commit hasil merge; checkout, memori dan proses VPS belum diverifikasi.
 
@@ -29,3 +29,8 @@ hambatan akses.
 Dokumen terdahulu disimpan sebagai [arsip 10 Oktober](handoff/PROJECT_HANDOFF_20261010.md)
 dan [checkpoint sampai 13 Oktober](handoff/KATARINA_START_NEXT_CHAT_20261013.md).
 Catatan host lama di dalamnya bukan keadaan VPS saat ini.
+
+Patokan arsitektur kini [diagram satu otak 16 Oktober](architecture/KATARINA_SINGLE_BRAIN_WORKFLOW_20261016.md).
+Otak memiliki observer, monitoring, modal/recovery offline dan gerbang OFF;
+Risk Governor tetap di luar. Entry point legacy menolak start. Tidak ada
+migrasi state broker, scheduler, deployment VPS atau aktivasi live dari perubahan ini.

@@ -67,3 +67,11 @@ Sintesis entry/exit tersedia pada instance yang sama sebagai riset offline.
 Tidak ada worker/model trading kedua, self-rewrite atau scheduler baru. Risk
 Governor tetap independen dan tidak diubah. Cloud Hands, bukti broker, autentikasi
 Owner dan deployment VPS tetap belum diterima sebagai produksi.
+
+## Patokan yang berlaku sejak 16 Oktober 2026
+
+Lihat [diagram satu otak dan pemetaan source](KATARINA_SINGLE_BRAIN_WORKFLOW_20261016.md).
+Observer, monitoring, modal/recovery offline dan gerbang pengiriman kini dimiliki
+otak; CLI tidak lagi memiliki proses observasi tersendiri. Registry mencakup 17
+modul. Risk Governor, Cloud Hands, MT5, broker dan infrastruktur host berada di
+batas eksternal, dengan pengiriman tetap OFF dan sinkronisasi VPS belum diverifikasi.
