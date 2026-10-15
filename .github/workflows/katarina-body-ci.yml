@@ -646,7 +646,7 @@ jobs:
 
   branch-inventory-on-consolidation:
     name: Read-only branch consolidation inventory
-    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[branch-inventory]')
+    if: github.event_name == 'push'
     needs: body
     runs-on: ubuntu-latest
     timeout-minutes: 15
