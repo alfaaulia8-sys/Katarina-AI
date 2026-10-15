@@ -1,103 +1,103 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-15T07:21:27Z",
+  "updatedAt": "2026-10-15T13:21:43Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "UK economy grew 0.1% in August, beating expectations",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/15/uk-gdp-august-2026-economy.html",
-      "publishedAt": "2026-10-15T07:15:28Z",
+      "title": "Treasury yields slide as investors flee to safety of bonds amid tech rout",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/15/us-treasury-yields-investors-economic-data-.html",
+      "publishedAt": "2026-10-15T13:16:17Z",
+      "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Jim Cramer's top 10 things to watch in the stock market Thursday",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/investingclub/2026/10/15/jim-cramers-top-10-things-to-watch-in-the-stock-market-thursday.html",
+      "publishedAt": "2026-10-15T12:54:30Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "SK Hynix shares plunge 10% amid Asia tech rout as Fed rate hike fears, AI funding worries mount",
-      "source": "CNBC Dunia",
+      "title": "College was supposed to be ‘good debt.’ For many borrowers, it isn’t paying off",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/15/student-loans-college-degree-good-debt.html",
+      "publishedAt": "2026-10-15T12:53:06Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Nvidia, AMD, Micron fall as AI stock sell-off deepens",
+      "source": "CNBC Utama",
       "url": "https://www.cnbc.com/2026/10/15/sk-hynix-samsung-softbank-stocks-asia-tech-rout-ai-funding-worries.html",
-      "publishedAt": "2026-10-15T06:42:57Z",
+      "publishedAt": "2026-10-15T12:52:40Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "U.S. Treasury dismisses IMF debt warning and 'messy' forecasting",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/15/zervos-imf-us-debt-warning.html",
+      "publishedAt": "2026-10-15T12:40:58Z",
       "category": "Suku Bunga / Inflasi",
       "language": "en"
     },
     {
-      "title": "India’s IDBI Bank falls 7% as government announces $5.5 billion stake sale to Canada's Fairfax",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/15/india-canada-fairfax-idbi-fdi.html",
-      "publishedAt": "2026-10-15T06:12:04Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Oil falls as investors assess Mideast tensions, International Energy Agency's report",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/15/oil-prices-today-brent-wti.html",
-      "publishedAt": "2026-10-15T04:09:18Z",
-      "category": "Energi / Geopolitik",
-      "language": "en"
-    },
-    {
-      "title": "Jim Cramer says don't give up on this unpredictable market. Here's why",
+      "title": "The problem with 'good debt': Why borrowers should think twice about the label",
       "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/cramer-stock-market-selloff-inflation.html",
-      "publishedAt": "2026-10-14T22:19:32Z",
+      "url": "https://www.cnbc.com/2026/10/15/good-debt-vs-bad-debt-why-experts-say-rethink-labels.html",
+      "publishedAt": "2026-10-15T12:30:01Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Traders pile into 'bubble puts' on CoreWeave as neocloud stocks plunge",
+      "title": "Nvidia CEO Jensen Huang urges U.S.-China dialogue on 'potentially dangerous' AI",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/coreweave-put-options-ai-trade.html",
-      "publishedAt": "2026-10-14T21:19:09Z",
+      "url": "https://www.cnbc.com/2026/10/15/jensen-huang-nvidia-china-ai.html",
+      "publishedAt": "2026-10-15T12:17:13Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "OpenAI bugging suspect booked one-way ticket to Saudi Arabia with family before arrest",
+      "title": "Memory stocks are getting hammered. China and a 2029 oversupply are the big worries",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/openai-alfozan-recording-raed-ventures.html",
-      "publishedAt": "2026-10-14T21:18:13Z",
-      "category": "Energi / Geopolitik",
+      "url": "https://www.cnbc.com/2026/10/15/memory-stocks-micron-sk-hynix-samsung-china.html",
+      "publishedAt": "2026-10-15T12:15:09Z",
+      "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "CoreWeave shares tumble as bond yields near 15% on concern about AI borrowing binge",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/coreweave-stock-bond-yields-ai-debt.html",
-      "publishedAt": "2026-10-14T20:46:32Z",
+      "title": "Analysis: Why a $2 trillion deficit and 5% Treasury yields are becoming America's biggest economic challenge",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/15/treasury-yields-deficit-national-debt-ai.html",
+      "publishedAt": "2026-10-15T12:11:15Z",
       "category": "Suku Bunga / Inflasi",
       "language": "en"
     },
     {
-      "title": "Morgan Stanley tops estimates as equities trading revenue beats expectations by $909 million",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/14/morgan-stanley-ms-q3-2026-earnings.html",
-      "publishedAt": "2026-10-14T20:22:09Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Bank of America shares drop after third-quarter revenue miss and regulatory penalty",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/14/bank-of-america-bac-q3-2026-earnings.html",
-      "publishedAt": "2026-10-14T20:20:46Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Dell stock plunges 11%, leading data center sell-off as fears mount about 'enterprise AI timing'",
+      "title": "Cboe to expand options trading hours for major stocks and ETFs",
       "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/dell-stock-barclays-enterprise-ai.html",
-      "publishedAt": "2026-10-14T20:19:25Z",
+      "url": "https://www.cnbc.com/2026/10/15/cboe-stock-etf-options-extended-hours.html",
+      "publishedAt": "2026-10-15T12:01:59Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Bank of America hired 1,000 contractors to patch software flaws exposed by Anthropic's Mythos",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/14/anthropic-mythos-bank-of-america-hiring-cost.html",
-      "publishedAt": "2026-10-14T20:06:28Z",
+      "title": "How lower fuel economy targets could boost pickups and V-8 engines",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/15/cafe-fuel-economy-v8-trucks.html",
+      "publishedAt": "2026-10-15T11:30:01Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Scott Bessent's growth plans aren't enough to tame surging deficit and debt pile, IMF chief says",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/bond-yields-debt-deficit-treasury.html",
+      "publishedAt": "2026-10-15T10:53:32Z",
       "category": "Pasar Global",
       "language": "en"
     }
