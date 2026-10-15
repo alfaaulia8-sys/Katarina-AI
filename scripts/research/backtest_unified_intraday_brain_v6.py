@@ -25,6 +25,7 @@ from backtest_explainable_55_pairs import OUT,get_bars,TIMEFRAME,sensors,bisecte
 from backtest_full_m5_intraday_scalp_v5 import replay
 from katarina.intelligence.market_decision_pipeline import MarketDecisionPipeline
 from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
+from katarina.intelligence.research_signal_ablation import eligible_for_research
 from katarina.intelligence.semantic_setup_truth import CausalSetupValidator
 from katarina.intelligence.structural_entry_quality import StructuralEntryQuality
 from katarina.intelligence.intraday_scalp_research import vector_prefilter,fill_next_open,Candidate
@@ -36,11 +37,23 @@ RISK=.0025
 from katarina.intelligence.unified_intraday_gate import (check_candidate, min_capital_for_broker)
 
 def main():
+    global DEST
     ap=argparse.ArgumentParser()
     ap.add_argument("--symbols",default="")
     ap.add_argument("--bars",type=int,default=90000)
     ap.add_argument("--allow-scalp-research",action="store_true")
+    ap.add_argument("--minimum-signal-score",type=float,default=0.0,
+                    help="Research-only causal candidate floor; default preserves V6")
+    ap.add_argument("--research-side",choices=("BOTH","BUY","SELL"),default="BOTH",
+                    help="Research-only side ablation; default preserves V6")
+    ap.add_argument("--output-dir",type=Path,default=None,
+                    help="Isolated research output: avoid overwriting earlier receipts")
     args=ap.parse_args()
+    if not math.isfinite(args.minimum_signal_score) or not 0<=args.minimum_signal_score<=1:
+        raise ValueError("invalid_research_signal_floor")
+    if args.output_dir is not None:
+        DEST=args.output_dir.resolve()
+        DEST.mkdir(parents=True,exist_ok=True)
     if not 500<=args.bars<=90000:raise ValueError("invalid_bar_count")
     if not mt5.initialize():raise RuntimeError("mt5_unavailable")
     if mt5.terminal_info() is None or mt5.terminal_info().trade_allowed:
@@ -88,6 +101,14 @@ def main():
             counts["all_fast_candidates"]+=1
             if x.mode=="SCALP_EXTREME" and not args.allow_scalp_research:
                 counts["scalp_disabled"]+=1
+                continue
+            # Causal research-only gates; applied BEFORE semantic / risk /
+            # future outcome scoring and before the cross-symbol ranking.
+            if not eligible_for_research(
+                    x.score,x.side,minimum_score=args.minimum_signal_score,
+                    research_side=args.research_side):
+                counts["research_score_or_side_rejected"]+=1
+                local["research_score_or_side_rejected"]+=1
                 continue
             candidate,why=check_candidate(x,frame["M5"],frame["M15"],frame["H1"],
                 clocks,point,sem,quality,brain)
@@ -154,6 +175,10 @@ def main():
         combined=scalp=None
     full=dict(
         kind="KATARINA_V6_CAUSAL_BRAIN_GATED_FULL_M5_PORTFOLIO",
+        experimental_minimum_signal_score=args.minimum_signal_score,
+        experimental_research_side=args.research_side,
+        experimental_research_gate_only=True,
+        research_only_no_live_model_change=True,
         scan_symbols=len(symbols),M5_closed_bars_scanned=sum(p["fast_scan"]["closed_bars_considered"] for p in per),
         raw_intraday_candidate_count=sum(p["fast_scan"]["intraday"] for p in per),
         raw_scalp_candidate_count=sum(p["fast_scan"]["scalp_extreme"] for p in per),
@@ -166,6 +191,7 @@ def main():
            "CausalSetupValidator and StructuralEntryQuality must both agree before portfolio ranking",
            "Only then choose top at exact shared broker-coded timestamp, WITHOUT reading future R",
            "News assumed verified hypothetically because point-in-time archive unavailable; actual trades WAIT",
+           "Score/side gates use only candidate-known values before future return is examined; any tuning on these previously inspected dates is not unseen OOS",
            "Exit uses V5 M5 OHLC next-open model, spread, one adverse point each side and .03R fee",
            "Fee stress +.10/.20R; actual broker commission and historical bid/ask intrabar not reconciled",
            "Scalping disabled unless explicitly requested separately; never live",
