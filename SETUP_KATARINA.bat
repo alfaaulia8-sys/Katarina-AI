@@ -1,6 +1,5 @@
 @echo off
 setlocal
-cd /d "%~dp0"
 title KATARINA PC Test - LIVE OFF
 python -c "import sys; sys.exit(sys.version_info[:2] != (3, 12))" >nul 2>nul
 if not errorlevel 1 goto UsePython
