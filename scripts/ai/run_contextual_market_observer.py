@@ -6,6 +6,7 @@ import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"src"))
 from katarina.intelligence.unified_brain import UnifiedKatarinaBrain
+from katarina.host import inspect_host, state_directory
 
 
 def observe(root, *, max_symbols=17, fetch_news=True):
@@ -15,14 +16,37 @@ def observe(root, *, max_symbols=17, fetch_news=True):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument("--state-dir",default=r"C:\KatarinaDev\artifacts\contextual-observer")
-    parser.add_argument("--max-symbols",type=int,default=17)
+    parser.add_argument("--state-dir", help="State location; overrides KATARINA_STATE_DIR and OS default")
+    parser.add_argument("--offline-research", action="store_true", help="One local evidence cycle; no MT5 or network")
+    parser.add_argument("--doctor", action="store_true", help="Local preflight only; no broker connection")
+    parser.add_argument("--max-symbols",type=int, help="Explicit observation budget (1..17); default adapts to host")
     parser.add_argument("--no-fetch",action="store_true")
     args=parser.parse_args()
-    if not 1<=args.max_symbols<=17:parser.error("max 17 broker markets")
-    result=observe(Path(args.state_dir),max_symbols=args.max_symbols,fetch_news=not args.no_fetch)
+    if args.max_symbols is not None and not 1<=args.max_symbols<=17:
+        parser.error("max 17 broker markets")
+    try:
+        root=state_directory(args.state_dir)
+    except ValueError as exc:
+        parser.error(str(exc))
+    host=inspect_host(root)
+    if args.doctor:
+        print(json.dumps(host,sort_keys=True),flush=True)
+        return 0 if not host["blockers"] else 2
+    if host["blockers"]:
+        parser.error(",".join(host["blockers"]))
+    if args.offline_research:
+        result=UnifiedKatarinaBrain.research_once(root)
+        print(json.dumps(result,sort_keys=True),flush=True)
+        return 0
+    symbols=args.max_symbols if args.max_symbols is not None else host["budget"]["max_symbols"]
+    host["effective_max_symbols"]=symbols
+    host["observation_budget_source"]="explicit" if args.max_symbols is not None else "host_policy"
+    if not host["native_mt5_package_available"]:
+        parser.error("MT5_ADAPTER_UNAVAILABLE: offline research remains available; use --doctor for host status")
+    result=observe(root,max_symbols=symbols,fetch_news=not args.no_fetch)
+    result["host_environment"]=host
     print("KATARINA_CONTEXTUAL_ONE_PASS",json.dumps(result,sort_keys=True),flush=True)
 
 
 if __name__=="__main__":
-    main()
+    raise SystemExit(main())
