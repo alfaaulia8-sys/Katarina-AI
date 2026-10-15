@@ -79,3 +79,10 @@ Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
 - Add local host preflight and visible bounded observation budgets.
 - Add broker-free, brain-owned local evidence lifecycle with checkpoint/lock.
 - Test portable lifecycle on Linux, Windows and macOS in CI; retain live OFF.
+
+## 2026-10-16 — automatic read-only connections
+
+- Bind allowed broker account/server before selecting local or HTTPS sensor routes.
+- Retry bounded whole passes and retain offline research when routes are unavailable.
+- Add explicitly installed authenticated TLS sensor bridge; no execution APIs.
+- Test route selection, disconnect/session recovery, real loopback TLS and data pipeline.

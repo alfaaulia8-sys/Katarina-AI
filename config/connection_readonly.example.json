@@ -1,0 +1,9 @@
+{
+  "expected_login": 12345678,
+  "expected_server": "REPLACE_WITH_ALLOWED_BROKER_SERVER",
+  "priority": ["local", "cloud"],
+  "terminal_path": null,
+  "cloud_url": "https://your-sensor.example.invalid/sensor-v1",
+  "cloud_token_env": "KATARINA_CLOUD_TOKEN",
+  "attempts": 2
+}

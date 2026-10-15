@@ -106,3 +106,10 @@ Otak dapat menjalankan satu siklus riset lokal tanpa VPS/MT5 melalui
 lokasi state mengikuti konfigurasi/OS, anggaran observasi mengikuti kapasitas.
 Lihat [panduan host portabel](architecture/KATARINA_PORTABLE_HOST.md). Tidak ada migrasi state legacy otomatis,
 Cloud Hands lintas host belum terverifikasi, live tetap OFF.
+
+## Koneksi otomatis baca-saja — 16 Oktober 2026
+
+Launcher memilih local/cloud/offline menurut konfigurasi akun yang diizinkan.
+Retry terbatas mengulang seluruh pass; tanpa koneksi valid tetap riset lokal.
+Sensor HTTPS baru memerlukan pemasangan dan kredensial sekali; belum diuji pada
+MT5/cloud nyata. Lihat [kontrak koneksi otomatis](architecture/KATARINA_AUTOMATIC_CONNECTION.md). Risk Governor independen, live OFF.

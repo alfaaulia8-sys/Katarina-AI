@@ -327,4 +327,4 @@ jobs:
       - name: Exercise host policy and real offline lifecycle without MT5
         env:
           PYTHONPATH: src
-        run: python -m unittest tests.integration.test_portable_host -v
+        run: python -m unittest tests.integration.test_portable_host tests.integration.test_automatic_connection -v
