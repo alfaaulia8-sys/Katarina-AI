@@ -1,104 +1,104 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-14T19:14:44Z",
+  "updatedAt": "2026-10-15T01:14:47Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
-      "title": "10-year Treasury yields dip as traders look ahead to Thursday economic reports",
+      "title": "SK Hynix shares plunge 10% amid Asia tech rout as Fed rate hike fears, AI funding worries mount",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/us-treasury-yields-cpi-inflation-report.html",
-      "publishedAt": "2026-10-14T19:10:20Z",
+      "url": "https://www.cnbc.com/2026/10/15/sk-hynix-samsung-softbank-stocks-asia-tech-rout-ai-funding-worries.html",
+      "publishedAt": "2026-10-15T01:07:01Z",
       "category": "Suku Bunga / Inflasi",
       "language": "en"
     },
     {
-      "title": "CoreWeave shares tumble as bond yields near 15% on concern about AI borrowing binge",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/coreweave-stock-bond-yields-ai-debt.html",
-      "publishedAt": "2026-10-14T19:04:29Z",
-      "category": "Suku Bunga / Inflasi",
+      "title": "Jim Cramer explains why even strong bank earnings couldn't save their stocks",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/cramer-big-bank-earnings-stock-reaction.html",
+      "publishedAt": "2026-10-14T22:48:06Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Jim Cramer says don't give up on this unpredictable market. Here's why",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/cramer-stock-market-selloff-inflation.html",
+      "publishedAt": "2026-10-14T22:19:32Z",
+      "category": "Pasar Global",
       "language": "en"
     },
     {
       "title": "Traders pile into 'bubble puts' on CoreWeave as neocloud stocks plunge",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/14/coreweave-put-options-ai-trade.html",
-      "publishedAt": "2026-10-14T19:03:44Z",
+      "publishedAt": "2026-10-14T21:19:09Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Treasury says largest U.S. banks let politics influence who received banking services",
+      "title": "OpenAI bugging suspect booked one-way ticket to Saudi Arabia with family before arrest",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/treasury-banks-debanking-trump-reputation-risk.html",
-      "publishedAt": "2026-10-14T18:51:42Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Bank of America hired 1,000 contractors to patch software flaws exposed by Anthropic's Mythos",
-      "source": "CNBC Pasar",
-      "url": "https://www.cnbc.com/2026/10/14/anthropic-mythos-bank-of-america-hiring-cost.html",
-      "publishedAt": "2026-10-14T18:48:44Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "AI infrastructure stocks tumble. Here's a few reasons for the sell-off",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/investingclub/2026/10/14/ai-infrastructure-stocks-tumble-heres-a-few-reasons-for-the-sell-off-.html",
-      "publishedAt": "2026-10-14T18:41:11Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "Container ship sinks in Strait of Hormuz as Iran steps up attacks",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/container-ship-sinks-strait-hormuz-as-iran-war-attacks.html",
-      "publishedAt": "2026-10-14T18:18:43Z",
+      "url": "https://www.cnbc.com/2026/10/14/openai-alfozan-recording-raed-ventures.html",
+      "publishedAt": "2026-10-14T21:18:13Z",
       "category": "Energi / Geopolitik",
       "language": "en"
     },
     {
-      "title": "The steel stock that has the shorts and options traders on edge",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/the-steel-stock-that-has-the-shorts-and-options-traders-on-edge.html",
-      "publishedAt": "2026-10-14T17:22:55Z",
-      "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "How high inflation became a 'fact of life' in the U.S.",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/high-inflation-fed-expectations.html",
-      "publishedAt": "2026-10-14T17:20:23Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Iran says it’s ‘counting the moments’ until it can strike U.S. warships; Saudi Aramco facilities attacked",
+      "title": "CoreWeave shares tumble as bond yields near 15% on concern about AI borrowing binge",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/us-iran-war-trump-hormuz-saudi.html",
-      "publishedAt": "2026-10-14T17:12:20Z",
-      "category": "Energi / Geopolitik",
+      "url": "https://www.cnbc.com/2026/10/14/coreweave-stock-bond-yields-ai-debt.html",
+      "publishedAt": "2026-10-14T20:46:32Z",
+      "category": "Suku Bunga / Inflasi",
       "language": "en"
     },
     {
       "title": "Morgan Stanley tops estimates as equities trading revenue beats expectations by $909 million",
       "source": "CNBC Pasar",
       "url": "https://www.cnbc.com/2026/10/14/morgan-stanley-ms-q3-2026-earnings.html",
-      "publishedAt": "2026-10-14T17:08:23Z",
+      "publishedAt": "2026-10-14T20:22:09Z",
       "category": "Pasar Global",
       "language": "en"
     },
     {
-      "title": "Fannie Mae sharply raises mortgage rate forecast for 2027",
+      "title": "Bank of America shares drop after third-quarter revenue miss and regulatory penalty",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/14/bank-of-america-bac-q3-2026-earnings.html",
+      "publishedAt": "2026-10-14T20:20:46Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Dell stock plunges 11%, leading data center sell-off as fears mount about 'enterprise AI timing'",
+      "source": "CNBC Utama",
+      "url": "https://www.cnbc.com/2026/10/14/dell-stock-barclays-enterprise-ai.html",
+      "publishedAt": "2026-10-14T20:19:25Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Bank of America hired 1,000 contractors to patch software flaws exposed by Anthropic's Mythos",
+      "source": "CNBC Pasar",
+      "url": "https://www.cnbc.com/2026/10/14/anthropic-mythos-bank-of-america-hiring-cost.html",
+      "publishedAt": "2026-10-14T20:06:28Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "10-year Treasury yield dips as traders look ahead to Thursday economic reports",
       "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/fannie-mae-sharply-raises-mortgage-rate-forecast-for-2027-.html",
-      "publishedAt": "2026-10-14T17:08:07Z",
+      "url": "https://www.cnbc.com/2026/10/14/us-treasury-yields-cpi-inflation-report.html",
+      "publishedAt": "2026-10-14T20:03:22Z",
       "category": "Suku Bunga / Inflasi",
+      "language": "en"
+    },
+    {
+      "title": "Container ship sinks in Strait of Hormuz as Iran steps up attacks",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/14/container-ship-sinks-strait-hormuz-as-iran-war-attacks.html",
+      "publishedAt": "2026-10-14T19:22:00Z",
+      "category": "Energi / Geopolitik",
       "language": "en"
     }
   ]
