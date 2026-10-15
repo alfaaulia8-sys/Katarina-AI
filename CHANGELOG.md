@@ -108,5 +108,5 @@ Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
 - Add an authenticated foreground browser surface; require TLS for remote access.
 - Add nonexecuting MT5/Hands WAIT feedback with account checks, TTL, dedup and receipts.
 - Add portable pretrial acceptance; distinguish scripted fixtures from real model/broker proof.
-- Local regression: 1,270 unit; 113 static (4 skips); 132 integration. Cross-OS CI not yet run for this revision.
-- Trading/risk/MT5 source unchanged, real execution OFF. Owner authorized public GitHub publication, PR, CI and merged-branch cleanup; cross-platform results are recorded after verification.
+- Local regression: 1,270 unit; 113 static (4 skips); 132 integration. Linux, Windows and macOS packaged CI passed (Actions run 38811219852).
+- Trading/risk/MT5 source unchanged, real execution OFF. Owner authorized public GitHub publication, PR, CI and merged-branch cleanup; cross-platform results are recorded in the pretrial validation evidence.

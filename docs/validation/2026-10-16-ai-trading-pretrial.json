@@ -30,8 +30,18 @@
   "real_mt5_connection_verified": false,
   "real_broker_execution_verified": false,
   "phone_destination_test_verified": false,
-  "cross_platform_ci_verified": false,
-  "publication": "OWNER_AUTHORIZED_PUBLICATION_PR_AND_CI_PENDING",
+  "cross_platform_ci_verified": true,
+  "publication": "OWNER_AUTHORIZED_PUBLICATION_PR94",
   "source_revision": "SEE_PACKAGE_SOURCE_REVISION_MANIFEST",
-  "architecture": "docs/architecture/KATARINA_AI_TRADING_PRETRIAL.md"
+  "architecture": "docs/architecture/KATARINA_AI_TRADING_PRETRIAL.md",
+  "ci_evidence": {
+    "source_commit": "4a9199943b870101791691712b16afe23192bc23",
+    "run_id": 38811219852,
+    "url": "https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38811219852",
+    "body": "PASS",
+    "ubuntu": "PASS",
+    "windows": "PASS",
+    "macos": "PASS",
+    "scope": "SYNTHETIC_PROTOCOL_AND_PACKAGED_INSTALLATION_ONLY"
+  }
 }

@@ -144,3 +144,12 @@ Risk Governor, trading strategy and MT5 source remain unchanged; delivery is OFF
 The portable `pretrial` command distinguishes synthetic checks from missing real
 model, destination host, MT5 and demo broker evidence. See
 [pretrial contract and instructions](architecture/KATARINA_AI_TRADING_PRETRIAL.md).
+
+### GitHub CI evidence for pretrial
+
+[PR #94](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/94) and
+[Actions run 38811219852](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38811219852)
+verify the published implementation: Body CI plus Linux, Windows and macOS
+installation, extracted-package acceptance, pretrial and environment recovery all
+passed. These are synthetic/protocol checks, not real-model quality or broker
+execution clearance. The validation JSON records the exact tested commit.
