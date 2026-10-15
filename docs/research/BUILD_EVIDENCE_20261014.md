@@ -1,3 +1,5 @@
+> Historical report: Management/specialist code and workflows described below were removed by Owner on 2026-10-15. Current architecture is one unified research brain; this report is not an execution instruction.
+
 # Katarina AI — engineering / research evidence, 14 October 2026
 
 Status: **ENGINEERING TESTS PASS, TRADING EDGE NOT VALIDATED, LIVE RELEASE BLOCKED**.

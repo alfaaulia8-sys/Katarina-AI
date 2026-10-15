@@ -44,7 +44,7 @@ change when reviewed evidence paths are added; it is not a completion score.
 | A15 Owner dashboard and authenticated controls | Not integrated | End-to-end verified auth, emergency controls |
 | A16 Early-exit counterfactual feedback | Partial | Immutable source-linked predictive horizon and cost proof |
 | A17 Neuro-Link & evidence dedup | Partial | Cross-source evidence weighting and scheduling semantics |
-| A18 Management & 11 specialists | ON HOLD | No action until Owner reverses latest decision |
+| A18 Management & 11 specialists | REMOVED | Removed with scripts, workplan and workflow hooks by Owner on 15 October 2026 |
 
 Offline-verified means the particular existing behavior has tests and acceptance
 receipts. It does **not** certify the entire area as production-complete.
@@ -58,7 +58,7 @@ dedup/evidence/fast-deep internals; D6: cloud/hands performance, security,
 privacy/retention and offline incidents.
 
 The approved **25% cumulative Profit Lock**, Risk Governor veto, same-day
-Katarina-caused emergency lockdown, and Management-on-hold decision are
+Katarina-caused emergency lockdown, and Management removal decision are
 not among the unresolved choices and must not be changed opportunistically.
 
 ## Work sequencing, no queue buildup

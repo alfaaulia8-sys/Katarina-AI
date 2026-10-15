@@ -1,19 +1,37 @@
 # Status perkembangan Katarina AI
 
-Diperbarui: **15 Oktober 2026**. Baseline integrasi kode:
-`3b43c04f6efc9484b383db135e01ac7d5d3ec611` (PR #86).
+Diperbarui: **15 Oktober 2026**. Snapshot sumber setelah penghapusan Management
+serta penyatuan satu otak canonical. Lihat commit `main` dan Actions untuk SHA
+perubahan yang diuji; status ini tidak mengklaim deployment VPS telah sinkron.
 
 | Bagian | Hasil terverifikasi | Batas |
 |---|---|---|
 | Branch | Hanya `main`; 42 branch awal selain main sudah terhapus | Branch kerja sementara boleh muncul untuk PR berikutnya |
 | Integrasi | 34 branch terverifikasi setara/identik; delapan direview dan diselesaikan | Varian eksekusi eksperimen tetap terpisah dari engine produksi |
-| Pengujian | 1.309 unit, 110 static (4 skipped), 42 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
-| Otak unified | 10 komponen canonical diverifikasi; Neuro-Link recall ditambahkan | Memori privat dan proses VPS belum diperiksa |
+| Pengujian | 1.270 unit, 109 static (4 skipped), 49 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
+| Otak unified | 1 otak dengan 14 modul canonical; persepsi, kognisi dan Neuro-Link berbagi runtime | Memori privat dan proses VPS belum diperiksa |
 | Trading | Engine produksi, Risk Governor, konfigurasi risk dan MT5 tidak berubah | Live execution false; 0 order pada verifikasi offline |
 | Keamanan | Main wajib PR/body CI, up-to-date dan conversation resolution; admin tunduk aturan | Bukan audit penetrasi menyeluruh |
 | Akses | Tidak ada kolaborator tambahan; token Actions read-only secara default | CLI perangkat luar Work belum dipasang/diuji |
 
-## Integrasi branch
+## Satu otak canonical; Management dihapus
+
+- Tiga workflow Management/team, enam script, workplan dan roadmap spesialis
+  dihapus; hook pemanggilnya di Body CI juga dihapus. Sejarah tersedia di Git.
+- `UnifiedKatarinaBrain` menjadi satu pintu masuk observer. Persepsi pasar,
+  pembelajaran kognitif, recall Neuro-Link dan sintesis riset entry/exit merupakan
+  kemampuan di instance yang sama, tanpa worker atau scheduler kedua.
+- Fast/Deep menggunakan MemoryStore dan checkpoint yang sama. Pembacaan causal
+  mempertahankan waktu pertama informasi tersedia, checksum, provenance dan
+  penolakan duplikasi/tampering. Outcome quote hanya OBSERVED, bukan profit broker.
+- Rollback Owner dan knowledge window yang terpotong menahan sampling virtual.
+  Parameter D1–D6 yang masih membutuhkan validasi tidak diisi sembarangan.
+- Cloud Hands, autentikasi Owner, validasi broker dan VPS tetap belum selesai.
+  Rekayasa satu otak bukan klaim seluruh grand desain sudah siap produksi.
+
+Diagram dan kontrak ada di [arsitektur unified](architecture/KATARINA_UNIFIED_V1_SYNC.md).
+
+## Integrasi branch sebelumnya
 
 [PR #85](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/85)
 menyatukan riwayat 34 branch setelah verifikasi patch-id atau blob file identik.

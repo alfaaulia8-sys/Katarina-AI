@@ -39,7 +39,7 @@ class OwnerPolicyBaselineTests(unittest.TestCase):
 
     def test_existing_owner_policy_preserves_manual_trade_protection(self):
         self.assertIn("Manual positions affect total account safety", self.baseline)
-        self.assertIn("Katarina Management and its 11 specialists are ON HOLD", self.baseline)
+        self.assertIn("Katarina Management and its 11 specialists are REMOVED", self.baseline)
         self.assertIn("RECURRING PROFIT LOCK", self.baseline)
 
 

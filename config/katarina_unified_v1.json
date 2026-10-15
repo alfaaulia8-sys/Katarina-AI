@@ -3,7 +3,7 @@
   "profile": "KATARINA_UNIFIED_V1_RESEARCH_ONLY",
   "canonical": {
     "core": "src/katarina/core/orchestrator.py",
-    "brain": "src/katarina/intelligence/unified_cognitive_cycle.py",
+    "brain": "src/katarina/intelligence/unified_brain.py",
     "observer": "scripts/ai/run_contextual_market_observer.py",
     "shadow": "src/katarina/intelligence/prospective_shadow_book.py",
     "risk": "src/katarina/engines/risk.py",
@@ -11,7 +11,11 @@
     "capital": "src/katarina/engines/capital.py",
     "broker_readonly": "src/katarina/adapters/mt5_account_pnl.py",
     "recovery": "src/katarina/engines/execution_recovery.py",
-    "runtime_memory": "src/katarina/memory/runtime_state.py"
+    "runtime_memory": "src/katarina/memory/runtime_state.py",
+    "cognition": "src/katarina/intelligence/unified_cognitive_cycle.py",
+    "knowledge_memory": "src/katarina/memory/neuro_link.py",
+    "market_perception": "src/katarina/intelligence/market_decision_brain_v3.py",
+    "adaptive_research": "src/katarina/intelligence/unified_adaptive_research_cycle.py"
   },
   "deferred": {
     "external_ai_workers": false,
@@ -21,10 +25,6 @@
     "automatic_capital_state_migration": false,
     "background_scheduler": false,
     "live_execution": false
-  },
-  "on_hold": {
-    "katarina_management": true,
-    "eleven_specialists": true
   },
   "operating_mode": {
     "core": "TESTER_ONLY",
@@ -41,5 +41,10 @@
     "caution_drawdown_from": 0.1,
     "recovery_only_from": 0.23,
     "extreme_drawdown_from": 0.35
+  },
+  "organization": {
+    "architecture": "SINGLE_COGNITIVE_BRAIN",
+    "management": "REMOVED",
+    "specialist_workers": 0
   }
 }

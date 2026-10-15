@@ -24,7 +24,7 @@ PRECEDENCE: newest explicit Owner decisions override older proposals, historic s
 15. One brain with many sensor/executor hands; per-account Local Survival Guardian, safe offline NO NEW ENTRY, TLS/WSS, authenticated commands and signed staged updates.
 16. Human behavioral learning remains individually separated and privacy-filtered; broker feed clustering is only an entry optimization, not merging user memories.
 17. Strong Owner authentication, web monitoring/control, emergency pause and audited rollback. Chat identity is not authorization.
-18. Latest organizational override: Katarina Management and its 11 specialists are ON HOLD. Do not require it for the Katarina AI roadmap or insert specialists into the brain.
+18. Latest organizational override: Katarina Management and its 11 specialists are REMOVED by the explicit Owner override of 15 October 2026. Do not require it for the Katarina AI roadmap or insert specialists into the brain.
 
 ## Example and integration obligations
 
@@ -41,7 +41,7 @@ The current 25% cumulative formula must match capital engine, config, risk sizin
 5. Detailed Neuro-Link confidence/knowledge graph, dedup, memory weighting and fast/deep scheduling.
 6. Cloud/MT5/hands performance SLO, security/auth deployment, privacy retention and offline incident operation.
 
-DO NOT invent these six unresolved parameters, and DO NOT re-open already-approved 25% Profit Lock or 11-specialist suspension.
+DO NOT invent these six unresolved parameters, and DO NOT re-open already-approved 25% Profit Lock or 11-specialist removal.
 
 ## Engineering safety
 

@@ -8,7 +8,6 @@ Never uses the live/order gateway, never writes to GitHub, and never
 automatically promotes signals. Legacy observers must remain disabled.
 """
 from __future__ import annotations
-from dataclasses import replace
 from datetime import datetime,timedelta,timezone
 from hashlib import sha256
 from pathlib import Path
@@ -24,7 +23,8 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"src"))
 from katarina.intelligence.public_context import ContextStore,utc as parse_utc
 from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 from katarina.intelligence.broker_clock_alignment import infer_clock_shift, capture_time_reference
-from katarina.intelligence.market_decision_brain_v3 import MarketDecisionBrain
+from katarina.intelligence.unified_brain import UnifiedKatarinaBrain
+from katarina.memory.store import MemoryStore
 from katarina.intelligence.contextual_decision_intelligence import RiskSituation
 from katarina.intelligence.news_intelligence import (
     MultiSourceNewsEngine,NewsContext,
@@ -45,12 +45,6 @@ from katarina.intelligence.broker_account_monitor import inspect_broker_account
 from katarina.intelligence.broker_history_coverage import inspect_history
 from katarina.intelligence.official_cache_provenance import inspect_cached_official_sources
 from katarina.intelligence.foundation_readiness import assess_foundation
-from katarina.intelligence.self_evolution_lab import (
-    evaluate_shadow_self_evolution,derive_shadow_research_policy,
-)
-from katarina.intelligence.unified_cognitive_cycle import (
-    run_unified_cognitive_cycle,
-)
 from katarina.governance.multi_model_evolution_review import review_candidate
 from katarina.intelligence.prospective_shadow_book import (
     ProspectiveShadowBook,ResearchHypothesis,
@@ -233,6 +227,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         mt5.shutdown()
         raise RuntimeError("FAIL_CLOSED_TRADING_MUST_BE_DISABLED")
     store=None
+    memory=None
     try:
         feed_started_at=datetime.now(timezone.utc)
         store=ContextStore(root/"context.sqlite3")
@@ -264,7 +259,8 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         offset=clock.observed_hours_shift
         time_reference=capture_time_reference(clock,now)
         correction=timedelta(hours=offset)
-        brain=MarketDecisionBrain()
+        memory=MemoryStore(root/"cognitive-memory.sqlite3")
+        brain=UnifiedKatarinaBrain(store.db,memory)
         report={"schema":1,"mode":"READ_ONLY_CONTEXTUAL_ONE_CANONICAL_OBSERVER",
                 "observed_at_utc":now.isoformat(),"broker_server_shift_hours":offset,
                 "time_reference":time_reference.as_dict(),
@@ -427,20 +423,12 @@ def observe(root,*,max_symbols=17,fetch_news=True):
             now=now,quotes=latest_quotes)
         # Unified research brain uses only matured, past-only quote outcomes
         # to adjust subsequent virtual *sampling*, never production strategy.
-        report["self_evolution_lab"]=evaluate_shadow_self_evolution(
-            store.db,as_of_utc=now)
-        # The same canonical observer owns the full cognitive loop: episodic
-        # and semantic memory, descriptive world model, causal alternatives,
-        # curiosity experiments, metacognition and an auditable checkpoint.
-        # No external agent, strategy promotion or second scheduler.
-        report["unified_cognitive_cycle"]=run_unified_cognitive_cycle(
-            store.db,as_of_utc=now)
-        learned_policy=derive_shadow_research_policy(
-            report["self_evolution_lab"])
-        if report["unified_cognitive_cycle"].get(
-                "source_snapshot_matches_active") is not True:
-            # Owner rollback/replayed evidence always pauses new sampling.
-            learned_policy=replace(learned_policy,integrity_ok=False)
+        unified=brain.run_unified_cognitive_cycle(as_of_utc=now)
+        report["brain_architecture"]=unified["architecture"]
+        report["self_evolution_lab"]=unified["self_evolution_lab"]
+        report["unified_cognitive_cycle"]=unified["cognition"]
+        report["neuro_link_memory"]=unified["knowledge_memory"]
+        learned_policy=unified["research_policy"]
         report["shadow_research_policy"]=learned_policy.to_dict()
         curiosity_priorities={
             (q["symbol"],q["method"],q["side"],q["regime"]):
@@ -493,6 +481,7 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 "hypotheses":len(paper_hypotheses),
                 "orders":0}
     finally:
+        if memory is not None:memory.close()
         if store is not None:store.db.close()
         mt5.shutdown()
 

@@ -88,8 +88,8 @@ original `context.sqlite3` is unchanged by this test.
 - Memory is rolling-window bounded (last 3,500 shadow records) and individual
   episode previews keep up to 64 samples; older checkpoint receipts remain in
   the ledger. Do not interpret this as unlimited long-term knowledge.
-- 11 Management audit roles are **not** part of this brain enhancement and
-  are not commissioned as external autonomous agents by this build.
+- Management and its 11 specialist roles were removed by Owner on 2026-10-15;
+  their scripts, workplan and workflow hooks are absent from the current tree.
 
 The User's `GAS EKSEKUSI` authorized this *Poin 1* engineering change;
 it did **not** authorize enabling live trading or creating scheduled tasks.

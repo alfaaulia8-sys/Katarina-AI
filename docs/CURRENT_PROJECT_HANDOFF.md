@@ -6,10 +6,14 @@ Mulai dari [status proyek terkini](PROJECT_STATUS.md),
 [changelog](../CHANGELOG.md), dan
 [aturan GitHub-first](operations/GITHUB_FIRST_DEVELOPMENT.md).
 
-Baseline tervalidasi terakhir: `3b43c04f6efc9484b383db135e01ac7d5d3ec611`.
-Body CI integrasi dan main lulus. Sepuluh komponen unified terintegrasi dalam verifikasi
-offline, tanpa order dan tanpa live execution. GitHub dan checkout kerja cocok;
-kesamaan dengan checkout/proses VPS belum diverifikasi.
+Arsitektur canonical terbaru: `UnifiedKatarinaBrain`, satu instance observer,
+14 modul dalam registry dan satu memori bersama untuk Fast/Deep. Management,
+11 spesialis, workplan, script dan workflow pemanggil sudah dihapus berdasarkan
+instruksi Owner 15 Oktober 2026. Risk Governor tetap independen.
+
+Pengujian perubahan: 1.270 unit, 109 static (4 skipped), 49 integration.
+Tidak ada order atau live execution. GitHub dan checkout kerja disamakan pada
+commit hasil merge; checkout, memori dan proses VPS belum diverifikasi.
 
 Repository publik tetap dimiliki akun `alfaauliau-katarinaAI`; main wajib PR dan
 CI, dengan larangan force-push/penghapusan. Seluruh 42 branch awal selain main

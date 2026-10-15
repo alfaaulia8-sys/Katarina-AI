@@ -23,9 +23,9 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
     def test_existing_core_brain_risk_broker_fit_one_profile(self):
         result=verify(self.profile,root=ROOT)
         self.assertEqual(result["status"],"INTEGRATED_OFFLINE_ENGINEERING_ONLY")
-        self.assertEqual(result["modules_verified"],10)
-        self.assertEqual(len(set(result["module_sha256"])),10)
-        self.assertEqual(result["management"],"ON_HOLD")
+        self.assertEqual(result["modules_verified"],14)
+        self.assertEqual(len(set(result["module_sha256"])),14)
+        self.assertEqual(result["management"],"REMOVED")
         self.assertEqual(result["cumulative_profit_lock"],
                          "VERIFIED_THREE_MILESTONES_AND_RESTART")
         self.assertEqual(result["same_day_emergency_lockdown"],
@@ -80,19 +80,17 @@ class UnifiedKatarinaIntegrationTests(unittest.TestCase):
                 verify(self.profile,root=ROOT)
 
     def test_management_and_specialists_cannot_be_reactivated_by_manifest(self):
-        for component in ("katarina_management", "eleven_specialists"):
-            changed=deepcopy(self.profile)
-            changed["on_hold"][component]=False
-            with self.subTest(component=component):
-                with self.assertRaisesRegex(ValueError,"management_on_hold_required"):
-                    verify(changed,root=ROOT)
+        changed=deepcopy(self.profile)
+        changed["organization"]["specialist_workers"]=11
+        with self.assertRaisesRegex(ValueError,"single_brain_organization_required"):
+            verify(changed,root=ROOT)
         changed=deepcopy(self.profile)
         changed["canonical"]["management"]="scripts/ai/management_acceptance.py"
         with self.assertRaisesRegex(ValueError,"incomplete_unified_component_registry"):
             verify(changed,root=ROOT)
         changed=deepcopy(self.profile)
         changed["operating_mode"]["management"]="MANUAL_QA_ON_PINNED_COMMIT"
-        with self.assertRaisesRegex(ValueError,"management_on_hold_required"):
+        with self.assertRaisesRegex(ValueError,"single_brain_organization_required"):
             verify(changed,root=ROOT)
 
     def test_unready_components_cannot_be_reenabled_by_manifest(self):
