@@ -28,6 +28,15 @@ def report():
             "positions_read_success":True,
             "positions_missing_protective_sl":0,
         },
+        "broker_history_coverage":{
+            "status":"DEAL_FIELDS_OBSERVED_NOT_FULL_RISK_LEDGER",
+            "historical_range_complete":False,
+            "live_execution_authorized":False,
+        },
+        "official_cache_integrity":{
+            "all_four_cache_digests_fresh":True,
+            "policy_inference_from_headlines_authorized":False,
+        },
         "unified_cognitive_cycle":{
             "source_snapshot_matches_active":True,
             "real_execution_authorized":False,
@@ -90,6 +99,17 @@ class FoundationReadinessTests(unittest.TestCase):
         o=assess_foundation(r,expected_symbols=2)
         self.assertFalse(o["engineering_checks"]["official_news_cache_transport_reachable"])
         self.assertFalse(o["live_execution_authorized"])
+
+    def test_cached_error_and_deals_not_readable_degrade(self):
+        r=report()
+        r["broker_history_coverage"]["status"]="HISTORICAL_DEALS_UNAVAILABLE"
+        r["official_cache_integrity"]["all_four_cache_digests_fresh"]=False
+        x=assess_foundation(r,expected_symbols=2)
+        self.assertIn("recent_broker_deal_book_readable",
+                      x["engineering_failure_reasons"])
+        self.assertIn("official_source_cache_digest_and_freshness",
+                      x["engineering_failure_reasons"])
+        self.assertFalse(x["live_execution_authorized"])
 
     def test_invalid_expected_symbols_rejected(self):
         for n in (0,18,True,-1):
