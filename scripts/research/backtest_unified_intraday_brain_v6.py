@@ -25,6 +25,7 @@ from backtest_explainable_55_pairs import OUT,get_bars,TIMEFRAME,sensors,bisecte
 from backtest_full_m5_intraday_scalp_v5 import replay
 from katarina.intelligence.market_decision_pipeline import MarketDecisionPipeline
 from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
+from katarina.intelligence.research_signal_ablation import eligible_for_research
 from katarina.intelligence.semantic_setup_truth import CausalSetupValidator
 from katarina.intelligence.structural_entry_quality import StructuralEntryQuality
 from katarina.intelligence.intraday_scalp_research import vector_prefilter,fill_next_open,Candidate
@@ -103,8 +104,9 @@ def main():
                 continue
             # Causal research-only gates; applied BEFORE semantic / risk /
             # future outcome scoring and before the cross-symbol ranking.
-            if x.score < args.minimum_signal_score or (args.research_side!="BOTH"
-                    and x.side!=args.research_side):
+            if not eligible_for_research(
+                    x.score,x.side,minimum_score=args.minimum_signal_score,
+                    research_side=args.research_side):
                 counts["research_score_or_side_rejected"]+=1
                 local["research_score_or_side_rejected"]+=1
                 continue
