@@ -112,7 +112,9 @@ class BoundLocalBroker:
                 raise ConnectionUnavailable('LOCAL_NOT_CONNECTED')
             try:
                 verify_identity(self._native,self._config)
-                return getattr(self._native,name)(*args,**kwargs)
+                result = getattr(self._native,name)(*args,**kwargs)
+                verify_identity(self._native,self._config)
+                return result
             except Exception:
                 self.connection_failed = True
                 raise ConnectionUnavailable('LOCAL_READ_FAILED') from None

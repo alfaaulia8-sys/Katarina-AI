@@ -184,6 +184,7 @@ class ReadOnlySensorBridge:
             result={'read_only':True,'constants':{k:getattr(self._broker,k) for k in CONSTANTS}}
         else:
             result=getattr(self._broker,method)(*args)
+        verify_identity(self._broker,self._config)
         return {'protocol':PROTOCOL,'request_id':request['request_id'],'session':self.session,
                 'sent_at':time.time(),'result':pack(result)}
 

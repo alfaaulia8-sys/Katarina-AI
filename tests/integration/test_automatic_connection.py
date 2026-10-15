@@ -205,3 +205,20 @@ class AutomaticConnectionTests(unittest.TestCase):
                         CloudReadOnlyBroker(url,'wrong-token-that-is-long-enough-123456',config()).initialize()
             finally:
                 server.shutdown(); server.server_close(); worker.join(timeout=5)
+
+    def test_account_switch_during_read_discards_returned_data(self):
+        for route in ('local','cloud'):
+            native=AccountBroker()
+            def changing_read():
+                native.account_info=lambda:SimpleNamespace(login=999,server='Other')
+                return []
+            native.symbols_get=changing_read
+            if route=='local':
+                adapter=BoundLocalBroker(native,config())
+            else:
+                bridge=ReadOnlySensorBridge(native,config())
+                adapter=CloudReadOnlyBroker('https://localhost',TOKEN,config(),exchange=bridge.dispatch)
+            adapter.initialize()
+            with self.subTest(route=route), self.assertRaises(ConnectionUnavailable):
+                adapter.symbols_get()
+            adapter.shutdown()
