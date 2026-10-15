@@ -2,11 +2,13 @@
 from pathlib import Path
 import argparse
 import json
+import os
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"src"))
 from katarina.intelligence.unified_brain import UnifiedKatarinaBrain
 from katarina.host import inspect_host, state_directory
+from katarina.adapters.automatic_connection import ConnectionConfig, run_connected
 
 
 def observe(root, *, max_symbols=17, fetch_news=True):
@@ -16,6 +18,7 @@ def observe(root, *, max_symbols=17, fetch_news=True):
 
 def main():
     parser=argparse.ArgumentParser()
+    parser.add_argument("--connection-config", help="Allowed account/routes JSON; default KATARINA_CONNECTION_CONFIG")
     parser.add_argument("--state-dir", help="State location; overrides KATARINA_STATE_DIR and OS default")
     parser.add_argument("--offline-research", action="store_true", help="One local evidence cycle; no MT5 or network")
     parser.add_argument("--doctor", action="store_true", help="Local preflight only; no broker connection")
@@ -41,9 +44,13 @@ def main():
     symbols=args.max_symbols if args.max_symbols is not None else host["budget"]["max_symbols"]
     host["effective_max_symbols"]=symbols
     host["observation_budget_source"]="explicit" if args.max_symbols is not None else "host_policy"
-    if not host["native_mt5_package_available"]:
-        parser.error("MT5_ADAPTER_UNAVAILABLE: offline research remains available; use --doctor for host status")
-    result=observe(root,max_symbols=symbols,fetch_news=not args.no_fetch)
+    config_path=args.connection_config or os.environ.get("KATARINA_CONNECTION_CONFIG")
+    try:
+        config=ConnectionConfig.load(config_path) if config_path else None
+    except ValueError as exc:
+        parser.error(str(exc))
+    result=run_connected(UnifiedKatarinaBrain,root,config=config,
+                         max_symbols=symbols,fetch_news=not args.no_fetch)
     result["host_environment"]=host
     print("KATARINA_CONTEXTUAL_ONE_PASS",json.dumps(result,sort_keys=True),flush=True)
 
