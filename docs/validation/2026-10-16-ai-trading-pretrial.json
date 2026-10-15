@@ -43,5 +43,10 @@
     "windows": "PASS",
     "macos": "PASS",
     "scope": "SYNTHETIC_PROTOCOL_AND_PACKAGED_INSTALLATION_ONLY"
+  },
+  "maintenance_unit_tests": {
+    "run": 4,
+    "result": "PASS",
+    "scope": "ORPHAN_WORKFLOW_REGISTRATION_GUARDS"
   }
 }

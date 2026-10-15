@@ -22,7 +22,21 @@ class WorkflowSecurityTests(unittest.TestCase):
     def test_automatic_jobs_cannot_dispatch_other_workflows_or_push_news_to_main(self):
         body = (ROOT / '.github/workflows/katarina-body-ci.yml').read_text()
         news = (ROOT / '.github/workflows/katarina-hotnews.yml').read_text()
-        self.assertNotIn('actions: write', body)
+        # Owner-approved maintenance has Actions write only in its isolated
+        # main-push job. Public PR tests and model jobs remain read-only.
+        sections = body.split('\n  workflow-catalog-hygiene:\n')
+        self.assertEqual(len(sections), 2)
+        ordinary, maintenance = sections
+        self.assertNotIn('actions: write', ordinary)
+        self.assertEqual(body.count('actions: write'), 1)
+        self.assertIn("if: github.event_name == 'push' && github.ref == 'refs/heads/main'", maintenance)
+        self.assertIn('needs: body', maintenance)
+        self.assertIn('contents: read', maintenance)
+        self.assertIn('clean_orphaned_workflow_catalog.py --execute', maintenance)
+        script = (ROOT/'scripts/governance/clean_orphaned_workflow_catalog.py').read_text()
+        self.assertNotIn('/dispatches', script)
+        self.assertNotIn('/actions/runs/', script)
+        self.assertNotIn("method='DELETE'", script)
         self.assertNotIn('gh workflow run', body)
         self.assertNotIn('paths-ignore:', body)
         self.assertNotIn('git push', news)

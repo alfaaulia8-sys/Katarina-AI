@@ -110,3 +110,10 @@ Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
 - Add portable pretrial acceptance; distinguish scripted fixtures from real model/broker proof.
 - Local regression: 1,270 unit; 113 static (4 skips); 132 integration. Linux, Windows and macOS packaged CI passed (Actions run 38811219852).
 - Trading/risk/MT5 source unchanged, real execution OFF. Owner authorized public GitHub publication, PR, CI and merged-branch cleanup; cross-platform results are recorded in the pretrial validation evidence.
+
+### Repository maintenance
+
+- Owner-authorized main-only Actions maintenance disables active workflow registrations whose YAML source is absent at the exact current main commit.
+- Preserve source-backed workflows, built-in Dependency Graph, run history and artifacts.
+- Verify main SHA again before mutation; default script execution is dry-run.
+- Four maintenance safety tests pass; total unit suite is 1,274.

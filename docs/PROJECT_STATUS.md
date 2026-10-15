@@ -8,7 +8,7 @@ perubahan yang diuji; status ini tidak mengklaim deployment VPS telah sinkron.
 |---|---|---|
 | Branch | Hanya `main`; 42 branch awal selain main sudah terhapus | Branch kerja sementara boleh muncul untuk PR berikutnya |
 | Integrasi | 34 branch terverifikasi setara/identik; delapan direview dan diselesaikan | Varian eksekusi eksperimen tetap terpisah dari engine produksi |
-| Pengujian | 1.270 unit, 113 static (4 skipped), 132 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
+| Pengujian | 1.274 unit, 113 static (4 skipped), 132 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
 | Otak unified | 1 otak dengan 17 modul canonical; persepsi, kognisi dan Neuro-Link berbagi runtime | Memori privat dan proses VPS belum diperiksa |
 | Trading | Engine produksi, Risk Governor, konfigurasi risk dan MT5 tidak berubah | Live execution false; 0 order pada verifikasi offline |
 | Keamanan | Main wajib PR/body CI, up-to-date dan conversation resolution; admin tunduk aturan | Bukan audit penetrasi menyeluruh |
@@ -153,3 +153,8 @@ verify the published implementation: Body CI plus Linux, Windows and macOS
 installation, extracted-package acceptance, pretrial and environment recovery all
 passed. These are synthetic/protocol checks, not real-model quality or broker
 execution clearance. The validation JSON records the exact tested commit.
+
+The main-only workflow-catalog maintenance job checks that its source SHA still
+matches remote main before disabling an orphaned YAML registration. It preserves
+source-backed and GitHub dynamic workflows, Actions runs and artifacts. Four
+additional unit tests verify scope, dry-run and revision-race behavior.
