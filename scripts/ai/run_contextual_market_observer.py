@@ -23,7 +23,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"src"))
 
 from katarina.intelligence.public_context import ContextStore,utc as parse_utc
 from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
-from katarina.intelligence.broker_clock_alignment import infer_clock_shift
+from katarina.intelligence.broker_clock_alignment import infer_clock_shift, capture_time_reference
 from katarina.intelligence.market_decision_brain_v3 import MarketDecisionBrain
 from katarina.intelligence.contextual_decision_intelligence import RiskSituation
 from katarina.intelligence.news_intelligence import (
@@ -258,10 +258,12 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         if not clock.suitable_for_readonly_snapshot:
             raise RuntimeError("BROKER_CLOCK_NOT_VERIFIED")
         offset=clock.observed_hours_shift
+        time_reference=capture_time_reference(clock,now)
         correction=timedelta(hours=offset)
         brain=MarketDecisionBrain()
         report={"schema":1,"mode":"READ_ONLY_CONTEXTUAL_ONE_CANONICAL_OBSERVER",
                 "observed_at_utc":now.isoformat(),"broker_server_shift_hours":offset,
+                "time_reference":time_reference.as_dict(),
                 "historical_clock_shift_verified":False,
                 "broker_clock_confirming_symbols":clock.confirming_symbols,
                 "news_feed_status":feed_status,"full_article_checks":article_diag,
@@ -340,6 +342,8 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 card=decision.to_dict()
                 card["broker_quote_age_seconds"]=round(quote_age,2)
                 card["market_timestamp_utc"]=market_at.isoformat()
+                card["broker_wall_time_display_only"]=(
+                    market_at+correction).replace(tzinfo=None).isoformat()
                 card["timestamp_authority"]=broker_clock.source
                 card["observed_vps_timestamp_utc"]=now.isoformat()
                 card["broker_spread_price"]=round(observed_spread,8)
