@@ -72,3 +72,10 @@
 
 Angka pengujian dan tautan bukti ada di [status proyek](docs/PROJECT_STATUS.md).
 Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
+
+## 2026-10-16 — portable host
+
+- Replace fixed Windows observer state default with explicit/env/OS resolution.
+- Add local host preflight and visible bounded observation budgets.
+- Add broker-free, brain-owned local evidence lifecycle with checkpoint/lock.
+- Test portable lifecycle on Linux, Windows and macOS in CI; retain live OFF.

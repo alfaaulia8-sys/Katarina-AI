@@ -45,6 +45,53 @@ class UnifiedKatarinaBrain:
         self.observer = None
 
     @classmethod
+    def research_once(cls, root, *, mode="fast"):
+        """Resume local evidence research on any host, with no broker or network."""
+        from pathlib import Path
+        from katarina.host import inspect_host
+        from katarina.intelligence.brain_observer import lock_worker
+        from katarina.intelligence.public_context import ContextStore
+        from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
+        from katarina.intelligence.prospective_shadow_book import ProspectiveShadowBook
+        if mode not in ("fast", "deep"):
+            raise ValueError("invalid_research_mode")
+        root = Path(root)
+        host = inspect_host(root)
+        if host["blockers"]:
+            raise RuntimeError(",".join(host["blockers"]))
+        lock = lock_worker(root)
+        context = memory = brain = None
+        try:
+            context = ContextStore(root / "context.sqlite3")
+            memory = MemoryStore(root / "cognitive-memory.sqlite3")
+            brain = cls(context.db, memory)
+            brain.quote_journal = ContextDecisionJournal(context.db)
+            brain.shadow_book = ProspectiveShadowBook(context.db)
+            brain.control.audit_phase("OBSERVING")
+            result = brain.run_unified_cognitive_cycle(
+                as_of_utc=datetime.now(timezone.utc), mode=mode)
+            result["research_policy"] = result["research_policy"].to_dict()
+            result["host_environment"] = host
+            result["input_scope"] = "EXISTING_LOCAL_EVIDENCE_ONLY_NO_MARKET_FETCH"
+            brain.control.audit_phase("COMPLETE")
+            brain.control.checkpoint()
+            return result
+        except Exception as exc:
+            if brain is not None:
+                brain.control.audit_phase("BLOCKED", error=exc)
+            raise
+        finally:
+            try:
+                if memory is not None:
+                    memory.close()
+            finally:
+                try:
+                    if context is not None:
+                        context.db.close()
+                finally:
+                    lock.close()
+
+    @classmethod
     def observe_once(cls, root, *, broker=None, max_symbols=17, fetch_news=True):
         """Own exactly one bounded observation, including cleanup on every failure."""
         from pathlib import Path

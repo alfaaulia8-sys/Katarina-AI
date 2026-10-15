@@ -68,3 +68,11 @@ Lulus pengujian sumber tidak membuktikan profitabilitas atau kesiapan trading li
 - [Audit cleanup dan sinkronisasi sumber](docs/operations/REPOSITORY_CLEANUP_20261015.md).
 - [Checkpoint historis sampai 13 Oktober](docs/handoff/KATARINA_START_NEXT_CHAT_20261013.md) — bukan status VPS terkini.
 - [Panduan hosting Cloudflare Pages](docs/deployment/CLOUDFLARE_PAGES_SETUP.md).
+
+## Portabilitas host — 16 Oktober 2026
+
+Otak dapat menjalankan satu siklus riset lokal tanpa VPS/MT5 melalui
+`run_contextual_market_observer.py --offline-research`. `--doctor` memeriksa host;
+lokasi state mengikuti konfigurasi/OS, anggaran observasi mengikuti kapasitas.
+Lihat [panduan host portabel](docs/architecture/KATARINA_PORTABLE_HOST.md). Tidak ada migrasi state legacy otomatis,
+Cloud Hands lintas host belum terverifikasi, live tetap OFF.

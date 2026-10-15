@@ -34,3 +34,11 @@ Patokan arsitektur kini [diagram satu otak 16 Oktober](architecture/KATARINA_SIN
 Otak memiliki observer, monitoring, modal/recovery offline dan gerbang OFF;
 Risk Governor tetap di luar. Entry point legacy menolak start. Tidak ada
 migrasi state broker, scheduler, deployment VPS atau aktivasi live dari perubahan ini.
+
+## Portabilitas host — 16 Oktober 2026
+
+Otak dapat menjalankan satu siklus riset lokal tanpa VPS/MT5 melalui
+`run_contextual_market_observer.py --offline-research`. `--doctor` memeriksa host;
+lokasi state mengikuti konfigurasi/OS, anggaran observasi mengikuti kapasitas.
+Lihat [panduan host portabel](architecture/KATARINA_PORTABLE_HOST.md). Tidak ada migrasi state legacy otomatis,
+Cloud Hands lintas host belum terverifikasi, live tetap OFF.
