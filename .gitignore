@@ -272,3 +272,7 @@ ops/vps/health/*/status.json
 .dev.vars.*
 node_modules/
 .wrangler/
+
+# Private PC environment and generated downloadable test kit
+.venv-pc/
+/dist/
