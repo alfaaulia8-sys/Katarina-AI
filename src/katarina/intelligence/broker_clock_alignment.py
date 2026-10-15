@@ -170,8 +170,13 @@ def normalize_incoming_time(
     else:
         raise ValueError("unknown_or_unverifiable_timestamp_source")
     # This display conversion is diagnostic, not an MT5 historical tick source.
+    # Never display an archived event with today's unverified DST offset.
+    display_shift_is_current = (
+        reference is not None and
+        abs((normalized - reference.observed_at_utc).total_seconds()) <= 180
+    )
     wall = (
         (normalized + timedelta(hours=reference.server_shift_hours)).replace(tzinfo=None)
-        if reference is not None else None
+        if display_shift_is_current else None
     )
     return NormalizedIncomingTime(normalized, source, market_authority, wall)
