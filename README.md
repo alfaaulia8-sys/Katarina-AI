@@ -8,9 +8,27 @@ KATARINA AI adalah proyek yang dikembangkan untuk membantu pengamatan pasar, eva
 
 Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur, dan memperhatikan risiko. Pengembangan dan pengujian masih berlangsung.
 
-## Status
+## Status perkembangan — 15 Oktober 2026
 
-**Development Preview** — belum merupakan produk siap pakai untuk trading langsung. Ketersediaan fitur dan kompatibilitas dapat berubah selama pengembangan.
+**Development Preview / research-only. Live trading belum diaktifkan.**
+
+| Bagian | Terverifikasi pada baseline PR #83 |
+|---|---|
+| Otak unified | 10 komponen canonical terintegrasi; 0 order dalam uji offline |
+| Pengujian | 1.245 unit, 110 static (4 skipped), 42 integration lulus |
+| Repository | Main dilindungi; wajib PR dan CI; 0 kolaborator tambahan |
+| Cleanup | 12 branch ancestor dihapus; 42 branch unik dipertahankan |
+| Sinkronisasi | GitHub dan checkout kerja cocok; VPS belum diverifikasi |
+| Akses luar Work | Panduan tersedia; login CLI perangkat tujuan belum terpasang |
+
+[**Lihat status lengkap dan bukti**](docs/PROJECT_STATUS.md) ·
+[**Lihat perubahan**](CHANGELOG.md) ·
+[**Lanjutkan pekerjaan**](docs/CURRENT_PROJECT_HANDOFF.md) ·
+[**Akses GitHub lintas perangkat**](docs/operations/GITHUB_ACCESS.md)
+
+Angka tersebut adalah snapshot bertanggal. Hasil terbaru tersedia di
+[GitHub Actions](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions).
+Lulus pengujian sumber tidak membuktikan profitabilitas atau kesiapan trading live.
 
 ## Informasi
 
@@ -37,11 +55,11 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 - TIDAK menerima pembayaran paket langganan atau lisensi EA sampai produk, ketentuan penggunaan, verifikasi pembayaran, dan dukungan pelanggan siap. Tidak ada jaminan hasil trading.
 
 
-## Status teknis terverifikasi
+## Catatan teknis dan riwayat validasi
 
 - [Laporan validasi jalur, kode MT5, dan observer](docs/validation/2026-10-11-paths-mt5-integration.md).
 - [Audit struktur dan dependensi otomatis](scripts/governance/audit_dependency_links.py) diperiksa di GitHub Actions. Ini adalah pemeriksaan sumber, **bukan** bukti kesiapan live.
-- [Status tahap pengembangan dan batas validasi](docs/operations/GITHUB_FIRST_STATUS_20261011.md).
+- [Snapshot tahap 11 Oktober](docs/operations/GITHUB_FIRST_STATUS_20261011.md) — riwayat, bukan status terkini.
 
 ## Navigasi pengembangan
 
