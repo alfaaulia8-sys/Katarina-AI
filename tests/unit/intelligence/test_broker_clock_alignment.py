@@ -63,6 +63,14 @@ class TestIncomingTimeNormalization(unittest.TestCase):
         self.assertFalse(incoming.authoritative_market_event)
         self.assertEqual(incoming.server_wall_display_only.hour, 9)
 
+    def test_archived_aware_data_converts_utc_without_guessing_broker_dst(self):
+        result = normalize_incoming_time(
+            "2026-01-15T12:00:00+07:00", source="EXPLICIT_OFFSET",
+            reference=self.clock)
+        self.assertEqual(result.utc, datetime(2026, 1, 15, 5, tzinfo=timezone.utc))
+        self.assertIsNone(result.server_wall_display_only)
+        self.assertFalse(result.authoritative_market_event)
+
     def test_current_broker_local_stamp_uses_captured_offset(self):
         result = normalize_incoming_time(
             "2026-10-15T08:59:30", source="BROKER_WALL_CURRENT",
