@@ -11,7 +11,7 @@ Arsitektur canonical terbaru: `UnifiedKatarinaBrain`, satu instance observer,
 11 spesialis, workplan, script dan workflow pemanggil sudah dihapus berdasarkan
 instruksi Owner 15 Oktober 2026. Risk Governor tetap independen.
 
-Pengujian perubahan: 1.270 unit, 113 static (4 skipped), 61 integration.
+Pengujian perubahan: 1.270 unit, 113 static (4 skipped), 98 integration.
 Tidak ada order atau live execution. GitHub dan checkout kerja disamakan pada
 commit hasil merge; checkout, memori dan proses VPS belum diverifikasi.
 
@@ -49,3 +49,11 @@ Launcher memilih local/cloud/offline menurut konfigurasi akun yang diizinkan.
 Retry terbatas mengulang seluruh pass; tanpa koneksi valid tetap riset lokal.
 Sensor HTTPS baru memerlukan pemasangan dan kredensial sekali; belum diuji pada
 MT5/cloud nyata. Lihat [kontrak koneksi otomatis](architecture/KATARINA_AUTOMATIC_CONNECTION.md). Risk Governor independen, live OFF.
+
+## Paket uji PC — 16 Oktober 2026
+
+Peluncur utama START_KATARINA sekarang menjalankan acceptance sintetis sekali,
+bukan supervisor VPS background. SETUP_KATARINA membuat environment privat.
+Laporan HTML/JSON lokal memisahkan hasil demo dari observasi broker dan tidak
+menganggap fallback offline sebagai kelulusan broker. Lihat [panduan PC](QUICKSTART_PC.md).
+Paket source-only bermanifest commit disediakan artifact CI; live OFF.

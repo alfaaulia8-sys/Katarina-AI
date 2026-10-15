@@ -86,3 +86,10 @@ Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
 - Retry bounded whole passes and retain offline research when routes are unavailable.
 - Add explicitly installed authenticated TLS sensor bridge; no execution APIs.
 - Test route selection, disconnect/session recovery, real loopback TLS and data pipeline.
+
+## 2026-10-16 — direct PC acceptance kit
+
+- Replace default VPS supervisor launcher with one-pass PC acceptance.
+- Add private Python 3.12 environment setup and optional Windows MT5 dependency.
+- Separate invented demo state from bound read-only broker observation and report locally.
+- Build source-only kit with commit/checksum manifest; test extracted kit on three OSes.

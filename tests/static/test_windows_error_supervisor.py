@@ -18,7 +18,10 @@ class WindowsErrorSupervisorStaticTests(unittest.TestCase):
         cls.publisher = PUBLISHER.read_text(encoding='utf-8')
 
     def test_one_click_launcher(self):
-        self.assertIn('Start-KatarinaAll.ps1', self.launcher)
+        self.assertIn('katarina_pc.py', self.launcher)
+        self.assertIn('test %*', self.launcher)
+        self.assertNotIn('Start-KatarinaAll.ps1', self.launcher)
+        self.assertNotIn('powershell.exe', self.launcher)
 
     def test_starter_discovers_git_from_github_desktop(self):
         self.assertIn('GitHubDesktop', self.starter)

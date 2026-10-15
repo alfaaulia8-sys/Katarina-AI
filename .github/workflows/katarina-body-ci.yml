@@ -327,4 +327,25 @@ jobs:
       - name: Exercise host policy and real offline lifecycle without MT5
         env:
           PYTHONPATH: src
-        run: python -m unittest tests.integration.test_portable_host tests.integration.test_automatic_connection -v
+        run: python -m unittest tests.integration.test_portable_host tests.integration.test_automatic_connection tests.integration.test_pc_acceptance -v
+
+      - name: Build committed source-only PC test kit
+        run: python scripts/pc/build_pc_test_package.py
+      - name: Extract package to a path with spaces and create its private environment
+        shell: bash
+        run: |
+          python -c "import zipfile; zipfile.ZipFile('dist/Katarina-PC-Test.zip').extractall('build/PC package test')"
+          python "build/PC package test/Katarina-PC-Test/katarina_pc.py" setup
+      - name: Run packaged acceptance and preserve local reports
+        shell: bash
+        run: python "build/PC package test/Katarina-PC-Test/katarina_pc.py" test --state-dir "build/PC acceptance state"
+      - name: Upload committed PC kit and acceptance evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
+        with:
+          name: Katarina-PC-Test-${{ matrix.os }}-${{ github.sha }}
+          path: |
+            dist/Katarina-PC-Test.zip
+            build/PC acceptance state/latest-pc-test.json
+            build/PC acceptance state/latest-pc-test.html
+          if-no-files-found: error
+          retention-days: 14
