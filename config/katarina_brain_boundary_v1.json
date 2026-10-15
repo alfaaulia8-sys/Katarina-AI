@@ -17,14 +17,22 @@
     "runtime_control",
     "core",
     "manual_positions",
-    "runtime_memory"
+    "runtime_memory",
+    "dialog",
+    "model_routing",
+    "bounded_tools",
+    "dialog_history",
+    "nonexecuting_feedback"
   ],
   "external_boundaries": [
     "independent_risk_governor",
     "cloud_hands_with_local_survival_guardian",
     "mt5",
     "broker",
-    "vps_cloud_host"
+    "portable_host",
+    "configured_language_model",
+    "owner_granted_research_sources",
+    "owner_browser_surface"
   ],
   "delivery_mode": "DISABLED",
   "background_workers": 0,
@@ -32,5 +40,6 @@
   "capital_state_scope": "OFFLINE_BRAIN_RUNTIME_ONLY",
   "vps_sync_verified": false,
   "production_integration_verified": false,
-  "architecture_document": "docs/architecture/KATARINA_SINGLE_BRAIN_WORKFLOW_20261016.md"
+  "architecture_document": "docs/architecture/KATARINA_SINGLE_BRAIN_WORKFLOW_20261016.md",
+  "pretrial_document": "docs/architecture/KATARINA_AI_TRADING_PRETRIAL.md"
 }

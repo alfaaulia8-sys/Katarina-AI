@@ -8,7 +8,7 @@ perubahan yang diuji; status ini tidak mengklaim deployment VPS telah sinkron.
 |---|---|---|
 | Branch | Hanya `main`; 42 branch awal selain main sudah terhapus | Branch kerja sementara boleh muncul untuk PR berikutnya |
 | Integrasi | 34 branch terverifikasi setara/identik; delapan direview dan diselesaikan | Varian eksekusi eksperimen tetap terpisah dari engine produksi |
-| Pengujian | 1.270 unit, 113 static (4 skipped), 110 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
+| Pengujian | 1.274 unit, 113 static (4 skipped), 132 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
 | Otak unified | 1 otak dengan 17 modul canonical; persepsi, kognisi dan Neuro-Link berbagi runtime | Memori privat dan proses VPS belum diperiksa |
 | Trading | Engine produksi, Risk Governor, konfigurasi risk dan MT5 tidak berubah | Live execution false; 0 order pada verifikasi offline |
 | Keamanan | Main wajib PR/body CI, up-to-date dan conversation resolution; admin tunduk aturan | Bukan audit penetrasi menyeluruh |
@@ -127,3 +127,34 @@ Paket source-only bermanifest commit disediakan artifact CI; live OFF.
 Startup memeriksa dependensi dan menguji kandidat pengganti sebelum memilihnya.
 Environment lama, strategi, Risk Governor dan memori tetap dipertahankan; tidak
 ada perubahan source atau izin trading. Panduan: [pemulihan environment](architecture/KATARINA_ENVIRONMENT_RECOVERY.md). Live OFF.
+
+## AI trading pretrial extension — 16 October
+
+Dialog, heuristic Fast/Deep model routing and bounded read tools now run through
+UnifiedKatarinaBrain with the existing memory and single host lock. The explicit
+Owner console/browser surface supports a configured model; no model or API token
+is bundled. Owner browser access uses bearer authentication and requires TLS for
+non-loopback binding. This is not a native Android application.
+
+MT5 local/cloud sensor adapters accept nonexecuting WAIT feedback and return
+identity-bound acknowledgements. The observer records receipts. This is a
+bidirectional adapter path, not a live order gateway or verified broker execution.
+Risk Governor, trading strategy and MT5 source remain unchanged; delivery is OFF.
+
+The portable `pretrial` command distinguishes synthetic checks from missing real
+model, destination host, MT5 and demo broker evidence. See
+[pretrial contract and instructions](architecture/KATARINA_AI_TRADING_PRETRIAL.md).
+
+### GitHub CI evidence for pretrial
+
+[PR #94](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/94) and
+[Actions run 38811219852](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38811219852)
+verify the published implementation: Body CI plus Linux, Windows and macOS
+installation, extracted-package acceptance, pretrial and environment recovery all
+passed. These are synthetic/protocol checks, not real-model quality or broker
+execution clearance. The validation JSON records the exact tested commit.
+
+The main-only workflow-catalog maintenance job checks that its source SHA still
+matches remote main before disabling an orphaned YAML registration. It preserves
+source-backed and GitHub dynamic workflows, Actions runs and artifacts. Four
+additional unit tests verify scope, dry-run and revision-race behavior.

@@ -77,6 +77,8 @@ class BoundLocalBroker:
     """Revalidate binding before every read; expose no order/login operation."""
     def __init__(self, native, config):
         self._native, self._config = native, config
+        from katarina.adapters.brain_feedback import FeedbackInbox
+        self._feedback = FeedbackInbox()
         self._ready = False
         self.connection_failed = False
 
@@ -101,6 +103,18 @@ class BoundLocalBroker:
             self._native.shutdown()
         except Exception:
             pass
+
+    def brain_feedback(self, message):
+        if not self._ready:
+            raise ConnectionUnavailable('LOCAL_NOT_CONNECTED')
+        try:
+            verify_identity(self._native, self._config)
+            receipt = self._feedback.accept(message)
+            verify_identity(self._native, self._config)
+            return receipt
+        except Exception:
+            self.connection_failed = True
+            raise ConnectionUnavailable('LOCAL_FEEDBACK_REJECTED') from None
 
     def __getattr__(self, name):
         if name in CONSTANTS:

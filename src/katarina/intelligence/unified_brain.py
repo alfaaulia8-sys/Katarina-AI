@@ -182,6 +182,37 @@ class UnifiedKatarinaBrain:
             "virtual_shadow_not_executed":True,
         }
 
+    def acknowledge_observation(self, broker, report):
+        """Return a WAIT receipt to Hands; never sends an executable instruction."""
+        from hashlib import sha256
+        import json
+        import time
+        import uuid
+        feedback = getattr(broker, 'brain_feedback', None)
+        if feedback is None:
+            return {"status": "NOT_SUPPORTED", "orders_submitted": 0}
+        receipts = []
+        for symbol, card in report['symbols'].items():
+            now = time.time()
+            message = {"feedback_id": uuid.uuid4().hex, "symbol": symbol,
+                       "action": "WAIT_LIVE_OFF", "created_at": now, "expires_at": now + 20,
+                       "plan_sha256": sha256(json.dumps(card, sort_keys=True,
+                                                       allow_nan=False).encode()).hexdigest()}
+            receipt = feedback(message)
+            digest = sha256(json.dumps(message, sort_keys=True, allow_nan=False).encode()).hexdigest()
+            if (not isinstance(receipt, dict)
+                    or receipt.get('feedback_id') != message['feedback_id']
+                    or receipt.get('message_sha256') != digest
+                    or receipt.get('status') != 'ACKNOWLEDGED_LIVE_OFF'
+                    or type(receipt.get('orders_submitted')) is not int
+                    or receipt['orders_submitted'] != 0
+                    or receipt.get('live_execution_authorized') is not False):
+                raise RuntimeError('BRAIN_FEEDBACK_ACK_REJECTED')
+            self.memory.append_operational_event('brain_hands_feedback_v1', receipt)
+            receipts.append(receipt)
+        return {"status": "ACKNOWLEDGED_LIVE_OFF", "receipts": receipts,
+                "orders_submitted": 0, "broker_order_execution_verified": False}
+
     def inspect_foundation(self, broker, report, *, expected_symbols):
         """Internal monitor consumes read-only external facts; never initializes capital."""
         from katarina.intelligence.broker_account_monitor import inspect_broker_account
@@ -212,6 +243,51 @@ class UnifiedKatarinaBrain:
         # The snapshot is COMPLETE only if this atomic publication succeeds.
         report["brain_runtime"] = {**self.control.snapshot(), "phase":"COMPLETE"}
         publish(root, report)
+
+    def prepare_research(self):
+        from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
+        from katarina.intelligence.prospective_shadow_book import ProspectiveShadowBook
+        if self.quote_journal is None:
+            self.quote_journal = ContextDecisionJournal(self.shadow_db)
+        if self.shadow_book is None:
+            self.shadow_book = ProspectiveShadowBook(self.shadow_db)
+
+    def observe_connected_market(self, root, broker, *, max_symbols=3, fetch_news=False):
+        """A dialog-owned sensor pass reuses its brain, DB and already-held host lock."""
+        from katarina.intelligence.brain_observer import BrainObserver
+        if self.context_store is None:
+            raise RuntimeError('brain_context_store_required')
+        if type(max_symbols) is not int or not 1 <= max_symbols <= 17:
+            raise ValueError('max_17_broker_markets')
+        from pathlib import Path
+        root = Path(root)
+        root.mkdir(parents=True, exist_ok=True)
+        try:
+            if not broker.initialize():
+                raise RuntimeError('BROKER_NOT_CONNECTED')
+            terminal = broker.terminal_info()
+            if terminal is None or terminal.trade_allowed:
+                raise RuntimeError('FAIL_CLOSED_TRADING_MUST_BE_DISABLED')
+            self.prepare_research()
+            self.observer = BrainObserver(self, broker, root)
+            self.control.audit_phase('OBSERVING')
+            result = self.observer.run(max_symbols=max_symbols, fetch_news=fetch_news)
+            self.control.audit_phase('COMPLETE')
+            self.control.checkpoint()
+            return result
+        except Exception as exc:
+            self.control.audit_phase('BLOCKED', error=exc)
+            raise
+        finally:
+            try:
+                broker.shutdown()
+            finally:
+                self.observer = None
+
+    def converse(self, text, **options):
+        """Dialog, recall and bounded tools share this brain and its memory."""
+        from katarina.intelligence.assistant_cycle import run_turn
+        return run_turn(self, text, **options)
 
     def review_delivery(self, plan_id, request, *, governor=None):
         result = self.control.delivery.inspect(plan_id, request, governor)

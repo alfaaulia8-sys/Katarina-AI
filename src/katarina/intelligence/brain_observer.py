@@ -399,6 +399,7 @@ class BrainObserver:
         report["observed_symbols"]=len(report["symbols"])
         report.update(brain.inspect_foundation(
             mt5, report, expected_symbols=len(symbols)))
+        report["brain_hands_feedback"] = brain.acknowledge_observation(mt5, report)
         brain.publish_observation(root,report)
         return {"observed_symbols":report["observed_symbols"],
                 "market_states":report["market_states"],"final_actions":report["final_actions"],

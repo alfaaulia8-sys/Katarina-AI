@@ -100,3 +100,20 @@ Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
 - Require actual synthetic acceptance before atomic selection; preserve old environments.
 - Add validated previous-environment fallback, lock, failure cooldown and local redacted audit.
 - Prove recovery from an unavailable interpreter in extracted packages on three OSes.
+
+## 2026-10-16 — AI trading pretrial foundation
+
+- Add configured JSON model dialog, heuristic Fast/Deep routing and bounded read tools to the single brain.
+- Share dialog, Neuro-Link and market observation memory under one host lock.
+- Add an authenticated foreground browser surface; require TLS for remote access.
+- Add nonexecuting MT5/Hands WAIT feedback with account checks, TTL, dedup and receipts.
+- Add portable pretrial acceptance; distinguish scripted fixtures from real model/broker proof.
+- Local regression: 1,270 unit; 113 static (4 skips); 132 integration. Linux, Windows and macOS packaged CI passed (Actions run 38811219852).
+- Trading/risk/MT5 source unchanged, real execution OFF. Owner authorized public GitHub publication, PR, CI and merged-branch cleanup; cross-platform results are recorded in the pretrial validation evidence.
+
+### Repository maintenance
+
+- Owner-authorized main-only Actions maintenance disables active workflow registrations whose YAML source is absent at the exact current main commit.
+- Preserve source-backed workflows, built-in Dependency Graph, run history and artifacts.
+- Verify main SHA again before mutation; default script execution is dry-run.
+- Four maintenance safety tests pass; total unit suite is 1,274.

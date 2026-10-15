@@ -144,6 +144,12 @@ class CloudReadOnlyBroker:
         verify_identity(self,self._config)
         return True
 
+    def brain_feedback(self, message):
+        if self._session is None:
+            raise ConnectionUnavailable('CLOUD_NOT_CONNECTED')
+        # The bridge validates the account before and after the nonexecuting ACK.
+        return self._request('brain_feedback', (message,))
+
     def shutdown(self):
         self._session=None
         self._constants={}
@@ -168,6 +174,8 @@ class ReadOnlySensorBridge:
     def __init__(self,broker,config):
         self._broker,self._config=broker,config
         self.session=secrets.token_hex(24)
+        from katarina.adapters.brain_feedback import FeedbackInbox
+        self._feedback = FeedbackInbox()
 
     def dispatch(self,request):
         if (not isinstance(request,dict) or request.get('protocol')!=PROTOCOL
@@ -175,13 +183,15 @@ class ReadOnlySensorBridge:
                 or len(request['request_id'])!=32 or not _fresh(request.get('sent_at'))):
             raise ValueError('invalid_sensor_request')
         method=request.get('method')
-        if method!='hello' and (method not in METHODS or request.get('session')!=self.session):
+        if method!='hello' and (method not in METHODS | {'brain_feedback'} or request.get('session')!=self.session):
             raise ValueError('sensor_operation_rejected')
         args=unpack(request.get('args'))
         self._validate_args(method,args)
         verify_identity(self._broker,self._config)
         if method=='hello':
             result={'read_only':True,'constants':{k:getattr(self._broker,k) for k in CONSTANTS}}
+        elif method == 'brain_feedback':
+            result = self._feedback.accept(args[0])
         else:
             result=getattr(self._broker,method)(*args)
         verify_identity(self._broker,self._config)
@@ -189,7 +199,7 @@ class ReadOnlySensorBridge:
                 'sent_at':time.time(),'result':pack(result)}
 
     def _validate_args(self,method,args):
-        arity={'hello':0,'terminal_info':0,'account_info':0,'positions_get':0,'orders_get':0,
+        arity={'brain_feedback':1,'hello':0,'terminal_info':0,'account_info':0,'positions_get':0,'orders_get':0,
                'symbols_get':0,'symbol_info_tick':1,'symbol_info':1,'symbol_select':2,
                'copy_ticks_range':4,'copy_rates_from_pos':4,'history_deals_get':2}
         if method not in arity or not isinstance(args,list) or len(args)!=arity[method]:
