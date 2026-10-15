@@ -11,7 +11,8 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[2]
 TOP_FILES={'katarina_pc.py','START_KATARINA.bat','SETUP_KATARINA.bat',
            'requirements-pc.txt','requirements-stage07.txt','README.md'}
-EXTRA_FILES={'scripts/pc/environment_recovery.py','scripts/pc/run_pc_acceptance.py','scripts/ai/run_contextual_market_observer.py',
+EXTRA_FILES={'scripts/pc/run_assistant.py','scripts/pc/run_pretrial_acceptance.py',
+             'docs/architecture/KATARINA_AI_TRADING_PRETRIAL.md','scripts/pc/environment_recovery.py','scripts/pc/run_pc_acceptance.py','scripts/ai/run_contextual_market_observer.py',
              'scripts/ai/run_readonly_sensor_bridge.py','docs/QUICKSTART_PC.md',
              'docs/architecture/KATARINA_AUTOMATIC_CONNECTION.md',
              'docs/architecture/KATARINA_PORTABLE_HOST.md',

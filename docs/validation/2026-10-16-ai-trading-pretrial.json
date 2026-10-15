@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-16",
+  "scope": "LOCAL_SYNTHETIC_PRETRIAL_FOUNDATION",
+  "unit": {
+    "run": 1270,
+    "result": "PASS"
+  },
+  "static": {
+    "run": 113,
+    "skipped": 4,
+    "result": "PASS"
+  },
+  "integration": {
+    "run": 132,
+    "result": "PASS"
+  },
+  "acceptance": "PASS_SYNTHETIC_PRETRIAL_ONLY",
+  "audits": [
+    "dependency_links",
+    "unified_brain_boundary",
+    "repository_hygiene",
+    "autonomous_shadow_safety"
+  ],
+  "orders_submitted": 0,
+  "live_execution_authorized": false,
+  "model_fixture": "SCRIPTED_RESPONSES_NOT_REAL_INTELLIGENCE_PROOF",
+  "broker_fixture": "FABRICATED_MARKET_PRICES",
+  "real_model_quality_verified": false,
+  "real_mt5_connection_verified": false,
+  "real_broker_execution_verified": false,
+  "phone_destination_test_verified": false,
+  "cross_platform_ci_verified": false,
+  "publication": "OWNER_AUTHORIZED_PUBLICATION_PR_AND_CI_PENDING",
+  "source_revision": "SEE_PACKAGE_SOURCE_REVISION_MANIFEST",
+  "architecture": "docs/architecture/KATARINA_AI_TRADING_PRETRIAL.md"
+}

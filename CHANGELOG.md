@@ -100,3 +100,13 @@ Perubahan ini tidak mengklaim sinkronisasi VPS atau profitabilitas strategi.
 - Require actual synthetic acceptance before atomic selection; preserve old environments.
 - Add validated previous-environment fallback, lock, failure cooldown and local redacted audit.
 - Prove recovery from an unavailable interpreter in extracted packages on three OSes.
+
+## 2026-10-16 — AI trading pretrial foundation
+
+- Add configured JSON model dialog, heuristic Fast/Deep routing and bounded read tools to the single brain.
+- Share dialog, Neuro-Link and market observation memory under one host lock.
+- Add an authenticated foreground browser surface; require TLS for remote access.
+- Add nonexecuting MT5/Hands WAIT feedback with account checks, TTL, dedup and receipts.
+- Add portable pretrial acceptance; distinguish scripted fixtures from real model/broker proof.
+- Local regression: 1,270 unit; 113 static (4 skips); 132 integration. Cross-OS CI not yet run for this revision.
+- Trading/risk/MT5 source unchanged, real execution OFF. Owner authorized public GitHub publication, PR, CI and merged-branch cleanup; cross-platform results are recorded after verification.

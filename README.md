@@ -21,7 +21,7 @@ Fokus KATARINA AI adalah menghadirkan pengalaman analisis yang praktis, terukur,
 | Bagian | Satu otak canonical — pembaruan 16 Oktober 2026 |
 |---|---|
 | Otak unified | 1 otak, 17 modul canonical; Management dan 11 spesialis dihapus |
-| Pengujian | 1.270 unit, 113 static (4 skipped), 110 integration lulus |
+| Pengujian | 1.270 unit, 113 static (4 skipped), 132 integration lulus |
 | Repository | Main dilindungi; wajib PR dan CI; 0 kolaborator tambahan |
 | Cleanup | 42 branch lama diintegrasikan dan dihapus; hanya `main` tersisa |
 | Sinkronisasi | GitHub dan checkout kerja cocok; VPS belum diverifikasi |
@@ -95,3 +95,12 @@ MT5/cloud nyata. Lihat [kontrak koneksi otomatis](docs/architecture/KATARINA_AUT
 Startup memeriksa dependensi dan menguji kandidat pengganti sebelum memilihnya.
 Environment lama, strategi, Risk Governor dan memori tetap dipertahankan; tidak
 ada perubahan source atau izin trading. Panduan: [pemulihan environment](docs/architecture/KATARINA_ENVIRONMENT_RECOVERY.md). Live OFF.
+
+### Dialog and AI trading pretrial (LIVE OFF)
+
+`python katarina_pc.py pretrial` runs synthetic behavior acceptance.
+`python katarina_pc.py chat --model-config PATH` opens the configured model dialog;
+`ui` opens the optional foreground authenticated browser service. Model IDs,
+credentials and real MT5 connections require installation configuration.
+MT5 feedback is WAIT/ACK only, not an executable order transport.
+[Setup, target diagram and remaining real-evidence gates](docs/architecture/KATARINA_AI_TRADING_PRETRIAL.md).

@@ -119,11 +119,13 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
             or boundary.get("risk_governor_owned_by_brain") is not False
             or set(boundary.get("external_boundaries", [])) != {
                 "independent_risk_governor", "cloud_hands_with_local_survival_guardian",
-                "mt5", "broker", "vps_cloud_host"}
+                "mt5", "broker", "portable_host", "configured_language_model",
+                "owner_granted_research_sources", "owner_browser_surface"}
             or set(boundary.get("internal_capabilities", [])) != {
                 "observer", "market_perception", "cognition", "knowledge_memory", "shadow",
                 "adaptive_research", "capital", "recovery", "health", "runtime_control",
-                "core", "manual_positions", "runtime_memory"}):
+                "core", "manual_positions", "runtime_memory", "dialog", "model_routing",
+                "bounded_tools", "dialog_history", "nonexecuting_feedback"}):
         raise ValueError("brain_boundary_contract_mismatch")
     if set(disabled)!={
         "external_ai_workers","autonomous_source_rewrite",

@@ -91,3 +91,12 @@ Environment lama dan memori tidak dihapus. Lihat
 `py -3.12 katarina_pc.py repair-status` melihat status; `repair` mencoba perbaikan
 eksplisit. `test --no-auto-repair` menonaktifkan pemasangan pengganti otomatis.
 Python 3.12 tetap perlu disiapkan pemilik; live selalu OFF.
+
+## Dialog, browser dan acceptance sebelum uji nyata
+
+Jalankan `python katarina_pc.py pretrial` untuk paket ujian perilaku sintetis.
+Untuk dialog gunakan `python katarina_pc.py chat --model-config PATH`; untuk UI
+browser gunakan `python katarina_pc.py ui --model-config PATH` setelah menyiapkan
+`KATARINA_OWNER_TOKEN`. Model yang bekerja harus dikonfigurasi sendiri; contoh
+JSON hanya placeholder. Tidak ada fallback jawaban buatan saat model gagal.
+[Petunjuk model, izin alat, akses HP/TLS, MT5 feedback dan batas bukti](architecture/KATARINA_AI_TRADING_PRETRIAL.md).
