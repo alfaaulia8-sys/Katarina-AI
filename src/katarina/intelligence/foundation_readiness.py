@@ -31,6 +31,8 @@ def assess_foundation(report: dict, *, expected_symbols: int = 17) -> dict:
     timeref = report.get("time_reference") or {}
     cognition = report.get("unified_cognitive_cycle") or {}
     monitor = report.get("broker_account_monitor") or {}
+    history = report.get("broker_history_coverage") or {}
+    official_cache = report.get("official_cache_integrity") or {}
     feed = report.get("news_feed_status") or {}
     final = report.get("final_actions") or {}
     shadow = report.get("virtual_shadow_summary") or {}
@@ -81,6 +83,16 @@ def assess_foundation(report: dict, *, expected_symbols: int = 17) -> dict:
         ),
         "sensors_without_errors": len(errors) == 0 and len(entries) > 0,
         "official_news_cache_transport_reachable": news_transport_ready,
+        "official_source_cache_digest_and_freshness": (
+            official_cache.get("all_four_cache_digests_fresh") is True and
+            official_cache.get("policy_inference_from_headlines_authorized") is False
+        ),
+        "recent_broker_deal_book_readable": (
+            history.get("status") ==
+            "DEAL_FIELDS_OBSERVED_NOT_FULL_RISK_LEDGER" and
+            history.get("historical_range_complete") is False and
+            history.get("live_execution_authorized") is False
+        ),
         "unified_memory_checkpoint_matches": (
             cognition.get("source_snapshot_matches_active") is True and
             cognition.get("real_execution_authorized") is False
@@ -119,6 +131,7 @@ def assess_foundation(report: dict, *, expected_symbols: int = 17) -> dict:
         "technical_symbol_count": len(entries),
         "news_transport_is_not_verified_trading_news": True,
         "account_snapshot_is_not_risk_clearance": True,
+        "deal_book_is_not_daily_loss_or_drawdown_clearance": True,
         "cognitive_history_is_not_live_trade_experience": True,
         "unknown_or_unverified_production_gates": unavailable,
         "knowledge_matured_virtual_observations": (
