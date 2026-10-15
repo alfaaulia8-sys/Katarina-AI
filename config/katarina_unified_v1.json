@@ -4,7 +4,7 @@
   "canonical": {
     "core": "src/katarina/core/orchestrator.py",
     "brain": "src/katarina/intelligence/unified_brain.py",
-    "observer": "scripts/ai/run_contextual_market_observer.py",
+    "observer": "src/katarina/intelligence/brain_observer.py",
     "shadow": "src/katarina/intelligence/prospective_shadow_book.py",
     "risk": "src/katarina/engines/risk.py",
     "manual_positions": "src/katarina/engines/manual_risk.py",
@@ -15,7 +15,10 @@
     "cognition": "src/katarina/intelligence/unified_cognitive_cycle.py",
     "knowledge_memory": "src/katarina/memory/neuro_link.py",
     "market_perception": "src/katarina/intelligence/market_decision_brain_v3.py",
-    "adaptive_research": "src/katarina/intelligence/unified_adaptive_research_cycle.py"
+    "adaptive_research": "src/katarina/intelligence/unified_adaptive_research_cycle.py",
+    "runtime_control": "src/katarina/intelligence/brain_runtime_control.py",
+    "market_sensor": "src/katarina/adapters/mt5_readonly_market.py",
+    "health": "src/katarina/health/engine.py"
   },
   "deferred": {
     "external_ai_workers": false,
@@ -46,5 +49,6 @@
     "architecture": "SINGLE_COGNITIVE_BRAIN",
     "management": "REMOVED",
     "specialist_workers": 0
-  }
+  },
+  "architecture_contract": "config/katarina_brain_boundary_v1.json"
 }

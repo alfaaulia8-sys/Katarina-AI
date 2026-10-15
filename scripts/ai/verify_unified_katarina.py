@@ -87,7 +87,7 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         "core", "brain", "observer", "shadow", "risk",
         "manual_positions", "capital", "broker_readonly",
         "recovery", "runtime_memory", "cognition", "knowledge_memory",
-        "market_perception", "adaptive_research",
+        "market_perception", "adaptive_research", "runtime_control", "market_sensor", "health",
     }
     if (not isinstance(parts,dict) or set(parts)!=expected_parts
             or not isinstance(disabled,dict)):
@@ -99,6 +99,10 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         raise ValueError("single_brain_organization_required")
     expected_paths = {
         "brain":"src/katarina/intelligence/unified_brain.py",
+        "observer":"src/katarina/intelligence/brain_observer.py",
+        "runtime_control":"src/katarina/intelligence/brain_runtime_control.py",
+        "market_sensor":"src/katarina/adapters/mt5_readonly_market.py",
+        "health":"src/katarina/health/engine.py",
         "cognition":"src/katarina/intelligence/unified_cognitive_cycle.py",
         "knowledge_memory":"src/katarina/memory/neuro_link.py",
         "market_perception":"src/katarina/intelligence/market_decision_brain_v3.py",
@@ -106,6 +110,21 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
     }
     if any(parts.get(k) != v for k,v in expected_paths.items()):
         raise ValueError("invalid_canonical_single_brain_path")
+    if profile.get("architecture_contract") != "config/katarina_brain_boundary_v1.json":
+        raise ValueError("brain_boundary_contract_required")
+    boundary=json.loads((root/profile["architecture_contract"]).read_text())
+    if (boundary.get("owner") != "UnifiedKatarinaBrain"
+            or boundary.get("delivery_mode") != "DISABLED"
+            or boundary.get("background_workers") != 0
+            or boundary.get("risk_governor_owned_by_brain") is not False
+            or set(boundary.get("external_boundaries", [])) != {
+                "independent_risk_governor", "cloud_hands_with_local_survival_guardian",
+                "mt5", "broker", "vps_cloud_host"}
+            or set(boundary.get("internal_capabilities", [])) != {
+                "observer", "market_perception", "cognition", "knowledge_memory", "shadow",
+                "adaptive_research", "capital", "recovery", "health", "runtime_control",
+                "core", "manual_positions", "runtime_memory"}):
+        raise ValueError("brain_boundary_contract_mismatch")
     if set(disabled)!={
         "external_ai_workers","autonomous_source_rewrite",
         "unverified_broker_provenance","unverified_broker_clock",
@@ -225,9 +244,15 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         now=datetime.now(timezone.utc)
         report=evaluate_shadow_self_evolution(db,as_of_utc=now)
         proposal=derive_shadow_research_policy(report)
-        unified=UnifiedKatarinaBrain(db,memory).run_unified_cognitive_cycle(
+        brain=UnifiedKatarinaBrain(db,memory)
+        unified=brain.run_unified_cognitive_cycle(
             as_of_utc=now,persist=False)
         cognitive=unified["cognition"]
+        gate=brain.control.delivery.inspect(
+            "offline-acceptance", RiskRequest(.01,0.,0.,.1,2.,True,True), governor)
+        if (gate["delivery_status"] != "BLOCKED_LIVE_OFF" or gate["orders_submitted"] != 0
+                or gate["queued_for_retry"] or gate["live_execution_authorized"]):
+            raise RuntimeError("brain_delivery_gate_bypass")
         if (cognitive["orders_submitted"]!=0
                 or cognitive["real_execution_authorized"]
                 or cognitive["production_mutation_authorized"]
@@ -246,6 +271,10 @@ def verify(profile: dict, *, root: Path = ROOT, shadow_db: Path | None = None) -
         "brain_architecture":unified["architecture"],
         "specialist_workers":unified["specialist_workers"],
         "neuro_link_shared_memory":unified["knowledge_memory"]["shared_memory"],
+        "runtime_owner":"UnifiedKatarinaBrain",
+        "internal_capabilities":boundary["internal_capabilities"],
+        "independent_risk_external":True,
+        "delivery_gate":gate["delivery_status"],
         "cumulative_profit_lock":"VERIFIED_THREE_MILESTONES_AND_RESTART",
         "same_day_emergency_lockdown":"VERIFIED_NO_NEW_ENTRY",
         "unverified_optional_components_disabled":True,

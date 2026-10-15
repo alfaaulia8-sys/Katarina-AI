@@ -13,13 +13,17 @@
         "src/katarina/core/orchestrator.py",
         "src/katarina/intelligence/unified_cognitive_cycle.py",
         "src/katarina/intelligence/unified_brain.py",
-        "src/katarina/memory/neuro_link.py"
+        "src/katarina/memory/neuro_link.py",
+        "src/katarina/intelligence/brain_observer.py",
+        "src/katarina/intelligence/brain_runtime_control.py"
       ],
       "test_paths": [
         "tests/integration/test_unified_katarina_stack.py",
-        "tests/integration/test_single_brain_runtime.py"
+        "tests/integration/test_single_brain_runtime.py",
+        "tests/integration/test_brain_owned_workflow.py",
+        "tests/static/test_single_brain_boundary.py"
       ],
-      "remaining": "Single-brain offline acceptance only; no live activation. Single runtime now routes market perception, cognitive learning and Neuro-Link recall through the same brain; full broker/Cloud deployment remains unverified."
+      "remaining": "Single-brain offline acceptance only; no live activation. Single runtime now routes market perception, cognitive learning and Neuro-Link recall through the same brain; full broker/Cloud deployment remains unverified. Diagram-owned observer/control lifecycle is integrated offline; broker deployment, live delivery and numerical production validation remain blocked."
     },
     {
       "id": "A02",
@@ -81,7 +85,9 @@
         "src/katarina/memory/quarantined_research_memory.py",
         "src/katarina/intelligence/self_evolution_lab.py",
         "src/katarina/intelligence/unified_brain.py",
-        "src/katarina/memory/neuro_link.py"
+        "src/katarina/memory/neuro_link.py",
+        "src/katarina/intelligence/brain_observer.py",
+        "src/katarina/intelligence/brain_runtime_control.py"
       ],
       "test_paths": [
         "tests/unit/memory/test_runtime_state_persistence.py",
@@ -89,9 +95,11 @@
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
         "tests/unit/memory/test_quarantined_research_memory.py",
         "tests/unit/intelligence/test_strict_self_evolution_integrity.py",
-        "tests/integration/test_single_brain_runtime.py"
+        "tests/integration/test_single_brain_runtime.py",
+        "tests/integration/test_brain_owned_workflow.py",
+        "tests/static/test_single_brain_boundary.py"
       ],
-      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding. Offline adaptive synthesis now respects active cognitive learning checkpoint and explicit Owner rollback; production learning and strategy promotion remain blocked. Single runtime now routes market perception, cognitive learning and Neuro-Link recall through the same brain; full broker/Cloud deployment remains unverified."
+      "remaining": "Local persisted payload checksum, strict finite JSON evidence and restore integrity are enforced. Cross-source provenance, knowledge quarantine, selective dedup, and long-term retention policy remain incomplete. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding. Offline adaptive synthesis now respects active cognitive learning checkpoint and explicit Owner rollback; production learning and strategy promotion remain blocked. Single runtime now routes market perception, cognitive learning and Neuro-Link recall through the same brain; full broker/Cloud deployment remains unverified. Diagram-owned observer/control lifecycle is integrated offline; broker deployment, live delivery and numerical production validation remain blocked."
     },
     {
       "id": "A06",
@@ -161,15 +169,19 @@
         "src/katarina/engines/multi_symbol_execution.py",
         "src/katarina/intelligence/unified_research_handoff.py",
         "src/katarina/intelligence/unified_adaptive_research_cycle.py",
-        "src/katarina/intelligence/research_exit_lifecycle.py"
+        "src/katarina/intelligence/research_exit_lifecycle.py",
+        "src/katarina/intelligence/brain_observer.py",
+        "src/katarina/intelligence/brain_runtime_control.py"
       ],
       "test_paths": [
         "tests/unit/engines/test_account_risk_state.py",
         "tests/unit/intelligence/test_unified_research_handoff.py",
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
-        "tests/unit/intelligence/test_research_exit_lifecycle.py"
+        "tests/unit/intelligence/test_research_exit_lifecycle.py",
+        "tests/integration/test_brain_owned_workflow.py",
+        "tests/static/test_single_brain_boundary.py"
       ],
-      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders. Offline exit review now rechecks adaptive entry receipt contents, causal time and semantic validity; actual broker lifecycle is still unverified."
+      "remaining": "Modules exist; no end-to-end broker-authorized fill/cancel/reconciliation demonstration. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders. Offline exit review now rechecks adaptive entry receipt contents, causal time and semantic validity; actual broker lifecycle is still unverified. Diagram-owned observer/control lifecycle is integrated offline; broker deployment, live delivery and numerical production validation remain blocked."
     },
     {
       "id": "A11",
@@ -179,15 +191,19 @@
         "src/katarina/intelligence/structure_exit_plan.py",
         "src/katarina/intelligence/unified_research_handoff.py",
         "src/katarina/intelligence/unified_adaptive_research_cycle.py",
-        "src/katarina/intelligence/research_exit_lifecycle.py"
+        "src/katarina/intelligence/research_exit_lifecycle.py",
+        "src/katarina/intelligence/brain_observer.py",
+        "src/katarina/intelligence/brain_runtime_control.py"
       ],
       "test_paths": [
         "tests/unit/intelligence/test_structure_exit_plan.py",
         "tests/unit/intelligence/test_unified_research_handoff.py",
         "tests/unit/intelligence/test_unified_adaptive_research_cycle.py",
-        "tests/unit/intelligence/test_research_exit_lifecycle.py"
+        "tests/unit/intelligence/test_research_exit_lifecycle.py",
+        "tests/integration/test_brain_owned_workflow.py",
+        "tests/static/test_single_brain_boundary.py"
       ],
-      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders. Offline exit review now rechecks adaptive entry receipt contents, causal time and semantic validity; actual broker lifecycle is still unverified."
+      "remaining": "Exit research modules exist; account-specific predictive exit and broker net-cost lifecycle not proven. Offline Owner research review handoff exists; it does not authorize live execution. Offline cognitive/curiosity and Adaptive Entry/Exit evidence synthesis now checks exact cohort provenance; broker edge, promotion and full implementation remain unproven. Research-only FULL/PARTIAL/TRAIL feasibility now uses supplied broker lot grids, stop/freeze distances and Owner-manual protection; no predictive net-cost portfolio lifecycle or executable orders. Offline exit review now rechecks adaptive entry receipt contents, causal time and semantic validity; actual broker lifecycle is still unverified. Diagram-owned observer/control lifecycle is integrated offline; broker deployment, live delivery and numerical production validation remain blocked."
     },
     {
       "id": "A12",
@@ -262,15 +278,19 @@
         "src/katarina/memory/quarantined_research_memory.py",
         "src/katarina/intelligence/self_evolution_lab.py",
         "src/katarina/intelligence/unified_brain.py",
-        "src/katarina/memory/neuro_link.py"
+        "src/katarina/memory/neuro_link.py",
+        "src/katarina/intelligence/brain_observer.py",
+        "src/katarina/intelligence/brain_runtime_control.py"
       ],
       "test_paths": [
         "tests/unit/intelligence/test_unified_cognitive_cycle.py",
         "tests/unit/memory/test_quarantined_research_memory.py",
         "tests/unit/intelligence/test_strict_self_evolution_integrity.py",
-        "tests/integration/test_single_brain_runtime.py"
+        "tests/integration/test_single_brain_runtime.py",
+        "tests/integration/test_brain_owned_workflow.py",
+        "tests/static/test_single_brain_boundary.py"
       ],
-      "remaining": "Unified offline snapshot exists; evidence weighting, duplicate-source rules and Fast/Deep resource scheduling deferred. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding. Single runtime now routes market perception, cognitive learning and Neuro-Link recall through the same brain; full broker/Cloud deployment remains unverified."
+      "remaining": "Unified offline snapshot exists; evidence weighting, duplicate-source rules and Fast/Deep resource scheduling deferred. Append-only quarantined research receipt memory now retains source provenance and flags repeated Hand sources; source authentication and independent alpha validation remain missing. Causal duplicate events and clipped research history now fail closed instead of biasing quote-only learning; independent broker forward proof remains outstanding. Single runtime now routes market perception, cognitive learning and Neuro-Link recall through the same brain; full broker/Cloud deployment remains unverified. Diagram-owned observer/control lifecycle is integrated offline; broker deployment, live delivery and numerical production validation remain blocked."
     },
     {
       "id": "A18",

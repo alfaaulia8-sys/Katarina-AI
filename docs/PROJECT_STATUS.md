@@ -1,6 +1,6 @@
 # Status perkembangan Katarina AI
 
-Diperbarui: **15 Oktober 2026**. Snapshot sumber setelah penghapusan Management
+Diperbarui: **16 Oktober 2026**. Snapshot sumber setelah penghapusan Management
 serta penyatuan satu otak canonical. Lihat commit `main` dan Actions untuk SHA
 perubahan yang diuji; status ini tidak mengklaim deployment VPS telah sinkron.
 
@@ -8,11 +8,30 @@ perubahan yang diuji; status ini tidak mengklaim deployment VPS telah sinkron.
 |---|---|---|
 | Branch | Hanya `main`; 42 branch awal selain main sudah terhapus | Branch kerja sementara boleh muncul untuk PR berikutnya |
 | Integrasi | 34 branch terverifikasi setara/identik; delapan direview dan diselesaikan | Varian eksekusi eksperimen tetap terpisah dari engine produksi |
-| Pengujian | 1.270 unit, 109 static (4 skipped), 49 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
-| Otak unified | 1 otak dengan 14 modul canonical; persepsi, kognisi dan Neuro-Link berbagi runtime | Memori privat dan proses VPS belum diperiksa |
+| Pengujian | 1.270 unit, 113 static (4 skipped), 61 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
+| Otak unified | 1 otak dengan 17 modul canonical; persepsi, kognisi dan Neuro-Link berbagi runtime | Memori privat dan proses VPS belum diperiksa |
 | Trading | Engine produksi, Risk Governor, konfigurasi risk dan MT5 tidak berubah | Live execution false; 0 order pada verifikasi offline |
 | Keamanan | Main wajib PR/body CI, up-to-date dan conversation resolution; admin tunduk aturan | Bukan audit penetrasi menyeluruh |
 | Akses | Tidak ada kolaborator tambahan; token Actions read-only secara default | CLI perangkat luar Work belum dipasang/diuji |
+
+## Jalur sesuai diagram patokan — 16 Oktober
+
+Seluruh lifecycle observer dipindah ke `UnifiedKatarinaBrain`: satu lock/koneksi,
+satu pemilik context/memori/journal/shadow, urutan settle → learn → propose,
+monitoring/foundation dan publikasi. Script observer kini hanya CLI delegasi.
+Dua entry point observer legacy ditutup agar perintah lama tidak membuat jalur
+paralel. Helper MT5 berada pada adapter eksternal yang diinjeksi.
+
+Modal/Profit Lock dan recovery offline memakai engine lama di bawah control
+internal. Checkpoint tidak memigrasi state broker atau mereset reserve. Gerbang
+pengiriman menerima penilaian Risk Governor independen tetapi tetap LIVE OFF:
+tidak ada callback kirim, antrean retry atau sakelar enable. Uji broker sintetis
+menjangkau sensor/persepsi nyata dalam kode, cleanup, restart, sensor gagal,
+perubahan izin trading dan checkpoint tampering.
+
+[Diagram patokan dan batas kelulusan](architecture/KATARINA_SINGLE_BRAIN_WORKFLOW_20261016.md).
+Perapian jalur source selesai setelah CI, sedangkan sinkronisasi VPS, Cloud auth
+serta pembuktian broker/strategi tetap terpisah dan belum dinyatakan selesai.
 
 ## Satu otak canonical; Management dihapus
 

@@ -20,6 +20,11 @@ from katarina.intelligence.self_evolution_lab import (
 from katarina.intelligence.unified_adaptive_research_cycle import synthesize_offline_research
 from katarina.memory.neuro_link import CognitiveEvidence, NeuroLinkMemory
 from katarina.memory.store import MemoryStore
+from katarina.intelligence.brain_runtime_control import BrainRuntimeControl
+from katarina.contracts.runtime import RuntimeMode
+from katarina.core.orchestrator import KatarinaOrchestrator, OrchestratorConfig
+from katarina.engines.manual_risk import SharedAccountRiskEngine
+from katarina.memory.runtime_state import RuntimeStatePersistence
 
 
 class UnifiedKatarinaBrain:
@@ -30,6 +35,153 @@ class UnifiedKatarinaBrain:
         self.memory = memory
         self._perception = MarketDecisionBrain()
         self._knowledge = NeuroLinkMemory(memory)
+        self.control = BrainRuntimeControl(memory)
+        self.core = KatarinaOrchestrator(OrchestratorConfig(RuntimeMode.TESTER, 32))
+        self.manual_positions = SharedAccountRiskEngine()
+        self.runtime_memory = RuntimeStatePersistence(memory)
+        self.context_store = None
+        self.quote_journal = None
+        self.shadow_book = None
+        self.observer = None
+
+    @classmethod
+    def observe_once(cls, root, *, broker=None, max_symbols=17, fetch_news=True):
+        """Own exactly one bounded observation, including cleanup on every failure."""
+        from pathlib import Path
+        from katarina.intelligence.brain_observer import BrainObserver, lock_worker
+        from katarina.intelligence.public_context import ContextStore
+        from katarina.intelligence.contextual_observation_journal import ContextDecisionJournal
+        from katarina.intelligence.prospective_shadow_book import ProspectiveShadowBook
+        if type(max_symbols) is not int or not 1 <= max_symbols <= 17:
+            raise ValueError("max_17_broker_markets")
+        if type(fetch_news) is not bool:
+            raise ValueError("invalid_news_fetch_mode")
+        if broker is None:
+            import MetaTrader5 as broker
+        root = Path(root)
+        lock = lock_worker(root)
+        context = memory = brain = None
+        try:
+            if not broker.initialize():
+                raise RuntimeError("BROKER_NOT_CONNECTED")
+            terminal = broker.terminal_info()
+            if terminal is None or terminal.trade_allowed:
+                raise RuntimeError("FAIL_CLOSED_TRADING_MUST_BE_DISABLED")
+            context = ContextStore(root / "context.sqlite3")
+            memory = MemoryStore(root / "cognitive-memory.sqlite3")
+            brain = cls(context.db, memory)
+            brain.context_store = context
+            brain.quote_journal = ContextDecisionJournal(context.db)
+            brain.shadow_book = ProspectiveShadowBook(context.db)
+            brain.observer = BrainObserver(brain, broker, root)
+            brain.control.audit_phase("OBSERVING")
+            result = brain.observer.run(max_symbols=max_symbols, fetch_news=fetch_news)
+            brain.control.audit_phase("COMPLETE")
+            brain.control.checkpoint()
+            return result
+        except Exception as exc:
+            if brain is not None:
+                brain.control.audit_phase("BLOCKED", error=exc)
+            raise
+        finally:
+            # Nested cleanup means one failing close cannot leak the other owners.
+            try:
+                if memory is not None:
+                    memory.close()
+            finally:
+                try:
+                    if context is not None:
+                        context.db.close()
+                finally:
+                    try:
+                        broker.shutdown()
+                    finally:
+                        lock.close()
+
+    def advance_shadow_cycle(self, *, now, latest_quotes, paper_hypotheses, quote_lookup):
+        """Settle -> learn -> sample is one brain-owned sequence, never an order."""
+        from katarina.intelligence.prospective_shadow_review import summarize
+        from katarina.governance.multi_model_evolution_review import review_candidate
+        if self.shadow_book is None or self.quote_journal is None:
+            raise RuntimeError("brain_observer_resources_not_attached")
+        resolved = self.quote_journal.resolve(latest_quotes, now, quote_lookup=quote_lookup)
+        settled = self.shadow_book.settle(now=now, quotes=latest_quotes)
+        unified = self.run_unified_cognitive_cycle(as_of_utc=now)
+        policy = unified["research_policy"]
+        priorities = {
+            (q["symbol"], q["method"], q["side"], q["regime"]):q["curiosity_priority"]
+            for q in unified["cognition"]["curiosity_hypotheses"]
+        } if policy.integrity_ok else {}
+        selected = self.shadow_book.propose(
+            paper_hypotheses, now, research_policy=policy, research_priorities=priorities)
+        retrospective = summarize(self.shadow_db, now)
+        return {
+            "brain_architecture":unified["architecture"],
+            "quote_markouts_resolved_this_cycle":resolved,
+            "quote_markouts_use_past_only_broker_tick_history":True,
+            "current_bidask_source":"BROKER_UTC_TICK_HISTORY_AS_OF_CLOCK",
+            "quote_journal":self.quote_journal.summary(),
+            "virtual_shadow_settled":settled,
+            "self_evolution_lab":unified["self_evolution_lab"],
+            "unified_cognitive_cycle":unified["cognition"],
+            "neuro_link_memory":unified["knowledge_memory"],
+            "shadow_research_policy":policy.to_dict(),
+            "virtual_shadow_selection":selected,
+            "virtual_shadow_summary":self.shadow_book.summary(),
+            "self_evolution_model_review":review_candidate(unified["self_evolution_lab"]).to_dict(),
+            "virtual_memory_cohorts":sorted(retrospective["groups"], key=lambda g:-g["complete"])[:12],
+            "virtual_memory_total_cohorts":len(retrospective["groups"]),
+            "virtual_memory_cannot_authorize_real_trading":True,
+            "virtual_shadow_not_executed":True,
+        }
+
+    def inspect_foundation(self, broker, report, *, expected_symbols):
+        """Internal monitor consumes read-only external facts; never initializes capital."""
+        from katarina.intelligence.broker_account_monitor import inspect_broker_account
+        from katarina.intelligence.broker_history_coverage import inspect_history
+        from katarina.intelligence.official_cache_provenance import inspect_cached_official_sources
+        from katarina.intelligence.foundation_readiness import assess_foundation
+        monitor = inspect_broker_account(broker, observed_at_utc=datetime.now(timezone.utc))
+        if not monitor["algo_trading_off"]:
+            raise RuntimeError("FAIL_CLOSED_TRADING_PERMISSION_CHANGED")
+        result = {
+            "broker_account_monitor":monitor,
+            "broker_history_coverage":inspect_history(broker, as_of_utc=datetime.now(timezone.utc)),
+            "official_cache_integrity":inspect_cached_official_sources(
+                self.shadow_db, as_of_utc=datetime.now(timezone.utc)),
+            "brain_runtime":self.control.snapshot(),
+        }
+        result["foundation_readiness"] = assess_foundation(
+            {**report, **result}, expected_symbols=expected_symbols)
+        return result
+
+    def publish_observation(self, root, report):
+        """One atomic publication point; a research report cannot arm delivery."""
+        from katarina.intelligence.brain_observer import publish
+        if (report.get("orders_submitted") != 0
+                or report.get("live_execution_authorized") is not False
+                or report.get("production_execution") is not False):
+            raise RuntimeError("brain_observation_safety_violation")
+        # The snapshot is COMPLETE only if this atomic publication succeeds.
+        report["brain_runtime"] = {**self.control.snapshot(), "phase":"COMPLETE"}
+        publish(root, report)
+
+    def review_delivery(self, plan_id, request, *, governor=None):
+        result = self.control.delivery.inspect(plan_id, request, governor)
+        self.memory.append_operational_event("single_brain_delivery_review_v1", result)
+        return result
+
+    def preview_recovery(self, plan, *, side, current_stop, position_origin,
+                         current_volume, volume_step):
+        """Use the existing recovery engine internally; return unsent intents only."""
+        self.control.recovery.apply_plan(
+            plan, side=side, current_stop=current_stop, position_origin=position_origin)
+        commands = self.control.recovery.reconcile(
+            plan.position_id, current_volume=current_volume,
+            current_stop=current_stop, volume_step=volume_step)
+        self.control.checkpoint()
+        return {"commands":[asdict(c) for c in commands], "orders_submitted":0,
+                "delivery":"DISABLED", "live_execution_authorized":False}
 
     def evaluate_contextually(self, **evidence):
         # Preserve the existing market decision semantics and hard controls.

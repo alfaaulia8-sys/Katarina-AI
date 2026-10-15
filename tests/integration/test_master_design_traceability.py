@@ -70,7 +70,7 @@ class MasterDesignTraceabilityTests(unittest.TestCase):
         from scripts.ai import verify_master_design_traceability as audit
         bad = {
             "status":"INTEGRATED_OFFLINE_ENGINEERING_ONLY",
-            "modules_verified":14,
+            "modules_verified":17,
             "orders_submitted":0,
             "live_execution_authorized":True,
             "management":"REMOVED",

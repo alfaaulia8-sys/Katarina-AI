@@ -87,7 +87,7 @@ def audit_master_design(
         profile = json.loads((root / manifest["canonical_profile"]).read_text())
         actual = verify(profile, root=root)
         if (actual["status"] != "INTEGRATED_OFFLINE_ENGINEERING_ONLY" or
-                actual["modules_verified"] != 14 or
+                actual["modules_verified"] != 17 or
                 actual["orders_submitted"] != 0 or
                 actual["live_execution_authorized"] or
                 actual["management"] != "REMOVED" or
