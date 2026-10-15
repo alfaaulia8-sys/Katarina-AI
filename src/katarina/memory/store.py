@@ -169,6 +169,13 @@ class MemoryStore:
                 f"database schema {version} does not match supported {self.CURRENT_SCHEMA_VERSION}"
             )
 
+        # Additive index: no schema-data rewrite and no changes to immutable rows.
+        with self._conn:
+            self._conn.execute(
+                "CREATE INDEX IF NOT EXISTS ix_operational_events_type_seq "
+                "ON operational_events(event_type, sequence)"
+            )
+
     @property
     def schema_version(self) -> int:
         row = self._conn.execute(
@@ -267,6 +274,37 @@ class MemoryStore:
                 "payload_hash": row["payload_hash"],
             }
             for row in rows
+        ]
+
+    def load_recent_operational_events_of_type(
+        self, event_type: str, *, limit: int = 1000
+    ) -> list[dict[str, Any]]:
+        """Bounded, indexed recall with original immutable provenance.
+
+        Most recent records are returned in chronological order. Read-only.
+        """
+        if not event_type or not 1 <= limit <= 20001:
+            raise ValueError("invalid event type or limit")
+        rows = self._conn.execute(
+            """
+            SELECT sequence,event_id,event_type,created_utc,payload_json,payload_hash
+            FROM operational_events
+            WHERE event_type=?
+            ORDER BY sequence DESC
+            LIMIT ?
+            """,
+            (event_type, limit),
+        ).fetchall()
+        return [
+            {
+                "sequence": int(row["sequence"]),
+                "event_id": row["event_id"],
+                "event_type": row["event_type"],
+                "created_utc": row["created_utc"],
+                "payload": _verified_payload(row),
+                "payload_hash": row["payload_hash"],
+            }
+            for row in reversed(rows)
         ]
 
     def load_latest_operational_event(self, event_type: str) -> dict[str, Any] | None:

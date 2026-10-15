@@ -105,6 +105,22 @@ class KatarinaAIBrain:
                                 selection_end_ns=selection_end_ns)
         return selector, evidence
 
+    def recall_experience_connections(
+        self, memory_store, *, context_tags: Sequence[str], as_of_ns: int,
+        deep: bool = False, limit: int = 5,
+    ):
+        """Read-only Neuro-Link connections; not an order or risk decision.
+
+        Both fast and deep cognition use the SAME memory and causal evidence.
+        Independent Risk Governor and live approval remain entirely separate.
+        """
+        from katarina.memory.neuro_link import NeuroLinkMemory
+
+        return NeuroLinkMemory(memory_store).recall(
+            tuple(context_tags), as_of_ns=as_of_ns,
+            mode="deep" if deep else "fast", limit=limit,
+        )
+
     def train_candidate(
         self,
         examples: Sequence[LabeledMarketExample],
