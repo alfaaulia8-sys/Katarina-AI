@@ -41,6 +41,8 @@ from katarina.intelligence.causal_broker_quotes import (
 from katarina.intelligence.market_article_context import collect_market_articles
 from katarina.intelligence.evidence_risk import assess_legacy_august_audit
 from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
+from katarina.intelligence.broker_account_monitor import inspect_broker_account
+from katarina.intelligence.foundation_readiness import assess_foundation
 from katarina.intelligence.self_evolution_lab import (
     evaluate_shadow_self_evolution,derive_shadow_research_policy,
 )
@@ -277,7 +279,9 @@ def observe(root,*,max_symbols=17,fetch_news=True):
                 "real_account_risk_not_connected":True,
                 "forward_trade_outcomes_not_verified":True,
                 "production_execution":False,
-                "live_execution_authorized":False,"orders_submitted":0,"symbols":{}}
+                "live_execution_authorized":False,"orders_submitted":0,"symbols":{},
+                 "broker_account_monitor":inspect_broker_account(
+                     mt5,observed_at_utc=now)}
         # Historical quote-only simulations NEVER count as independently
         # settled forward broker fills. Missing/corrupt files fail closed.
         try:
@@ -462,6 +466,16 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         report["final_actions"]=dict(Counter(
             x["action"] for x in report["symbols"].values()))
         report["observed_symbols"]=len(report["symbols"])
+        # An MT5 balance snapshot does not certify portfolio risk history.
+        # Recheck permission after market/news evaluation: if permission
+        # changes mid-cycle, refuse a success snapshot.
+        final_monitor=inspect_broker_account(
+            mt5,observed_at_utc=datetime.now(timezone.utc))
+        if not final_monitor["algo_trading_off"]:
+            raise RuntimeError("FAIL_CLOSED_TRADING_PERMISSION_CHANGED")
+        report["broker_account_monitor"]=final_monitor
+        report["foundation_readiness"]=assess_foundation(
+            report,expected_symbols=len(symbols))
         publish(root,report)
         return {"observed_symbols":report["observed_symbols"],
                 "market_states":report["market_states"],"final_actions":report["final_actions"],
