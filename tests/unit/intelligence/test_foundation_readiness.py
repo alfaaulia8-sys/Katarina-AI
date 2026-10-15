@@ -25,6 +25,8 @@ def report():
         "broker_account_monitor":{
             "status":"READONLY_ACCOUNT_OBSERVED_NO_RISK_CLEARANCE",
             "connected":True,"algo_trading_off":True,
+            "positions_read_success":True,
+            "positions_missing_protective_sl":0,
         },
         "unified_cognitive_cycle":{
             "source_snapshot_matches_active":True,
@@ -74,6 +76,14 @@ class FoundationReadinessTests(unittest.TestCase):
         o=assess_foundation(r,expected_symbols=2)
         self.assertIn("read_only_terminal_confirmed",o["engineering_failure_reasons"])
         self.assertIn("sensors_without_errors",o["engineering_failure_reasons"])
+
+    def test_unprotected_position_degrades_even_in_readonly(self):
+        r=report()
+        r["broker_account_monitor"]["positions_missing_protective_sl"]=1
+        o=assess_foundation(r,expected_symbols=2)
+        self.assertIn("no_unprotected_broker_positions",
+                      o["engineering_failure_reasons"])
+        self.assertFalse(o["live_execution_authorized"])
 
     def test_unverified_news_transport_degrades_not_fabricated_ready(self):
         r=report();r["news_feed_status"]["fed"]="ERROR"
