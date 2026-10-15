@@ -665,6 +665,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh workflow run katarina-branch-inventory.yml --ref main
+      - name: Dispatch controlled cleanup audit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run katarina-guarded-branch-cleanup.yml --ref main -f execute=false
       - name: Generate read-only branch inventory
         env:
           GITHUB_TOKEN: ${{ github.token }}
