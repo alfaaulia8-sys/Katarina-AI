@@ -266,3 +266,9 @@ Desktop.ini
 
 # VPS heartbeat snapshots are runtime telemetry, not current source state
 ops/vps/health/*/status.json
+
+# Standalone website development secrets and Cloudflare cache
+.dev.vars
+.dev.vars.*
+node_modules/
+.wrangler/
