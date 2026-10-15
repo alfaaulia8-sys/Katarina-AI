@@ -7,6 +7,15 @@ from scripts.governance.audit_repo_hygiene import audit, audit_tracked_files
 
 
 class RepoHygieneFilenameTests(unittest.TestCase):
+    def test_runtime_health_cannot_be_committed_as_current_source_state(self):
+        with TemporaryDirectory() as directory:
+            junk, empty = audit_tracked_files(
+                Path(directory),
+                ["ops/vps/health/primary/status.json", "ops/vps/README.md"],
+            )
+            self.assertEqual(junk, ["ops/vps/health/primary/status.json"])
+            self.assertEqual(empty, [])
+
     def test_cache_and_editor_junk_are_detected(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

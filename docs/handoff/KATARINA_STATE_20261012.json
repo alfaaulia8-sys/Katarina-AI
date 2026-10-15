@@ -28,7 +28,7 @@
   "tests_unit": 753,
   "tests_static": 96,
   "tests_integration": 22,
-  "handoff": "KATARINA_START_NEXT_CHAT.md",
+  "handoff": "docs/handoff/KATARINA_START_NEXT_CHAT_20261013.md",
   "instructions": "Only do explicitly requested work.",
   "current_working_checkout": "C:\\KatarinaDev\\ci-research-fresh-20261012",
   "previous_checkout": "C:\\KatarinaDev\\ci-research",

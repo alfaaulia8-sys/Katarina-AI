@@ -1696,7 +1696,7 @@ public static class KatInteractiveLauncher {
                 $repoName = [string]$cfg.repository
                 $branchName = [string]$cfg.branch
                 $primaryAgentId = [string]$cfg.agent_id
-                if ([string]::IsNullOrWhiteSpace($repoName)) { $repoName = "alfaaulia8-sys/Katarina-AI" }
+                if ([string]::IsNullOrWhiteSpace($repoName)) { $repoName = "alfaauliau-katarinaAI/Katarina-AI" }
                 if ([string]::IsNullOrWhiteSpace($branchName)) { $branchName = "main" }
                 if ([string]::IsNullOrWhiteSpace($primaryAgentId)) { $primaryAgentId = "katarina-vps-2012r2-01" }
 
@@ -1975,7 +1975,7 @@ public static class KatInteractiveLauncher {
                     installed_utc=[DateTime]::UtcNow.ToString("o")
                 }
                 if([string]::IsNullOrWhiteSpace([string]$guarded.agent_id)){$guarded.agent_id="katarina-vps-2012r2-01"}
-                if([string]::IsNullOrWhiteSpace([string]$guarded.repository)){$guarded.repository="alfaaulia8-sys/Katarina-AI"}
+                if([string]::IsNullOrWhiteSpace([string]$guarded.repository)){$guarded.repository="alfaauliau-katarinaAI/Katarina-AI"}
                 if([string]::IsNullOrWhiteSpace([string]$guarded.branch)){$guarded.branch="main"}
                 Write-JsonFile $primaryConfig $guarded
 

@@ -4,7 +4,7 @@
 
 | Item | Hasil yang diverifikasi |
 |---|---|
-| GitHub main | V1–V6 lengkap, checkpoint ada di KATARINA_START_NEXT_CHAT.md |
+| GitHub main | V1–V6 lengkap, checkpoint ada di docs/handoff/KATARINA_START_NEXT_CHAT_20261013.md |
 | File sampah GitHub | Tidak ada file tracked >1 MB maupun Python/node_modules cache |
 | Branch lama | 3 branch divergen berisi sejarah unik; **tidak dihapus** |
 | CI setelah checkpoint pertama | Body CI PASS |

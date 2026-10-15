@@ -263,3 +263,6 @@ Desktop.ini
 /scratch/
 /tmp/
 /temp/
+
+# VPS heartbeat snapshots are runtime telemetry, not current source state
+ops/vps/health/*/status.json
