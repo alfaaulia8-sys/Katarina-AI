@@ -643,3 +643,29 @@ jobs:
           path: ${{ runner.temp }}/management-evidence.json
           if-no-files-found: warn
           retention-days: 14
+
+  branch-inventory-on-consolidation:
+    name: Read-only branch consolidation inventory
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[branch-inventory]')
+    needs: body
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate read-only branch inventory
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/governance/audit_branch_inventory.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branch-consolidation-inventory-${{ github.run_id }}
+          path: build/validation/branch-inventory.json
+          if-no-files-found: error
+          retention-days: 30
