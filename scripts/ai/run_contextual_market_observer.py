@@ -42,6 +42,8 @@ from katarina.intelligence.market_article_context import collect_market_articles
 from katarina.intelligence.evidence_risk import assess_legacy_august_audit
 from katarina.intelligence.prospective_shadow_review import summarize as shadow_review
 from katarina.intelligence.broker_account_monitor import inspect_broker_account
+from katarina.intelligence.broker_history_coverage import inspect_history
+from katarina.intelligence.official_cache_provenance import inspect_cached_official_sources
 from katarina.intelligence.foundation_readiness import assess_foundation
 from katarina.intelligence.self_evolution_lab import (
     evaluate_shadow_self_evolution,derive_shadow_research_policy,
@@ -474,6 +476,12 @@ def observe(root,*,max_symbols=17,fetch_news=True):
         if not final_monitor["algo_trading_off"]:
             raise RuntimeError("FAIL_CLOSED_TRADING_PERMISSION_CHANGED")
         report["broker_account_monitor"]=final_monitor
+        # Broker financial history and source cache are descriptive only:
+        # no account risk authorization, no inferred macro bias.
+        report["broker_history_coverage"]=inspect_history(
+            mt5,as_of_utc=datetime.now(timezone.utc))
+        report["official_cache_integrity"]=inspect_cached_official_sources(
+            store.db,as_of_utc=datetime.now(timezone.utc))
         report["foundation_readiness"]=assess_foundation(
             report,expected_symbols=len(symbols))
         publish(root,report)
