@@ -30,3 +30,10 @@ All current development and verification should be performed in GitHub or reprod
 
 ## Completion rule
 Mark GitHub-only acceptance **PASS** only when the exact final commit has reproducible CI artifacts for tests, static audits and security checks. Keep non-GitHub runtime gates separately **PENDING**.
+
+## Verification update — 15 October 2026
+- PR [#73](https://github.com/alfaauliau-katarinaAI/Katarina-AI/pull/73) added five fail-closed unit regressions and was merged with squash commit `f0979f527e978dd542272c0bbda49f3e64efef57`.
+- The PR head `a726b467b0d89a8c7506fff745cba65052a4edd5` passed [Body CI run #869](https://github.com/alfaauliau-katarinaAI/Katarina-AI/actions/runs/38729781290), including unit/static/integration, governance, stage-framework and synthetic audits. CI artifact ID: `11969133636` (11 JSON evidence files).
+- CI functional audit reports `policy_pending=[14, 15, 16, 17, 38]` and `windows_pending=[35, 36, 38]`. These are deliberately **not** treated as release-ready.
+- No independently verified post-merge `main` workflow result has been captured in this update. Completion for exact final main SHA remains unverified.
+- GitHub Actions emitted Node.js 20 compatibility/deprecation warnings for checkout@v4, setup-python@v5 and upload-artifact@v4. These were warnings, not failures in PR #73. Dependency upgrades require their own validated change.
