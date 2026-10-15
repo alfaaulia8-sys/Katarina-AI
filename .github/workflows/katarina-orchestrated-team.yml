@@ -20,15 +20,15 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Validate and publish immutable schedule
         run: python scripts/ai/katarina_flow_v2.py scheduler --commit "${{ github.sha }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: katarina-v2-schedule
           path: build/team-v2/schedule.json
@@ -49,19 +49,19 @@ jobs:
       PYTHONPATH: src
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           name: katarina-v2-schedule
           path: build/team-v2
       - name: Perform scheduled ${{ matrix.role }} audit
         run: python scripts/ai/katarina_flow_v2.py role --role "${{ matrix.role }}" --commit "${{ github.sha }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: katarina-v2-${{ matrix.role }}
           path: build/team-v2/${{ matrix.role }}.json
@@ -77,13 +77,13 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: katarina-v2-*
           path: build/team-v2
@@ -109,7 +109,7 @@ jobs:
           python scripts/ai/katarina_flow_v2.py qa --commit "${{ github.sha }}" --regression "$OUTCOME"
       - name: Upload QA decision
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: katarina-v2-qa
           path: build/team-v2/qa.json
@@ -128,20 +128,20 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: katarina-v2-*
           path: build/team-v2
           merge-multiple: true
       - name: Independently verify QA receipt and produce manager verdict
         run: python scripts/ai/katarina_flow_v2.py manager --commit "${{ github.sha }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         if: always()
         with:
           name: katarina-v2-manager
@@ -158,13 +158,13 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: katarina-v2-*
           path: build/team-v2
@@ -191,7 +191,7 @@ jobs:
                   for blocker in d['reasons']:
                       out.write('- Still blocked: {}\n'.format(blocker))
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         if: always()
         with:
           name: katarina-v2-release-${{ github.run_id }}

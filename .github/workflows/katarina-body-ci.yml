@@ -3,17 +3,7 @@ name: KATARINA Body CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'website/hot-news.json'
-      - 'website/**'
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'website/hot-news.json'
-      - 'website/**'
   workflow_dispatch:
 
 permissions:
@@ -29,10 +19,12 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -137,7 +129,7 @@ jobs:
 
       - name: Upload GitHub CI evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: katarina-body-gate-${{ github.run_id }}
           path: |
@@ -163,15 +155,15 @@ jobs:
       contents: read
       models: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: External author A
         id: ai_a
-        uses: actions/ai-inference@v2.0.8
+        uses: actions/ai-inference@af6ad2c4ac4edf01884054fc3a6caa6d2567c13a # actions/ai-inference@v2.0.8
         with:
           model: openai/gpt-4.1-mini
           max-tokens: 250
@@ -186,7 +178,7 @@ jobs:
             evidence_references (list with cohorts.0.holdout).
       - name: External author B
         id: ai_b
-        uses: actions/ai-inference@v2.0.8
+        uses: actions/ai-inference@af6ad2c4ac4edf01884054fc3a6caa6d2567c13a # actions/ai-inference@v2.0.8
         with:
           model: meta/Meta-Llama-3.1-8B-Instruct
           max-tokens: 250
@@ -233,7 +225,7 @@ jobs:
           PY
       - name: Save safe model connection evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: external-ai-smoke-${{ github.run_id }}
           path: build/validation/github-external-ai-synthetic.json
@@ -250,10 +242,10 @@ jobs:
       PYTHONPATH: src
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Causal evolution unit regressions
@@ -282,7 +274,7 @@ jobs:
           PY
       - name: Save strategy research report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: strategy-discovery-${{ github.run_id }}
           path: build/discovery/
@@ -303,16 +295,16 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Run independent specialist
         run: python scripts/ai/katarina_team.py "${{ matrix.role }}" --commit "${{ github.sha }}"
       - name: Upload evidence receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: team-smoke-${{ matrix.role }}
           path: build/team/roles/${{ matrix.role }}.json
@@ -329,13 +321,13 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: team-smoke-*
           path: build/team/roles
@@ -361,7 +353,7 @@ jobs:
           python scripts/ai/katarina_team.py qa --commit "${{ github.sha }}" --regression "$STATE"
       - name: Upload QA receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: team-smoke-qa
           path: build/team/roles/qa.json
@@ -381,13 +373,13 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: team-smoke-*
           path: build/team/roles
@@ -405,7 +397,7 @@ jobs:
           PY
       - name: Upload manager report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: team-smoke-manager-${{ github.run_id }}
           path: build/team/roles/
@@ -422,14 +414,14 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python scripts/ai/katarina_flow_v2.py scheduler --commit "${{ github.sha }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: v2-smoke-schedule
           path: build/team-v2/schedule.json
@@ -452,18 +444,18 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           name: v2-smoke-schedule
           path: build/team-v2
       - run: python scripts/ai/katarina_flow_v2.py role --role "${{ matrix.role }}" --commit "${{ github.sha }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: v2-smoke-${{ matrix.role }}
           path: build/team-v2/${{ matrix.role }}.json
@@ -481,13 +473,13 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: v2-smoke-*
           path: build/team-v2
@@ -511,7 +503,7 @@ jobs:
           STATE=fail
           if [ "$RESULT" = success ]; then STATE=pass; fi
           python scripts/ai/katarina_flow_v2.py qa --commit "${{ github.sha }}" --regression "$STATE"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         if: always()
         with:
           name: v2-smoke-qa
@@ -533,19 +525,19 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: v2-smoke-*
           path: build/team-v2
           merge-multiple: true
       - run: python scripts/ai/katarina_flow_v2.py manager --commit "${{ github.sha }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         if: always()
         with:
           name: v2-smoke-manager
@@ -564,13 +556,13 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: v2-smoke-*
           path: build/team-v2
@@ -588,7 +580,7 @@ jobs:
           assert d['orders_sent']==0
           print('PASS_TEAM_V2_ALL_ROLES_AUDITED_RELEASE_STILL_BLOCKED')
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         if: always()
         with:
           name: v2-smoke-release-${{ github.run_id }}
@@ -607,10 +599,10 @@ jobs:
       PYTHONPATH: src:.
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install bounded Python dependencies
@@ -636,7 +628,7 @@ jobs:
                       item["status"],item["specialists_verified"],item["orders_sent"]))
                   fp.write("**Trading release:** {} (deliberate block).\n".format(item["release_status"]))
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         if: always()
         with:
           name: management-pr-evidence-${{ github.run_id }}
@@ -652,28 +644,18 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      actions: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Trigger standalone inventory with GitHub token
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow run katarina-branch-inventory.yml --ref main
-      - name: Dispatch controlled cleanup audit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run katarina-guarded-branch-cleanup.yml --ref main -f execute=false
       - name: Generate read-only branch inventory
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/governance/audit_branch_inventory.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: branch-consolidation-inventory-${{ github.run_id }}
           path: build/validation/branch-inventory.json

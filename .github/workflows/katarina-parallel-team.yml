@@ -25,16 +25,16 @@ jobs:
       PYTHONPATH: src
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Execute independent ${{ matrix.role }} review
         run: python scripts/ai/katarina_team.py "${{ matrix.role }}" --commit "${{ github.sha }}"
       - name: Publish signed role receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: katarina-team-${{ matrix.role }}
           path: build/team/roles/${{ matrix.role }}.json
@@ -51,14 +51,14 @@ jobs:
       PYTHONPATH: src
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Download all four independently written receipts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: katarina-team-*
           path: build/team/roles
@@ -84,7 +84,7 @@ jobs:
           python scripts/ai/katarina_team.py qa --commit "${{ github.sha }}" --regression "$STATUS"
       - name: Publish independent QA receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: katarina-team-qa
           path: build/team/roles/qa.json
@@ -104,14 +104,14 @@ jobs:
       PYTHONPATH: src
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Download all specialist and QA evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact@v4
         with:
           pattern: katarina-team-*
           path: build/team/roles
@@ -142,7 +142,7 @@ jobs:
           PY
       - name: Upload reproducible manager decisions
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
         with:
           name: katarina-team-manager-${{ github.run_id }}
           path: build/team/roles/
