@@ -336,6 +336,16 @@ jobs:
         run: |
           python -c "import zipfile; zipfile.ZipFile('dist/Katarina-PC-Test.zip').extractall('build/PC package test')"
           python "build/PC package test/Katarina-PC-Test/katarina_pc.py" setup
+      - name: Exercise Windows double-click setup and test launchers
+        if: runner.os == 'Windows'
+        shell: cmd
+        env:
+          KATARINA_NO_PAUSE: '1'
+          KATARINA_STATE_DIR: ${{ github.workspace }}\build\Windows launcher state
+        run: |
+          call "build\PC package test\Katarina-PC-Test\SETUP_KATARINA.bat"
+          if errorlevel 1 exit /b %ERRORLEVEL%
+          call "build\PC package test\Katarina-PC-Test\START_KATARINA.bat"
       - name: Run packaged acceptance and preserve local reports
         shell: bash
         run: python "build/PC package test/Katarina-PC-Test/katarina_pc.py" test --state-dir "build/PC acceptance state"
