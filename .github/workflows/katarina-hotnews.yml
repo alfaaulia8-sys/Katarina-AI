@@ -4,7 +4,7 @@ on:
     - cron: '41 */6 * * *'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: katarina-market-news
   cancel-in-progress: false
@@ -13,22 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
-          persist-credentials: true
-      - uses: actions/setup-python@v5
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Refresh headline snapshot only when fresh trusted RSS changes
         run: python scripts/update_hot_news.py --output website/hot-news.json
-      - name: Commit only actual headline changes (no trade orders or private files)
-        run: |
-          if git diff --quiet -- website/hot-news.json && git ls-files --error-unmatch website/hot-news.json >/dev/null 2>&1; then
-            echo 'No verified market headline changes.'
-            exit 0
-          fi
-          git config user.name 'katarina-research-bot'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add website/hot-news.json
-          git commit -m 'news: refresh sourced market headlines'
-          git push
+      - name: Store sourced news for reviewed publication
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact@v4
+        with:
+          name: sourced-market-news-${{ github.run_id }}
+          path: website/hot-news.json
+          if-no-files-found: error
+          retention-days: 7

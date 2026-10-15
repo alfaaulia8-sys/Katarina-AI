@@ -1,49 +1,52 @@
+# All source changes remain owned by the repository owner.
+* @alfaauliau-katarinaAI
+
 # Governance-critical files: human project owner review required.
-/KATARINA_CONSTITUTION.md @alfaaulia-katarina
-/config/constitution.json @alfaaulia-katarina
+/KATARINA_CONSTITUTION.md @alfaauliau-katarinaAI
+/config/constitution.json @alfaauliau-katarinaAI
 
-/docs/KATARINA_FINAL_WORKFLOW.md @alfaaulia-katarina
-/config/execution_workflow.json @alfaaulia-katarina
-/docs/KATARINA_TRANSPORT_PROTOCOL.md @alfaaulia-katarina
-/config/transport_policy.json @alfaaulia-katarina
-/docs/KATARINA_EXECUTION_RELIABILITY.md @alfaaulia-katarina
-/config/execution_reliability.json @alfaaulia-katarina
+/docs/KATARINA_FINAL_WORKFLOW.md @alfaauliau-katarinaAI
+/config/execution_workflow.json @alfaauliau-katarinaAI
+/docs/KATARINA_TRANSPORT_PROTOCOL.md @alfaauliau-katarinaAI
+/config/transport_policy.json @alfaauliau-katarinaAI
+/docs/KATARINA_EXECUTION_RELIABILITY.md @alfaauliau-katarinaAI
+/config/execution_reliability.json @alfaauliau-katarinaAI
 
-/docs/architecture/ @alfaaulia-katarina
-/docs/adr/ @alfaaulia-katarina
-/config/repository_architecture.json @alfaaulia-katarina
+/docs/architecture/ @alfaauliau-katarinaAI
+/docs/adr/ @alfaauliau-katarinaAI
+/config/repository_architecture.json @alfaauliau-katarinaAI
 
-/protocol/ @alfaaulia-katarina
-/config/protocol_schema.json @alfaaulia-katarina
-/docs/reviews/STAGE_04_PROTOCOL_AUDIT.md @alfaaulia-katarina
+/protocol/ @alfaauliau-katarinaAI
+/config/protocol_schema.json @alfaauliau-katarinaAI
+/docs/reviews/STAGE_04_PROTOCOL_AUDIT.md @alfaauliau-katarinaAI
 
-/config/core_orchestrator.json @alfaaulia-katarina
-/docs/reviews/STAGE_05_CORE_AUDIT.md @alfaaulia-katarina
+/config/core_orchestrator.json @alfaauliau-katarinaAI
+/docs/reviews/STAGE_05_CORE_AUDIT.md @alfaauliau-katarinaAI
 
-/config/mt5_bridge_draft.json @alfaaulia-katarina
-/mt5/ @alfaaulia-katarina
-/scripts/mt5/compile_stage06.ps1 @alfaaulia-katarina
-/config/windows_compatibility_stage06.json @alfaaulia-katarina
-/docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md @alfaaulia-katarina
-/scripts/mt5/check_stage06_host.ps1 @alfaaulia-katarina
-/tests/static/test_stage06_windows_compatibility.py @alfaaulia-katarina
-/scripts/mt5/verify_stage06_modern_windows.ps1 @alfaaulia-katarina
-/scripts/mt5/collect_stage06_runtime_evidence.ps1 @alfaaulia-katarina
-/docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md @alfaaulia-katarina
-/scripts/mt5/audit_stage06_final.ps1 @alfaaulia-katarina
-/scripts/mt5/complete_stage06.ps1 @alfaaulia-katarina
-/docs/operations/STAGE_06_FINAL_CLEARANCE.md @alfaaulia-katarina
-/config/mt5_python_communication_draft.json @alfaaulia-katarina
-/src/katarina/ports/transport.py @alfaaulia-katarina
-/src/katarina/adapters/transport/ @alfaaulia-katarina
-/tests/unit/transport/ @alfaaulia-katarina
-/docs/reviews/STAGE_07_COMMUNICATION_RESEARCH.md @alfaaulia-katarina
-/docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md @alfaaulia-katarina
-/docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md @alfaaulia-katarina
-/docs/adr/0009-stage07-live-communication-topology.md @alfaaulia-katarina
-/config/vps_remote_lab_policy.json @alfaaulia-katarina
-/scripts/vps/ @alfaaulia-katarina
-/ops/vps/ @alfaaulia-katarina
-/docs/operations/KATARINA_VPS_REMOTE_LAB.md @alfaaulia-katarina
-/.github/workflows/katarina-vps-lab.yml @alfaaulia-katarina
-/tests/static/test_vps_remote_lab.py @alfaaulia-katarina
+/config/mt5_bridge_draft.json @alfaauliau-katarinaAI
+/mt5/ @alfaauliau-katarinaAI
+/scripts/mt5/compile_stage06.ps1 @alfaauliau-katarinaAI
+/config/windows_compatibility_stage06.json @alfaauliau-katarinaAI
+/docs/operations/STAGE_06_WINDOWS_COMPATIBILITY.md @alfaauliau-katarinaAI
+/scripts/mt5/check_stage06_host.ps1 @alfaauliau-katarinaAI
+/tests/static/test_stage06_windows_compatibility.py @alfaauliau-katarinaAI
+/scripts/mt5/verify_stage06_modern_windows.ps1 @alfaauliau-katarinaAI
+/scripts/mt5/collect_stage06_runtime_evidence.ps1 @alfaauliau-katarinaAI
+/docs/reviews/STAGE_06_GITHUB_REFERENCE_AUDIT.md @alfaauliau-katarinaAI
+/scripts/mt5/audit_stage06_final.ps1 @alfaauliau-katarinaAI
+/scripts/mt5/complete_stage06.ps1 @alfaauliau-katarinaAI
+/docs/operations/STAGE_06_FINAL_CLEARANCE.md @alfaauliau-katarinaAI
+/config/mt5_python_communication_draft.json @alfaauliau-katarinaAI
+/src/katarina/ports/transport.py @alfaauliau-katarinaAI
+/src/katarina/adapters/transport/ @alfaauliau-katarinaAI
+/tests/unit/transport/ @alfaauliau-katarinaAI
+/docs/reviews/STAGE_07_COMMUNICATION_RESEARCH.md @alfaauliau-katarinaAI
+/docs/reviews/STAGE_07_INITIAL_IMPLEMENTATION_CHECK.md @alfaauliau-katarinaAI
+/docs/architecture/KATARINA_MT5_PYTHON_COMMUNICATION_DRAFT.md @alfaauliau-katarinaAI
+/docs/adr/0009-stage07-live-communication-topology.md @alfaauliau-katarinaAI
+/config/vps_remote_lab_policy.json @alfaauliau-katarinaAI
+/scripts/vps/ @alfaauliau-katarinaAI
+/ops/vps/ @alfaauliau-katarinaAI
+/docs/operations/KATARINA_VPS_REMOTE_LAB.md @alfaauliau-katarinaAI
+/.github/workflows/katarina-vps-lab.yml @alfaauliau-katarinaAI
+/tests/static/test_vps_remote_lab.py @alfaauliau-katarinaAI

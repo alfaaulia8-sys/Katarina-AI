@@ -45,12 +45,12 @@ class TestActionRequestFanout(unittest.TestCase):
             found.add(path.name)
         self.assertEqual(set(AUTOMATIC).intersection(found),set(AUTOMATIC))
 
-    def test_primary_ci_has_concurrency_cancel_and_avoids_docs_noise(self):
+    def test_required_primary_ci_cannot_skip_documentation_pull_requests(self):
         source=(WORKFLOWS/"katarina-body-ci.yml").read_text()
         self.assertIn("cancel-in-progress: true",source)
-        self.assertIn("paths-ignore:",source)
-        self.assertIn("'docs/**'",source)
-        self.assertIn("'website/hot-news.json'",source)
+        # Required branch checks must report a result for every PR.
+        self.assertNotIn("paths-ignore:",source)
+        self.assertIn("  pull_request:",source)
 
     def test_management_evidence_gate_is_manual_read_only_and_hosted(self):
         path=WORKFLOWS/"katarina-management-evidence-gate.yml"

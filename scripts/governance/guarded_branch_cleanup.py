@@ -18,6 +18,57 @@ def eligible(branch, comparison, open_heads):
     )
 
 
+def collection(api, path):
+    """Read a complete snapshot before any deletion changes pagination."""
+    result = []
+    for page in range(1, 21):
+        rows = api(f"{path}&per_page=100&page={page}")
+        result.extend(rows)
+        if len(rows) < 100:
+            return result
+    raise RuntimeError("pagination_limit_reached_cleanup_blocked")
+
+
+def active_pr_branches(api, repo):
+    refs = set()
+    for pr in collection(api, "/pulls?state=open"):
+        for side in ("head", "base"):
+            branch = pr.get(side) or {}
+            if (branch.get("repo") or {}).get("full_name") == repo:
+                refs.add(branch["ref"])
+    return refs
+
+
+def cleanup(api, repo, *, execute=False, max_deletes=10):
+    if not 1 <= max_deletes <= 10:
+        raise ValueError("max_deletes_must_be_between_1_and_10")
+    open_refs = active_pr_branches(api, repo)
+    branches = collection(api, "/branches?")
+    report = {"dry_run": not execute, "candidates": [], "deleted": [],
+              "max_deletes": max_deletes}
+    for branch in branches:
+        name = branch["name"]
+        if name == "main":
+            continue
+        encoded = quote(name, safe="")
+        comparison = api("/compare/main..." + encoded)
+        if not eligible(branch, comparison, open_refs):
+            continue
+        report["candidates"].append(name)
+        if not execute or len(report["deleted"]) >= max_deletes:
+            continue
+        fresh = api("/branches/" + encoded)
+        fresh_compare = api("/compare/main..." + encoded)
+        # PRs may be opened while the run is in progress. Protect both ends.
+        fresh_refs = active_pr_branches(api, repo)
+        if (fresh["commit"]["sha"] != branch["commit"]["sha"]
+                or not eligible(fresh, fresh_compare, fresh_refs)):
+            continue
+        api("/git/refs/heads/" + quote(name, safe="/"), "DELETE")
+        report["deleted"].append(name)
+    return report
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--execute", action="store_true")
@@ -33,41 +84,8 @@ def main():
         with urlopen(request, timeout=25) as response:
             return json.load(response) if method == "GET" else response.status
 
-    open_heads = set()
-    for page in range(1, 21):
-        prs = api(f"/pulls?state=open&per_page=100&page={page}")
-        open_heads.update(x["head"]["ref"] for x in prs
-                          if x.get("head", {}).get("repo", {}).get("full_name") == repo)
-        if len(prs) < 100:
-            break
-    candidates = []
-    deleted = []
-    for page in range(1, 21):
-        branches = api(f"/branches?per_page=100&page={page}")
-        for branch in branches:
-            name = branch["name"]
-            if name == "main":
-                continue
-            encoded = quote(name, safe="")
-            comparison = api("/compare/main..." + encoded)
-            if not eligible(branch, comparison, open_heads):
-                continue
-            candidates.append(name)
-            if not args.execute or len(deleted) >= args.max_deletes:
-                continue
-            # Recheck the branch SHA, protection and ancestry immediately before delete.
-            fresh_branch = api("/branches/" + encoded)
-            fresh_compare = api("/compare/main..." + encoded)
-            if (fresh_branch["commit"]["sha"] != branch["commit"]["sha"]
-                    or not eligible(fresh_branch, fresh_compare, open_heads)):
-                continue
-            api("/git/refs/heads/" + quote(name, safe="/"), "DELETE")
-            deleted.append(name)
-        if len(branches) < 100:
-            break
+    report = cleanup(api, repo, execute=args.execute, max_deletes=args.max_deletes)
     os.makedirs("build/validation", exist_ok=True)
-    report = {"dry_run": not args.execute, "candidates": candidates,
-              "deleted": deleted, "max_deletes": args.max_deletes}
     with open("build/validation/branch-cleanup.json", "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
     print("PASS_GUARDED_BRANCH_CLEANUP", json.dumps(report))
