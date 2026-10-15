@@ -70,6 +70,10 @@ def assess_foundation(report: dict, *, expected_symbols: int = 17) -> dict:
             "READONLY_ACCOUNT_OBSERVED_NO_RISK_CLEARANCE"
         ),
         "canonical_utc_market_clock": clock_ok,
+        "no_unprotected_broker_positions": (
+            monitor.get("positions_read_success") is True and
+            monitor.get("positions_missing_protective_sl") == 0
+        ),
         "expected_symbols_observed": (
             report.get("observed_symbols") == expected_symbols and
             len(entries) == expected_symbols and
