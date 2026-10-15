@@ -1,24 +1,40 @@
 {
   "schema": 1,
   "kind": "attributed-headline-feed",
-  "updatedAt": "2026-10-15T01:14:47Z",
+  "updatedAt": "2026-10-15T07:21:27Z",
   "scope": "market-moving headlines from dated publisher RSS (not independently fact-checked claims)",
   "status": "source-headlines",
   "items": [
     {
+      "title": "UK economy grew 0.1% in August, beating expectations",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/15/uk-gdp-august-2026-economy.html",
+      "publishedAt": "2026-10-15T07:15:28Z",
+      "category": "Pasar Global",
+      "language": "en"
+    },
+    {
       "title": "SK Hynix shares plunge 10% amid Asia tech rout as Fed rate hike fears, AI funding worries mount",
       "source": "CNBC Dunia",
       "url": "https://www.cnbc.com/2026/10/15/sk-hynix-samsung-softbank-stocks-asia-tech-rout-ai-funding-worries.html",
-      "publishedAt": "2026-10-15T01:07:01Z",
+      "publishedAt": "2026-10-15T06:42:57Z",
       "category": "Suku Bunga / Inflasi",
       "language": "en"
     },
     {
-      "title": "Jim Cramer explains why even strong bank earnings couldn't save their stocks",
-      "source": "CNBC Utama",
-      "url": "https://www.cnbc.com/2026/10/14/cramer-big-bank-earnings-stock-reaction.html",
-      "publishedAt": "2026-10-14T22:48:06Z",
+      "title": "India’s IDBI Bank falls 7% as government announces $5.5 billion stake sale to Canada's Fairfax",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/15/india-canada-fairfax-idbi-fdi.html",
+      "publishedAt": "2026-10-15T06:12:04Z",
       "category": "Pasar Global",
+      "language": "en"
+    },
+    {
+      "title": "Oil falls as investors assess Mideast tensions, International Energy Agency's report",
+      "source": "CNBC Dunia",
+      "url": "https://www.cnbc.com/2026/10/15/oil-prices-today-brent-wti.html",
+      "publishedAt": "2026-10-15T04:09:18Z",
+      "category": "Energi / Geopolitik",
       "language": "en"
     },
     {
@@ -83,22 +99,6 @@
       "url": "https://www.cnbc.com/2026/10/14/anthropic-mythos-bank-of-america-hiring-cost.html",
       "publishedAt": "2026-10-14T20:06:28Z",
       "category": "Pasar Global",
-      "language": "en"
-    },
-    {
-      "title": "10-year Treasury yield dips as traders look ahead to Thursday economic reports",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/us-treasury-yields-cpi-inflation-report.html",
-      "publishedAt": "2026-10-14T20:03:22Z",
-      "category": "Suku Bunga / Inflasi",
-      "language": "en"
-    },
-    {
-      "title": "Container ship sinks in Strait of Hormuz as Iran steps up attacks",
-      "source": "CNBC Dunia",
-      "url": "https://www.cnbc.com/2026/10/14/container-ship-sinks-strait-hormuz-as-iran-war-attacks.html",
-      "publishedAt": "2026-10-14T19:22:00Z",
-      "category": "Energi / Geopolitik",
       "language": "en"
     }
   ]
