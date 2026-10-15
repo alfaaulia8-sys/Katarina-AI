@@ -652,6 +652,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -659,6 +660,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Trigger standalone inventory with GitHub token
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run katarina-branch-inventory.yml --ref main
       - name: Generate read-only branch inventory
         env:
           GITHUB_TOKEN: ${{ github.token }}
