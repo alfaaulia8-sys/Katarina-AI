@@ -6,47 +6,34 @@ import os
 import platform
 import subprocess
 import sys
-import venv
-
 ROOT=Path(__file__).resolve().parent
-ENV=ROOT/'.venv-pc'
-
-
-def environment_python():
-    return ENV/('Scripts/python.exe' if os.name=='nt' else 'bin/python')
+sys.path.insert(0,str(ROOT))
+from scripts.pc.environment_recovery import EnvironmentManager, RecoveryBlocked
 
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description='Katarina PC test kit — LIVE OFF')
-    parser.add_argument('action',choices=['setup','test','doctor','observe'],nargs='?',default='test')
+    parser.add_argument('action',choices=['setup','repair','repair-status','test','doctor','observe'],nargs='?',default='test')
+    parser.add_argument('--no-auto-repair',action='store_true',help='Block instead of installing a replacement environment')
     parser.add_argument('--mt5',action='store_true',help='Install optional native Windows MT5 package during setup')
     parser.add_argument('--state-dir')
     parser.add_argument('--connection-config')
     args=parser.parse_args(argv)
     if sys.version_info[:2]!=(3,12):
         parser.error('Python 3.12 diperlukan. Install Python 3.12 64-bit lalu ulangi.')
-    python=environment_python()
-    if args.action=='setup':
-        if args.mt5 and (platform.system()!='Windows' or sys.maxsize<=2**32):
-            parser.error('Native MT5 requires Windows 64-bit; offline/cloud client needs no MT5 package.')
-        if not python.is_file():
-            print('Membuat environment privat .venv-pc ...',flush=True)
-            venv.EnvBuilder(with_pip=True).create(ENV)
-        subprocess.run([str(python),'-c',
-                        'import sys; assert sys.version_info[:2] == (3, 12), "Existing .venv-pc requires Python 3.12"'],check=True)
-        subprocess.run([str(python),'-m','pip','install','--disable-pip-version-check',
-                        '-r',str(ROOT/'requirements-pc.txt')],check=True,cwd=ROOT)
-        if args.mt5:
-            version=json.loads((ROOT/'config/runtime_dependencies_v1.json').read_text())['packages']['MetaTrader5']
-            subprocess.run([str(python),'-m','pip','install','--disable-pip-version-check',
-                            'MetaTrader5=='+version],check=True,cwd=ROOT)
-        print('SETUP_OK. Jalankan START_KATARINA.bat atau python katarina_pc.py test. LIVE OFF.',flush=True)
+    if args.mt5 and args.action not in ('setup','repair'):
+        parser.error('--mt5 hanya untuk setup/repair')
+    manager=EnvironmentManager(ROOT)
+    if args.action=='repair-status':
+        print(json.dumps(manager.status(),sort_keys=True),flush=True)
         return 0
-    if args.mt5:
-        parser.error('--mt5 hanya untuk setup')
-    if not python.is_file():
-        print('SETUP_REQUIRED: jalankan SETUP_KATARINA.bat atau python katarina_pc.py setup.',file=sys.stderr)
-        return 2
+    print('Memeriksa environment privat Katarina; pemulihan terbatas, LIVE OFF ...',flush=True)
+    python=manager.ensure(mt5=args.mt5,explicit=args.action in ('setup','repair'),
+                          force=args.action=='repair',
+                          auto=not args.no_auto_repair and args.action!='doctor')
+    if args.action in ('setup','repair'):
+        print('SETUP_OK. Environment lulus uji sintetis. Jalankan START_KATARINA.bat. LIVE OFF.',flush=True)
+        return 0
     # Disable accidental inheritance of a different checkout's Python import path.
     env=dict(os.environ)
     env.pop('PYTHONHOME',None)
@@ -69,6 +56,9 @@ def main(argv=None):
 if __name__=='__main__':
     try:
         raise SystemExit(main())
-    except (OSError,subprocess.CalledProcessError):
+    except RecoveryBlocked as exc:
+        print("PC_RECOVERY_BLOCKED:",str(exc),"Environment lama dan memori dipertahankan.",file=sys.stderr)
+        raise SystemExit(2)
+    except (OSError,ValueError,subprocess.CalledProcessError):
         print('PC_SETUP_OR_LAUNCH_FAILED: lihat pesan pemasangan; tidak ada trading/unggahan otomatis.',file=sys.stderr)
         raise SystemExit(2)

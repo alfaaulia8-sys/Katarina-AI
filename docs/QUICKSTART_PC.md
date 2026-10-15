@@ -13,7 +13,7 @@ offline. Tidak ada program yang dipasang sebagai startup/service/background.
 2. Pasang Python 3.12 64-bit jika belum ada, lalu klik **SETUP_KATARINA.bat** sekali.
    Tunggu `SETUP_OK`. Klik **START_KATARINA.bat** untuk uji.
 
-Setup membuat `.venv-pc` di folder tersebut dan memasang dependensi ke sana,
+Setup memilih environment privat tervalidasi di `.katarina-envs` dan memasang dependensi ke sana,
 bukan ke Python global. Tidak memasang Git/winget, tidak mengambil credential,
 tidak mengubah izin MT5, tidak membuat supervisor, dan tidak mengunggah laporan.
 START_KATARINA lama yang membuka supervisor VPS telah diganti menjadi uji PC.
@@ -82,3 +82,12 @@ Paket ZIP hanya source dan manifest checksum `SOURCE_REVISION.json`. Python,
 dependensi, MT5, sertifikat, private state dan credential tidak dibundel. Manifest
 memberi jejak commit/file, bukan tanda tangan distribusi independen. Untuk bukti
 CI terbaru lihat workflow pada commit sumber, bukan hanya nama paket.
+
+## Jika dependensi rusak
+
+START memeriksa environment dan mencoba pengganti yang diuji terlebih dahulu.
+Environment lama dan memori tidak dihapus. Lihat
+[pemulihan environment](architecture/KATARINA_ENVIRONMENT_RECOVERY.md).
+`py -3.12 katarina_pc.py repair-status` melihat status; `repair` mencoba perbaikan
+eksplisit. `test --no-auto-repair` menonaktifkan pemasangan pengganti otomatis.
+Python 3.12 tetap perlu disiapkan pemilik; live selalu OFF.

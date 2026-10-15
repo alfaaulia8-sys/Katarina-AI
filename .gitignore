@@ -276,3 +276,6 @@ node_modules/
 # Private PC environment and generated downloadable test kit
 .venv-pc/
 /dist/
+
+# Guarded private environment candidates, pointers and recovery audit
+.katarina-envs/

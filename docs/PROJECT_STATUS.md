@@ -8,7 +8,7 @@ perubahan yang diuji; status ini tidak mengklaim deployment VPS telah sinkron.
 |---|---|---|
 | Branch | Hanya `main`; 42 branch awal selain main sudah terhapus | Branch kerja sementara boleh muncul untuk PR berikutnya |
 | Integrasi | 34 branch terverifikasi setara/identik; delapan direview dan diselesaikan | Varian eksekusi eksperimen tetap terpisah dari engine produksi |
-| Pengujian | 1.270 unit, 113 static (4 skipped), 98 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
+| Pengujian | 1.270 unit, 113 static (4 skipped), 110 integration lulus | Tidak membuktikan kesiapan live atau profitabilitas |
 | Otak unified | 1 otak dengan 17 modul canonical; persepsi, kognisi dan Neuro-Link berbagi runtime | Memori privat dan proses VPS belum diperiksa |
 | Trading | Engine produksi, Risk Governor, konfigurasi risk dan MT5 tidak berubah | Live execution false; 0 order pada verifikasi offline |
 | Keamanan | Main wajib PR/body CI, up-to-date dan conversation resolution; admin tunduk aturan | Bukan audit penetrasi menyeluruh |
@@ -121,3 +121,9 @@ bukan supervisor VPS background. SETUP_KATARINA membuat environment privat.
 Laporan HTML/JSON lokal memisahkan hasil demo dari observasi broker dan tidak
 menganggap fallback offline sebagai kelulusan broker. Lihat [panduan PC](QUICKSTART_PC.md).
 Paket source-only bermanifest commit disediakan artifact CI; live OFF.
+
+## Pemulihan environment privat — 16 Oktober 2026
+
+Startup memeriksa dependensi dan menguji kandidat pengganti sebelum memilihnya.
+Environment lama, strategi, Risk Governor dan memori tetap dipertahankan; tidak
+ada perubahan source atau izin trading. Panduan: [pemulihan environment](architecture/KATARINA_ENVIRONMENT_RECOVERY.md). Live OFF.
