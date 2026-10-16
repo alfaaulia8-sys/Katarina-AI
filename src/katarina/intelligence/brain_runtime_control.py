@@ -48,6 +48,8 @@ class BrainRuntimeControl:
 
     def __init__(self, memory: MemoryStore):
         self.memory = memory
+        from katarina.intelligence.owner_research_review import OwnerResearchReview
+        self.research_review = OwnerResearchReview(memory)
         self.capital = CapitalCompoundingEngine()
         self.recovery = ManagementRecoveryCoordinator()
         self.health = HealthSafetyEngine()
@@ -122,5 +124,6 @@ class BrainRuntimeControl:
             "recovery_positions":len(self.recovery.snapshot_state()),
             "health_requires_fresh_observations":True,
             "delivery":"DISABLED", "pending_delivery_queue":0,
+            "research_review_scope":"VERSION_BOUND_LOCAL_OWNER_REVIEW_NO_ACTIVATION",
             "orders_submitted":0, "live_execution_authorized":False,
         }

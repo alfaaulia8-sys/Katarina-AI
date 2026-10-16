@@ -84,6 +84,27 @@ def run(root, *, model_config=None):
         finally:
             context.db.close()
         report['checks'].append('PASS: independent Risk Governor veto and disabled delivery')
+        from datetime import datetime, timezone, timedelta
+        from scripts.pc.run_owner_research import research_runtime
+        with research_runtime(work/'roundtrip') as review:
+            now = datetime.now(timezone.utc)
+            review.register('fixture', 'v1', dict(hypothesis='Synthetic test',
+                entry_reason='Fixture reason', invalidation='Fixture invalidation',
+                exit_plan='Fixture exit', source_sha256='a'*64), now=now)
+            trial = review.record_trial('fixture', 'v1', trial_id='fixture-run',
+                evidence_kind='SYNTHETIC', dataset_sha256='b'*64,
+                evaluation=dict(result='PASS', costs='Fixture costs only',
+                    limitations='Not broker evidence', policy_sha256='c'*64), now=now)
+            try:
+                review.owner_review('fixture-run', trial['review_sha256'],
+                    decision='ACCEPT_FOR_CONTROLLED_TEST_REVIEW', reason='Must block', now=now)
+            except ValueError:
+                pass
+            else:
+                raise RuntimeError('synthetic_trial_was_accepted')
+            weekly = review.weekly_report(as_of=now+timedelta(seconds=1))
+            require(weekly['trial_count'] == 1 and not weekly['strategy_activated'])
+        report['checks'].append('PASS: same-brain research review, weekly evidence separation and synthetic promotion refusal')
         if model_config:
             with assistant_runtime(work/'real-model', JSONDialogModel(ModelConfig.load(model_config))) as turn:
                 real = turn('Balas dengan satu kalimat: ini uji koneksi, live trading OFF.')

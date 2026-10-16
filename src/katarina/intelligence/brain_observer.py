@@ -397,11 +397,13 @@ class BrainObserver:
         report["final_actions"]=dict(Counter(
             x["action"] for x in report["symbols"].values()))
         report["observed_symbols"]=len(report["symbols"])
+        report["received_market_data_symbols"]=len(latest_quotes)
         report.update(brain.inspect_foundation(
             mt5, report, expected_symbols=len(symbols)))
         report["brain_hands_feedback"] = brain.acknowledge_observation(mt5, report)
         brain.publish_observation(root,report)
         return {"observed_symbols":report["observed_symbols"],
+                "received_market_data_symbols":report["received_market_data_symbols"],
                 "market_states":report["market_states"],"final_actions":report["final_actions"],
                 "full_articles":len(articles),"clock_hours":offset,
                 "journal":report["quote_journal"]["counts"],

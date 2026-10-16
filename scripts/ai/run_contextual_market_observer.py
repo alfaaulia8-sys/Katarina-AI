@@ -24,7 +24,11 @@ def main():
     parser.add_argument("--doctor", action="store_true", help="Local preflight only; no broker connection")
     parser.add_argument("--max-symbols",type=int, help="Explicit observation budget (1..17); default adapts to host")
     parser.add_argument("--no-fetch",action="store_true")
+    parser.add_argument("--require-market-data", action="store_true",
+                        help="Exit blocked when no usable bound sensor data was received")
     args=parser.parse_args()
+    if args.require_market_data and (args.doctor or args.offline_research):
+        parser.error('--require-market-data requires a sensor observation pass')
     if args.max_symbols is not None and not 1<=args.max_symbols<=17:
         parser.error("max 17 broker markets")
     try:
@@ -53,6 +57,7 @@ def main():
                          max_symbols=symbols,fetch_news=not args.no_fetch)
     result["host_environment"]=host
     print("KATARINA_CONTEXTUAL_ONE_PASS",json.dumps(result,sort_keys=True),flush=True)
+    return 2 if args.require_market_data and not result['connection']['receiving_market_data'] else 0
 
 
 if __name__=="__main__":
