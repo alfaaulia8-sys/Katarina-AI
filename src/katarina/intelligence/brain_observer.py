@@ -14,6 +14,7 @@ from hashlib import sha256
 from pathlib import Path
 from collections import Counter
 import json
+import os
 import sys
 
 from katarina.intelligence.public_context import utc as parse_utc
@@ -224,6 +225,10 @@ class BrainObserver:
         # NEVER convert it into an official monetary-policy trade signal.
         media_analysis,media_status=collect_market_articles(
             store.db,datetime.now(timezone.utc)) if fetch_news else ([],("disabled",))
+        from katarina.intelligence.research_news_collection import collect as collect_research_news, event_study
+        research_news=collect_research_news(store.db,datetime.now(timezone.utc)) if fetch_news and os.environ.get('KATARINA_EXTENDED_NEWS_RESEARCH')=='1' else {'status':'DISABLED','new_documents':[]}
+        for document in research_news['new_documents']:
+            brain.memory.append_operational_event('research_news_body_v1',document,event_id='research-news:'+document['id'])
         now=datetime.now(timezone.utc)
         catalog=mt5.symbols_get()
         if catalog is None:raise RuntimeError("BROKER_CATALOG_NOT_FOUND")
@@ -403,6 +408,9 @@ class BrainObserver:
         report["received_market_data_symbols"]=len(latest_quotes)
         from katarina.intelligence.observational_associations import observe_associations
         report['observational_associations'] = observe_associations(store.db, latest_quotes, now)
+        report['research_news']=research_news
+        report['news_market_event_study']=event_study(store.db,now)
+        brain.memory.append_operational_event('news_market_event_study_v1',report['news_market_event_study'])
         association = report['observational_associations']
         # One brain and the existing shared memory; no extra worker or model.
         brain.memory.append_operational_event('observational_associations_v1', association,
