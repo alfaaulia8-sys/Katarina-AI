@@ -234,7 +234,8 @@ def collect_market_articles(db,now):
             story=next((x for x in stories if x["url"]==url),None)
             if story is None or not market_headline_relevant(story["title"]):
                 continue
-            output.append(interpret_story(story,body.split("\n"),f))
+            # A revised RSS timestamp must not relabel an older cached body.
+            output.append(interpret_story({**story, 'published_utc':published},body.split("\n"),f))
         except (ValueError,TypeError,KeyError):
             continue
     return output,tuple(status)
