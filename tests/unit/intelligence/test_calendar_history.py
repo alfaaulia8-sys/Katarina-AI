@@ -9,6 +9,13 @@ def rows(*times):return np.array([(int(t.timestamp()),100,102,99,101,10) for t i
 
 
 class CalendarHistoryTests(unittest.TestCase):
+    def test_out_of_month_boundary_rows_cannot_duplicate_the_next_chunk(self):
+        def fetch(symbol,tf,start,end):
+            return rows(at(1),at(2))
+        data,coverage=load_calendar_history(fetch,'A',5,300,at(1),at(3),now=at(3))
+        self.assertEqual(len(data),2)
+        self.assertEqual([m['returned_closed_bars'] for m in coverage['months']],[1,1])
+
     def test_monthly_requests_and_incomplete_final_bar_hidden(self):
         calls=[]
         def fetch(symbol,tf,start,end):

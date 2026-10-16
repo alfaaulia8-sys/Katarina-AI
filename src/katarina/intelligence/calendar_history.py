@@ -20,7 +20,8 @@ def load_calendar_history(fetch, symbol, timeframe, seconds, start, end, *, now=
         count=0
         if rows is not None and len(rows):
             rows=np.asarray(rows)
-            valid=((rows['time']>=start.timestamp()) & (rows['time']+seconds<=cutoff.timestamp())
+            valid=((rows['time']>=cursor.timestamp()) & (rows['time']<stop.timestamp())
+                   & (rows['time']+seconds<=cutoff.timestamp())
                    & (rows['open']>0) & (rows['close']>0)
                    & (rows['high']>=np.maximum(rows['open'],rows['close']))
                    & (rows['low']<=np.minimum(rows['open'],rows['close']))
