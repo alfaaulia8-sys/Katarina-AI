@@ -26,7 +26,12 @@ def main():
     parser.add_argument("--no-fetch",action="store_true")
     parser.add_argument("--require-market-data", action="store_true",
                         help="Exit blocked when no usable bound sensor data was received")
+    parser.add_argument('--continuous', action='store_true', help='One persistent foreground brain; LIVE OFF')
+    parser.add_argument('--interval-seconds', type=int, default=60)
+    parser.add_argument('--max-cycles', type=int, help='Optional bounded observation soak')
     args=parser.parse_args()
+    if args.continuous and (args.doctor or args.offline_research):
+        parser.error('--continuous requires a configured sensor')
     if args.require_market_data and (args.doctor or args.offline_research):
         parser.error('--require-market-data requires a sensor observation pass')
     if args.max_symbols is not None and not 1<=args.max_symbols<=17:
@@ -53,6 +58,16 @@ def main():
         config=ConnectionConfig.load(config_path) if config_path else None
     except ValueError as exc:
         parser.error(str(exc))
+    if args.continuous:
+        from katarina.intelligence.continuous_observation import run_continuous
+        try:
+            result = run_continuous(root, config=config, max_symbols=symbols,
+                interval_seconds=args.interval_seconds, max_cycles=args.max_cycles)
+        except (ValueError, RuntimeError, OSError):
+            print('CONTINUOUS_BLOCKED_LIVE_OFF', file=sys.stderr, flush=True)
+            return 2
+        print(json.dumps(result, sort_keys=True), flush=True)
+        return 0
     result=run_connected(UnifiedKatarinaBrain,root,config=config,
                          max_symbols=symbols,fetch_news=not args.no_fetch)
     result["host_environment"]=host
