@@ -52,6 +52,62 @@ class AutomaticConnectionTests(unittest.TestCase):
         with self.assertRaises(ConnectionUnavailable): BoundLocalBroker(native,config()).initialize()
         self.assertEqual(native.orders,0)
 
+    def test_failure_diagnostics_identify_binding_issue_without_values(self):
+        for change, expected in [
+                ('active', 'TERMINAL_TRADING_MUST_BE_OFF'),
+                ('account', 'ACCOUNT_LOGIN_MISMATCH'),
+                ('server', 'ACCOUNT_SERVER_MISMATCH')]:
+            native = AccountBroker(active=change == 'active')
+            if change == 'account':
+                native.account_info = lambda: SimpleNamespace(login=999, server='Test-Demo')
+            if change == 'server':
+                native.account_info = lambda: SimpleNamespace(login=123, server='private-server')
+            with tempfile.TemporaryDirectory() as root:
+                result = run_connected(UnifiedKatarinaBrain, root,
+                    config=config(priority=('local',), attempts=1),
+                    factories={'local': lambda c: BoundLocalBroker(native, c)})
+            connection = result['connection']
+            self.assertFalse(connection['receiving_market_data'])
+            self.assertEqual(connection['attempts'][0]['reason'], expected)
+            self.assertNotIn('private-server', json.dumps(result))
+
+    def test_missing_mt5_dependency_is_explicit_and_does_not_fake_data(self):
+        def missing(c):
+            raise ImportError('private path must not be exposed')
+        with tempfile.TemporaryDirectory() as root:
+            result = run_connected(UnifiedKatarinaBrain, root,
+                config=config(priority=('local',), attempts=1), factories={'local':missing})
+        self.assertEqual(result['connection']['attempts'][0]['reason'], 'LOCAL_MT5_PACKAGE_UNAVAILABLE')
+        self.assertFalse(result['connection']['receiving_market_data'])
+        self.assertNotIn('private path', json.dumps(result))
+
+    def test_connected_terminal_with_failed_sensors_is_not_receiving_data(self):
+        native = AccountBroker()
+        native.copy_rates_from_pos = lambda *a: None
+        with tempfile.TemporaryDirectory() as root:
+            result = run_connected(UnifiedKatarinaBrain, root,
+                config=config(priority=('local',)), fetch_news=False,
+                factories={'local':lambda c:BoundLocalBroker(native,c)})
+        self.assertEqual(result['connection']['route'], 'local')
+        self.assertGreater(result['observed_symbols'], 0)
+        self.assertEqual(result['received_market_data_symbols'], 0)
+        self.assertFalse(result['connection']['receiving_market_data'])
+
+    def test_strict_sensor_cli_blocks_offline_fallback(self):
+        import os
+        import subprocess
+        import sys
+        env = dict(os.environ)
+        env.pop('KATARINA_CONNECTION_CONFIG', None)
+        root = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as tmp:
+            result = subprocess.run([sys.executable,
+                str(root/'scripts/ai/run_contextual_market_observer.py'),
+                '--state-dir', tmp, '--no-fetch', '--require-market-data'],
+                env=env, capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('"receiving_market_data": false', result.stdout)
+
     def test_local_preferred_only_one_route_used(self):
         native=AccountBroker()
         with tempfile.TemporaryDirectory() as root:

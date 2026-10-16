@@ -12,6 +12,22 @@ METHODS = frozenset(('terminal_info', 'account_info', 'positions_get', 'orders_g
     'copy_ticks_range', 'copy_rates_from_pos', 'history_deals_get'))
 CONSTANTS = ('TIMEFRAME_M5', 'TIMEFRAME_M15', 'TIMEFRAME_H1', 'COPY_TICKS_INFO',
              'ACCOUNT_TRADE_MODE_DEMO')
+DIAGNOSTIC_CODES = frozenset((
+    'TERMINAL_UNAVAILABLE', 'TERMINAL_NOT_CONNECTED', 'TERMINAL_TRADING_MUST_BE_OFF',
+    'ACCOUNT_UNAVAILABLE', 'ACCOUNT_LOGIN_MISMATCH', 'ACCOUNT_SERVER_MISMATCH',
+    'IDENTITY_CHECK_FAILED', 'LOCAL_CONNECT_FAILED', 'LOCAL_BINDING_UNAVAILABLE',
+    'LOCAL_NOT_CONNECTED', 'LOCAL_READ_FAILED', 'LOCAL_FEEDBACK_REJECTED',
+    'CLOUD_NOT_CONFIGURED', 'LOCAL_MT5_PACKAGE_UNAVAILABLE',
+))
+
+
+def diagnostic_code(error, route):
+    if isinstance(error, ImportError):
+        return 'LOCAL_MT5_PACKAGE_UNAVAILABLE' if route == 'local' else 'DEPENDENCY_UNAVAILABLE'
+    # Arbitrary server/exception messages can contain credentials. Only exact
+    # static codes produced by our own validation may cross this boundary.
+    code = str(error)
+    return code if code in DIAGNOSTIC_CODES else 'CONNECTION_UNAVAILABLE'
 
 
 class ConnectionUnavailable(RuntimeError):
@@ -60,13 +76,18 @@ class ConnectionConfig:
 def verify_identity(broker, config):
     try:
         terminal, account = broker.terminal_info(), broker.account_info()
-        if (terminal is None or account is None
-                or getattr(terminal,'connected',None) is not True
-                or getattr(terminal,'trade_allowed',None) is not False
-                or type(getattr(account,'login',None)) is not int
-                or account.login != config.expected_login
-                or getattr(account,'server',None) != config.expected_server):
-            raise ConnectionUnavailable('ACCOUNT_OR_READONLY_BINDING_REJECTED')
+        checks = (
+            (terminal is None, 'TERMINAL_UNAVAILABLE'),
+            (getattr(terminal, 'connected', None) is not True, 'TERMINAL_NOT_CONNECTED'),
+            (getattr(terminal, 'trade_allowed', None) is not False, 'TERMINAL_TRADING_MUST_BE_OFF'),
+            (account is None, 'ACCOUNT_UNAVAILABLE'),
+            (type(getattr(account, 'login', None)) is not int
+             or getattr(account, 'login', None) != config.expected_login, 'ACCOUNT_LOGIN_MISMATCH'),
+            (getattr(account, 'server', None) != config.expected_server, 'ACCOUNT_SERVER_MISMATCH'),
+        )
+        for failed, code in checks:
+            if failed:
+                raise ConnectionUnavailable(code)
     except ConnectionUnavailable:
         raise
     except Exception:
@@ -92,6 +113,10 @@ class BoundLocalBroker:
             self.connection_failed = False
             self._ready = True
             return True
+        except ConnectionUnavailable:
+            self.connection_failed = True
+            self.shutdown()
+            raise
         except Exception:
             self.connection_failed = True
             self.shutdown()
@@ -157,6 +182,7 @@ def run_connected(brain_type, root, *, config=None, max_symbols=17, fetch_news=T
     if config is None:
         result = brain_type.research_once(root)
         result['connection'] = {'route':'offline','reason':'ACCOUNT_BINDING_NOT_CONFIGURED',
+                                'receiving_market_data':False,
                                 'live_authorized':False}
         return result
     factories = factories if factories is not None else {'local':local_factory,'cloud':cloud_factory}
@@ -168,10 +194,12 @@ def run_connected(brain_type, root, *, config=None, max_symbols=17, fetch_news=T
                 broker = factories[route](config)
                 result = brain_type.observe_once(root,broker=broker,max_symbols=max_symbols,fetch_news=fetch_news)
                 result['connection'] = {'route':route,'attempt':attempt+1,
+                    'prior_faults':faults,
+                    'receiving_market_data':result.get('received_market_data_symbols', 0) > 0,
                     'identity_verified':True,'live_authorized':False}
                 return result
-            except (ConnectionUnavailable, ImportError):
-                faults.append({'route':route,'attempt':attempt+1,'reason':'CONNECTION_UNAVAILABLE'})
+            except (ConnectionUnavailable, ImportError) as exc:
+                faults.append({'route':route,'attempt':attempt+1,'reason':diagnostic_code(exc, route)})
             except RuntimeError:
                 if broker is None or not getattr(broker,'connection_failed',False):
                     raise
@@ -181,5 +209,6 @@ def run_connected(brain_type, root, *, config=None, max_symbols=17, fetch_news=T
                     broker.shutdown()
     result = brain_type.research_once(root)
     result['connection'] = {'route':'offline','reason':'NO_VALID_CONFIGURED_CONNECTION',
+                            'receiving_market_data':False,
                             'attempts':faults,'live_authorized':False}
     return result

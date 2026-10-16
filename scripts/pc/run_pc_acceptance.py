@@ -73,6 +73,9 @@ def run(root,*,mode='demo',connection_config=None):
                                  max_symbols=host['budget']['max_symbols'],fetch_news=False)
             route=result['connection']['route']
             report['route']=route
+            # run_connected returns only static redacted diagnostic codes, never
+            # exception messages/account values. Preserve them in the PC report.
+            report['connection']=result['connection']
             if route not in ('local','cloud'):
                 raise RuntimeError('BROKER_UNAVAILABLE_OFFLINE_ONLY')
             observed=json.loads((work/'latest.json').read_text())
