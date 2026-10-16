@@ -72,3 +72,9 @@ Status ACCUMULATING_OBSERVED_REACTIONS berarti pengamatan tersimpan, bukan
 strategi teruji, prediksi atau pembelajaran bobot LLM. Berita lama yang baru
 diambil mengukur respons setelah pengambilan lokal; dampak saat rilis tidak
 dapat disimpulkan darinya.
+
+Permintaan publik menyertakan Accept untuk RSS/XML/HTML. Ini diperlukan oleh
+RBA: probe VPS dengan header tersebut berhasil mengambil feed dan artikel;
+permintaan lama tanpa Accept mendapat 403. Sumber gagal HTTP/UNAVAILABLE
+dicoba ulang setelah 5 menit, sumber berhasil tetap 30 menit; satu sumber
+per siklus dan batas ukuran/HTTPS tetap berlaku.

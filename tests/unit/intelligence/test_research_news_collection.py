@@ -122,3 +122,22 @@ class ResearchNewsTests(unittest.TestCase):
         self.assertIn('RATES_INFLATION',[r['topic'] for r in result['topic_groups']])
         self.assertAlmostEqual(result['groups'][0]['mean_mid_return_bps'],100)
         self.assertEqual(event_study(self.db,self.now)['stored_reactions'],1)
+
+    def test_failed_sources_retry_after_five_minutes_not_every_cycle(self):
+        from urllib.error import HTTPError
+        def failure(url,host):raise HTTPError(url,403,'Forbidden',None,None)
+        for _ in SOURCES:collect(self.db,self.now,exchange=failure)
+        self.assertEqual(collect(self.db,self.now+timedelta(seconds=299),exchange=failure)['status'],'CACHED')
+        result=collect(self.db,self.now+timedelta(seconds=301),exchange=lambda *a:b'<rss/>')
+        self.assertEqual(result['status'],'NO_NEW_ARTICLE')
+
+    def test_public_http_request_declares_supported_feed_and_article_formats(self):
+        from unittest.mock import patch,MagicMock
+        from katarina.intelligence.research_news_collection import fetch
+        response=MagicMock();response.__enter__.return_value.read.return_value=b'<rss/>'
+        opener=MagicMock();opener.open.return_value=response
+        with patch('katarina.intelligence.research_news_collection.build_opener',return_value=opener):
+            self.assertEqual(fetch('https://www.rba.gov.au/rss/a.xml','www.rba.gov.au'),b'<rss/>')
+        request=opener.open.call_args.args[0]
+        self.assertIn('application/rss+xml',request.get_header('Accept'))
+        self.assertIn('text/html',request.get_header('Accept'))
