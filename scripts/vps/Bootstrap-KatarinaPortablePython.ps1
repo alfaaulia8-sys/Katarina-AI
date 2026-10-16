@@ -2,6 +2,9 @@ param(
     [Parameter(Mandatory=$false)]
     [string]$WorkspaceRoot = "C:\KatarinaDev",
 
+    [Parameter(Mandatory=$false)]
+    [string]$SourceRoot = "",
+
     [Parameter(Mandatory=$true)]
     [string]$OutputDir
 )
@@ -26,7 +29,8 @@ $Version = "3.12.10"
 $RuntimeRoot = Join-Path $WorkspaceRoot "runtime"
 $PythonRoot = Join-Path $RuntimeRoot "python"
 $DownloadRoot = Join-Path $RuntimeRoot "downloads"
-$SourceRoot = Join-Path $WorkspaceRoot "workspace"
+if (!$SourceRoot) { $SourceRoot = Join-Path $WorkspaceRoot "workspace" }
+$SourceRoot = [IO.Path]::GetFullPath($SourceRoot)
 
 New-Item -ItemType Directory -Force -Path $OutputDir,$RuntimeRoot,$DownloadRoot | Out-Null
 
@@ -124,6 +128,18 @@ if (-not $HaveImportSite) {
 
 $Updated | Set-Content -LiteralPath $Pth -Encoding ASCII
 New-Item -ItemType Directory -Force -Path (Join-Path $PythonRoot "Lib\site-packages") | Out-Null
+
+# The installer root and approved Git checkout can differ. Embedded Python
+# ignores PYTHONPATH, including in nested -c probes, so bind the checkout explicitly.
+$Binder = Join-Path $SourceRoot "scripts\pc\bind_portable_runtime.py"
+if (!(Test-Path -LiteralPath $Binder -PathType Leaf)) { throw "Approved source runtime binder missing." }
+$BindOut = Join-Path $OutputDir "source_binding.txt"
+$BindErr = Join-Path $OutputDir "source_binding_error.txt"
+$QuotedBinder = '"'+$Binder+'"'
+$QuotedRuntime = '"'+$PythonRoot+'"'
+$QuotedSource = '"'+$SourceRoot+'"'
+$Exit = Invoke-NativeChecked -FilePath $PythonExe -Arguments @($QuotedBinder,'--runtime-root',$QuotedRuntime,'--source-root',$QuotedSource) -StdoutPath $BindOut -StderrPath $BindErr
+if ($Exit -ne 0) { throw "Portable Python source binding failed." }
 
 $VersionStdout = Join-Path $OutputDir "python_version.txt"
 $VersionStderr = Join-Path $OutputDir "python_version_error.txt"
