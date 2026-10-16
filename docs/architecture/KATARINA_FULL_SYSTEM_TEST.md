@@ -78,7 +78,8 @@ python scripts/pc/run_system_acceptance.py --state-dir PRIVATE_TEST_STATE --obse
 ```
 
 Runner menjalankan seluruh unit, static dan integration suite di subprocess
-bertimeout, mencatat SHA dan kebersihan source serta log privat per grup. Database
+bertimeout (default 300 detik per suite; host lambat dapat memakai
+`--timeout-seconds 900`, maksimum 1800), mencatat SHA dan kebersihan source serta log privat per grup. Database
 uji berada di direktori uji tersendiri; runner hanya membaca snapshot observer
 aktif dan tidak membuka database/lock otak. Snapshot dibatasi umur, ukuran dan
 penanda keamanan. Snapshot segar bukan bukti identitas proses atau source: cocokkan
@@ -103,3 +104,13 @@ berubah menjadi klaim koneksi model terverifikasi.
    Rekonsiliasi fill, slippage, spread, swap, intervensi, disconnect dan recovery.
 6. Review mingguan; aktivasi real trading adalah gerbang tersendiri. Modal Owner
    siap rugi bukan alasan melepas proteksi atau mempercepat kelulusan bukti.
+
+## Runtime portable dan checkout kanonis
+
+Jika runtime dipasang di `C:\KatarinaDev` sementara source kanonis berada di
+`C:\KatarinaGitBridge`, berikan `-SourceRoot` pada bootstrap. Root instalasi bukan
+root source. Binder mengutamakan checkout kanonis dalam `python312._pth`, menyimpan
+backup berdasarkan hash dan mempertahankan stdlib/site packages serta path lama.
+Perubahan file path saja bukan bukti impor: jalankan probe proses Python baru dan
+pastikan modul yang terimpor berada di checkout yang disetujui. Hentikan otak dan
+selesaikan test aktif sebelum mengganti pengikatan runtime.

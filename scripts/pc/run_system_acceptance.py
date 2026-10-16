@@ -94,8 +94,11 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--state-dir')
     parser.add_argument('--observer-state',help='Read only the active broker snapshot; never acquire its DB or lock')
+    parser.add_argument('--timeout-seconds',type=int,default=300,help='Per-suite timeout, 30..1800 seconds')
     args=parser.parse_args()
-    report,path=run(state_directory(args.state_dir),observer_state=args.observer_state)
+    if not 30 <= args.timeout_seconds <= 1800:
+        parser.error('timeout-seconds must be 30..1800')
+    report,path=run(state_directory(args.state_dir),observer_state=args.observer_state,timeout=args.timeout_seconds)
     print(report['status']);print('Report:',path)
     return 0 if report['software_pass'] else 2
 
