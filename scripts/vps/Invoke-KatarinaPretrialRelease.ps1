@@ -22,18 +22,27 @@ function Git-Value([string[]]$Arguments) {
   return (($out | ForEach-Object {[string]$_}) -join "`n").Trim()
 }
 function Run-Bounded([string]$Exe,[string]$Arguments,[int]$Timeout=30) {
-  $dir=Join-Path ([IO.Path]::GetTempPath()) ('katarina-pretrial-'+[Guid]::NewGuid().ToString('N'))
-  New-Item -ItemType Directory -Path $dir -ErrorAction Stop | Out-Null
+  $psi=New-Object System.Diagnostics.ProcessStartInfo
+  $psi.FileName=$Exe;$psi.Arguments=$Arguments;$psi.WorkingDirectory=$SourceRoot
+  $psi.UseShellExecute=$false;$psi.CreateNoWindow=$true
+  $psi.RedirectStandardOutput=$true;$psi.RedirectStandardError=$true
+  $p=New-Object System.Diagnostics.Process
+  $p.StartInfo=$psi
   try {
-    $out=Join-Path $dir 'stdout.txt';$err=Join-Path $dir 'stderr.txt'
-    $p=Start-Process -FilePath $Exe -ArgumentList $Arguments -WorkingDirectory $SourceRoot -PassThru -NoNewWindow -RedirectStandardOutput $out -RedirectStandardError $err
+    $null=$p.Start()
+    # Drain both streams concurrently so a full stderr pipe cannot deadlock.
+    # Use the owned .NET Process directly: legacy Start-Process can lose ExitCode.
+    $stdout=$p.StandardOutput.ReadToEndAsync()
+    $stderr=$p.StandardError.ReadToEndAsync()
     if(!$p.WaitForExit($Timeout*1000)) {
       $p.Kill();$p.WaitForExit();throw 'OWN_CHILD_TIMEOUT'
     }
     $p.WaitForExit()
     if($p.ExitCode -ne 0){throw 'PYTHON_COMMAND_FAILED'}
-    return (Get-Content -LiteralPath $out -Raw)
-  } finally {Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue}
+    $text=$stdout.Result
+    if($text.Length -gt 1048576){throw 'CHILD_OUTPUT_TOO_LARGE'}
+    return $text
+  } finally {$p.Dispose()}
 }
 try {
   if(!(Test-Path -LiteralPath (Join-Path $SourceRoot '.git'))){throw 'SOURCE_REPOSITORY_REQUIRED'}
@@ -91,7 +100,7 @@ try {
   $report.ok=$true;$report.status=($Mode.ToUpperInvariant()+'_COMPLETE_LIVE_OFF')
 } catch {
   # Exceptions can contain paths, account IDs, endpoints or tokens. Return codes only.
-  $safe=@('GIT_OPERATION_FAILED','OWN_CHILD_TIMEOUT','PYTHON_COMMAND_FAILED','SOURCE_REPOSITORY_REQUIRED','SOURCE_ORIGIN_REJECTED','SOURCE_DIRTY_NO_AUTOSTASH_OR_RESET','BRAIN_RUNNING_SYNC_REFUSED','MAIN_BRANCH_REQUIRED','MAIN_MOVED_REVALIDATE_COMMIT','SOURCE_COMMIT_MISMATCH','BRAIN_RUNNING_PRETRIAL_REFUSED','PYTHON312_REQUIRED','NUMPY_DEPENDENCY_REQUIRED','PRETRIAL_NOT_SAFE_PASS')
+  $safe=@('CHILD_OUTPUT_TOO_LARGE','GIT_OPERATION_FAILED','OWN_CHILD_TIMEOUT','PYTHON_COMMAND_FAILED','SOURCE_REPOSITORY_REQUIRED','SOURCE_ORIGIN_REJECTED','SOURCE_DIRTY_NO_AUTOSTASH_OR_RESET','BRAIN_RUNNING_SYNC_REFUSED','MAIN_BRANCH_REQUIRED','MAIN_MOVED_REVALIDATE_COMMIT','SOURCE_COMMIT_MISMATCH','BRAIN_RUNNING_PRETRIAL_REFUSED','PYTHON312_REQUIRED','NUMPY_DEPENDENCY_REQUIRED','PRETRIAL_NOT_SAFE_PASS')
   $message=$_.Exception.Message
   $report.reason=$(if($message -in $safe){$message}else{'PREFLIGHT_OPERATION_FAILED'})
   $report.error_type=$_.Exception.GetType().Name
