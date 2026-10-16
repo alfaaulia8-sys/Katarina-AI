@@ -28,6 +28,7 @@ from katarina.intelligence.broker_scan_universe import resolve_broker_symbols
 from katarina.intelligence.research_signal_ablation import eligible_for_research
 from katarina.intelligence.semantic_setup_truth import CausalSetupValidator
 from katarina.intelligence.structural_entry_quality import StructuralEntryQuality
+from katarina.intelligence.calendar_history import load_calendar_history
 from katarina.intelligence.intraday_scalp_research import vector_prefilter,fill_next_open,Candidate
 
 DEST=OUT/"intraday_brain_integrated_v6"
@@ -41,6 +42,8 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--symbols",default="")
     ap.add_argument("--bars",type=int,default=90000)
+    ap.add_argument('--start-date',help='Inclusive UTC calendar date; monthly history instead of last-N bars')
+    ap.add_argument('--end-date',help='Exclusive UTC calendar date; current partial day is capped at now')
     ap.add_argument("--allow-scalp-research",action="store_true")
     ap.add_argument("--minimum-signal-score",type=float,default=0.0,
                     help="Research-only causal candidate floor; default preserves V6")
@@ -49,6 +52,14 @@ def main():
     ap.add_argument("--output-dir",type=Path,default=None,
                     help="Isolated research output: avoid overwriting earlier receipts")
     args=ap.parse_args()
+    if bool(args.start_date)!=bool(args.end_date):
+        ap.error('start-date and end-date must be supplied together')
+    start=end=None
+    if args.start_date:
+        start=datetime.strptime(args.start_date,'%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end=datetime.strptime(args.end_date,'%Y-%m-%d').replace(tzinfo=timezone.utc)
+        if not 0<(end-start).days<=730 or start>=datetime.now(timezone.utc):
+            ap.error('historical range must be 1..730 days and start in the past')
     if not math.isfinite(args.minimum_signal_score) or not 0<=args.minimum_signal_score<=1:
         raise ValueError("invalid_research_signal_floor")
     if args.output_dir is not None:
@@ -88,8 +99,12 @@ def main():
         if info is None:raise RuntimeError("symbol_info_missing_"+sym)
         point=float(info.point)
         frame={}
+        history_coverage={}
         for k,(tf,sec,count) in TIMEFRAME.items():
-            a=get_bars(sym,tf,min(count,args.bars) if k=="M5" else count)
+            if start is not None:
+                a,history_coverage[k]=load_calendar_history(mt5.copy_rates_range,sym,tf,sec,start,end)
+            else:
+                a=get_bars(sym,tf,min(count,args.bars) if k=="M5" else count)
             if a is None:raise RuntimeError("missing_"+k+"_"+sym)
             frame[k]=a
         picks,scan=vector_prefilter(sym,frame["M5"],frame["M15"],frame["H1"],point)
@@ -131,7 +146,7 @@ def main():
              tick_size=float(info.trade_tick_size),
              tick_loss_value=float(info.trade_tick_value_loss),
              stop_level=float(info.trade_stops_level))
-        per.append(dict(symbol=sym,candles=len(frame["M5"]),
+        per.append(dict(symbol=sym,candles=len(frame["M5"]),calendar_history_coverage=history_coverage,
              first_timestamp=int(clocks["M5"][0]),
              last_timestamp=int(clocks["M5"][-1]),
              fast_scan=scan,pass_counts=dict(local)))
@@ -175,6 +190,8 @@ def main():
         combined=scalp=None
     full=dict(
         kind="KATARINA_V6_CAUSAL_BRAIN_GATED_FULL_M5_PORTFOLIO",
+        requested_start_date=args.start_date,requested_end_date_exclusive=args.end_date,
+        calendar_history_mode=start is not None,
         experimental_minimum_signal_score=args.minimum_signal_score,
         experimental_research_side=args.research_side,
         experimental_research_gate_only=True,
