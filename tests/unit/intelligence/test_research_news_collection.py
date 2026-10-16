@@ -7,6 +7,19 @@ from katarina.intelligence.observational_associations import observe_association
 
 
 class ResearchNewsTests(unittest.TestCase):
+    def test_existing_body_cache_preserves_actual_first_known_time(self):
+        self.db.execute('CREATE TABLE contextual_market_articles(url,published,body,fetched,sha256)')
+        published=(self.now-timedelta(hours=2)).isoformat()
+        known=(self.now-timedelta(hours=1)).isoformat()
+        body='actual cached article body'
+        self.db.execute('INSERT INTO contextual_market_articles VALUES(?,?,?,?,?)',
+            ('https://www.cnbc.com/a',published,body,known,sha256(body.encode()).hexdigest()))
+        result=collect(self.db,self.now,exchange=lambda *a:b'<rss/>')
+        self.assertEqual(result['new_documents'][0]['known_utc'],known)
+        self.assertEqual(result['new_documents'][0]['source'],'cnbc')
+        result=collect(self.db,self.now,exchange=lambda *a:b'<rss/>')
+        self.assertEqual(result['new_documents'],[])
+
     def setUp(self):
         self.db=sqlite3.connect(':memory:')
         self.now=datetime.now(timezone.utc)

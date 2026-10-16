@@ -68,11 +68,33 @@ def collect(db, now, *, exchange=None):
     db.execute('''CREATE TABLE IF NOT EXISTS research_news_documents(
         id TEXT PRIMARY KEY,source TEXT NOT NULL,url TEXT NOT NULL,published TEXT NOT NULL,
         known_utc TEXT NOT NULL,body TEXT NOT NULL,body_sha256 TEXT NOT NULL,summary TEXT NOT NULL)''')
+    new=[]
+    tables={r[0] for r in db.execute('SELECT name FROM sqlite_master WHERE type=?',('table',))}
+    cached=[]
+    if 'contextual_market_articles' in tables:
+        cached.extend(('cnbc',url,published,known,body,digest) for url,published,body,known,digest in db.execute(
+            'SELECT url,published,body,fetched,sha256 FROM contextual_market_articles ORDER BY fetched DESC LIMIT 24'))
+    if 'contextual_official_articles' in tables:
+        cached.extend(db.execute('SELECT source,url,published,observed,body,body_digest FROM contextual_official_articles ORDER BY observed DESC LIMIT 24'))
+    for source,url,published,known,body,digest in cached:
+        try:
+            p,k=datetime.fromisoformat(published),datetime.fromisoformat(known)
+            if p.tzinfo is None or k.tzinfo is None or not p<=k<=now or sha256(body.encode()).hexdigest()!=digest:continue
+            ident=sha256(url.encode()).hexdigest()
+            summary=' '.join(body.split()[:120])
+            with db:
+                db.execute('INSERT OR IGNORE INTO research_news_documents VALUES(?,?,?,?,?,?,?,?)',
+                    (ident,source,url,published,known,body,digest,summary))
+                inserted=db.execute('SELECT changes()').fetchone()[0]
+            if inserted:new.append(dict(id=ident,source=source,url=url,published_utc=published,
+                known_utc=known,body_sha256=digest,extractive_summary=summary,
+                semantic_interpretation_verified=False))
+        except (ValueError,TypeError,AttributeError):continue
     candidates=[]
     for source in SOURCES:
         row=db.execute('SELECT attempted_epoch FROM research_news_fetches WHERE source=?',(source,)).fetchone()
         if row is None or now.timestamp()-row[0]>=1800:candidates.append((row[0] if row else 0,source))
-    new=[];status='CACHED';source=None
+    status='CACHED';source=None
     if candidates:
         _,source=min(candidates)
         url,host=SOURCES[source]

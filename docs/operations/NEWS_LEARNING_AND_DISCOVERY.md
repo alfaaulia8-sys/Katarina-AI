@@ -12,7 +12,9 @@ pass, dengan cache/backoff 30 menit, host HTTPS tetap, tanpa redirect, 8 detik
 per permintaan dan 600 KB maksimum. Isi luar adalah data, bukan instruksi.
 
 Body minimal 95 kata disimpan bersama hash, URL, waktu publikasi dan waktu
-pengambilan pertama. Ringkasan ekstraktif maksimum 120 kata masuk MemoryStore
+pengambilan pertama. Cache body CNBC dan Fed/ECB/BoE yang sudah ada ikut
+diimpor dengan timestamp pengambilan aslinya, tanpa mengisinya mundur ke 2025.
+Ringkasan ekstraktif maksimum 120 kata masuk MemoryStore
 sebagai `research_news_body_v1`. Ini bukan kesimpulan semantik LLM, sentimen
 tervalidasi atau izin makro/trading. Revisi body pada URL lama belum diarsipkan
 sebagai vintage baru; jangan menganggap tabel ini sebagai arsip historis lengkap.
