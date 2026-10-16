@@ -17,6 +17,10 @@ sys.path.insert(0,str(ROOT/'src'))
 from katarina.host import state_directory
 
 GROUPS = ('unit', 'static', 'integration')
+# Embedded Windows Python ignores PYTHONPATH because of its ._pth isolation.
+# Put the approved checkout paths in each child explicitly, before discovery.
+TEST_BOOTSTRAP = ('import sys;sys.path[:0]=' + repr([str(ROOT/'src'),str(ROOT)])
+                  + ';import unittest;unittest.main(module=None)')
 
 
 def snapshot_check(root):
@@ -72,7 +76,7 @@ def run(root, *, observer_state=None, timeout=300):
         log = work/(group+'.log')
         try:
             with log.open('w',encoding='utf-8') as stream:
-                result = subprocess.run([sys.executable,'-m','unittest','discover','-s','tests/'+group,'-v'],
+                result = subprocess.run([sys.executable,'-c',TEST_BOOTSTRAP,'discover','-s','tests/'+group,'-v'],
                     cwd=ROOT,env=env,stdout=stream,stderr=subprocess.STDOUT,timeout=timeout)
             status = 'PASS' if result.returncode == 0 else 'FAIL'
         except (OSError,subprocess.TimeoutExpired):

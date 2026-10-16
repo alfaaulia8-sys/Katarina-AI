@@ -33,3 +33,13 @@ class SystemAcceptanceReportTests(unittest.TestCase):
             self.assertEqual(snapshot_check(tmp)['status'],'BLOCKED')
             (Path(tmp)/'continuous-status.json').write_text('not json')
             self.assertEqual(snapshot_check(tmp)['status'],'BLOCKED')
+
+    def test_child_bootstrap_works_when_python_ignores_pythonpath(self):
+        import subprocess
+        import sys
+        from scripts.pc.run_system_acceptance import TEST_BOOTSTRAP, ROOT
+        result = subprocess.run([sys.executable,'-I','-c',TEST_BOOTSTRAP,'discover',
+            '-s','tests/integration','-p','test_brain_owned_workflow.py','-q'],
+            cwd=ROOT,capture_output=True,text=True,timeout=30)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertIn('OK',result.stderr)
