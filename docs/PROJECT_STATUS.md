@@ -90,6 +90,13 @@ unik yang ditinggalkan atau dihapus sebelum integrasi dan CI.
 
 ## Prioritas berikutnya
 
+Pembaruan bukti host 16 Oktober sekitar 18.19 WIB: checkout aplikasi cocok dengan
+`6392646`; observer/MT5 aktif, snapshot 399/399 siklus dan 3 instrumen, live OFF.
+Tiga ACK WAIT terlihat pada pembacaan berikutnya. Ini belum mengaudit memori atau
+fingerprint modul yang sudah dimuat. Lihat [batas bukti dan pemeriksa runtime
+baca-saja](operations/READONLY_RUNTIME_EVIDENCE.md); bagian snapshot awal di atas
+dipertahankan sebagai riwayat, bukan klaim bahwa host belum pernah diperiksa.
+
 1. Verifikasi checkout, fingerprint modul, lokasi memori dan proses VPS secara
    read-only sebelum menyatakan otak yang berjalan di VPS sinkron.
 2. Autentikasi CLI pada perangkat kerja tujuan bila dibutuhkan, sesuai
