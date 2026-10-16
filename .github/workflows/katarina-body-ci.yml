@@ -331,6 +331,17 @@ jobs:
 
       - name: Build committed source-only PC test kit
         run: python scripts/pc/build_pc_test_package.py
+      - name: Verify bounded Windows VPS release audit without broker access
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $sha = (git rev-parse HEAD).Trim()
+          $raw = & .\scripts\vps\Invoke-KatarinaPretrialRelease.ps1 -Mode Audit -ExpectedCommit $sha -SourceRoot $env:GITHUB_WORKSPACE -PythonExe (Get-Command python.exe).Source
+          $result = ($raw -join "`n") | ConvertFrom-Json
+          if (!$result.ok -or !$result.source_matches -or !$result.python.numpy -or $result.orders_submitted -ne 0 -or $result.live_execution_authorized) {
+            throw 'VPS release audit failed without any broker operation.'
+          }
+          $result | ConvertTo-Json -Depth 8
       - name: Extract package to a path with spaces and create its private environment
         shell: bash
         run: |
