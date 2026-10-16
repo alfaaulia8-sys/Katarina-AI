@@ -51,7 +51,8 @@ Reuse the real read-only state directory. Never point this process at synthetic
 acceptance state. `continuous-status.json` contains redacted operational counters
 and a run ID; `latest.json` and the databases remain private evidence. Counters
 measure observations, not independent trades, alpha or profit. The process uses
-no article fetches in this mode. Evidence quality and repeated/correlated samples
+no feed refreshes with `--no-fetch`; omit that flag to use the existing bounded
+free news/calendar refresh path. Evidence quality and repeated/correlated samples
 still need separate evaluation before any alpha claim.
 
 Create `continuous.stop` in that state directory for graceful shutdown. The file
