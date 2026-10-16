@@ -13,9 +13,16 @@ button{background:#256a67;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:
 <h1>Katarina AI</h1><p>Satu otak · LIVE OFF</p><small>Akses Owner. Jawaban model belum tentu benar; lihat bukti alat. Ctrl+C pada komputer host untuk berhenti.</small>
 <p><input id="token" type="password" autocomplete="off" placeholder="Token Owner"><input id="session" value="owner" aria-label="Sesi">
 <select id="mode" aria-label="Mode"><option value="auto">Otomatis</option><option>fast</option><option>deep</option></select></p>
+<button id="check" type="button">Periksa status Katarina</button><pre id="runtime" aria-live="polite">Masukkan token Owner untuk memeriksa status.</pre>
 <div id="history" aria-live="polite"></div><form id="form"><textarea id="prompt" rows="4" maxlength="8000" required placeholder="Perintah untuk Katarina" aria-label="Perintah"></textarea><button id="send">Kirim</button></form><p id="status" role="status">Siap</p>
 <script>
 const byId=id=>document.getElementById(id);
+byId('check').onclick=async()=>{byId('check').disabled=true;try{
+const response=await fetch('/status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+byId('token').value},body:'{}'});
+if(!response.ok)throw Error('Pemeriksaan ditolak ('+response.status+')');const report=await response.json();
+byId('runtime').textContent=JSON.stringify(report,null,2);
+if(report.dialog_available===false){byId('send').disabled=true;byId('status').textContent='Status tersedia. Dialog menunggu konfigurasi model.'}
+}catch(error){byId('runtime').textContent=error.message}finally{byId('check').disabled=false}};
 byId('form').onsubmit=async event=>{event.preventDefault();byId('send').disabled=true;byId('status').textContent='Berjalan…';
 const input=byId('prompt').value;try{const response=await fetch('/turn',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+byId('token').value},body:JSON.stringify({text:input,session_id:byId('session').value,mode:byId('mode').value})});
 if(!response.ok)throw Error('Permintaan ditolak ('+response.status+')');const report=await response.json();
@@ -24,7 +31,7 @@ const entry=document.createElement('pre');entry.textContent='Owner: '+input+'\\n
 </script></html>'''
 
 
-def handler_type(turn, token, *, access_config=None):
+def handler_type(turn, token, *, access_config=None, status_callback=None):
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
             super().setup()
@@ -64,7 +71,7 @@ def handler_type(turn, token, *, access_config=None):
                                                   ('Bearer ' + token).encode('utf-8'))
             except (ValueError, OSError):
                 pass
-            if self.path != '/turn' or not allowed:
+            if self.path not in ('/turn', '/status') or not allowed:
                 # A close with unread POST data can reset TCP on Windows and
                 # discard the denial response. Drain only a bounded fixed body.
                 try:
@@ -81,6 +88,11 @@ def handler_type(turn, token, *, access_config=None):
                 if self.headers.get('Transfer-Encoding') or not 0 < length <= 40000:
                     raise ValueError()
                 value = json.loads(self.rfile.read(length))
+                if self.path == '/status':
+                    if value != {} or not isinstance(value, dict) or status_callback is None:
+                        raise ValueError('status_unavailable_or_invalid_request')
+                    self.reply(200, json.dumps(status_callback(), ensure_ascii=False, allow_nan=False))
+                    return
                 if not isinstance(value, dict) or set(value) != {'text', 'session_id', 'mode'}:
                     raise ValueError()
                 if principal:
@@ -95,7 +107,8 @@ def handler_type(turn, token, *, access_config=None):
     return Handler
 
 
-def create_server(turn, *, bind='127.0.0.1', port=8765, cert=None, key=None, access_config=None):
+def create_server(turn, *, bind='127.0.0.1', port=8765, cert=None, key=None, access_config=None,
+                  status_callback=None):
     token = os.environ.get('KATARINA_OWNER_TOKEN', '')
     if access_config:
         from katarina.adapters.owner_access import load_access
@@ -126,7 +139,8 @@ def create_server(turn, *, bind='127.0.0.1', port=8765, cert=None, key=None, acc
             except BaseException:
                 client.close()
                 raise
-    server = BoundedServer((bind, port), handler_type(turn, token, access_config=access_config))
+    server = BoundedServer((bind, port), handler_type(turn, token, access_config=access_config,
+                                                  status_callback=status_callback))
     try:
         print('KATARINA_OWNER_UI_READY · LIVE OFF · port ' + str(server.server_port), flush=True)
         server.timeout = 1

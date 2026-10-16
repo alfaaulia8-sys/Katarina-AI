@@ -29,6 +29,56 @@ def policy(path, *, analyst_enabled=True):
 
 
 class UnifiedOwnerSurfaceTests(unittest.TestCase):
+    def test_status_only_runs_on_same_brain_without_model_or_dialog_memory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            access = root/'access.json'; policy(access)
+            ready, replies, made = queue.Queue(), queue.Queue(), []
+            class Brain(UnifiedKatarinaBrain):
+                def __init__(self, *args):
+                    super().__init__(*args); made.append(self)
+            def server(*args, **kwargs):
+                result = create_server(*args, **kwargs)
+                ready.put(result.server_port)
+                return result
+            def client():
+                try:
+                    port = ready.get(timeout=5)
+                    rows = []
+                    for route, token, body in [('/status', 'wrong', {}),
+                            ('/status', OWNER, {}), ('/status', OWNER, {'grant':'shell'}),
+                            ('/turn', OWNER, dict(text='Hello',session_id='owner',mode='auto'))]:
+                        conn = http.client.HTTPConnection('127.0.0.1',port,timeout=5)
+                        conn.request('POST',route,json.dumps(body),headers={'Authorization':'Bearer '+token})
+                        response = conn.getresponse()
+                        rows.append((response.status,json.loads(response.read())))
+                        conn.close()
+                    replies.put(rows)
+                except Exception as error:
+                    replies.put(error)
+                finally:
+                    (root/'continuous.stop').touch()
+            thread = threading.Thread(target=client); thread.start()
+            try:
+                with patch('katarina.adapters.continuous_owner_surface.create_server',server):
+                    result = run_continuous(root, config=config(priority=('local',),attempts=1),
+                        factories={'local':lambda c:BoundLocalBroker(AccountBroker(),c)},brain_type=Brain,
+                        surface_factory=owner_surface(state_dir=root,port=0,access_config=access))
+                rows = replies.get(timeout=5)
+                self.assertIsInstance(rows,list,rows)
+                self.assertEqual([row[0] for row in rows],[403,200,400,200])
+                self.assertEqual(rows[1][1]['surface_mode'],'STATUS_ONLY')
+                self.assertFalse(rows[1][1]['dialog_available'])
+                self.assertEqual(rows[1][1]['delivery'],'DISABLED')
+                self.assertEqual(rows[3][1]['status'],'BLOCKED_MODEL_NOT_CONFIGURED')
+                self.assertEqual(len(made),1)
+                self.assertEqual(result['successful_cycles'],1)
+                with MemoryStore(root/'cognitive-memory.sqlite3') as memory:
+                    self.assertIsNone(memory.load_latest_operational_event('single_brain_dialog_v1'))
+            finally:
+                thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
     def test_http_dialog_sensor_and_memory_share_one_foreground_brain(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
