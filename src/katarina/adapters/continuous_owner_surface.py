@@ -5,7 +5,7 @@ import time
 from katarina.adapters.owner_dialog_server import create_server
 
 
-def owner_surface(model, *, workspace=None, sources_config=None, **server_options):
+def owner_surface(model=None, *, workspace=None, sources_config=None, state_dir=None, **server_options):
     sources = None
     if sources_config:
         from katarina.adapters.research_sources import load_sources
@@ -13,6 +13,10 @@ def owner_surface(model, *, workspace=None, sources_config=None, **server_option
     @contextmanager
     def attach(brain):
         def turn(text, *, session_id, mode='auto', principal=None):
+            if model is None:
+                return dict(status='BLOCKED_MODEL_NOT_CONFIGURED',
+                            answer='Model dialog belum dikonfigurasi. Gunakan pemeriksaan status.',
+                            trace=[], orders_submitted=0, live_execution_authorized=False)
             # HTTP clients never supply tool grants or Owner research approval.
             role = principal['role'] if principal else 'owner'
             allowed = ['status', 'research'] if role == 'owner' else ['status']
@@ -24,7 +28,14 @@ def owner_surface(model, *, workspace=None, sources_config=None, **server_option
                                     mode=mode, allowed_tools=allowed, workspace=workspace, sources=sources)
             brain.control.checkpoint()
             return result
-        server = create_server(turn, **server_options)
+        def status():
+            from katarina.intelligence.runtime_evidence import read_runtime
+            evidence = read_runtime(state_dir) if state_dir is not None else dict(
+                result='BLOCKED', blockers=['OBSERVER_STATE_NOT_CONFIGURED'], live_clearance=False)
+            return {**evidence, 'dialog_available': model is not None,
+                    'surface_mode': 'DIALOG_AND_STATUS' if model is not None else 'STATUS_ONLY',
+                    'delivery': brain.control.snapshot()['delivery']}
+        server = create_server(turn, status_callback=status, **server_options)
         try:
             def idle(_):
                 started = time.monotonic()

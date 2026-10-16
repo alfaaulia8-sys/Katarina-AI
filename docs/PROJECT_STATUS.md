@@ -90,6 +90,11 @@ unik yang ditinggalkan atau dihapus sebelum integrasi dan CI.
 
 ## Prioritas berikutnya
 
+Instruksi Owner 16 Oktober: tunda pembuktian strategi sampai seluruh sistem
+terbentuk. Pekerjaan saat ini hanya integrasi teknis. [Permukaan status Owner
+tanpa model](operations/OWNER_STATUS_SURFACE.md) memakai observer yang sama;
+endpoint model nyata dan TLS HP tetap gerbang konfigurasi eksternal.
+
 Alat persiapan pengujian dialog dan konfigurasi Owner tersedia pada
 [daftar gerbang pretrial](operations/PRETRIAL_REMAINING_GATES.md). Mode persiapan
 tidak memanggil provider; kualitas model nyata dan TLS HP tetap belum terverifikasi.
