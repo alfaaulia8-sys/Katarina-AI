@@ -7,13 +7,15 @@ param(
   [string]$StateRoot='C:\KatarinaDev\state\owner-pretrial'
 )
 $ErrorActionPreference='Stop'
+$env:GIT_TERMINAL_PROMPT='0'
+$env:GCM_INTERACTIVE='Never'
 $report=@{schema_version=1;mode=$Mode;observed_utc=[DateTime]::UtcNow.ToString('o');
   expected_commit=$ExpectedCommit;ok=$false;status='BLOCKED';orders_submitted=0;live_execution_authorized=$false}
 function Git-Value([string[]]$Arguments) {
   $previous=$ErrorActionPreference
   try {
     $ErrorActionPreference='Continue'
-    $out=@(& git.exe -C $SourceRoot @Arguments 2>&1)
+    $out=@(& git.exe -c credential.interactive=never -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 -C $SourceRoot @Arguments 2>&1)
     $code=$LASTEXITCODE
   } finally {$ErrorActionPreference=$previous}
   if($code -ne 0){throw 'GIT_OPERATION_FAILED'}
