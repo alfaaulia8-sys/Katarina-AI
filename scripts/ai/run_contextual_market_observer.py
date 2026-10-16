@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--doctor", action="store_true", help="Local preflight only; no broker connection")
     parser.add_argument("--max-symbols",type=int, help="Explicit observation budget (1..17); default adapts to host")
     parser.add_argument("--no-fetch",action="store_true")
+    parser.add_argument('--extended-news-research',action='store_true',help='Opt in to additional official research feeds on the same brain')
     parser.add_argument("--require-market-data", action="store_true",
                         help="Exit blocked when no usable bound sensor data was received")
     parser.add_argument('--continuous', action='store_true', help='One persistent foreground brain; LIVE OFF')
@@ -39,6 +40,10 @@ def main():
     parser.add_argument('--owner-cert')
     parser.add_argument('--owner-key')
     args=parser.parse_args()
+    if args.extended_news_research:
+        if not args.continuous or args.no_fetch:
+            parser.error('extended news requires continuous observation with fetching enabled')
+        os.environ['KATARINA_EXTENDED_NEWS_RESEARCH']='1'
     if (args.owner_model_config or args.owner_status_ui) and not args.continuous:
         parser.error('Owner surface requires --continuous')
     if args.continuous and (args.doctor or args.offline_research):
