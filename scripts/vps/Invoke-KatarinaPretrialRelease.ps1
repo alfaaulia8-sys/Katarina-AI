@@ -69,7 +69,7 @@ try {
     if(!$report.source_matches){throw 'SOURCE_COMMIT_MISMATCH'}
   }
   if(!$PythonExe) {
-    foreach($candidate in @('C:\KatarinaDev\runtime\python\python.exe','C:\KatarinaDev\runtime\python312\python.exe','C:\Python312\python.exe')) {
+    foreach($candidate in @('C:\KatarinaDev\runtime\python-full\python.exe','C:\KatarinaDev\runtime\python\python.exe','C:\KatarinaDev\runtime\python312\python.exe','C:\Python312\python.exe')) {
       if(Test-Path -LiteralPath $candidate -PathType Leaf){$PythonExe=$candidate;break}
     }
     if(!$PythonExe){$cmd=Get-Command python.exe -ErrorAction SilentlyContinue;if($cmd){$PythonExe=$cmd.Source}}

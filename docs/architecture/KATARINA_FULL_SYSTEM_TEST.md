@@ -114,3 +114,11 @@ backup berdasarkan hash dan mempertahankan stdlib/site packages serta path lama.
 Perubahan file path saja bukan bukti impor: jalankan probe proses Python baru dan
 pastikan modul yang terimpor berada di checkout yang disetujui. Hentikan otak dan
 selesaikan test aktif sebelum mengganti pengikatan runtime.
+
+Python embeddable tidak menyertakan modul `venv`. Observer dapat memakainya,
+tetapi pengujian pemulihan environment PC membutuhkan instalasi Python 3.12 penuh.
+Instalasi penuh harus terpisah, dependensi diverifikasi, dan baru kemudian dipakai
+controller. Binder mendukung `.pth` khusus pada instalasi penuh serta `_pth` pada
+embedded; jangan mengisi stdlib secara manual hanya agar test terlihat lulus.
+Penolakan HTTP membaca hanya body terbatas sebelum menutup koneksi, agar response
+403 tidak hilang karena TCP reset pada Windows.

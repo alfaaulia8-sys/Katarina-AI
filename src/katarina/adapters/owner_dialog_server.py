@@ -39,6 +39,7 @@ def handler_type(turn, token, *, access_config=None):
             self.send_header('Content-Type', mime + '; charset=utf-8')
             self.send_header('Content-Length', str(len(raw)))
             self.send_header('Cache-Control', 'no-store')
+            self.send_header('Connection', 'close')
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('X-Frame-Options', 'DENY')
             self.end_headers()
@@ -64,6 +65,15 @@ def handler_type(turn, token, *, access_config=None):
             except (ValueError, OSError):
                 pass
             if self.path != '/turn' or not allowed:
+                # A close with unread POST data can reset TCP on Windows and
+                # discard the denial response. Drain only a bounded fixed body.
+                try:
+                    length = int(self.headers.get('Content-Length', '0'))
+                    if not self.headers.get('Transfer-Encoding') and 0 < length <= 40000:
+                        self.rfile.read(length)
+                except (ValueError, OSError):
+                    pass
+                self.close_connection = True
                 self.reply(403, '{}')
                 return
             try:
