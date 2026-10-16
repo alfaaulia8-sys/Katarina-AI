@@ -40,7 +40,8 @@ def fetch(url, host):
         context=ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         context=ssl.create_default_context()
-    with build_opener(NoRedirect(),HTTPSHandler(context=context)).open(Request(url,headers={'User-Agent':'KatarinaResearch/1.0'}),timeout=8) as response:
+    with build_opener(NoRedirect(),HTTPSHandler(context=context)).open(Request(url,headers={'User-Agent':'KatarinaResearch/1.0',
+            'Accept':'application/rss+xml,application/xml;q=0.9,text/html;q=0.8,*/*;q=0.5'}),timeout=8) as response:
         raw=response.read(600001)
     if len(raw)>600000:raise ValueError('research_news_size_exceeded')
     return raw
@@ -126,8 +127,9 @@ def collect(db, now, *, exchange=None):
         except (ValueError,TypeError,AttributeError):continue
     candidates=[]
     for source in SOURCES:
-        row=db.execute('SELECT attempted_epoch FROM research_news_fetches WHERE source=?',(source,)).fetchone()
-        if row is None or now.timestamp()-row[0]>=1800:candidates.append((row[0] if row else 0,source))
+        row=db.execute('SELECT attempted_epoch,status FROM research_news_fetches WHERE source=?',(source,)).fetchone()
+        retry_after=300 if row and row[1].startswith(('HTTP_','UNAVAILABLE_')) else 1800
+        if row is None or now.timestamp()-row[0]>=retry_after:candidates.append((row[0] if row else 0,source))
     status='CACHED';source=None
     if candidates:
         _,source=min(candidates)
