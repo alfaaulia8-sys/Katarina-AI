@@ -24,7 +24,7 @@ const entry=document.createElement('pre');entry.textContent='Owner: '+input+'\\n
 </script></html>'''
 
 
-def handler_type(turn, token):
+def handler_type(turn, token, *, access_config=None):
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
             super().setup()
@@ -51,8 +51,19 @@ def handler_type(turn, token):
             self.reply(200, PAGE, 'text/html')
 
         def do_POST(self):
-            if self.path != '/turn' or not hmac.compare_digest(
-                    self.headers.get('Authorization', '').encode('utf-8'), ('Bearer ' + token).encode('utf-8')):
+            principal = None
+            allowed = False
+            try:
+                if access_config:
+                    from katarina.adapters.owner_access import authenticate
+                    principal = authenticate(access_config, self.headers.get('Authorization', ''))
+                    allowed = principal is not None
+                else:
+                    allowed = hmac.compare_digest(self.headers.get('Authorization', '').encode('utf-8'),
+                                                  ('Bearer ' + token).encode('utf-8'))
+            except (ValueError, OSError):
+                pass
+            if self.path != '/turn' or not allowed:
                 self.reply(403, '{}')
                 return
             try:
@@ -62,16 +73,24 @@ def handler_type(turn, token):
                 value = json.loads(self.rfile.read(length))
                 if not isinstance(value, dict) or set(value) != {'text', 'session_id', 'mode'}:
                     raise ValueError()
-                report = turn(value['text'], session_id=value['session_id'], mode=value['mode'])
+                if principal:
+                    from katarina.adapters.owner_access import scoped_session
+                    report = turn(value['text'], session_id=scoped_session(principal, value['session_id']),
+                                  mode=value['mode'], principal=principal)
+                else:
+                    report = turn(value['text'], session_id=value['session_id'], mode=value['mode'])
                 self.reply(200, json.dumps(report, ensure_ascii=False, allow_nan=False))
             except Exception:
                 self.reply(400, '{"status":"REQUEST_BLOCKED"}')
     return Handler
 
 
-def serve(turn, *, bind='127.0.0.1', port=8765, cert=None, key=None):
+def create_server(turn, *, bind='127.0.0.1', port=8765, cert=None, key=None, access_config=None):
     token = os.environ.get('KATARINA_OWNER_TOKEN', '')
-    if len(token) < 32 or not token.isascii() or any(x.isspace() for x in token):
+    if access_config:
+        from katarina.adapters.owner_access import load_access
+        load_access(access_config)
+    elif len(token) < 32 or not token.isascii() or any(x.isspace() for x in token):
         raise ValueError('owner_token_required')
     loopback = bind == 'localhost'
     try:
@@ -80,14 +99,36 @@ def serve(turn, *, bind='127.0.0.1', port=8765, cert=None, key=None):
         pass
     if not loopback and not (cert and key):
         raise ValueError('remote_owner_surface_requires_tls')
-    server = HTTPServer((bind, port), handler_type(turn, token))
+    context = None
+    if cert or key:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_cert_chain(cert, key)
+    class BoundedServer(HTTPServer):
+        def get_request(self):
+            client, address = super().get_request()
+            try:
+                client.settimeout(10)
+                if context is not None:
+                    client = context.wrap_socket(client, server_side=True, do_handshake_on_connect=False)
+                    client.do_handshake()
+                return client, address
+            except BaseException:
+                client.close()
+                raise
+    server = BoundedServer((bind, port), handler_type(turn, token, access_config=access_config))
     try:
-        if cert or key:
-            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            context.minimum_version = ssl.TLSVersion.TLSv1_2
-            context.load_cert_chain(cert, key)
-            server.socket = context.wrap_socket(server.socket, server_side=True)
         print('KATARINA_OWNER_UI_READY · LIVE OFF · port ' + str(server.server_port), flush=True)
+        server.timeout = 1
+        return server
+    except BaseException:
+        server.server_close()
+        raise
+
+
+def serve(turn, **options):
+    server = create_server(turn, **options)
+    try:
         server.serve_forever()
     finally:
         server.server_close()

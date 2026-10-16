@@ -73,7 +73,7 @@ def ensure_article_table(store):
         outcome TEXT NOT NULL, PRIMARY KEY(source,url))""")
     store.db.commit()
 
-def load_articles(store,now):
+def load_articles(store,now, *, allow_fetch=True):
     """At most one article fetch per source per pass; 30 min failure backoff."""
     ensure_article_table(store)
     diagnostics=Counter()
@@ -97,6 +97,9 @@ def load_articles(store,now):
                 (source,url)).fetchone()
             if exists:
                 diagnostics[source+"_full_text_cached"]+=1
+                continue
+            if not allow_fetch:
+                diagnostics[source+"_article_fetch_disabled"]+=1
                 continue
             attempt=store.db.execute(
                 "SELECT attempted FROM contextual_article_attempts WHERE source=? AND url=?",
@@ -216,7 +219,7 @@ class BrainObserver:
         # ContextStore.record timestamps are captured AFTER a network request;
         # the original feed_started_at is before those snapshots, so using it
         # to query the cache would silently hide every newly fetched article.
-        articles,article_diag=load_articles(store,datetime.now(timezone.utc))
+        articles,article_diag=load_articles(store,datetime.now(timezone.utc), allow_fetch=fetch_news)
         # Media article body provides contextual interpretation only.
         # NEVER convert it into an official monetary-policy trade signal.
         media_analysis,media_status=collect_market_articles(

@@ -128,3 +128,21 @@ class ContinuousObservationTests(unittest.TestCase):
         self.assertFalse(report['production_execution'])
         self.assertFalse(report['live_execution_authorized'])
         self.assertEqual(report['orders_submitted'], 0)
+
+    def test_disabled_news_fetch_does_not_fetch_uncached_article_from_cached_feed(self):
+        from datetime import datetime, timezone
+        from katarina.intelligence.brain_observer import load_articles
+        from katarina.intelligence.public_context import ContextStore
+        store = ContextStore(self.root/'article-test.sqlite3')
+        now = datetime.now(timezone.utc)
+        try:
+            snapshot = dict(ready=True, payload=dict(items=[dict(
+                published_utc=now.isoformat(),url='https://www.federalreserve.gov/example',title='Fixture')]))
+            with patch.object(store,'latest',return_value=snapshot), \
+                 patch('katarina.intelligence.brain_observer.fetch_official_article') as fetch:
+                articles, diagnostics = load_articles(store,now,allow_fetch=False)
+            fetch.assert_not_called()
+            self.assertEqual(articles,[])
+            self.assertEqual(diagnostics['fed_article_fetch_disabled'],1)
+        finally:
+            store.db.close()

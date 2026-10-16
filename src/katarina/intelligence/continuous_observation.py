@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import time
 import uuid
+from contextlib import ExitStack
 
 from katarina.adapters.automatic_connection import (
     ConnectionUnavailable, cloud_factory, local_factory, diagnostic_code,
@@ -26,7 +27,9 @@ FATAL_BINDING = frozenset(('ACCOUNT_LOGIN_MISMATCH', 'ACCOUNT_SERVER_MISMATCH',
 
 def run_continuous(root, *, config, max_symbols=3, interval_seconds=60,
                    max_cycles=None, factories=None, brain_type=UnifiedKatarinaBrain,
-                   wait=time.sleep):
+                   wait=time.sleep, surface_factory=None, fetch_news=False):
+    if type(fetch_news) is not bool:
+        raise ValueError('invalid_news_fetch_mode')
     if config is None:
         raise ValueError('continuous_account_binding_required')
     if type(max_symbols) is not int or not 1 <= max_symbols <= 17:
@@ -38,6 +41,7 @@ def run_continuous(root, *, config, max_symbols=3, interval_seconds=60,
     root = Path(root)
     lock = lock_worker(root)
     context = memory = None
+    surfaces = ExitStack()
     factories = factories if factories is not None else {'local': local_factory, 'cloud': cloud_factory}
     stop = root / 'continuous.stop'
     status = dict(schema_version=1, run_id=uuid.uuid4().hex, pid=os.getpid(),
@@ -45,7 +49,7 @@ def run_continuous(root, *, config, max_symbols=3, interval_seconds=60,
                   successful_cycles=0, consecutive_failures=0, status='STARTING',
                   received_market_data_symbols=0, orders_submitted=0,
                   live_execution_authorized=False, production_execution=False,
-                  background_workers=0, interval_seconds=interval_seconds)
+                  background_workers=0, interval_seconds=interval_seconds, fetch_news=fetch_news)
 
     def publish(phase, reason=None):
         status.update(status=phase, reason=reason,
@@ -63,6 +67,7 @@ def run_continuous(root, *, config, max_symbols=3, interval_seconds=60,
         memory = MemoryStore(root / 'cognitive-memory.sqlite3')
         brain = brain_type(context.db, memory)
         brain.context_store = context
+        idle = surfaces.enter_context(surface_factory(brain)) if surface_factory else wait
         publish('STARTING')
         while not stop.exists():
             if inspect_host(root)['blockers']:
@@ -78,7 +83,7 @@ def run_continuous(root, *, config, max_symbols=3, interval_seconds=60,
                     try:
                         broker = factories[route](config)
                         result = brain.observe_connected_market(root, broker,
-                            max_symbols=max_symbols, fetch_news=False)
+                            max_symbols=max_symbols, fetch_news=fetch_news)
                         break
                     except ConnectionUnavailable as exc:
                         fault = diagnostic_code(exc, route)
@@ -119,10 +124,13 @@ def run_continuous(root, *, config, max_symbols=3, interval_seconds=60,
                 break
             # No overlapping passes or catch-up bursts. Stop latency while idle <=1s.
             delay = min(3600, interval_seconds * 2 ** min(status['consecutive_failures'], 4))
+            deadline = time.monotonic() + delay
             for _ in range(delay):
                 if stop.exists():
                     break
-                wait(1)
+                idle(1)
+                if surface_factory and time.monotonic() >= deadline:
+                    break
             publish(status['status'], status['reason'])
         brain.control.checkpoint()
         publish('STOPPED', 'OWNER_STOP_REQUEST' if stop.exists() else 'CYCLE_LIMIT_REACHED')
@@ -136,11 +144,18 @@ def run_continuous(root, *, config, max_symbols=3, interval_seconds=60,
         raise
     finally:
         try:
-            if memory is not None:
-                memory.close()
+            surfaces.close()
         finally:
-            try:
-                if context is not None:
-                    context.db.close()
-            finally:
-                lock.close()
+            _close_stores(memory, context, lock)
+
+
+def _close_stores(memory, context, lock):
+    try:
+        if memory is not None:
+            memory.close()
+    finally:
+        try:
+            if context is not None:
+                context.db.close()
+        finally:
+            lock.close()

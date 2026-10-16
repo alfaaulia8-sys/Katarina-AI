@@ -29,7 +29,17 @@ def main():
     parser.add_argument('--continuous', action='store_true', help='One persistent foreground brain; LIVE OFF')
     parser.add_argument('--interval-seconds', type=int, default=60)
     parser.add_argument('--max-cycles', type=int, help='Optional bounded observation soak')
+    parser.add_argument('--owner-model-config', help='Optional dialog on the same continuous brain')
+    parser.add_argument('--owner-access-config', help='Private revocable Owner/analyst token hash policy')
+    parser.add_argument('--owner-workspace', help='Owner-granted read-only folder')
+    parser.add_argument('--owner-sources-config', help='Owner-granted HTTPS research sources')
+    parser.add_argument('--owner-bind', default='127.0.0.1')
+    parser.add_argument('--owner-port', type=int, default=8765)
+    parser.add_argument('--owner-cert')
+    parser.add_argument('--owner-key')
     args=parser.parse_args()
+    if args.owner_model_config and not args.continuous:
+        parser.error('--owner-model-config requires --continuous')
     if args.continuous and (args.doctor or args.offline_research):
         parser.error('--continuous requires a configured sensor')
     if args.require_market_data and (args.doctor or args.offline_research):
@@ -61,8 +71,17 @@ def main():
     if args.continuous:
         from katarina.intelligence.continuous_observation import run_continuous
         try:
+            surface = None
+            if args.owner_model_config:
+                from katarina.adapters.dialog_model import JSONDialogModel, ModelConfig
+                from katarina.adapters.continuous_owner_surface import owner_surface
+                surface = owner_surface(JSONDialogModel(ModelConfig.load(args.owner_model_config)),
+                    bind=args.owner_bind, port=args.owner_port, cert=args.owner_cert,
+                    key=args.owner_key, access_config=args.owner_access_config,
+                    workspace=args.owner_workspace, sources_config=args.owner_sources_config)
             result = run_continuous(root, config=config, max_symbols=symbols,
-                interval_seconds=args.interval_seconds, max_cycles=args.max_cycles)
+                interval_seconds=args.interval_seconds, max_cycles=args.max_cycles,
+                surface_factory=surface, fetch_news=not args.no_fetch)
         except (ValueError, RuntimeError, OSError):
             print('CONTINUOUS_BLOCKED_LIVE_OFF', file=sys.stderr, flush=True)
             return 2
