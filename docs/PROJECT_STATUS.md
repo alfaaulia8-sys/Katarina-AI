@@ -90,6 +90,10 @@ unik yang ditinggalkan atau dihapus sebelum integrasi dan CI.
 
 ## Prioritas berikutnya
 
+Alat persiapan pengujian dialog dan konfigurasi Owner tersedia pada
+[daftar gerbang pretrial](operations/PRETRIAL_REMAINING_GATES.md). Mode persiapan
+tidak memanggil provider; kualitas model nyata dan TLS HP tetap belum terverifikasi.
+
 Pembaruan bukti host 16 Oktober sekitar 18.19 WIB: checkout aplikasi cocok dengan
 `6392646`; observer/MT5 aktif, snapshot 399/399 siklus dan 3 instrumen, live OFF.
 Tiga ACK WAIT terlihat pada pembacaan berikutnya. Ini belum mengaudit memori atau
