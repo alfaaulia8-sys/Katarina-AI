@@ -137,6 +137,9 @@ class BoundLocalBroker:
             receipt = self._feedback.accept(message)
             verify_identity(self._native, self._config)
             return receipt
+        except ConnectionUnavailable:
+            self.connection_failed = True
+            raise
         except Exception:
             self.connection_failed = True
             raise ConnectionUnavailable('LOCAL_FEEDBACK_REJECTED') from None
@@ -154,6 +157,9 @@ class BoundLocalBroker:
                 result = getattr(self._native,name)(*args,**kwargs)
                 verify_identity(self._native,self._config)
                 return result
+            except ConnectionUnavailable:
+                self.connection_failed = True
+                raise
             except Exception:
                 self.connection_failed = True
                 raise ConnectionUnavailable('LOCAL_READ_FAILED') from None

@@ -37,3 +37,34 @@ Terminal presence and package importability do not prove incoming market data.
 Real MT5 observation still needs the correct terminal/session, account binding,
 disabled trading, sufficient causal price history and the existing strict sensor
 check. Neither synthetic PASS nor this release tool authorizes live orders.
+
+## Persistent read-only observation
+
+The canonical observer CLI also accepts `--continuous --no-fetch`, a bound
+`--connection-config`, and `--interval-seconds 60`. It retains one brain, one
+ContextStore, one MemoryStore and the existing host lock for the entire process.
+It creates no background worker. The existing host controller may supervise that
+single foreground process in the Owner's interactive Windows session; signing
+out or rebooting still requires that session and terminal to become available.
+
+Reuse the real read-only state directory. Never point this process at synthetic
+acceptance state. `continuous-status.json` contains redacted operational counters
+and a run ID; `latest.json` and the databases remain private evidence. Counters
+measure observations, not independent trades, alpha or profit. The process uses
+no article fetches in this mode. Evidence quality and repeated/correlated samples
+still need separate evaluation before any alpha claim.
+
+Create `continuous.stop` in that state directory for graceful shutdown. The file
+persists and blocks restart until the host operator explicitly clears it. Idle
+stop response is within one second; an active bounded sensor pass finishes first.
+The default pause is 60 seconds after each completed pass, with exponential
+backoff capped at one hour. There are no overlapping passes or catch-up bursts.
+`--max-cycles N` supports a bounded soak before long-running operation.
+
+Identity/permission changes, integrity faults, missing dependencies, disk pressure
+or unexpected errors stop the process with BLOCKED status. Transient connection
+faults retry within configured route/attempt limits and then wait with backoff.
+A status file alone is insufficient proof of liveness: check its timestamp, PID,
+run ID and increasing successful-cycle count. Stop the process before source
+synchronization. No live execution, manual-position mutation or strategy
+activation is authorized by this mode.
