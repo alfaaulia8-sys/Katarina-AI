@@ -338,6 +338,7 @@ jobs:
           $sha = (git rev-parse HEAD).Trim()
           $raw = & .\scripts\vps\Invoke-KatarinaPretrialRelease.ps1 -Mode Audit -ExpectedCommit $sha -SourceRoot $env:GITHUB_WORKSPACE -PythonExe (Get-Command python.exe).Source
           $result = ($raw -join "`n") | ConvertFrom-Json
+          $result | ConvertTo-Json -Depth 8
           if (!$result.ok -or !$result.source_matches -or !$result.python.numpy -or $result.orders_submitted -ne 0 -or $result.live_execution_authorized) {
             throw 'VPS release audit failed without any broker operation.'
           }

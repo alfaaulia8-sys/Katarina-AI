@@ -37,11 +37,11 @@ function Run-Bounded([string]$Exe,[string]$Arguments,[int]$Timeout=30) {
 }
 try {
   if(!(Test-Path -LiteralPath (Join-Path $SourceRoot '.git'))){throw 'SOURCE_REPOSITORY_REQUIRED'}
-  $origin=Git-Value @('remote','get-url','origin')
+  $origin=Git-Value -Arguments @('remote','get-url','origin')
   if($origin -notmatch '^(https://github\.com/|git@github\.com:)alfaauliau-katarinaAI/Katarina-AI(?:\.git)?$'){throw 'SOURCE_ORIGIN_REJECTED'}
-  $report.source_commit=Git-Value @('rev-parse','HEAD')
+  $report.source_commit=Git-Value -Arguments @('rev-parse','HEAD')
   $report.source_matches=($report.source_commit -ceq $ExpectedCommit)
-  $report.working_tree_clean=([string]::IsNullOrEmpty((Git-Value @('status','--porcelain'))))
+  $report.working_tree_clean=([string]::IsNullOrEmpty((Git-Value -Arguments @('status','--porcelain'))))
   $report.terminal_process_count=@(Get-Process terminal64 -ErrorAction SilentlyContinue).Count
   $report.brain_process_count=@(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue | Where-Object {
     $_.CommandLine -and ($_.CommandLine -match 'run_contextual_market_observer|run_assistant\.py|katarina_pc\.py|brain_observer')
@@ -49,13 +49,13 @@ try {
   if($Mode -eq 'Sync') {
     if(!$report.working_tree_clean){throw 'SOURCE_DIRTY_NO_AUTOSTASH_OR_RESET'}
     if($report.brain_process_count -gt 0){throw 'BRAIN_RUNNING_SYNC_REFUSED'}
-    if((Git-Value @('branch','--show-current')) -cne 'main'){throw 'MAIN_BRANCH_REQUIRED'}
+    if((Git-Value -Arguments @('branch','--show-current')) -cne 'main'){throw 'MAIN_BRANCH_REQUIRED'}
     # A fetch/moving main never silently changes the pinned approved destination.
-    $null=Git-Value @('fetch','--no-tags','origin','main')
-    if((Git-Value @('rev-parse','FETCH_HEAD')) -cne $ExpectedCommit){throw 'MAIN_MOVED_REVALIDATE_COMMIT'}
-    $null=Git-Value @('merge-base','--is-ancestor','HEAD',$ExpectedCommit)
-    $null=Git-Value @('merge','--ff-only',$ExpectedCommit)
-    $report.source_commit=Git-Value @('rev-parse','HEAD')
+    $null=Git-Value -Arguments @('fetch','--no-tags','origin','main')
+    if((Git-Value -Arguments @('rev-parse','FETCH_HEAD')) -cne $ExpectedCommit){throw 'MAIN_MOVED_REVALIDATE_COMMIT'}
+    $null=Git-Value -Arguments @('merge-base','--is-ancestor','HEAD',$ExpectedCommit)
+    $null=Git-Value -Arguments @('merge','--ff-only',$ExpectedCommit)
+    $report.source_commit=Git-Value -Arguments @('rev-parse','HEAD')
     $report.source_matches=($report.source_commit -ceq $ExpectedCommit)
     if(!$report.source_matches){throw 'SOURCE_COMMIT_MISMATCH'}
   }
@@ -69,8 +69,8 @@ try {
   if($report.python_found) {
     # Fixed probe, no caller-provided Python or shell text.
     $code="import sys,json,importlib.util;print(json.dumps(dict(version=list(sys.version_info[:3]),numpy=importlib.util.find_spec('numpy') is not None,mt5=importlib.util.find_spec('MetaTrader5') is not None)))"
-    $args='-c "'+$code+'"'
-    $report.python=(Run-Bounded $PythonExe $args 15)|ConvertFrom-Json
+    $probeArguments='-c "'+$code+'"'
+    $report.python=(Run-Bounded $PythonExe $probeArguments 15)|ConvertFrom-Json
   }
   $report.mt5_installations=@()
   foreach($terminal in @('C:\Program Files\MetaTrader 5 ALFA\terminal64.exe','C:\KatarinaDev\runtime\mt5-research\terminal64.exe','C:\Program Files\MetaTrader 5\terminal64.exe')) {

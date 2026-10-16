@@ -45,7 +45,7 @@ class VpsPretrialReleaseTests(unittest.TestCase):
 
     def test_real_audit_reads_local_runtime_without_changing_source(self):
         result = self.invoke('Audit')
-        self.assertTrue(result['ok'])
+        self.assertTrue(result['ok'], result)
         self.assertTrue(result['source_matches'])
         self.assertTrue(result['python_found'])
         self.assertEqual(result['python']['version'][:2], [3, 12])
