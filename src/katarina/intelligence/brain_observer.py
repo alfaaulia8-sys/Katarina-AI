@@ -409,4 +409,6 @@ class BrainObserver:
                 "journal":report["quote_journal"]["counts"],
                 "paper_virtual":report["virtual_shadow_summary"]["counts"],
                 "hypotheses":len(paper_hypotheses),
-                "orders":0}
+                "orders":0, "orders_submitted":report["orders_submitted"],
+                "live_execution_authorized":report["live_execution_authorized"],
+                "production_execution":report["production_execution"]}

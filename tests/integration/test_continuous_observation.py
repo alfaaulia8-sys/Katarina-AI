@@ -113,3 +113,18 @@ class ContinuousObservationTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'HOST_RESOURCE'):
                 self.run_loop(max_cycles=1)
         self.assertEqual(self.calls, [])
+
+    def test_actual_brain_pipeline_repeats_with_bound_sensor_and_no_orders(self):
+        from tests.integration.test_automatic_connection import AccountBroker, config
+        from katarina.adapters.automatic_connection import BoundLocalBroker
+        native = AccountBroker()
+        result = run_continuous(self.root, config=config(priority=('local',), attempts=1),
+            max_cycles=3, factories={'local':lambda c:BoundLocalBroker(native, c)},
+            wait=lambda _:None)
+        self.assertEqual(result['successful_cycles'], 3)
+        self.assertEqual(result['received_market_data_symbols'], 3)
+        self.assertEqual(native.orders, 0)
+        report = json.loads((self.root/'latest.json').read_text())
+        self.assertFalse(report['production_execution'])
+        self.assertFalse(report['live_execution_authorized'])
+        self.assertEqual(report['orders_submitted'], 0)
