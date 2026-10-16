@@ -2,7 +2,7 @@ from datetime import datetime,timezone,timedelta
 from hashlib import sha256
 import sqlite3
 import unittest
-from katarina.intelligence.research_news_collection import collect,parse_feed,event_study,allowed
+from katarina.intelligence.research_news_collection import collect,parse_feed,event_study,allowed,describe_body,SOURCES
 from katarina.intelligence.observational_associations import observe_associations
 
 
@@ -39,7 +39,7 @@ class ResearchNewsTests(unittest.TestCase):
         calls=[]
         def exchange(url,host):
             calls.append(url)
-            if '/feed/' in url or '/rss/' in url:
+            if '/feed/' in url or '/rss/' in url or '/feeds/' in url:
                 return f'<rss><channel><item><title>Policy</title><link>https://{host}/statement</link><pubDate>{date}</pubDate></item></channel></rss>'.encode()
             return ('<html>'+''.join('<p>'+'policy economy inflation '*40+'</p>' for _ in range(3))+'</html>').encode()
         result=collect(self.db,self.now,exchange=exchange)
@@ -47,7 +47,7 @@ class ResearchNewsTests(unittest.TestCase):
         row=result['new_documents'][0]
         self.assertGreater(datetime.fromisoformat(row['known_utc']),datetime.fromisoformat(date))
         self.assertFalse(row['semantic_interpretation_verified'])
-        collect(self.db,self.now,exchange=exchange)
+        for _ in range(len(SOURCES)-1):collect(self.db,self.now,exchange=exchange)
         before=len(calls)
         result=collect(self.db,self.now,exchange=exchange)
         self.assertEqual(result['status'],'CACHED')
@@ -66,6 +66,8 @@ class ResearchNewsTests(unittest.TestCase):
         self.assertEqual(len(result['groups']),2)
         self.assertAlmostEqual(result['groups'][0]['mean_mid_return_bps'],100)
         self.assertEqual(result['groups'][0]['status'],'INSUFFICIENT_EVENTS')
+        self.assertEqual(result['stored_reactions'],2)
+        self.assertEqual(event_study(self.db,self.now)['stored_reactions'],2)
         self.assertFalse(result['causality_proven'])
         self.assertFalse(result['strategy_validated'])
 
@@ -73,3 +75,50 @@ class ResearchNewsTests(unittest.TestCase):
         collect(self.db,self.now,exchange=lambda *a:b'<rss/>')
         result=event_study(self.db,self.now)
         self.assertEqual(result['status'],'WAITING_FOR_DATA')
+
+    def test_topics_extract_actual_context_without_claiming_sentiment(self):
+        text='We use cookies and subscribe to our newsletter to receive updates daily.\nInflation and interest rates remain elevated as the dollar rises while oil supply falls across global markets.'
+        result=describe_body(text)
+        self.assertIn('RATES_INFLATION',result['topics'])
+        self.assertIn('ENERGY_SUPPLY',result['topics'])
+        self.assertNotIn('cookies',result['extractive_summary'])
+        self.assertEqual(result['sentiment'],'NOT_INFERRED')
+
+    def test_http_failure_remains_visible_and_other_sources_continue(self):
+        from urllib.error import HTTPError
+        def exchange(url,host):raise HTTPError(url,403,'Forbidden',None,None)
+        result=collect(self.db,self.now,exchange=exchange)
+        source=result['source_checked']
+        self.assertEqual(result['source_statuses'][source],'HTTP_403')
+        again=collect(self.db,self.now,exchange=lambda *a:b'<rss/>')
+        self.assertNotEqual(again['source_checked'],source)
+        self.assertEqual(again['source_statuses'][source],'HTTP_403')
+
+    def test_quote_observed_after_window_cannot_repair_missing_history(self):
+        collect(self.db,self.now,exchange=lambda *a:b'<rss/>')
+        known=self.now-timedelta(hours=2);body='Inflation and monetary policy.'
+        self.db.execute('INSERT INTO research_news_documents VALUES(?,?,?,?,?,?,?,?)',
+            ('id','fed','https://www.federalreserve.gov/a',known.isoformat(),known.isoformat(),body,sha256(body.encode()).hexdigest(),'summary'))
+        observe_associations(self.db,{},self.now)
+        self.db.execute('INSERT INTO research_market_samples VALUES(?,?,?,?)',('A',known.timestamp(),self.now.timestamp(),100))
+        self.db.execute('INSERT INTO research_market_samples VALUES(?,?,?,?)',('A',known.timestamp()+900,self.now.timestamp(),101))
+        result=event_study(self.db,self.now)
+        self.assertEqual(result['stored_reactions'],0)
+        self.assertEqual(result['groups'],[])
+
+    def test_five_minute_reaction_persists_with_topic_and_no_duplicate(self):
+        collect(self.db,self.now,exchange=lambda *a:b'<rss/>')
+        known=self.now-timedelta(minutes=6)
+        body='Inflation and interest rates influence the dollar and global oil supply.'
+        self.db.execute('INSERT INTO research_news_documents VALUES(?,?,?,?,?,?,?,?)',
+            ('id','fed','https://www.federalreserve.gov/a',known.isoformat(),known.isoformat(),body,sha256(body.encode()).hexdigest(),'summary'))
+        for seconds,mid in [(1,100),(301,101)]:
+            clock=known+timedelta(seconds=seconds)
+            observe_associations(self.db,{'A':(mid,mid,clock.timestamp())},clock)
+        result=event_study(self.db,self.now)
+        self.assertEqual(result['stored_reactions'],1)
+        self.assertEqual(result['pending_windows'],2)
+        self.assertEqual(result['groups'][0]['horizon_seconds'],300)
+        self.assertIn('RATES_INFLATION',[r['topic'] for r in result['topic_groups']])
+        self.assertAlmostEqual(result['groups'][0]['mean_mid_return_bps'],100)
+        self.assertEqual(event_study(self.db,self.now)['stored_reactions'],1)
